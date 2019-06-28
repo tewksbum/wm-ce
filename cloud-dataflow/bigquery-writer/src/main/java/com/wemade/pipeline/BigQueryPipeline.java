@@ -1,4 +1,4 @@
-package com.pipeline;
+package com.wemade.pipeline;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -43,7 +43,7 @@ import com.util.ReadConfig;
  *
  */
 
-public class DataflowStreamingPipeline {
+public class BigQueryPipeline {
 
 	public static void run(ReadConfig config) throws Exception {
 

@@ -1,4 +1,4 @@
-package com.pipeline;
+package com.wemade.pipeline;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -39,7 +39,7 @@ public class DynamicPipelineWrapper {
 		}else
 		{
 			try {
-				DataflowStreamingPipeline.run(config);
+				BigQueryPipeline.run(config);
 			} catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
