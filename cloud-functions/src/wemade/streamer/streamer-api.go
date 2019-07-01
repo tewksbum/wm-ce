@@ -1,5 +1,5 @@
-// Package wemade contains an HTTP Cloud Function.
-package wemade
+// Package streamer contains a series of cloud functions for streamer
+package streamer
 
 import (
 	"context"
@@ -15,14 +15,6 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
 )
-
-// Customer contains Customer fields
-type Customer struct {
-	Name      string
-	AccessKey string
-	Enabled   bool
-	Key       *datastore.Key `datastore:"__key__"`
-}
 
 // Request contains a record for the request
 type Request struct {
@@ -43,11 +35,8 @@ const NameSpace = "wemade.streamer"
 // BucketName the GS storage bucket name
 const BucketName = "streamer-upload"
 
-// ProjectID the google cloud project id
-const ProjectID = "wemade-core"
-
-// ProcessRequest is the API body
-func ProcessRequest(w http.ResponseWriter, r *http.Request) {
+// UploadFile is the API body
+func UploadFile(w http.ResponseWriter, r *http.Request) {
 	var d struct {
 		AccessKey    string `json:"accessKey"`
 		FileURL      string `json:"fileUrl"`

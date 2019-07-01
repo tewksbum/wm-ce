@@ -1,5 +1,5 @@
-// Package wemade contains an HTTP Cloud Function.
-package wemade
+// Package streamer contains a series of cloud functions for streamer
+package streamer
 
 import (
 	"context"
@@ -13,42 +13,18 @@ import (
 	"cloud.google.com/go/datastore"
 )
 
-// Customer contains Customer fields
-type Customer struct {
-	Name      string
-	AccessKey string
-	Enabled   bool
-	Key       *datastore.Key `datastore:"__key__"`
-}
-
 // Profile is a dynamic map of the profile results
 type Profile map[string]interface {
 }
 
-func (d *Profile) Load(props []datastore.Property) error {
-	// Note: you might want to clear current values from the map or create a new map
-	for _, p := range props {
-		(*d)[p.Name] = p.Value
-	}
-	return nil
-}
-
-func (d *Profile) Save() (props []datastore.Property, err error) {
-	for k, v := range *d {
-		props = append(props, datastore.Property{Name: k, Value: v})
-	}
-	return
-}
-
-// NameSpace of the entity types used by streamer api
+// NameSpaceStreamer is the namespace of the streamer
 const NameSpaceStreamer = "wemade.streamer"
+
+// NameSpaceProfiler is the namespace of the profiler
 const NameSpaceProfiler = "wemade.profiler"
 
-// ProjectID the google cloud project id
-const ProjectID = "wemade-core"
-
-// ProcessRequest is the API body
-func ProcessRequest(w http.ResponseWriter, r *http.Request) {
+// ProfilerAPI is the API body
+func ProfilerAPI(w http.ResponseWriter, r *http.Request) {
 	var d struct {
 		AccessKey string `json:"accessKey"`
 		RequestID string `json:"requestId"`

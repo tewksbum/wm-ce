@@ -1,5 +1,5 @@
-// Package wmPsLogger contains a Pub/Sub Cloud Function.
-package wmPsLogger
+// Package pipeline contains a Pub/Sub Cloud Function.
+package pipeline
 
 import (
 	"context"
@@ -11,7 +11,7 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-// HelloPubSub logs the pubsub message
+// LogPubSub logs the pubsub message
 func LogPubSub(ctx context.Context, m PubSubMessage) error {
 	log.Println(string(m.Data))
 	return nil

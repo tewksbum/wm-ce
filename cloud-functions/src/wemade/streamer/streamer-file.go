@@ -1,5 +1,5 @@
-// Package wemade contains an GS bucket trigger that fires data into pubsub
-package wemade
+// Package streamer contains a series of cloud functions for streamer
+package streamer
 
 import (
 	"bytes"
@@ -28,15 +28,13 @@ type GCSEvent struct {
 	Updated        time.Time `json:"updated"`
 }
 
-// ProjectID the google cloud project id
-const ProjectID = "wemade-core"
-
+// RenameDuplicateColumns renames duplicate columns
 func RenameDuplicateColumns(s []string) []string {
 	m := make(map[string]int)
 	var result []string
 	for _, item := range s {
 		if _, ok := m[item]; ok {
-			m[item] += 1
+			m[item]++
 			result = append(result, item+"_"+strconv.Itoa(m[item]))
 
 		} else {
@@ -45,7 +43,7 @@ func RenameDuplicateColumns(s []string) []string {
 		}
 	}
 
-	for item, _ := range m {
+	for item := range m {
 		result = append(result, item)
 	}
 	return result

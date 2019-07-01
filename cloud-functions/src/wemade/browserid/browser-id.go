@@ -1,4 +1,5 @@
-package wemade
+// Package pipeline contains a browser id implementation
+package browserid
 
 import (
 	"fmt"
