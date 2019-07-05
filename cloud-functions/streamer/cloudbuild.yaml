@@ -6,7 +6,7 @@ steps:
     'deploy','streamer-$BRANCH_NAME', 
     '--entry-point', 'FileStreamer', 
     '--runtime','go111', 
-    '--trigger-bucket', "streamer-upload-$BRANCH_NAME"
+    '--trigger-bucket', "streamer-upload-$BRANCH_NAME",
     "--project", "${PROJECT_ID}", 
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
