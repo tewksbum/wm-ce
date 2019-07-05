@@ -2,6 +2,6 @@ timeout: 10m
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http']
-  env: ['GOPATH=/gopath']
+  env: ['GOPATH=.']
   dir: './cloud-functions/browser-id/src'
 tags: ['$BRANCH_NAME']    
