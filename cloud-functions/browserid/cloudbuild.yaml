@@ -29,7 +29,3 @@ steps:
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/browserid/src'
 tags: ['$BRANCH_NAME']    
-artifacts:
-  objects:
-    location: 'gs://ci-$BRANCH_NAME'
-    paths: ['browserid']
