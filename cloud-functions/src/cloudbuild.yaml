@@ -1,0 +1,19 @@
+timeout: 10m
+steps:
+- id: go_version
+  name: "gcr.io/cloud-builders/go"
+  args: ["version"]
+  env: ["GOPATH=."]
+
+- id: go_build
+  name: "gcr.io/cloud-builders/go"
+  args: ["build", "cloud-functions/src/browserid/main.go"]
+  env: [
+    "GOARCH=amd64",
+    "GOOS=linux",
+    "CGO_ENABLED=0",
+    "GOPATH=/workspace"
+  ]  
+#- name: 'gcr.io/cloud-builders/gcloud'
+#  args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http', "--project", "${PROJECT_ID}", "--env-vars-file", ".env.$BRANCH_NAME.yaml"]
+tags: ['$BRANCH_NAME']    
