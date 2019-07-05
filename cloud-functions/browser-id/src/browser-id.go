@@ -18,7 +18,6 @@ func contains(strings []string, val string) bool {
 			return true
 		}
 	}
-
 	return false
 }
 
