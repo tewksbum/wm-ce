@@ -63,7 +63,7 @@ def save_profiler_stats(file_name, columns, column_headers, flat_col_stats):
 
     client.put(profile)
 
-def file_profiler(data, context):
+def main(data, context):
     """
     Cloud function entry point.
     """
