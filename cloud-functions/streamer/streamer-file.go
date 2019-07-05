@@ -17,6 +17,7 @@ import (
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
 )
+const ProjectID = "wemade-core"
 
 // GCSEvent contains GS event
 type GCSEvent struct {
