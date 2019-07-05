@@ -1,4 +1,4 @@
-// Package pipeline contains a browser id implementation
+// Package browserid contains a browser id implementation
 package browserid
 
 import (
