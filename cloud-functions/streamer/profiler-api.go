@@ -13,9 +13,6 @@ import (
 	"cloud.google.com/go/datastore"
 )
 
-// Profile is a dynamic map of the profile results
-type Profile map[string]interface {
-}
 
 // NameSpaceStreamer is the namespace of the streamer
 const NameSpaceStreamer = "wemade.streamer"

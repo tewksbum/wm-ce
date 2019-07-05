@@ -3,6 +3,10 @@ package streamer
 
 import "cloud.google.com/go/datastore"
 
+// Profile is a dynamic map of the profile results
+type Profile map[string]interface {
+}
+
 // Load a datastore field
 func (d *Profile) Load(props []datastore.Property) error {
 	// Note: you might want to clear current values from the map or create a new map
