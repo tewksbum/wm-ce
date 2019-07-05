@@ -3,4 +3,4 @@ steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http']
   env: ['GOPATH=/gopath']
-  dir: './src'
+  dir: './cloud-functions/browser-id/src'
