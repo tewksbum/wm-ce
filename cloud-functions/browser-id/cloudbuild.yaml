@@ -9,5 +9,5 @@ steps:
     "GOPATH=/workspace/cloud-functions/browser-id"
   ]  
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http', "--project", "${PROJECT_ID}"]
+  args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http', "--project", "${PROJECT_ID}", "--env-vars-file", ".env.$BRANCH_NAME.yaml"]
 tags: ['$BRANCH_NAME']    

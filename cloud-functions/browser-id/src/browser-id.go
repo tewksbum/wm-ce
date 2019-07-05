@@ -4,13 +4,12 @@ package browserid
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/google/uuid"
 )
 
-const (
-	CookieName = "wemade-browserid"
-)
+var CookieName = os.Getenv("COOKIE")
 
 func contains(strings []string, val string) bool {
 	for _, check := range strings {
