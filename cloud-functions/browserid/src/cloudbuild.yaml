@@ -5,15 +5,6 @@ steps:
   args: ["version"]
   env: ["GOPATH=."]
 
-- id: go_linter
-  name: "golangci/golangci-lint"
-  args: ["golangci-lint","run"]
-
-- id: go_security
-  name: "securego/gosec"
-  args: ["helloworld"]
-  env: ["GOPATH=./cloud-functions/browserid"]
-
 - id: go_build
   name: "gcr.io/cloud-builders/go"
   args: ["build", "browserid"]
