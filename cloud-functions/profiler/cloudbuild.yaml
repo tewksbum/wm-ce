@@ -2,5 +2,5 @@ timeout: 10m
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   args: ['functions', 'deploy','file-profiler-$BRANCH_NAME','--entry-point','main', '--runtime','python37','--trigger-bucket', '${_STREAMER_BUCKET}']
-  dir: './src'
+  dir: './cloud-functions/profiler/src'
 tags: ['$BRANCH_NAME']  
