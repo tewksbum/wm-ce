@@ -1,7 +1,13 @@
 timeout: 10m
 steps:
+- name: "gcr.io/cloud-builders/go"
+  args: ["build", "cloud-functions/browser-id/src/browser-id.go"]
+  env: [
+    "GOARCH=amd64",
+    "GOOS=linux",
+    "CGO_ENABLED=0",
+    "GOPATH=/workspace"
+  ]  
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http']
-  env: ['GOPATH=.']
-  dir: './cloud-functions/browser-id/src'
+  args: ['functions', 'deploy','browser-id-dev','--entry-point','Main', '--runtime','go111','--trigger-http', "--project", "${PROJECT_ID}"]
 tags: ['$BRANCH_NAME']    
