@@ -8,11 +8,11 @@ steps:
 - id: maven_build
   name: 'gcr.io/cloud-builders/mvn'
   args: [
-  'compile',
-  'exec:java -Dexec.mainClass=com.wemade.pipeline.PeoplePipeline -Dexec.cleanupDaemonThreads=false -Dexec.args=" --project=${PROJECT_ID} --stagingLocation=gs://wemade-dataflow-templates/staging --tempLocation=gs://wemade-dataflow-templates/temp --templateLocation=gs://wemade-dataflow-templates/templates/people-pipeline-$BRANCH_NAME-$SHORT_SHA.json --runner=DataflowRunner "',
   '--batch-mode',
   '--file',  
-  './cloud-dataflow/people-pipeline/pom.xml'
+  './cloud-dataflow/people-pipeline/pom.xml',
+  'compile',
+  'exec:java -Dexec.mainClass=com.wemade.pipeline.PeoplePipeline -Dexec.cleanupDaemonThreads=false -Dexec.args=" --project=${PROJECT_ID} --stagingLocation=gs://wemade-dataflow-templates/staging --tempLocation=gs://wemade-dataflow-templates/temp --templateLocation=gs://wemade-dataflow-templates/templates/people-pipeline-$BRANCH_NAME-$SHORT_SHA.json --runner=DataflowRunner"'
   ]
 substitutions:
   # Default values
