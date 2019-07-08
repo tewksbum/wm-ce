@@ -47,8 +47,8 @@ var NameSpace = os.Getenv("NSSTREAMER")
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
 
-// UploadFile is the API body
-func UploadFile(w http.ResponseWriter, r *http.Request) {
+// Main is the API body
+func Main(w http.ResponseWriter, r *http.Request) {
 	var d struct {
 		AccessKey    string `json:"accessKey"`
 		FileURL      string `json:"fileUrl"`
