@@ -11,5 +11,5 @@ steps:
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
-    dir: './cloud-functions/browserid/src'
+    dir: './cloud-functions/statusapi/src'
 tags: ['$BRANCH_NAME']    
