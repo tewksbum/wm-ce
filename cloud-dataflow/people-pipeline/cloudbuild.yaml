@@ -1,9 +1,16 @@
 steps:
+- id: maven_version
+  name: 'gcr.io/cloud-builders/mvn'
+  args:
+  - '--version'
+  dir: './cloud-dataflow/people-pipeline'
+
 - id: maven_build
   name: 'gcr.io/cloud-builders/mvn'
   args:
   - 'compile'
   - 'exec:java -Dexec.mainClass=com.wemade.pipeline.PeoplePipeline -Dexec.cleanupDaemonThreads=false -Dexec.args=" --project=${PROJECT_ID} --stagingLocation=gs://wemade-dataflow-templates/staging --tempLocation=gs://wemade-dataflow-templates/temp --templateLocation=gs://wemade-dataflow-templates/templates/people-pipeline-$BRANCH_NAME-$SHORT_SHA.json --runner=DataflowRunner "'
+  - '--batch-mode'
   dir: './cloud-dataflow/people-pipeline'
 substitutions:
   # Default values
