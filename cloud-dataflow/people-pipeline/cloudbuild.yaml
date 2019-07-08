@@ -4,7 +4,7 @@ steps:
   args:
   - 'compile'
   - 'exec:java -Dexec.mainClass=com.wemade.pipeline.PeoplePipeline -Dexec.cleanupDaemonThreads=false -Dexec.args=" --project=${PROJECT_ID} --stagingLocation=gs://${_BUCKET}/staging --tempLocation=gs://${_BUCKET}/temp --templateLocation=gs://${_BUCKET}/templates/people-pipeline-$BRANCH_NAME-$SHORT_SHA.json --runner=DataflowRunner "'
-
+  dir: './cloud-dataflow/people-pipeline'
 substitutions:
   # Default values
   _BUCKET: 'wemade-dataflow-templates'
