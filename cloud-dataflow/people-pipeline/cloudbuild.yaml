@@ -7,5 +7,5 @@ steps:
   dir: './cloud-dataflow/people-pipeline'
 substitutions:
   # Default values
-  _BUCKET: 'wemade-dataflow-templates'
+  #_BUCKET: 'wemade-dataflow-templates'
 
