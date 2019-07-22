@@ -143,7 +143,9 @@ func Main(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -4\"}")
 			return
 		}
-		fileName := strconv.FormatInt(customer.Key.ID, 10) + "/" + requestID.String() + ".txt"
+
+		// store the file without an extension, the extension will be detected inside streamer
+		fileName := strconv.FormatInt(customer.Key.ID, 10) + "/" + requestID.String()
 		bucket := sbclient.Bucket(BucketName)
 		file := bucket.Object(fileName).NewWriter(ctx)
 
