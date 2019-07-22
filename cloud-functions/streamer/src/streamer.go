@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -37,6 +38,9 @@ var NameSpaceRecordTemplate = os.Getenv("NAMESPACETEMPLATE")
 
 // KindRecordTemplate is the kind to write the original records to
 var KindRecordTemplate = os.Getenv("KINDTEMPLATTE")
+
+// HeuristicRecordTemplate is the kind to write heuristics to
+var HeuristicRecordTemplate = os.Getenv("HEURISTICSTEMPLATE")
 
 // NameSpaceRequest is the namespace of the streamer request
 var NameSpaceRequest = os.Getenv("NAMESPACEREQUEST")
@@ -130,6 +134,99 @@ func (u *UnbufferedReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
 	u.N += int64(n)
 	return
 }
+func getCsvMap(csvData [][]string) map[string][]string {
+	columns := csvData[0]
+	csvMap := make(map[string][]string)
+	for j, col := range columns {
+		for index := 1; index < len(csvData); index++ {
+			csvMap[col] = append(csvMap[col], csvData[index][j])
+		}
+	}
+	return csvMap
+}
+
+func contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+	_, ok := set[item]
+	return ok
+}
+
+func uniqueElements(s []string) []string {
+	unique := make(map[string]bool, len(s))
+	us := make([]string, len(unique))
+	for _, elem := range s {
+		if len(elem) != 0 {
+			if !unique[elem] {
+				us = append(us, elem)
+				unique[elem] = true
+			}
+		}
+	}
+	return us
+}
+
+func getColumnStats(column []string) map[string]float64 {
+	stats := make(map[string]float64)
+	stats["rows"] = float64(len(column))
+	emptyCounter := 0
+	for i, e := range column {
+		value, error := strconv.ParseFloat(e, 64)
+		if error != nil {
+			panic("Can't parse value to float")
+		}
+		if i == 0 || value < stats["min"] {
+			stats["min"] = value
+		}
+		if i == 0 || value > stats["max"] {
+			stats["max"] = value
+		}
+		if e == "" {
+			emptyCounter++
+		}
+	}
+	stats["unique"] = float64(len(uniqueElements(column)))
+	stats["populated"] = float64(emptyCounter / len(column))
+	return stats
+}
+func flattenStats(colStats map[string]map[string]float64) map[string]float64 {
+	flatenned := make(map[string]float64)
+	for colName, stats := range colStats {
+		for key, value := range stats {
+			flatKey := strings.Join([]string{colName, key}, ".")
+			flatenned[flatKey] = value
+		}
+	}
+	return flatenned
+}
+
+func saveProfilerStats(ctx context.Context, kind bytes.Buffer, file string, columns []string, columnHeaders []string, colStats map[string]map[string]float64) error {
+	flatColStats := flattenStats(colStats)
+	dsClient, err := datastore.NewClient(ctx, ProjectID)
+	if err != nil {
+		log.Fatalf("Error accessing datastore: %v", err)
+		return err
+	}
+
+	owner, requestFile := path.Split(file)
+	request := strings.Trim(requestFile, path.Ext(requestFile))
+
+	profile := map[string]string{
+		"file":           file,
+		"request":        request,
+		"owner":          owner,
+		"columns":        strings.Join(columns, ","),
+		"column_headers": strings.Join(columnHeaders, ","),
+	}
+	for key, value := range flatColStats {
+		profile[key] = fmt.Sprintf("%f", value)
+	}
+	incompleteKey := datastore.IncompleteKey(kind, nil)
+	dsClient.put(ctx, incompleteKey, profile)
+	return nil
+}
 
 // FileStreamer is the main function
 func FileStreamer(ctx context.Context, e GCSEvent) error {
@@ -186,6 +283,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		// Use the custom sniffer to parse the CSV
 		csvReader := csvd.NewReader(fileReader)
+		csvReader.Comma = '\t'
 		csvReader.FieldsPerRecord = -1
 		csvHeader, err := csvReader.Read()
 		if err != nil {
@@ -201,7 +299,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		records = csvRecords
 	}
 	headers = RenameDuplicateColumns(headers)
-
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
 	fileDetail := strings.Split(fileName, "/")
 	_, requestID := fileDetail[0], fileDetail[1]
@@ -253,6 +350,16 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return err
 	}
 
+	var heuristicsKind bytes.Buffer
+	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse text template: %v", err)
+		return nil
+	}
+	if err := hKindtemplate.Execute(&heuristicsKind, requests[0]); err != nil {
+		return err
+	}
+
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
 
@@ -296,6 +403,19 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 
 	sbclient.Close()
-
+	colStats := make(map[string]map[string]float64)
+	csvMap := getCsvMap(records)
+	for i, col := range records[0] {
+		if contains(headers, col) {
+			colStats[col] = getColumnStats(csvMap[col])
+		} else {
+			colName := fmt.Sprintf("col_{}", i)
+			colStats[colName] = getColumnStats(csvMap[col])
+		}
+	}
+	saverr := saveProfilerStats(ctx, heuristicsKind, file, records[0], headers, colStats)
+	if saverr != nil {
+		return saverr
+	}
 	return nil
 }
