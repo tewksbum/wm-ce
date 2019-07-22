@@ -202,7 +202,7 @@ func flattenStats(colStats map[string]map[string]float64) map[string]float64 {
 	return flatenned
 }
 
-func saveProfilerStats(ctx context.Context, kind bytes.Buffer, file string, columns []string, columnHeaders []string, colStats map[string]map[string]float64) error {
+func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string, file string, columns []string, columnHeaders []string, colStats map[string]map[string]float64) error {
 	flatColStats := flattenStats(colStats)
 	dsClient, err := datastore.NewClient(ctx, ProjectID)
 	if err != nil {
@@ -223,7 +223,10 @@ func saveProfilerStats(ctx context.Context, kind bytes.Buffer, file string, colu
 	for key, value := range flatColStats {
 		profile[key] = fmt.Sprintf("%f", value)
 	}
-	incompleteKey := datastore.IncompleteKey(kind, nil)
+	log.Print(profile)
+	log.Printf("Namespace is %s", namespace)
+	incompleteKey := datastore.IncompleteKey(kind.String(), nil)
+	incompleteKey.Namespace = namespace
 	dsClient.put(ctx, incompleteKey, profile)
 	return nil
 }
@@ -401,8 +404,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		fmt.Printf("Published msg %v; ID: %v\n", recordJSON, psid)
 	}
-
-	sbclient.Close()
 	colStats := make(map[string]map[string]float64)
 	csvMap := getCsvMap(records)
 	for i, col := range records[0] {
@@ -413,9 +414,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			colStats[colName] = getColumnStats(csvMap[col])
 		}
 	}
-	saverr := saveProfilerStats(ctx, heuristicsKind, file, records[0], headers, colStats)
+	saverr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), file, records[0], headers, colStats)
 	if saverr != nil {
 		return saverr
 	}
+	sbclient.Close()
 	return nil
 }
