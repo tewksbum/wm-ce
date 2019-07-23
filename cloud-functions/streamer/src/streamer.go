@@ -299,6 +299,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		headers = csvHeader
 		records = csvRecords
 	}
+
+	log.Printf("headers: %v", headers)
+	log.Printf("records: %v", records)
+
 	headers = RenameDuplicateColumns(headers)
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
 	fileDetail := strings.Split(fileName, "/")
@@ -361,6 +365,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return err
 	}
 
+	log.Printf("Storing source records with namespace %v and kind %v", recordNS.String(), recordKind.String())
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
 
