@@ -234,19 +234,22 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	sbclient, err := storage.NewClient(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to create storage client: %v", err)
+		log.Fatalf("failed to create storage client: %v", err)
+		return nil
 	}
 	bucket := sbclient.Bucket(e.Bucket)
 	file := bucket.Object(e.Name)
 
 	reader, err := file.NewReader(ctx)
 	if err != nil {
-		return fmt.Errorf("unable to open file from bucket %q, file %q: %v", e.Bucket, e.Name, err)
+		log.Fatalf("unable to open file from bucket %q, file %q: %v", e.Bucket, e.Name, err)
+		return nil
 	}
 	defer reader.Close()
 	slurp, err := ioutil.ReadAll(reader)
 	if err != nil {
-		return fmt.Errorf("readFile: unable to read data from bucket %q, file %q: %v", e.Bucket, e.Name, err)
+		log.Fatalf("readFile: unable to read data from bucket %q, file %q: %v", e.Bucket, e.Name, err)
+		return nil
 	}
 
 	fileKind, _ := filetype.Match(slurp)
