@@ -104,9 +104,6 @@ func RenameDuplicateColumns(s []string) []string {
 		}
 	}
 
-	for item := range m {
-		result = append(result, item)
-	}
 	return result
 }
 
@@ -227,7 +224,7 @@ func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string,
 	log.Printf("Namespace is %s", namespace)
 	incompleteKey := datastore.IncompleteKey(kind.String(), nil)
 	incompleteKey.Namespace = namespace
-	dsClient.put(ctx, incompleteKey, profile)
+	dsClient.Put(ctx, incompleteKey, profile)
 	return nil
 }
 
@@ -410,11 +407,11 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if contains(headers, col) {
 			colStats[col] = getColumnStats(csvMap[col])
 		} else {
-			colName := fmt.Sprintf("col_{}", i)
+			colName := fmt.Sprintf("col_%d", i)
 			colStats[colName] = getColumnStats(csvMap[col])
 		}
 	}
-	saverr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), file, records[0], headers, colStats)
+	saverr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), fileName, records[0], headers, colStats)
 	if saverr != nil {
 		return saverr
 	}
