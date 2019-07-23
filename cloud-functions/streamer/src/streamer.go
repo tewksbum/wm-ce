@@ -386,7 +386,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		// store in DS
 		if _, err := dsClient.Put(ctx, sourceKey, &record); err != nil {
-			log.Fatalf("Error storing source record: %v", err)
+
+			log.Fatalf("Error storing source record: %v.  record is %v", err, record)
 		}
 
 		// pub to pubsub
