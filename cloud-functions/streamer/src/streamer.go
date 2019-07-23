@@ -224,8 +224,8 @@ func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string,
 	log.Printf("Namespace is %s", namespace)
 	incompleteKey := datastore.IncompleteKey(kind.String(), nil)
 	incompleteKey.Namespace = namespace
-	dsClient.Put(ctx, incompleteKey, profile)
-	return nil
+	_, putErr := dsClient.Put(ctx, incompleteKey, &profile)
+	return putErr
 }
 
 // FileStreamer is the main function
@@ -260,7 +260,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	fileSize := reader.Size()
 	log.Printf("read %v bytes from the file", fileSize)
-
+	if 0 > fileSize {
+		log.Fatal("Unable to process an empty file.")
+	}
 	var headers []string
 	var records [][]string
 
@@ -383,7 +385,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 
 		// store in DS
-		if _, err := dsClient.Put(ctx, sourceKey, record); err != nil {
+		if _, err := dsClient.Put(ctx, sourceKey, &record); err != nil {
 			log.Fatalf("Error storing source record: %v", err)
 		}
 
@@ -417,9 +419,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			colStats[colName] = getColumnStats(csvMap[col])
 		}
 	}
-	saverr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), fileName, records[0], headers, colStats)
-	if saverr != nil {
-		return saverr
+	savErr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), fileName, records[0], headers, colStats)
+	if savErr != nil {
+		log.Fatalf("Error storing profile: %v", err)
 	}
 	sbclient.Close()
 	return nil
