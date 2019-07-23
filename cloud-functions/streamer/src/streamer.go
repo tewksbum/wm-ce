@@ -233,44 +233,32 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Printf("GS triggerred on file named %v created on %v\n", e.Name, e.TimeCreated)
 
 	sbclient, err := storage.NewClient(ctx)
-	log.Printf("1")
 	if err != nil {
 		log.Fatalf("failed to create storage client: %v", err)
 		return nil
 	}
-	log.Printf("2")
 	bucket := sbclient.Bucket(e.Bucket)
-	log.Printf("3")
 	file := bucket.Object(e.Name)
-	log.Printf("4")
 
 	reader, err := file.NewReader(ctx)
-	log.Printf("5")
 	if err != nil {
 		log.Fatalf("unable to open file from bucket %q, file %q: %v", e.Bucket, e.Name, err)
 		return nil
 	}
-	log.Printf("6")
 	defer reader.Close()
-	log.Printf("7")
 	slurp, err := ioutil.ReadAll(reader)
-	log.Printf("8")
 	if err != nil {
 		log.Fatalf("readFile: unable to read data from bucket %q, file %q: %v", e.Bucket, e.Name, err)
 		return nil
 	}
-	log.Printf("9")
 	fileKind, _ := filetype.Match(slurp)
-	log.Printf("10")
 	if fileKind == filetype.Unknown {
 		log.Printf("filetype detection: unknown file type, treat as text")
 	} else {
 		log.Printf("filetype detection: detected file type: %v", fileKind.Extension)
 	}
-	log.Printf("11")
 
 	fileSize := reader.Size()
-	log.Printf("12")
 	log.Printf("read %v bytes from the file", fileSize)
 
 	var headers []string
@@ -297,7 +285,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		// Use the custom sniffer to parse the CSV
 		csvReader := csvd.NewReader(fileReader)
-		csvReader.Comma = '\t'
 		csvReader.FieldsPerRecord = -1
 		csvHeader, err := csvReader.Read()
 		if err != nil {
