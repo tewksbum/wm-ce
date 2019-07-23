@@ -71,3 +71,20 @@ func TestContains(t *testing.T) {
 
 	}
 }
+
+func TestGetCsvMap(t *testing.T) {
+	var tests = []struct {
+		input             [][]string
+		expectedNameSlice []string
+		expectedYearSlice []string
+	}{
+		{[][]string{{"name", "year"}, {"john", "2020"}, {"smith", "2019"}}, []string{"john", "smith"}, []string{"2020", "2019"}},
+	}
+	for _, test := range tests {
+		pivotedMap := getCsvMap(test.input)
+		if !compareSlices(pivotedMap["name"], test.expectedNameSlice) && compareSlices(pivotedMap["year"], test.expectedYearSlice) {
+			t.Error("Csv map wasn't created as expected")
+		}
+	}
+
+}
