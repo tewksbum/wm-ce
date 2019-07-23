@@ -170,9 +170,9 @@ func getColumnStats(column []string) map[string]float64 {
 	stats["rows"] = float64(len(column))
 	emptyCounter := 0
 	for i, e := range column {
-		value, error := strconv.ParseFloat(e, 64)
-		if error != nil {
-			panic("Can't parse value to float")
+		value, err := strconv.ParseFloat(e, 64)
+		if err != nil {
+			log.Panicf("Can't parse to float: %v", err)
 		}
 		if i == 0 || value < stats["min"] {
 			stats["min"] = value
@@ -221,7 +221,6 @@ func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string,
 		profile[key] = fmt.Sprintf("%f", value)
 	}
 	log.Print(profile)
-	log.Printf("Namespace is %s", namespace)
 	incompleteKey := datastore.IncompleteKey(kind.String(), nil)
 	incompleteKey.Namespace = namespace
 	_, putErr := dsClient.Put(ctx, incompleteKey, &profile)
@@ -403,12 +402,11 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		})
 
 		// psid, err := psresult.Get(ctx)
-		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
 		if err != nil {
 			log.Fatalf("Could not pub to pubsub: %v", err)
 			return nil
 		}
-		fmt.Printf("Published msg %v; ID: %v\n", recordJSON, psid)
 	}
 	colStats := make(map[string]map[string]float64)
 	csvMap := getCsvMap(records)
