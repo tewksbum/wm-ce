@@ -13,7 +13,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -174,33 +173,28 @@ type ColumnStats struct {
 	max       string
 }
 
-func getColumnStats(column []string) ColumnStats {
-	stats := ColumnStats{rows: len(column), unique: len(uniqueElements(column))}
-	//stats should be a struct!
-
+func getColumnStats(column []string) map[string]string {
+	stats := map[string]string{"rows": strconv.Itoa(len(column)), "unique": strconv.Itoa(len(uniqueElements(column)))}
 	emptyCounter := 0
 	for i, v := range column {
-		if i == 0 || v < stats.min {
-			stats.min = v
-		}
-		if i == 0 || v > stats.max {
-			stats.max = v
-		}
 		if v == "" {
 			emptyCounter++
+			continue
+		}
+		if i == 0 || v < stats["min"] {
+			stats["min"] = v
+		}
+		if i == 0 || v > stats["max"] {
+			stats["max"] = v
 		}
 	}
-	stats.populated = float64(emptyCounter / len(column))
+	stats["populated"] = fmt.Sprintf("%g", float64(emptyCounter)/float64(len(column)))
 	return stats
 }
-func flattenStats(colStats map[string]ColumnStats) map[string]interface{} {
-	flatenned := make(map[string]interface{})
+func flattenStats(colStats map[string]map[string]string) map[string]string {
+	flatenned := make(map[string]string)
 	for colName, stats := range colStats {
-		v := reflect.ValueOf(stats)
-		typeOfS := v.Type()
-		for i := 0; i < v.NumField(); i++ {
-			key := typeOfS.Field(i).Name
-			value := v.Field(i).Interface()
+		for key, value := range stats {
 			flatKey := strings.Join([]string{colName, key}, ".")
 			flatenned[flatKey] = value
 		}
@@ -208,13 +202,8 @@ func flattenStats(colStats map[string]ColumnStats) map[string]interface{} {
 	return flatenned
 }
 
-func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string, file string, columns []string, columnHeaders []string, colStats map[string]ColumnStats) error {
+func getProfilerStats(file string, columns int, columnHeaders []string, colStats map[string]map[string]string) map[string]string {
 	flatColStats := flattenStats(colStats)
-	dsClient, err := datastore.NewClient(ctx, ProjectID)
-	if err != nil {
-		log.Fatalf("Error accessing datastore: %v", err)
-		return err
-	}
 
 	owner, requestFile := path.Split(file)
 	request := strings.Trim(requestFile, path.Ext(requestFile))
@@ -223,17 +212,13 @@ func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string,
 		"file":           file,
 		"request":        request,
 		"owner":          owner,
-		"columns":        strings.Join(columns, ","),
+		"columns":        strconv.Itoa(columns),
 		"column_headers": strings.Join(columnHeaders, ","),
 	}
 	for key, value := range flatColStats {
-		profile[key] = fmt.Sprintf("%f", value)
+		profile[key] = fmt.Sprintf("%s", value)
 	}
-	log.Print(profile)
-	incompleteKey := datastore.IncompleteKey(kind.String(), nil)
-	incompleteKey.Namespace = namespace
-	_, putErr := dsClient.Put(ctx, incompleteKey, &profile)
-	return putErr
+	return profile
 }
 
 // FileStreamer is the main function
@@ -417,7 +402,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
-	colStats := make(map[string]ColumnStats)
+	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(records)
 	for i, col := range records[0] {
 		if contains(headers, col) {
@@ -427,8 +412,12 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			colStats[colName] = getColumnStats(csvMap[col])
 		}
 	}
-	savErr := saveProfilerStats(ctx, heuristicsKind, recordNS.String(), fileName, records[0], headers, colStats)
-	if savErr != nil {
+	profile := getProfilerStats(fileName, len(headers), headers, colStats)
+	log.Print(profile)
+	incompleteKey := datastore.IncompleteKey(heuristicsKind.String(), nil)
+	incompleteKey.Namespace = recordNS.String()
+	_, profileErr := dsClient.Put(ctx, incompleteKey, &profile)
+	if profileErr != nil {
 		log.Fatalf("Error storing profile: %v", err)
 	}
 	sbclient.Close()

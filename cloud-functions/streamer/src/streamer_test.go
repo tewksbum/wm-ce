@@ -1,6 +1,7 @@
 package streamer
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -86,5 +87,63 @@ func TestGetCsvMap(t *testing.T) {
 			t.Error("Csv map wasn't created as expected")
 		}
 	}
+}
 
+func TestGetColumnStats(t *testing.T) {
+	var tests = []struct {
+		input    []string
+		expected map[string]string
+	}{
+		{[]string{"john", "smith", ""}, map[string]string{"max": "smith", "min": "john", "rows": "3", "unique": "2", "populated": "0.3333333333333333"}},
+		{[]string{"test", "test", "test"}, map[string]string{"max": "test", "min": "test", "rows": "3", "unique": "1", "populated": "0"}},
+	}
+	for _, test := range tests {
+		stats := getColumnStats(test.input)
+		equal := reflect.DeepEqual(stats, test.expected)
+		if !equal {
+			t.Errorf("Column stats %v not equal to expected %v", stats, test.expected)
+		}
+	}
+}
+
+func TestFlattenStats(t *testing.T) {
+	var tests = []struct {
+		nameCol  []string
+		yearCol  []string
+		expected map[string]string
+	}{
+		{[]string{"john", "mike", "rob"}, []string{"1998", "2000", "2015"}, map[string]string{"name.min": "john", "year.min": "1998", "year.populated": "0", "name.rows": "3", "name.populated": "0", "name.unique": "3", "year.rows": "3", "year.unique": "3", "year.max": "2015", "name.max": "rob"}},
+		{[]string{"test", "test", "test"}, []string{"1", "3", ""}, map[string]string{"year.rows": "3", "name.max": "test", "year.unique": "2", "year.max": "3", "year.populated": "0.3333333333333333", "name.min": "test", "name.populated": "0", "name.rows": "3", "name.unique": "1", "year.min": "1"}},
+	}
+	for _, test := range tests {
+		colStats := make(map[string]map[string]string)
+		colStats["name"] = getColumnStats(test.nameCol)
+		colStats["year"] = getColumnStats(test.yearCol)
+		flattened := flattenStats(colStats)
+		equal := reflect.DeepEqual(flattened, test.expected)
+		if !equal {
+			t.Errorf("Column stats %v not equal to expected %v", flattened, test.expected)
+		}
+	}
+}
+func TestGetProfilerStats(t *testing.T) {
+	var tests = []struct {
+		colStats map[string]map[string]string
+		headers  []string
+		expected map[string]string
+	}{
+		{
+			map[string]map[string]string{"name": {"max": "smith", "min": "john", "rows": "3", "unique": "2", "populated": "0.3333333333333333"}},
+			[]string{"name", "year"},
+			map[string]string{"name.rows": "3", "name.unique": "2", "file": "test/test", "request": "test", "owner": "test/", "column_headers": "name,year", "name.max": "smith", "name.min": "john", "columns": "2", "name.populated": "0.3333333333333333"},
+		},
+	}
+
+	for _, test := range tests {
+		profiler := getProfilerStats("test/test", len(test.headers), test.headers, test.colStats)
+		equal := reflect.DeepEqual(profiler, test.expected)
+		if !equal {
+			t.Errorf("Profiler %v not equal to expected %v", profiler, test.expected)
+		}
+	}
 }
