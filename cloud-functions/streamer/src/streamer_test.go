@@ -130,12 +130,12 @@ func TestGetProfilerStats(t *testing.T) {
 	var tests = []struct {
 		colStats map[string]map[string]string
 		headers  []string
-		expected map[string]string
+		expected Profiler
 	}{
 		{
 			map[string]map[string]string{"name": {"max": "smith", "min": "john", "rows": "3", "unique": "2", "populated": "0.3333333333333333"}},
 			[]string{"name", "year"},
-			map[string]string{"name.rows": "3", "name.unique": "2", "file": "test/test", "request": "test", "owner": "test/", "column_headers": "name,year", "name.max": "smith", "name.min": "john", "columns": "2", "name.populated": "0.3333333333333333"},
+			Profiler{"name.rows": "3", "name.unique": "2", "file": "test/test", "request": "test", "owner": "test/", "columnHeaders": "name,year", "name.max": "smith", "name.min": "john", "columns": 2, "name.populated": "0.3333333333333333"},
 		},
 	}
 

@@ -202,18 +202,38 @@ func flattenStats(colStats map[string]map[string]string) map[string]string {
 	return flatenned
 }
 
-func getProfilerStats(file string, columns int, columnHeaders []string, colStats map[string]map[string]string) map[string]string {
+//Profiler data type to support "dynamic objects" saving on datastore
+type Profiler map[string]interface{}
+
+//Load unpacks the datastore properties to the map
+func (d *Profiler) Load(props []datastore.Property) error {
+	// Note: you might want to clear current values from the map or create a new map
+	for _, p := range props {
+		(*d)[p.Name] = p.Value
+	}
+	return nil
+}
+
+//Save turns the interface map to a datastore.property map
+func (d *Profiler) Save() (props []datastore.Property, err error) {
+	for k, v := range *d {
+		props = append(props, datastore.Property{Name: k, Value: v})
+	}
+	return
+}
+
+func getProfilerStats(file string, columns int, columnHeaders []string, colStats map[string]map[string]string) Profiler {
 	flatColStats := flattenStats(colStats)
 
 	owner, requestFile := path.Split(file)
 	request := strings.Trim(requestFile, path.Ext(requestFile))
 
-	profile := map[string]string{
-		"file":           file,
-		"request":        request,
-		"owner":          owner,
-		"columns":        strconv.Itoa(columns),
-		"column_headers": strings.Join(columnHeaders, ","),
+	profile := Profiler{
+		"file":          file,
+		"request":       request,
+		"owner":         owner,
+		"columns":       columns,
+		"columnHeaders": strings.Join(columnHeaders, ","),
 	}
 	for key, value := range flatColStats {
 		profile[key] = fmt.Sprintf("%s", value)
@@ -253,7 +273,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	fileSize := reader.Size()
 	log.Printf("read %v bytes from the file", fileSize)
-	if 0 > fileSize {
+	if fileSize < 1 {
 		log.Fatal("Unable to process an empty file.")
 	}
 	var headers []string
