@@ -13,6 +13,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"text/template"
@@ -165,33 +166,41 @@ func uniqueElements(s []string) []string {
 	return us
 }
 
-func getColumnStats(column []string) map[string]float64 {
-	stats := make(map[string]float64)
-	stats["rows"] = float64(len(column))
+type ColumnStats struct {
+	rows      int
+	unique    int
+	populated float64
+	min       string
+	max       string
+}
+
+func getColumnStats(column []string) ColumnStats {
+	stats := ColumnStats{rows: len(column), unique: len(uniqueElements(column))}
+	//stats should be a struct!
+
 	emptyCounter := 0
-	for i, e := range column {
-		value, err := strconv.ParseFloat(e, 64)
-		if err != nil {
-			log.Panicf("Can't parse to float: %v", err)
+	for i, v := range column {
+		if i == 0 || v < stats.min {
+			stats.min = v
 		}
-		if i == 0 || value < stats["min"] {
-			stats["min"] = value
+		if i == 0 || v > stats.max {
+			stats.max = v
 		}
-		if i == 0 || value > stats["max"] {
-			stats["max"] = value
-		}
-		if e == "" {
+		if v == "" {
 			emptyCounter++
 		}
 	}
-	stats["unique"] = float64(len(uniqueElements(column)))
-	stats["populated"] = float64(emptyCounter / len(column))
+	stats.populated = float64(emptyCounter / len(column))
 	return stats
 }
-func flattenStats(colStats map[string]map[string]float64) map[string]float64 {
-	flatenned := make(map[string]float64)
+func flattenStats(colStats map[string]ColumnStats) map[string]interface{} {
+	flatenned := make(map[string]interface{})
 	for colName, stats := range colStats {
-		for key, value := range stats {
+		v := reflect.ValueOf(stats)
+		typeOfS := v.Type()
+		for i := 0; i < v.NumField(); i++ {
+			key := typeOfS.Field(i).Name
+			value := v.Field(i).Interface()
 			flatKey := strings.Join([]string{colName, key}, ".")
 			flatenned[flatKey] = value
 		}
@@ -199,7 +208,7 @@ func flattenStats(colStats map[string]map[string]float64) map[string]float64 {
 	return flatenned
 }
 
-func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string, file string, columns []string, columnHeaders []string, colStats map[string]map[string]float64) error {
+func saveProfilerStats(ctx context.Context, kind bytes.Buffer, namespace string, file string, columns []string, columnHeaders []string, colStats map[string]ColumnStats) error {
 	flatColStats := flattenStats(colStats)
 	dsClient, err := datastore.NewClient(ctx, ProjectID)
 	if err != nil {
@@ -408,7 +417,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
-	colStats := make(map[string]map[string]float64)
+	colStats := make(map[string]ColumnStats)
 	csvMap := getCsvMap(records)
 	for i, col := range records[0] {
 		if contains(headers, col) {
