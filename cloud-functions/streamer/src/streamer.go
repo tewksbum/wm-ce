@@ -131,12 +131,11 @@ func (u *UnbufferedReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
 	u.N += int64(n)
 	return
 }
-func getCsvMap(csvData [][]string) map[string][]string {
-	columns := csvData[0]
+func getCsvMap(headers []string, data [][]string) map[string][]string {
 	csvMap := make(map[string][]string)
-	for j, col := range columns {
-		for index := 1; index < len(csvData); index++ {
-			csvMap[col] = append(csvMap[col], csvData[index][j])
+	for j, col := range headers {
+		for index := 1; index < len(data); index++ {
+			csvMap[col] = append(csvMap[col], data[index][j])
 		}
 	}
 	return csvMap
@@ -423,8 +422,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 	}
 	colStats := make(map[string]map[string]string)
-	csvMap := getCsvMap(records)
-	for i, col := range records[0] {
+	csvMap := getCsvMap(headers, records)
+	for i, col := range headers {
 		if contains(headers, col) {
 			colStats[col] = getColumnStats(csvMap[col])
 		} else {
