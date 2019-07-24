@@ -418,7 +418,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	incompleteKey.Namespace = recordNS.String()
 	_, profileErr := dsClient.Put(ctx, incompleteKey, &profile)
 	if profileErr != nil {
-		log.Fatalf("Error storing profile: %v", err)
+		log.Fatalf("Error storing profile: %v", profileErr)
 	}
 	sbclient.Close()
 	return nil
