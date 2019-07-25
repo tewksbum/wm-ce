@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -41,6 +42,9 @@ var KindRecordTemplate = os.Getenv("KINDTEMPLATTE")
 
 // HeuristicRecordTemplate is the kind to write heuristics to
 var HeuristicRecordTemplate = os.Getenv("HEURISTICSTEMPLATE")
+
+// NERRecordTemplate is the kind to write ner data to
+var NERRecordTemplate = os.Getenv("NERTEMPLATE")
 
 // NameSpaceRequest is the namespace of the streamer request
 var NameSpaceRequest = os.Getenv("NAMESPACEREQUEST")
@@ -240,6 +244,43 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 	return profile
 }
 
+type NERcolumns struct {
+	ColumnName  string             `json:"ColumnName"`
+	NEREntities map[string]float64 `json:"NEREntities"`
+}
+type NERresponse struct {
+	Columns     []NERcolumns `json:"Columns"`
+	ElapsedTime float64      `json:"ElapsedTime"`
+	Owner       string       `json:"Owner"`
+	Source      string       `json:"Source"`
+	TimeStamp   string       `json:"TimeStamp"`
+}
+
+type NERrequest struct {
+	Owner  string
+	Source string
+	Data   map[string][]string
+}
+
+func getNERresponse(nerData NERrequest) NERresponse {
+	jsonValue, err := json.Marshal(nerData)
+	if err != nil {
+		log.Panicf("Could not convert the NERrequest to json: %v", err)
+	}
+	var structResponse NERresponse
+	response, err := http.Post("https://us-central1-on-campus-marketing.cloudfunctions.net/ner_api-v0r01", "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Panicf("The NER request failed: %v", err)
+	} else {
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Panicf("Couldn't read the NER response: %v", err)
+		}
+		json.Unmarshal(data, &structResponse)
+	}
+	return structResponse
+}
+
 // FileStreamer is the main function
 func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Printf("GS triggerred on file named %v created on %v\n", e.Name, e.TimeCreated)
@@ -372,10 +413,20 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var heuristicsKind bytes.Buffer
 	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse text template: %v", err)
+		log.Fatalf("Unable to parse heuristic kind template: %v", err)
 		return nil
 	}
 	if err := hKindtemplate.Execute(&heuristicsKind, requests[0]); err != nil {
+		return err
+	}
+
+	var nerKind bytes.Buffer
+	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse NER kind template: %v", err)
+		return nil
+	}
+	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
 		return err
 	}
 
@@ -421,6 +472,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
+	// Heuristics and NER are handled here
 	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(headers, records)
 	for i, col := range headers {
@@ -433,11 +485,24 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	profile := getProfilerStats(fileName, len(headers), headers, colStats)
 	log.Print(profile)
-	incompleteKey := datastore.IncompleteKey(heuristicsKind.String(), nil)
-	incompleteKey.Namespace = recordNS.String()
-	_, profileErr := dsClient.Put(ctx, incompleteKey, &profile)
-	if profileErr != nil {
-		log.Fatalf("Error storing profile: %v", profileErr)
+	profileIKey := datastore.IncompleteKey(heuristicsKind.String(), nil)
+	profileIKey.Namespace = recordNS.String()
+	_, err = dsClient.Put(ctx, profileIKey, &profile)
+	if err != nil {
+		log.Fatalf("Error storing profile: %v", err)
+	}
+
+	nerRequest := NERrequest{
+		Owner:  fmt.Sprintf("%v", requests[0].CustomerID),
+		Source: "we-made-streamer",
+		Data:   csvMap,
+	}
+	nerResponse := getNERresponse(nerRequest)
+	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
+	nerIKey.Namespace = recordNS.String()
+	_, err = dsClient.Put(ctx, nerIKey, &nerResponse)
+	if err != nil {
+		log.Fatalf("Error storing NER data: %v", err)
 	}
 	sbclient.Close()
 	return nil
