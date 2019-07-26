@@ -46,6 +46,9 @@ var HeuristicRecordTemplate = os.Getenv("HEURISTICSTEMPLATE")
 // NERRecordTemplate is the kind to write ner data to
 var NERRecordTemplate = os.Getenv("NERTEMPLATE")
 
+// NERApiEndpoint url for the ner endpoint
+var NERApiEndpoint = os.Getenv("NERENDPOINT")
+
 // NameSpaceRequest is the namespace of the streamer request
 var NameSpaceRequest = os.Getenv("NAMESPACEREQUEST")
 
@@ -285,13 +288,16 @@ func getNERresponse(nerData NERrequest) NERresponse {
 		log.Panicf("Could not convert the NERrequest to json: %v", err)
 	}
 	var structResponse NERresponse
-	response, err := http.Post("https://us-central1-on-campus-marketing.cloudfunctions.net/ner_api-v0r01", "application/json", bytes.NewBuffer(jsonValue))
+	response, err := http.Post(NERApiEndpoint, "application/json", bytes.NewBuffer(jsonValue))
 	if err != nil {
-		log.Panicf("The NER request failed: %v", err)
+		log.Fatalf("The NER request failed: %v", err)
 	} else {
+		if response.StatusCode != 200 {
+			log.Fatalf("NER request failed, status code:%v", response.StatusCode)
+		}
 		data, err := ioutil.ReadAll(response.Body)
 		if err != nil {
-			log.Panicf("Couldn't read the NER response: %v", err)
+			log.Fatalf("Couldn't read the NER response: %v", err)
 		}
 		json.Unmarshal(data, &structResponse)
 	}
