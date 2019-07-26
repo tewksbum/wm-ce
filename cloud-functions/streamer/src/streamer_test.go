@@ -148,3 +148,40 @@ func TestGetProfilerStats(t *testing.T) {
 		}
 	}
 }
+
+func TestGetNERentry(t *testing.T) {
+	var tests = []struct {
+		input    NERresponse
+		expected NERentry
+	}{
+		{
+			NERresponse{
+				Columns: []NERcolumns{
+					{
+						ColumnName:  "email",
+						NEREntities: map[string]float64{"ORG": 0.5},
+					},
+				},
+				ElapsedTime: 16.339344,
+				Owner:       "OWNER1",
+				Source:      "SOURCE1",
+				TimeStamp:   "2019-07-25 19:51:05.252920",
+			},
+			NERentry{
+				"TimeStamp":         "2019-07-25 19:51:05.252920",
+				"ElapsedTime":       16.339344,
+				"Owner":             "OWNER1",
+				"Source":            "SOURCE1",
+				"columns.email.ORG": 0.5,
+			},
+		},
+	}
+
+	for _, test := range tests {
+		nerentry := getNERentry(test.input)
+		equal := reflect.DeepEqual(nerentry, test.expected)
+		if !equal {
+			t.Errorf("Profiler %v not equal to expected %v", nerentry, test.expected)
+		}
+	}
+}
