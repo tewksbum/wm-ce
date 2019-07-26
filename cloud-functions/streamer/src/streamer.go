@@ -491,6 +491,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
+	pstopic.Stop()
+	log.Print("Done storing source records")
 	// Heuristics and NER are handled here
 	var heuristicsKind bytes.Buffer
 	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
@@ -502,15 +504,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return err
 	}
 
-	var nerKind bytes.Buffer
-	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
-	if err != nil {
-		log.Fatalf("Unable to parse NER kind template: %v", err)
-		return nil
-	}
-	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
-		return err
-	}
+	log.Print("Starting with heuristics")
 	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(headers, records)
 	for i, col := range headers {
@@ -529,13 +523,25 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	if err != nil {
 		log.Fatalf("Error storing profile: %v", err)
 	}
-
+	log.Print("Done with heuristics")
+	log.Print("Starting with NER")
+	var nerKind bytes.Buffer
+	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse NER kind template: %v", err)
+		return nil
+	}
+	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
+		return err
+	}
 	nerRequest := NERrequest{
 		Owner:  fmt.Sprintf("%v", requests[0].CustomerID),
 		Source: "we-made-streamer",
 		Data:   csvMap,
 	}
+	log.Print("Getting NER responses")
 	nerResponse := getNERresponse(nerRequest)
+	log.Print("Getting NER entry")
 	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
@@ -543,6 +549,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	if err != nil {
 		log.Fatalf("Error storing NER data: %v", err)
 	}
+	log.Print("Done with NER")
+
 	sbclient.Close()
 	return nil
 }
