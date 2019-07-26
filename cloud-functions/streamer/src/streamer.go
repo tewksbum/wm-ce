@@ -261,7 +261,24 @@ type NERrequest struct {
 	Source string
 	Data   map[string][]string
 }
+type NERentry map[string]interface{}
 
+//Load unpacks the datastore properties to the map
+func (d *NERentry) Load(props []datastore.Property) error {
+	// Note: you might want to clear current values from the map or create a new map
+	for _, p := range props {
+		(*d)[p.Name] = p.Value
+	}
+	return nil
+}
+
+//Save turns the interface map to a datastore.property map
+func (d *NERentry) Save() (props []datastore.Property, err error) {
+	for k, v := range *d {
+		props = append(props, datastore.Property{Name: k, Value: v})
+	}
+	return
+}
 func getNERresponse(nerData NERrequest) NERresponse {
 	jsonValue, err := json.Marshal(nerData)
 	if err != nil {
@@ -279,6 +296,22 @@ func getNERresponse(nerData NERrequest) NERresponse {
 		json.Unmarshal(data, &structResponse)
 	}
 	return structResponse
+}
+func getNERentry(structResponse NERresponse) NERentry {
+	var nerEntry = NERentry{
+		"ElapsedTime": structResponse.ElapsedTime,
+		"Owner":       structResponse.Owner,
+		"Source":      structResponse.Source,
+		"TimeStamp":   structResponse.TimeStamp,
+	}
+	//flatten the columns
+	for _, col := range structResponse.Columns {
+		for key, value := range col.NEREntities {
+			nerEntry["columns."+col.ColumnName+"."+key] = value
+		}
+	}
+
+	return nerEntry
 }
 
 // FileStreamer is the main function
@@ -410,26 +443,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return err
 	}
 
-	var heuristicsKind bytes.Buffer
-	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
-	if err != nil {
-		log.Fatalf("Unable to parse heuristic kind template: %v", err)
-		return nil
-	}
-	if err := hKindtemplate.Execute(&heuristicsKind, requests[0]); err != nil {
-		return err
-	}
-
-	var nerKind bytes.Buffer
-	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
-	if err != nil {
-		log.Fatalf("Unable to parse NER kind template: %v", err)
-		return nil
-	}
-	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
-		return err
-	}
-
 	log.Printf("Storing source records with namespace %v and kind %v", recordNS.String(), recordKind.String())
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
@@ -473,6 +486,25 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 	}
 	// Heuristics and NER are handled here
+	var heuristicsKind bytes.Buffer
+	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse heuristic kind template: %v", err)
+		return nil
+	}
+	if err := hKindtemplate.Execute(&heuristicsKind, requests[0]); err != nil {
+		return err
+	}
+
+	var nerKind bytes.Buffer
+	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse NER kind template: %v", err)
+		return nil
+	}
+	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
+		return err
+	}
 	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(headers, records)
 	for i, col := range headers {
@@ -498,9 +530,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		Data:   csvMap,
 	}
 	nerResponse := getNERresponse(nerRequest)
+	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
-	_, err = dsClient.Put(ctx, nerIKey, &nerResponse)
+	_, err = dsClient.Put(ctx, nerIKey, &nerEntry)
 	if err != nil {
 		log.Fatalf("Error storing NER data: %v", err)
 	}
