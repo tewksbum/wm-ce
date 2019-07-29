@@ -23,10 +23,12 @@ import (
 	"cloud.google.com/go/profiler"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
+	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
 	"github.com/jfyne/csvd"
 	"github.com/tealeg/xlsx"
+	"go.opencensus.io/trace"
 )
 
 // ProjectID is the GCP Project ID
@@ -330,6 +332,12 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Panicf("Failed to start profiling client: %v", err)
 	}
 	log.Printf("GS triggerred on file named %v created on %v\n", e.Name, e.TimeCreated)
+
+	exporter, err := stackdriver.NewExporter(stackdriver.Options{})
+	if err != nil {
+		log.Fatalf("Failed to start tracer client: %v", err)
+	}
+	trace.RegisterExporter(exporter)
 
 	sbclient, err := storage.NewClient(ctx)
 	if err != nil {
