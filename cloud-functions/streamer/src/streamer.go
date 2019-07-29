@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/profiler"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"github.com/google/uuid"
@@ -322,6 +323,12 @@ func getNERentry(structResponse NERresponse) NERentry {
 
 // FileStreamer is the main function
 func FileStreamer(ctx context.Context, e GCSEvent) error {
+	if err := profiler.Start(profiler.Config{
+		Service:        NameSpaceRequest,
+		ServiceVersion: "1.0.0",
+	}); err != nil {
+		log.Panicf("Failed to start profiling client: %v", err)
+	}
 	log.Printf("GS triggerred on file named %v created on %v\n", e.Name, e.TimeCreated)
 
 	sbclient, err := storage.NewClient(ctx)
@@ -393,9 +400,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		headers = csvHeader
 		records = csvRecords
 	}
-
-	log.Printf("headers: %v", headers)
-	log.Printf("records: %v", records)
 
 	headers = RenameDuplicateColumns(headers)
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
@@ -516,7 +520,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 	}
 	profile := getProfilerStats(fileName, len(headers), headers, colStats)
-	log.Print(profile)
 	profileIKey := datastore.IncompleteKey(heuristicsKind.String(), nil)
 	profileIKey.Namespace = recordNS.String()
 	_, err = dsClient.Put(ctx, profileIKey, &profile)
