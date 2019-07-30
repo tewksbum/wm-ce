@@ -482,10 +482,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		// store in DS
 		keys = append(keys, datastore.IncompleteKey(recordKind.String(), nil))
 		Records = append(Records, &record)
-		if _, err := dsClient.Put(ctx, sourceKey, &record); err != nil {
+		// if _, err := dsClient.Put(ctx, sourceKey, &record); err != nil {
 
-			log.Fatalf("Error storing source record: %v.  record is %v", err, record)
-		}
+		// 	log.Fatalf("Error storing source record: %v.  record is %v", err, record)
+		// }
 
 		// pub to pubsub
 		recordJSON, err := json.Marshal(record)
@@ -506,7 +506,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
-	_, err = dsClient.PutMulti(ctx, keys, &Records)
+	_, err = dsClient.PutMulti(ctx, keys, Records)
 	if err != nil {
 		log.Fatalf("Unable to store records: %v", err)
 	}
