@@ -464,7 +464,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Printf("Storing source records with namespace %v and kind %v", recordNS.String(), recordKind.String())
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
-
+	Records := []*Record{}
+	var keys []*datastore.Key
 	for row, d := range records {
 
 		record := Record{}
@@ -479,6 +480,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 
 		// store in DS
+		keys = append(keys, datastore.IncompleteKey(recordKind.String(), nil))
+		Records = append(Records, &record)
 		if _, err := dsClient.Put(ctx, sourceKey, &record); err != nil {
 
 			log.Fatalf("Error storing source record: %v.  record is %v", err, record)
@@ -502,6 +505,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			log.Fatalf("Could not pub to pubsub: %v", err)
 			return nil
 		}
+	}
+	_, err = dsClient.PutMulti(ctx, keys, Records)
+	if err != nil {
+		log.Fatalf("Unable to store records: %v", err)
 	}
 	pstopic.Stop()
 	log.Print("Done storing source records")
