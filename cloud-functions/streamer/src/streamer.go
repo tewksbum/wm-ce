@@ -506,10 +506,20 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			return nil
 		}
 	}
-	_, err = dsClient.PutMulti(ctx, keys, Records)
-	if err != nil {
-		log.Fatalf("Unable to store records: %v", err)
+	//Put multi has a 500 element limit
+	multiLimit := 500
+	for i := 0; i < len(Records); i += multiLimit {
+		end := i + multiLimit
+
+		if end > len(Records) {
+			end = len(Records)
+		}
+		_, err = dsClient.PutMulti(ctx, keys, Records[i:end])
+		if err != nil {
+			log.Fatalf("Unable to store records: %v", err)
+		}
 	}
+
 	pstopic.Stop()
 	log.Print("Done storing source records")
 	// Heuristics and NER are handled here
