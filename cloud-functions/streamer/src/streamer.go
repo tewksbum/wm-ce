@@ -514,7 +514,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if end > len(Records) {
 			end = len(Records)
 		}
-		_, err = dsClient.PutMulti(ctx, keys, Records[i:end])
+		_, err = dsClient.PutMulti(ctx, keys[i:end], Records[i:end])
 		if err != nil {
 			log.Fatalf("Unable to store records: %v", err)
 		}
