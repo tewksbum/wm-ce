@@ -464,7 +464,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Printf("Storing source records with namespace %v and kind %v", recordNS.String(), recordKind.String())
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
-	Records := []*Record{}
+	Records := []interface{}{}
 	var keys []*datastore.Key
 	for row, d := range records {
 
