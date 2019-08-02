@@ -744,7 +744,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			outputColumns = append(outputColumns, outputColumn)
 		}
 		output.Columns = outputColumns
-
+		outputJSON, _ := json.Marshal(output)
+		log.Print(outputJSON)
 	}
 
 	sbclient.Close()
