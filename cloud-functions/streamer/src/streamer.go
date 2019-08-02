@@ -278,7 +278,8 @@ type ERR struct {
 	ParentName      int
 }
 
-type ERRMap map[string]ERR
+// type ERRMap map[string]ERR
+// type NERMap map[string]map[string]float64
 
 type NERcolumns struct {
 	ColumnName  string             `json:"ColumnName"`
@@ -309,10 +310,10 @@ type Output struct {
 }
 
 type OutputColumn struct {
-	Name  string       `json:"Name"`
-	Value string       `json:"Value"`
-	ERR   ERR          `json:"ERR"`
-	NER   []NERcolumns `json:"NER"`
+	Name  string             `json:"Name"`
+	Value string             `json:"Value"`
+	ERR   ERR                `json:"ERR"`
+	NER   map[string]float64 `json:"NER"`
 }
 
 //Load unpacks the datastore properties to the map
@@ -703,7 +704,12 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	log.Print("Getting NER responses")
 	nerResponse := getNERresponse(nerRequest)
-	log.Printf("%v", nerResponse.Columns)
+
+	nerResult := make(map[string]map[string]float64)
+	for _, col := range nerResponse.Columns {
+		nerResult[col.ColumnName] = col.NEREntities
+	}
+	log.Printf("%v", nerResult)
 	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
@@ -741,7 +747,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			outputColumn.Name = headers[j]
 			outputColumn.Value = y
 			outputColumn.ERR = errResult[headers[j]]
-			// outputColumn.NER = nerResponse.Columns[headers[j]]
+			outputColumn.NER = nerResult[headers[j]]
 			outputColumns = append(outputColumns, outputColumn)
 		}
 		output.Columns = outputColumns
