@@ -348,6 +348,7 @@ func getNERresponse(nerData NERrequest) NERresponse {
 		if err != nil {
 			log.Fatalf("Couldn't read the NER response: %v", err)
 		}
+		log.Printf("ner response %v", data)
 		json.Unmarshal(data, &structResponse)
 	}
 	return structResponse
@@ -701,8 +702,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	log.Print("Getting NER responses")
 	nerResponse := getNERresponse(nerRequest)
-	log.Printf("%v", nerResponse.Columns)
-	log.Print("Getting NER entry")
 	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
