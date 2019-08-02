@@ -333,6 +333,7 @@ func (d *NERentry) Save() (props []datastore.Property, err error) {
 }
 func getNERresponse(nerData NERrequest) NERresponse {
 	jsonValue, err := json.Marshal(nerData)
+	log.Printf("calling NER endpoint")
 	if err != nil {
 		log.Panicf("Could not convert the NERrequest to json: %v", err)
 	}
