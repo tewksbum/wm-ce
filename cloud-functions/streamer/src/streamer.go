@@ -19,6 +19,7 @@ import (
 	"text/template"
 	"time"
 
+	"cloud.google.com/go/bigtable"
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/profiler"
 	"cloud.google.com/go/pubsub"
@@ -48,6 +49,9 @@ var HeuristicRecordTemplate = os.Getenv("HEURISTICSTEMPLATE")
 
 // NERRecordTemplate is the kind to write ner data to
 var NERRecordTemplate = os.Getenv("NERTEMPLATE")
+
+// ERRRecordTemplate is the kind to write err data to
+var ERRRecordTemplate = os.Getenv("ERRTEMPLATE")
 
 // NERApiEndpoint url for the ner endpoint
 var NERApiEndpoint = os.Getenv("NERENDPOINT")
@@ -250,6 +254,32 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 	return profile
 }
 
+type ERR struct {
+	FirstName       int
+	LastName        int
+	MiddleName      int
+	Suffix          int
+	FullName        int
+	Address1        int
+	Address2        int
+	City            int
+	State           int
+	ZipCode         int
+	County          int
+	Country         int
+	Email           int
+	ParentEmail     int
+	Gender          int
+	Phone           int
+	ParentFirstName int
+	ParentLastName  int
+	Birthday        int
+	Age             int
+	ParentName      int
+}
+
+type ERRMap map[string]ERR
+
 type NERcolumns struct {
 	ColumnName  string             `json:"ColumnName"`
 	NEREntities map[string]float64 `json:"NEREntities"`
@@ -410,6 +440,80 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 
 	headers = RenameDuplicateColumns(headers)
+	errResult := make(map[string]ERR)
+	for _, header := range headers {
+		var err ERR
+		key := strings.ToLower(header)
+		switch key {
+		case "fname", "f name", "first name", "name first", "first_name", "first":
+			err.FirstName = 1
+		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
+			err.LastName = 1
+		case "mi", "mi ", "mname", "m", "middle name":
+			err.MiddleName = 1
+		case "suffix", "jr., iii, etc.":
+			err.Suffix = 1
+		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1":
+			err.Address1 = 1
+		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2":
+			err.Address2 = 1
+		case "city", "city ":
+			err.City = 1
+		case "state", "st", "state ", "state_province", "st ", "state province":
+			err.State = 1
+		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode":
+			err.ZipCode = 1
+		case "citystzip", "city/st/zip ":
+			err.City = 1
+			err.State = 1
+			err.ZipCode = 1
+		case "county":
+			err.County = 1
+		case "country", "country (blank for us)":
+			err.Country = 1
+		case "email", "student email", "email ", "email1", "emali address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
+			err.Email = 1
+		case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+			err.Email = 1
+			err.ParentEmail = 1
+		case "gender", "m/f":
+			err.Gender = 1
+		case "pfname", "pfname1", "pfname2":
+			err.ParentFirstName = 1
+		case "plname", "plname1", "plname2":
+			err.ParentLastName = 1
+		case "phone", "phone1", "hphone", "cphone", "mphone":
+			err.Phone = 1
+		case "bday", "birthday":
+			err.Birthday = 1
+		case "age":
+			err.Age = 1
+		case "pname", "pname1", "pname2", "pname 1", "pname 2":
+			err.ParentFirstName = 1
+			err.ParentLastName = 1
+			err.ParentName = 1
+		case "fullname", "full name":
+			err.FullName = 1
+			err.FirstName = 1
+			err.LastName = 1
+		}
+		if strings.Contains(key, "first") {
+			err.FirstName = 1
+		}
+		if strings.Contains(key, "last") {
+			err.LastName = 1
+		}
+		if strings.Contains(key, "country") {
+			err.Country = 1
+		}
+		if strings.Contains(key, "email") {
+			err.Email = 1
+		}
+		errResult[header] = err
+	}
+	errJson, _ := json.Marshal(errResult)
+	log.Printf("ERR output %v", string(errJson))
+
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
 	fileDetail := strings.Split(fileName, "/")
 	_, requestID := fileDetail[0], fileDetail[1]
@@ -420,6 +524,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("Error accessing datastore: %v", err)
 		return nil
 	}
+
 	var requests []Request
 	query := datastore.NewQuery("Request").Namespace(NameSpaceRequest)
 	query.Filter("RequestID =", requestID).Limit(1)
@@ -432,6 +537,14 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("Unable to locate request: %v", err)
 		return nil
 	}
+
+	btInstanceID := "wemade-" + string(requests[0].CustomerID)
+	btClient, err := bigtable.NewClient(ctx, ProjectID, btInstanceID)
+	if err != nil {
+		log.Fatalf("Error accessing bigtable: %v", err)
+		return nil
+	}
+	log.Printf("btClient obtained, %v", btClient)
 
 	// get the namespace
 	var recordNS bytes.Buffer
@@ -522,7 +635,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	pstopic.Stop()
 	log.Print("Done storing source records")
-	// Heuristics and NER are handled here
+	// Heuristics, NER and ERR are handled here
 	var heuristicsKind bytes.Buffer
 	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
 	if err != nil {
@@ -552,6 +665,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("Error storing profile: %v", err)
 	}
 	log.Print("Done with heuristics")
+
 	log.Print("Starting with NER")
 	var nerKind bytes.Buffer
 	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
@@ -577,6 +691,19 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	if err != nil {
 		log.Fatalf("Error storing NER data: %v", err)
 	}
+	log.Print("Done with NER")
+
+	log.Print("Starting with ERR")
+	var errKind bytes.Buffer
+	eKindtemplate, err := template.New("requests").Parse(ERRRecordTemplate)
+	if err != nil {
+		log.Fatalf("Unable to parse NER kind template: %v", err)
+		return nil
+	}
+	if err := eKindtemplate.Execute(&errKind, requests[0]); err != nil {
+		return err
+	}
+
 	log.Print("Done with NER")
 
 	sbclient.Close()
