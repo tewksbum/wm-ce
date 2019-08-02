@@ -299,6 +299,22 @@ type NERrequest struct {
 }
 type NERentry map[string]interface{}
 
+type Output struct {
+	Owner     int64          `json:"Owner"`
+	Source    string         `json:"Source"`
+	Request   string         `json:"Request"`
+	Row       int            `json:"Row"`
+	Columns   []OutputColumn `json:"Columns"`
+	TimeStamp string         `json:"TimeStamp"`
+}
+
+type OutputColumn struct {
+	Name  string       `json:"Name"`
+	Value string       `json:"Value"`
+	ERR   ERR          `json:"ERR"`
+	NER   []NERcolumns `json:"NER"`
+}
+
 //Load unpacks the datastore properties to the map
 func (d *NERentry) Load(props []datastore.Property) error {
 	// Note: you might want to clear current values from the map or create a new map
@@ -600,24 +616,26 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		// 	log.Fatalf("Error storing source record: %v.  record is %v", err, record)
 		// }
 
-		// pub to pubsub
-		recordJSON, err := json.Marshal(record)
-		if err != nil {
-			log.Fatalf("Could not convert record to json: %v", err)
-			return nil
-		}
+		// ================================== disabled pubsub for the time being
 
-		// push into pubsub
-		psresult := pstopic.Publish(ctx, &pubsub.Message{
-			Data: recordJSON,
-		})
+		// // pub to pubsub
+		// recordJSON, err := json.Marshal(record)
+		// if err != nil {
+		// 	log.Fatalf("Could not convert record to json: %v", err)
+		// 	return nil
+		// }
 
-		// psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("Could not pub to pubsub: %v", err)
-			return nil
-		}
+		// // push into pubsub
+		// psresult := pstopic.Publish(ctx, &pubsub.Message{
+		// 	Data: recordJSON,
+		// })
+
+		// // psid, err := psresult.Get(ctx)
+		// _, err = psresult.Get(ctx)
+		// if err != nil {
+		// 	log.Fatalf("Could not pub to pubsub: %v", err)
+		// 	return nil
+		// }
 	}
 	//Put multi has a 500 element limit
 	multiLimit := 500
@@ -684,6 +702,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Print("Getting NER responses")
 	nerResponse := getNERresponse(nerRequest)
 	log.Print("Getting NER entry")
+	log.Printf("%v", nerResponse.Columns)
 	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
@@ -697,7 +716,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var errKind bytes.Buffer
 	eKindtemplate, err := template.New("requests").Parse(ERRRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse NER kind template: %v", err)
+		log.Fatalf("Unable to parse ERR kind template: %v", err)
 		return nil
 	}
 	if err := eKindtemplate.Execute(&errKind, requests[0]); err != nil {
@@ -705,6 +724,28 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 
 	log.Print("Done with NER")
+
+	// let's print the records
+	for row, d := range records {
+		output := Output{}
+		output.Owner = requests[0].CustomerID
+		output.Request = requests[0].RequestID
+		output.Source = requests[0].Source
+		output.Row = row
+		output.TimeStamp = requests[0].SubmittedAt.String()
+		var outputColumns []OutputColumn
+
+		for j, y := range d {
+			var outputColumn OutputColumn
+			outputColumn.Name = headers[j]
+			outputColumn.Value = y
+			outputColumn.ERR = errResult[headers[j]]
+			// outputColumn.NER = nerResponse.Columns[headers[j]]
+			outputColumns = append(outputColumns, outputColumn)
+		}
+		output.Columns = outputColumns
+
+	}
 
 	sbclient.Close()
 	return nil
