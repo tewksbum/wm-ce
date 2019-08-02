@@ -701,8 +701,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	log.Print("Getting NER responses")
 	nerResponse := getNERresponse(nerRequest)
-	log.Print("Getting NER entry")
 	log.Printf("%v", nerResponse.Columns)
+	log.Print("Getting NER entry")
 	nerEntry := getNERentry(nerResponse)
 	nerIKey := datastore.IncompleteKey(nerKind.String(), nil)
 	nerIKey.Namespace = recordNS.String()
@@ -745,7 +745,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		output.Columns = outputColumns
 		outputJSON, _ := json.Marshal(output)
-		log.Print(outputJSON)
+		log.Printf("%v", string(outputJSON))
 	}
 
 	sbclient.Close()
