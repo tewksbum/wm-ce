@@ -759,7 +759,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			log.Printf("pubbed record %v as message id %v", row, psid)
 		}
 
-		docID := strconv.FormatInt(requests[0].CustomerID, 10) + "-" + requests[0].Source + "-" + requests[0].RequestID + "-" + strconv.Itoa(row)
+		docID := requestID + "-" + strconv.Itoa(row)
 		req := esapi.IndexRequest{
 			Index:        "training",
 			DocumentType: "record",
