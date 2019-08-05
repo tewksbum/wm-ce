@@ -584,7 +584,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return nil
 	}
 	pstopic := psclient.Topic(PubsubTopic)
-	log.Printf("pubsub topic is %v: ", PubsubTopic)
+	log.Printf("pubsub topic is %v", pstopic)
 
 	var recordKind bytes.Buffer
 	dsKindtemplate, err := template.New("requests").Parse(KindRecordTemplate)
@@ -765,18 +765,19 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		output.Columns = outputColumns
 		outputJSON, _ := json.Marshal(output)
-		// push into pubsub
-		psresult := pstopic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-		})
 
-		psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("Could not pub to pubsub: %v", err)
-		} else {
-			log.Printf("pubbed record %v as message id %v", row, psid)
-		}
+		// // push into pubsub
+		// psresult := pstopic.Publish(ctx, &pubsub.Message{
+		// 	Data: outputJSON,
+		// })
+
+		// psid, err := psresult.Get(ctx)
+		// _, err = psresult.Get(ctx)
+		// if err != nil {
+		// 	log.Fatalf("Could not pub to pubsub: %v", err)
+		// } else {
+		// 	log.Printf("pubbed record %v as message id %v", row, psid)
+		// }
 
 		req := esapi.IndexRequest{
 			Index:      "training",
