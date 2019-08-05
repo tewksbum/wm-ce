@@ -657,7 +657,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 	}
 
-	pstopic.Stop()
 	log.Print("Done storing source records")
 	// Heuristics, NER and ERR are handled here
 	var heuristicsKind bytes.Buffer
@@ -766,18 +765,18 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		output.Columns = outputColumns
 		outputJSON, _ := json.Marshal(output)
 
-		// // push into pubsub
-		// psresult := pstopic.Publish(ctx, &pubsub.Message{
-		// 	Data: outputJSON,
-		// })
+		// push into pubsub
+		psresult := pstopic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+		})
 
-		// psid, err := psresult.Get(ctx)
-		// _, err = psresult.Get(ctx)
-		// if err != nil {
-		// 	log.Fatalf("Could not pub to pubsub: %v", err)
-		// } else {
-		// 	log.Printf("pubbed record %v as message id %v", row, psid)
-		// }
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("Could not pub to pubsub: %v", err)
+		} else {
+			log.Printf("pubbed record %v as message id %v", row, psid)
+		}
 
 		req := esapi.IndexRequest{
 			Index:      "training",
@@ -788,6 +787,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		req.Do(context.Background(), es)
 
 	}
+
+	pstopic.Stop()
 
 	sbclient.Close()
 	return nil
