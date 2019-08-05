@@ -25,6 +25,8 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"contrib.go.opencensus.io/exporter/stackdriver"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
 	"github.com/jfyne/csvd"
@@ -732,7 +734,17 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	log.Print("Done with NER")
 
-	// let's print the records
+	cfg := elasticsearch.Config{
+		Addresses: []string{
+			"http://104.198.136.122:9200",
+		},
+	}
+	es, err := elasticsearch.NewClient(cfg)
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+
+	// let's pub/store the records
 	for row, d := range records {
 		output := Output{}
 		output.Owner = requests[0].CustomerID
@@ -752,7 +764,27 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		output.Columns = outputColumns
 		outputJSON, _ := json.Marshal(output)
-		log.Printf("%v", string(outputJSON))
+		// push into pubsub
+		psresult := pstopic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+		})
+
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("Could not pub to pubsub: %v", err)
+		} else {
+			log.Printf("pubbed record %v as message id %v", row, psid)
+		}
+
+		req := esapi.IndexRequest{
+			Index:      "training",
+			DocumentID: strconv.FormatInt(requests[0].CustomerID, 10) + "-" + requests[0].Source + "-" + requests[0].RequestID + "-" + strconv.Itoa(row),
+			Body:       bytes.NewReader(outputJSON),
+			Refresh:    "true",
+		}
+		req.Do(context.Background(), es)
+
 	}
 
 	sbclient.Close()
