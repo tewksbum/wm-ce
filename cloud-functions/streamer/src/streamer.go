@@ -792,7 +792,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		defer res.Body.Close()
 
 		if res.IsError() {
-			log.Printf("[%s] Error indexing document ID=%v", res.Status(), docID)
+			resB, _ := ioutil.ReadAll(res.Body)
+			log.Printf("[%s] Error indexing document ID=%v, Message=%v", res.Status(), docID, string(resB))
 		} else {
 			// Deserialize the response into a map.
 			var r map[string]interface{}
