@@ -374,6 +374,23 @@ func getNERentry(structResponse NERresponse) NERentry {
 	return nerEntry
 }
 
+func GetFileContentType(out *os.File) (string, error) {
+
+	// Only the first 512 bytes are used to sniff the content type.
+	buffer := make([]byte, 512)
+
+	_, err := out.Read(buffer)
+	if err != nil {
+		return "", err
+	}
+
+	// Use the net/http package's handy DectectContentType function. Always returns a valid
+	// content-type by returning "application/octet-stream" if no others seemed to match.
+	contentType := http.DetectContentType(buffer)
+
+	return contentType, nil
+}
+
 // FileStreamer is the main function
 func FileStreamer(ctx context.Context, e GCSEvent) error {
 	if err := profiler.Start(profiler.Config{
@@ -409,6 +426,13 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("readFile: unable to read data from bucket %q, file %q: %v", e.Bucket, e.Name, err)
 		return nil
 	}
+
+	contentType, err := GetFileContentType(f)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("http detected file type as %v", contentType)
+
 	fileKind, _ := filetype.Match(slurp)
 	if fileKind == filetype.Unknown {
 		log.Printf("filetype detection: unknown file type, treat as text")
