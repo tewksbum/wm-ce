@@ -2,10 +2,12 @@
 package streamerapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -147,8 +149,14 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		// store the file without an extension, the extension will be detected inside streamer
 		fileName := strconv.FormatInt(customer.Key.ID, 10) + "/" + requestID.String()
 		bucket := sbclient.Bucket(BucketName)
-		file := bucket.Object(fileName).NewWriter(ctx)
+		file := bucket.Object(fileName)
+		writer := file.NewWriter(ctx)
 
+		content, _ := ioutil.ReadAll(resp.Body)
+		contentType := http.DetectContentType(content)
+
+		writer.ObjectAttrs.ContentType = contentType
+		log.Printf("Detected conntent type of %v", contentType)
 		// Warning: storage.AllUsers gives public read access to anyone.
 		// file.ACL = []storage.ACLRule{{Entity: storage.AllUsers, Role: storage.RoleReader}}
 		// file.ContentType = fh.Header.Get("Content-Type")
@@ -156,13 +164,14 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		// Entries are immutable, be aggressive about caching (1 day).
 		// file.CacheControl = "public, max-age=86400"
 
-		if _, err := io.Copy(file, resp.Body); err != nil {
+		// run content type detection
+		if _, err := io.Copy(writer, bytes.NewReader(content)); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Fatalf("failed to store uploaded file: %v", err)
 			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -5\"}")
 			return
 		}
-		if err := file.Close(); err != nil {
+		if err := writer.Close(); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Fatalf("failed to close upload stream: %v", err)
 			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -6\"}")
