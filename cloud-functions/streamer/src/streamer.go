@@ -717,6 +717,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		Addresses: []string{
 			"http://104.198.136.122:9200",
 		},
+		Username: "elastic",
+		Password: "TsLv8BtM",
 	}
 	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
