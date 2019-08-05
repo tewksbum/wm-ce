@@ -5,9 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -123,30 +121,6 @@ func RenameDuplicateColumns(s []string) []string {
 	return result
 }
 
-type UnbufferedReaderAt struct {
-	R io.Reader
-	N int64
-}
-
-func NewUnbufferedReaderAt(r io.Reader) io.ReaderAt {
-	return &UnbufferedReaderAt{R: r}
-}
-
-func (u *UnbufferedReaderAt) ReadAt(p []byte, off int64) (n int, err error) {
-	if off < u.N {
-		return 0, errors.New("invalid offset")
-	}
-	diff := off - u.N
-	written, err := io.CopyN(ioutil.Discard, u.R, diff)
-	u.N += written
-	if err != nil {
-		return 0, err
-	}
-
-	n, err = u.R.Read(p)
-	u.N += int64(n)
-	return
-}
 func getCsvMap(headers []string, data [][]string) map[string][]string {
 	csvMap := make(map[string][]string)
 	for j, col := range headers {
@@ -429,10 +403,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var records [][]string
 
 	// assume it is excel file if it is sniffed by http as application/zip
-	if contentType == "application/zip" {
-		//if fileKind.Extension == ".xlsx" {
-		readerAt := NewUnbufferedReaderAt(bytes.NewReader(slurp))
-		xlsxFile, err := xlsx.OpenReaderAt(readerAt, fileSize)
+	// if contentType == "application/zip" {
+	if fileKind.Extension == "xlsx" {
+		xlsxFile, err := xlsx.OpenBinary(slurp)
 		if err != nil {
 			log.Fatalf("unable to parse xlsx: %v", err)
 			return nil
