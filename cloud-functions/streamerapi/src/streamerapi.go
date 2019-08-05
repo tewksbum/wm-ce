@@ -2,12 +2,10 @@
 package streamerapi
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -152,11 +150,11 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		file := bucket.Object(fileName)
 		writer := file.NewWriter(ctx)
 
-		content, _ := ioutil.ReadAll(resp.Body)
-		contentType := http.DetectContentType(content)
+		// content, _ := ioutil.ReadAll(resp.Body)
+		// contentType := http.DetectContentType(content)
 
-		writer.ObjectAttrs.ContentType = contentType
-		log.Printf("Detected conntent type of %v", contentType)
+		// writer.ObjectAttrs.ContentType = contentType
+		// log.Printf("Detected conntent type of %v", contentType)
 		// Warning: storage.AllUsers gives public read access to anyone.
 		// file.ACL = []storage.ACLRule{{Entity: storage.AllUsers, Role: storage.RoleReader}}
 		// file.ContentType = fh.Header.Get("Content-Type")
@@ -165,7 +163,8 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		// file.CacheControl = "public, max-age=86400"
 
 		// run content type detection
-		if _, err := io.Copy(writer, bytes.NewReader(content)); err != nil {
+		// if _, err := io.Copy(writer, bytes.NewReader(content)); err != nil {
+		if _, err := io.Copy(writer, resp.Body); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Fatalf("failed to store uploaded file: %v", err)
 			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -5\"}")
