@@ -428,7 +428,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var headers []string
 	var records [][]string
 
-	if fileKind.Extension == ".xlsx" {
+	// assume it is excel file if it is sniffed by http as application/zip
+	if contentType == "application/zip" {
+		//if fileKind.Extension == ".xlsx" {
 		readerAt := NewUnbufferedReaderAt(bytes.NewReader(slurp))
 		xlsxFile, err := xlsx.OpenReaderAt(readerAt, fileSize)
 		if err != nil {
