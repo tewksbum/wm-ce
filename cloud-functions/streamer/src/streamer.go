@@ -778,13 +778,31 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			log.Printf("pubbed record %v as message id %v", row, psid)
 		}
 
+		docID := strconv.FormatInt(requests[0].CustomerID, 10) + "-" + requests[0].Source + "-" + requests[0].RequestID + "-" + strconv.Itoa(row)
 		req := esapi.IndexRequest{
 			Index:      "training",
-			DocumentID: strconv.FormatInt(requests[0].CustomerID, 10) + "-" + requests[0].Source + "-" + requests[0].RequestID + "-" + strconv.Itoa(row),
+			DocumentID: docID,
 			Body:       bytes.NewReader(outputJSON),
 			Refresh:    "true",
 		}
-		req.Do(context.Background(), es)
+		res, err := req.Do(ctx, es)
+		if err != nil {
+			log.Fatalf("Error getting response: %s", err)
+		}
+		defer res.Body.Close()
+
+		if res.IsError() {
+			log.Printf("[%s] Error indexing document ID=%v", res.Status(), docID)
+		} else {
+			// Deserialize the response into a map.
+			var r map[string]interface{}
+			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+				log.Printf("Error parsing the response body: %s", err)
+			} else {
+				// Print the response status and indexed document version.
+				log.Printf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
+			}
+		}
 
 	}
 
