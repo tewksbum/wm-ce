@@ -584,6 +584,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return nil
 	}
 	pstopic := psclient.Topic(PubsubTopic)
+	log.Printf("pubsub topic is %v: ", PubsubTopic)
 
 	var recordKind bytes.Buffer
 	dsKindtemplate, err := template.New("requests").Parse(KindRecordTemplate)
