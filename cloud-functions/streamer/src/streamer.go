@@ -254,9 +254,6 @@ type ERR struct {
 	ParentName      int
 }
 
-// type ERRMap map[string]ERR
-// type NERMap map[string]map[string]float64
-
 type NERcolumns struct {
 	ColumnName  string             `json:"ColumnName"`
 	NEREntities map[string]float64 `json:"NEREntities"`
