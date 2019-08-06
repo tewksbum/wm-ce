@@ -1,5 +1,8 @@
 timeout: 10m
 steps:
+  - id: git_fetch
+    name: gcr.io/cloud-builders/git
+    args: ['fetch', '--unshallow']
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
