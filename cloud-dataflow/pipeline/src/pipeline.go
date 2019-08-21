@@ -1,14 +1,17 @@
-package pipeline
+package main
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"hash/fnv"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -25,6 +28,7 @@ import (
 )
 
 var PubsubTopic = "streamer-output-dev"
+var OutputTopic = "pipeline-output-dev"
 var ProjectID = "wemade-core"
 var BucketData = "wemade-ai-platform"
 
@@ -42,6 +46,8 @@ var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?
 var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
 var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
+
+var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 type InputRecord struct {
 	Columns []struct {
@@ -67,6 +73,8 @@ type InputRecord struct {
 			State           int `json:"State"`
 			Suffix          int `json:"Suffix"`
 			ZipCode         int `json:"ZipCode"`
+			TrustedID       int `json:"TrustedID"`
+			Title           int `json:"Title"`
 		} `json:"ERR"`
 		NER struct {
 			FAC       float64 `json:"FAC"`
@@ -88,14 +96,894 @@ type InputRecord struct {
 			ORDINAL   float64 `json:"ORDINAL"`
 			CARDINAL  float64 `json:"CARDINAL"`
 		} `json:"NER"`
-		Name  string `json:"Name"`
-		Value string `json:"Value"`
+		Name     string `json:"Name"`
+		Value    string `json:"Value"`
+		MatchKey string `json:"MK"`
 	} `json:"Columns"`
 	Owner     int    `json:"Owner"`
 	Request   string `json:"Request"`
 	Row       int    `json:"Row"`
 	Source    string `json:"Source"`
 	TimeStamp string `json:"TimeStamp"`
+}
+
+type Prediction struct {
+	Predictions []float64 `json:"predictions"`
+}
+
+type IdentifiedRecord struct {
+	FNAME   string `json:"fname"`
+	LNAME   string `json:"lname"`
+	CITY    string `json:"city"`
+	STATE   string `json:"statte"`
+	ZIP     string `json:"zip"`
+	COUNTRY string `json:"counttry"`
+	EMAIL   string `json:"email"`
+	PHONE   string `json:"phone"`
+	AD1     string `json:"ad1"`
+	AD2     string `json:"ad2"`
+}
+
+type OutputAddress struct {
+	Add1                string  `json:"Add1"`
+	Add2                string  `json:"Add2"`
+	City                string  `json:"City"`
+	Country             string  `json:"Country"`
+	DMA                 string  `json:"DMA"`
+	Directional         string  `json:"Directional"`
+	Lat                 float64 `json:"Lat"`
+	Long                float64 `json:"Long"`
+	MailRoute           string  `json:"MailRoute"`
+	Number              string  `json:"Number"`
+	OccupancyIdentifier string  `json:"OccupancyIdentifier"`
+	OccupancyType       string  `json:"OccupancyType"`
+	PostType            string  `json:"PostType"`
+	Postal              string  `json:"Postal"`
+	State               string  `json:"State"`
+	StreetName          string  `json:"StreetName"`
+}
+
+type OutputBackground struct {
+	Age    int    `json:"Age"`
+	DOB    string `json:"DOB"`
+	Gender string `json:"Gender"`
+	Race   string `json:"Race"`
+}
+
+type OutputEmail struct {
+	Address   string `json:"Address"`
+	Confirmed bool   `json:"Confirmed"`
+	Domain    string `json:"Domain"`
+	Type      string `json:"Type"`
+}
+
+type OutputName struct {
+	First      string `json:"First"`
+	Full       string `json:"Full"`
+	Last       string `json:"Last"`
+	Middle     string `json:"Middle"`
+	Nick       string `json:"Nick"`
+	Salutation string `json:"Salutation"`
+	Suffix     string `json:"Suffix"`
+}
+
+type OutputOrganization struct {
+	Location string `json:"Location"`
+	Name     string `json:"Name"`
+	Role     string `json:"Role"`
+	SIC      string `json:"SIC"`
+	Status   string `json:"Status"`
+	Title    string `json:"Title"`
+}
+
+type OutputPhone struct {
+	Area      string `json:"Area"`
+	Confirmed bool   `json:"Confirmed"`
+	Country   string `json:"Country"`
+	Exchange  string `json:"Exchange"`
+	Provider  string `json:"Provider"`
+	Station   string `json:"Station"`
+	Type      string `json:"Type"`
+}
+
+type OutputTrustedID struct {
+	Source   string `json:"Source"`
+	SourceID string `json:"SourceId"`
+}
+
+type OutputRecord struct {
+	Address      []OutputAddress      `json:"Address"`
+	Background   OutputBackground     `json:"Background"`
+	Email        []OutputEmail        `json:"Email"`
+	Name         OutputName           `json:"Name"`
+	Organization []OutputOrganization `json:"Organization"`
+	Phone        []OutputPhone        `json:"Phone"`
+	TrustedID    []OutputTrustedID    `json:"TrustedId"`
+}
+
+type Address struct {
+	House           int
+	StreetDirection string
+	StreetName      string
+	StreetType      string
+	SuiteType       string
+	SuiteNumber     string
+}
+
+var StreetTypeAbbreviations map[string]string = map[string]string{
+	"alley": "aly",
+	"allee": "aly",
+	"ally":  "aly",
+	"aly":   "aly",
+
+	"anex":  "anx",
+	"annex": "anx",
+	"annx":  "anx",
+	"anx":   "anx",
+
+	"arcade": "arc",
+	"arc":    "arc",
+
+	"avenue": "ave",
+	"av":     "ave",
+	"aven":   "ave",
+	"avn":    "ave",
+	"anvue":  "ave",
+	"ave":    "ave",
+
+	"bayou": "byu",
+	"bayoo": "byu",
+	"byu":   "byu",
+
+	"beach": "bch",
+	"bch":   "bch",
+
+	"bend": "bnd",
+	"bnd":  "bnd",
+
+	"bluff": "blf",
+	"bluf":  "blf",
+	"blf":   "blf",
+
+	"bottom": "btm",
+	"bot":    "btm",
+	"bottm":  "btm",
+	"btm":    "btm",
+
+	"boulevard": "blvd",
+	"boulv":     "blvd",
+	"boul":      "blvd",
+	"blvd":      "blvd",
+
+	"branch": "br",
+	"brnch":  "br",
+	"br":     "br",
+
+	"bridge": "brg",
+	"brdge":  "brg",
+	"brg":    "brg",
+
+	"brook": "brk",
+	"brk":   "brk",
+
+	"brooks": "brks",
+	"brks":   "brks",
+
+	"burg": "bg",
+	"bg":   "bg",
+
+	"burgs": "bgs",
+	"bgs":   "bgs",
+
+	"bypass": "byp",
+	"bypa":   "byp",
+	"bypas":  "byp",
+	"byps":   "byp",
+	"byp":    "byp",
+
+	"camp": "cp",
+	"cmp":  "cp",
+	"cp":   "cp",
+
+	"canyon": "cyn",
+	"canyn":  "cyn",
+	"cnyn":   "cyn",
+	"cyn":    "cyn",
+
+	"cape": "cpe",
+	"cpe":  "cpe",
+
+	"causeway": "cswy",
+	"causwa":   "cswy",
+	"cswy":     "cswy",
+
+	"center": "ctr",
+	"cen":    "ctr",
+	"cent":   "ctr",
+	"centr":  "ctr",
+	"centre": "ctr",
+	"cnter":  "ctr",
+	"ctr":    "ctr",
+
+	"centers": "ctrs",
+	"ctrs":    "ctrs",
+
+	"circle": "cir",
+	"circ":   "cir",
+	"circl":  "cir",
+	"crcl":   "cir",
+	"crcle":  "cir",
+	"cir":    "cir",
+
+	"cliff": "clf",
+	"clf":   "clf",
+
+	"cliffs": "clfs",
+	"clfs":   "clfs",
+
+	"club": "clb",
+	"clb":  "clb",
+
+	"common": "cmn",
+	"cmn":    "cmn",
+
+	"commons": "cmns",
+	"cmns":    "cmns",
+
+	"corner": "cor",
+	"cor":    "cor",
+
+	"corners": "cors",
+	"cors":    "cors",
+
+	"course": "crse",
+	"crse":   "crse",
+
+	"court": "ct",
+	"ct":    "ct",
+
+	"courts": "cts",
+	"cts":    "cts",
+
+	"cove": "cv",
+	"cv":   "cv",
+
+	"coves": "cvs",
+	"cvs":   "cvs",
+
+	"cr":          "county road",
+	"county road": "county road",
+
+	"creek": "crk",
+	"crk":   "crk",
+
+	"crescent": "cres",
+	"crsent":   "cres",
+	"crsnt":    "cres",
+	"cres":     "cres",
+
+	"crest": "crst",
+	"crst":  "crst",
+
+	"crossing": "xing",
+	"crssing":  "xing",
+	"xing":     "xing",
+
+	"crossroad": "xrd",
+	"xrd":       "xrd",
+
+	"crossroads": "xrds",
+	"xrds":       "xrds",
+
+	"curve": "curv",
+	"curv":  "curv",
+
+	"dale": "dl",
+	"dl":   "dl",
+
+	"dam": "dm",
+	"dm":  "dm",
+
+	"divide": "dv",
+	"div":    "dv",
+	"dvd":    "dv",
+	"dv":     "dv",
+
+	"drive": "dr",
+	"driv":  "dr",
+	"drv":   "dr",
+	"dr":    "dr",
+
+	"drives": "drs",
+	"drs":    "drs",
+
+	"estate": "est",
+	"est":    "est",
+
+	"estates": "ests",
+	"ests":    "ests",
+
+	"expressway": "expy",
+	"expr":       "expy",
+	"express":    "expy",
+	"expw":       "expy",
+	"expy":       "expy",
+
+	"extension": "ext",
+	"extn":      "ext",
+	"extnsn":    "ext",
+	"ext":       "ext",
+
+	"fall": "fall",
+
+	"falls": "fls",
+	"fls":   "fls",
+
+	"ferry": "fry",
+	"frry":  "fry",
+	"fry":   "fry",
+
+	"field": "fld",
+	"fld":   "fld",
+
+	"fields": "flds",
+	"flds":   "flds",
+
+	"flat": "flt",
+	"flt":  "flt",
+
+	"flats": "flts",
+	"flts":  "flts",
+
+	"ford": "frd",
+	"frd":  "frd",
+
+	"fords": "frds",
+	"frds":  "frds",
+
+	"forest": "frst",
+	"frst":   "frst",
+
+	"forge": "frg",
+	"forg":  "frg",
+	"frg":   "frg",
+
+	"forges": "frgs",
+	"frgs":   "frgs",
+
+	"fork": "frk",
+	"frk":  "frk",
+
+	"fort": "ft",
+	"frt":  "ft",
+	"ft":   "ft",
+
+	"freeway": "fwy",
+	"freewy":  "fwy",
+	"frway":   "fwy",
+	"frwy":    "fwy",
+	"fwy":     "fwy",
+
+	"garden": "gdn",
+	"gardn":  "gdn",
+	"grden":  "gdn",
+	"grdn":   "gdn",
+	"gdn":    "gdn",
+
+	"gardens": "gdns",
+	"grdns":   "gdns",
+	"gdns":    "gdns",
+
+	"gateway": "gtwy",
+	"gatewy":  "gtwy",
+	"gatway":  "gtwy",
+	"gtway":   "gtwy",
+	"gtwy":    "gtwy",
+
+	"glen": "gln",
+	"gln":  "gln",
+
+	"glens": "glns",
+	"glns":  "glns",
+
+	"green": "grn",
+	"grn":   "grn",
+
+	"greens": "grns",
+	"grns":   "grns",
+
+	"grove": "grv",
+	"grov":  "grv",
+	"grv":   "grv",
+
+	"harbor": "hbr",
+	"harb":   "hbr",
+	"harbr":  "hbr",
+	"hrbr":   "hbr",
+	"hbr":    "hbr",
+
+	"harbors": "hbrs",
+	"hbrs":    "hbrs",
+
+	"haven": "hvn",
+	"hvn":   "hvn",
+
+	"heights": "hts",
+	"ht":      "hts",
+	"hts":     "hts",
+
+	"highway": "hwy",
+	"highwy":  "hwy",
+	"hiway":   "hwy",
+	"hiwy":    "hwy",
+	"hway":    "hwy",
+	"hwy":     "hwy",
+
+	"hill": "hl",
+	"hl":   "hl",
+
+	"hills": "hls",
+	"hls":   "hls",
+
+	"hollow":  "holw",
+	"hllw":    "holw",
+	"hollows": "holw",
+	"holws":   "holw",
+	"holw":    "holw",
+
+	"hodor": "hodor",
+
+	"inlet": "inlt",
+	"inlt":  "inlt",
+
+	"island": "is",
+	"islnd":  "is",
+	"is":     "is",
+
+	"isle":  "isle",
+	"isles": "isle",
+
+	"junction": "jct",
+	"jction":   "jct",
+	"jctn":     "jct",
+	"junctn":   "jct",
+	"juncton":  "jct",
+	"jct":      "jct",
+
+	"junctions": "jcts",
+	"jctns":     "jcts",
+	"jcts":      "jcts",
+
+	"key": "ky",
+	"ky":  "ky",
+
+	"keys": "kys",
+	"kys":  "kys",
+
+	"knoll": "knl",
+	"knol":  "knl",
+	"knl":   "knl",
+
+	"knolls": "knls",
+	"knls":   "knls",
+
+	"lake": "lk",
+	"lk":   "lk",
+
+	"lakes": "lks",
+	"lks":   "lks",
+
+	"land": "land",
+
+	"landing": "lndg",
+	"lndng":   "lndg",
+	"lndg":    "lndg",
+
+	"lane": "ln",
+	"ln":   "ln",
+
+	"light": "lgt",
+	"lgt":   "lgt",
+
+	"lights": "lgts",
+	"lgts":   "lgts",
+
+	"loaf": "lf",
+	"lf":   "lf",
+
+	"lock": "lck",
+	"lck":  "lck",
+
+	"locks": "lcks",
+	"lcks":  "lcks",
+
+	"lodge": "ldg",
+	"ldge":  "ldg",
+	"lodg":  "ldg",
+	"ldg":   "ldg",
+
+	"loop":  "loop",
+	"loops": "loop",
+
+	"mall": "mall",
+
+	"manor": "mnr",
+	"mnr":   "mnr",
+
+	"manors": "mnrs",
+	"mnrs":   "mnrs",
+
+	// Accoding to that table...:
+	// "meadow": "mdw",
+	// "mdw": "mdw",
+
+	// But on the following line...
+	"meadows": "mdws",
+	"mdw":     "mdws",
+	"meadow":  "mdws",
+	"medows":  "mdws",
+	"mdws":    "mdws",
+
+	"mews": "mews",
+
+	"mill": "ml",
+	"ml":   "ml",
+
+	"mission": "msn",
+	"misn":    "msn",
+	"msn":     "msn",
+
+	"motorway": "mtwy",
+	"mtwy":     "mtwy",
+
+	"mountain": "mtn",
+	"mntain":   "mtn",
+	"mt":       "mtn",
+	"mountin":  "mtn",
+	"mtin":     "mtn",
+	"mtn":      "mtn",
+
+	"mountains": "mtns",
+	"mtns":      "mtns",
+
+	"neck": "nck",
+	"nck":  "nck",
+
+	"orchard": "orch",
+	"orchrd":  "orch",
+	"orch":    "orch",
+
+	"oval": "ovl",
+	"ovl":  "ovl",
+
+	"overpass": "opas",
+	"opas":     "opas",
+
+	"park":  "park",
+	"parks": "park",
+	"prk":   "park",
+
+	"parkway":  "pkwy",
+	"parkwy":   "pkwy",
+	"pkway":    "pkwy",
+	"pky":      "pkwy",
+	"parkways": "pkwy",
+	"pkwys":    "pkwy",
+	"pkwy":     "pkwy",
+
+	"pass": "pass",
+
+	"passage": "psge",
+	"psge":    "psge",
+
+	"path":  "path",
+	"paths": "paths",
+
+	"pike":  "pike",
+	"pikes": "pike",
+
+	"pine": "pne",
+	"pne":  "pne",
+
+	"pines": "pnes",
+	"pnes":  "pnes",
+
+	"place": "pl",
+	"pl":    "pl",
+
+	"plain": "pln",
+	"pln":   "pln",
+
+	"plains": "plns",
+	"plns":   "plns",
+
+	"plaza": "plz",
+	"plza":  "plz",
+	"plz":   "plz",
+
+	"point": "pt",
+	"pt":    "pt",
+
+	"points": "pts",
+	"pts":    "pts",
+
+	"port": "prt",
+	"prt":  "prt",
+
+	"ports": "prts",
+	"prts":  "prts",
+
+	"prarie": "pr",
+	"prr":    "pr",
+	"pr":     "pr",
+
+	"radial": "radl",
+	"rad":    "radl",
+	"radiel": "radl",
+	"radl":   "radl",
+
+	"ramp": "ramp",
+
+	"ranch":   "rnch",
+	"ranches": "rnch",
+	"rnchs":   "rnch",
+	"rnch":    "rnch",
+
+	"rapid": "rpd",
+	"rpd":   "rpd",
+
+	"ridge": "rdg",
+	"rdge":  "rdg",
+	"rdg":   "rdg",
+
+	"rest": "rst",
+	"rst":  "rst",
+
+	"ridges": "rdgs",
+	"rdgs":   "rdgs",
+
+	"road": "road",
+	"rd":   "rd",
+
+	"route": "rte",
+	"rte":   "rte",
+
+	"row": "row",
+
+	"rue": "rue",
+
+	"run": "run",
+
+	"shoal": "shl",
+	"shl":   "shl",
+
+	"shoals": "shls",
+	"shls":   "shls",
+
+	"shore":  "shr",
+	"shores": "shr",
+	"shrs":   "shr",
+	"shr":    "shr",
+
+	"skyway": "skwy",
+
+	"spring": "spg",
+	"spng":   "spg",
+	"sprng":  "spg",
+	"spg":    "spg",
+
+	"springs": "spgs",
+	"spngs":   "spgs",
+	"sprngs":  "spgs",
+	"spgs":    "spgs",
+
+	"spur":  "spur",
+	"spurs": "spur",
+
+	"square": "sq",
+	"sqr":    "sq",
+	"sqre":   "sq",
+	"squ":    "sq",
+	"sq":     "sq",
+
+	"squares": "sqs",
+	"sqrs":    "sqs",
+	"sqs":     "sqs",
+
+	"station": "sta",
+	"statn":   "sta",
+	"stn":     "sta",
+	"sta":     "sta",
+
+	"stravenue": "stra",
+	"strav":     "stra",
+	"straven":   "stra",
+	"stravn":    "stra",
+	"strvn":     "stra",
+	"strvnue":   "stra",
+	"stra":      "stra",
+
+	"stream": "strm",
+	"streme": "strm",
+	"strm":   "strm",
+
+	"street": "st",
+	"strt":   "st",
+	"str":    "st",
+	"st":     "st",
+
+	"streets": "sts",
+
+	"summit": "smt",
+	"sumit":  "smt",
+	"sumitt": "smt",
+	"smt":    "smt",
+
+	"terrace": "ter",
+	"terr":    "ter",
+	"ter":     "ter",
+
+	"throughway": "trwy",
+	"trwy":       "trwy",
+
+	"trace":  "trce",
+	"traces": "trce",
+	"trce":   "trce",
+
+	"track":  "trak",
+	"tracks": "trak",
+	"trk":    "trak",
+	"trks":   "trak",
+	"trak":   "trak",
+
+	"trailer": "trlr",
+	"trlrs":   "trlr",
+	"trlr":    "trlr",
+
+	"tunnel":  "tunl",
+	"tunls":   "tunl",
+	"tunnels": "tunl",
+	"tunnl":   "tunl",
+	"tunl":    "tunl",
+
+	"turnpike": "tpke",
+	"trnp":     "tpke",
+	"turnpk":   "tpke",
+	"tpke":     "tpke",
+
+	"underpass": "upas",
+	"upas":      "upas",
+
+	"union": "un",
+	"un":    "un",
+
+	"valley": "vly",
+	"vally":  "vly",
+	"vlly":   "vly",
+	"vly":    "vly",
+
+	"valleys": "vlys",
+	"vlys":    "vlys",
+
+	"viaduct": "via",
+	"vdct":    "via",
+	"viadct":  "via",
+	"via":     "via",
+
+	"view": "vw",
+	"vw":   "vw",
+
+	"views": "vws",
+	"vws":   "vws",
+
+	"village":  "vlg",
+	"villag":   "vlg",
+	"vill":     "vlg",
+	"villg":    "vlg",
+	"villiage": "vlg",
+	"vlg":      "vlg",
+
+	"villages": "vlgs",
+	"vlgs":     "vlgs",
+
+	"ville": "vl",
+	"vl":    "vl",
+
+	"vista": "vis",
+	"vist":  "vis",
+	"vst":   "vis",
+	"vsta":  "vis",
+	"vis":   "vis",
+
+	"walk":  "walk",
+	"walks": "walk",
+
+	"wall": "wall",
+
+	"way": "way",
+	"wy":  "way",
+
+	"ways": "ways",
+
+	"well": "wl",
+	"wl":   "wl",
+
+	"wells": "wls",
+	"wls":   "wls",
+}
+
+var SuiteTypeAbbreviations map[string]string = map[string]string{
+	"apartment": "apt",
+	"#":         "apt",
+	"apt":       "apt",
+
+	"building": "bldg",
+	"bldg":     "bldg",
+
+	"floor": "fl",
+	"fl":    "fl",
+
+	"suite": "ste",
+	"ste":   "ste",
+
+	"unit": "unit",
+
+	"room": "rm",
+	"rm":   "rm",
+
+	"department": "dept",
+	"dept":       "dept",
+
+	"box": "box",
+}
+
+var CardinalDirectionAbbreviations map[string]string = map[string]string{
+	"north": "n",
+	"n":     "n",
+
+	"northwest": "nw",
+	"nw":        "nw",
+
+	"northeast": "ne",
+	"ne":        "ne",
+
+	"south": "s",
+	"s":     "s",
+
+	"southwest": "sw",
+	"sw":        "sw",
+
+	"southeast": "se",
+	"se":        "se",
+
+	"east": "e",
+	"e":    "e",
+
+	"west": "w",
+	"w":    "w",
+}
+
+var RuralBoxes map[string]string = map[string]string{
+	"cr":          "county road",
+	"county road": "county road",
+
+	"rr": "rr",
+
+	"po box": "po box",
+}
+
+var Pairs map[string]string = map[string]string{
+	"po":     "box",
+	"county": "road",
+	// CR is in here because it's dumb, but this is the only street name value that _has_ to be converted.
+	// "cr": "cr",
+}
+
+var NumberRequired []string = []string{
+	"po box",
+	"rr",
+	"county road",
+	"cr",
 }
 
 var httpClient *http.Client
@@ -292,12 +1180,355 @@ func main() {
 	}
 }
 
+func getMkField(v *IdentifiedRecord, field string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.String()
+}
+
+func setMkField(v *IdentifiedRecord, field string, value string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.SetString(value)
+	return value
+}
+
+func (a *Address) finalizeStreetAddress(s *[]string) {
+	if len(*s) <= 0 {
+		return
+	}
+
+	for i := 0; i < len(*s); i++ {
+		st := strings.Join([]string{
+			a.StreetName,
+			(*s)[i],
+		}, " ")
+		a.StreetName = st
+	}
+}
+
+func del(s *[]string, i int) {
+	*s = append((*s)[:(i)], (*s)[(i)+1:]...)
+}
+
+func (a *Address) getHouseNumber(s *[]string) (int, error) {
+	for i, e := range *s {
+		if _, ok := SuiteTypeAbbreviations[e]; ok {
+			return 0, fmt.Errorf("Found a suite type before a house number.  There must not be a house number.")
+		}
+		n, err := strconv.Atoi(e)
+		if err != nil {
+			continue
+		}
+		// Found a number!
+		del(s, i)
+		return n, nil
+	}
+	return 0, fmt.Errorf("Could not find a suitable house number.")
+}
+
+func (a *Address) getStreetDirection(s *[]string) (string, error) {
+	for i, e := range *s {
+		if n, ok := CardinalDirectionAbbreviations[e]; ok {
+			del(s, i)
+			return n, nil
+		}
+	}
+	return "", fmt.Errorf("No suitable street direction was found in the address.")
+}
+
+func (a *Address) getStreetType(s *[]string) (string, error) {
+	var t string
+	var m int
+	for i, e := range *s {
+		if n, ok := StreetTypeAbbreviations[e]; ok {
+			// Is there anything proceeding the street type?
+			if len(*s) > i+1 {
+				if isAbbreviation((*s)[i+1]) == true {
+					// Is it "apt", "suite", "s"...?
+					// then do nothing
+				} else {
+					return "", nil
+				}
+			}
+			m = i
+			t = n
+			// return n, nil
+		}
+	}
+	if t == "" {
+		return "", fmt.Errorf("No suitable street type was found in the address.")
+	}
+	del(s, m)
+	return t, nil
+}
+
+func isAbbreviation(s string) bool {
+	if _, ok := StreetTypeAbbreviations[s]; ok {
+		return true
+	}
+	if _, ok := CardinalDirectionAbbreviations[s]; ok {
+		return true
+	}
+	if _, ok := RuralBoxes[s]; ok {
+		return true
+	}
+	if _, ok := SuiteTypeAbbreviations[s]; ok {
+		return true
+	}
+	return false
+}
+
+type queue []int
+
+var last int
+
+func (q *queue) Push(n int) {
+	last = n
+	*q = append(*q, n)
+}
+
+func (q *queue) Pop() (n int, e error) {
+	if q.Len() <= 0 {
+		e = fmt.Errorf("index out of bounds")
+		return
+	}
+
+	n = (*q)[0]
+	*q = (*q)[1:]
+	return
+}
+
+func (q *queue) Peek() (n int) {
+	n = (*q)[0]
+	return
+}
+func (q *queue) PeekLast() (n int) {
+	return last
+}
+func (q *queue) Len() int {
+	return len(*q)
+}
+
+func (q *queue) Get() []int {
+	return *q
+}
+
+func (a *Address) getStreetName(s *[]string) (r string, err error) {
+	// The indices to remove at the end of the function.
+	var removeQueue queue
+
+	// Find the first non-number, non-abbreviation
+	for i, e := range *s {
+		_, err := strconv.Atoi(e)
+		if err == nil {
+			continue
+		}
+
+		if isAbbreviation(e) == true {
+			continue
+		}
+
+		removeQueue.Push(i)
+		r = e
+		break
+	}
+
+	// If nothing was found then try again and grab the first
+	// * Cardinal Direction, "PO"/"RR"/etc, or "Suite"/"Apartment"/etc.
+	if r == "" {
+		for i, e := range *s {
+			_, err := strconv.Atoi(e)
+			if err == nil {
+				continue
+			}
+			if _, ok := CardinalDirectionAbbreviations[e]; ok {
+				r = e
+				removeQueue.Push(i)
+				break
+			}
+			if n, ok := RuralBoxes[e]; ok {
+				r = n
+				removeQueue.Push(i)
+				break
+			}
+			if _, ok := SuiteTypeAbbreviations[e]; ok {
+				r = e
+				removeQueue.Push(i)
+				break
+			}
+		}
+	}
+
+	// Still nothing?
+	// Then grab the first street direction or the first street type.
+	if r == "" {
+		for i, e := range *s {
+			_, err := strconv.Atoi(e)
+			if err == nil {
+				continue
+			}
+
+			// Street type
+			if _, ok := StreetTypeAbbreviations[e]; ok {
+				r = e
+				removeQueue.Push(i)
+				break
+			}
+
+			// Street Direction
+			if _, ok := CardinalDirectionAbbreviations[e]; ok {
+				r = e
+				removeQueue.Push(i)
+				break
+			}
+		}
+	}
+
+	if p, ok := Pairs[r]; ok {
+		var n string
+		// Find our match, make sure it's in here.
+		for i, e := range *s {
+			if e == p {
+				n = p
+				removeQueue.Push(i)
+			}
+		}
+
+		if n == "" {
+			return "", fmt.Errorf("Badly formatted address.  Found a value that expected a pair, but the pair does not exist. (Example:  \"PO\" but no \"BOX\", \"County\" but no \"Road\")")
+		}
+
+		// You would think you could just join the 2 at this point and call it done, but nope. cr has to become "County road" at some point...
+		if b, ok := RuralBoxes[n]; ok {
+			r = b
+		} else {
+			// Join the strings.  rr, 23 becomes rr 23
+			st := strings.Join([]string{
+				r,
+				n,
+			}, " ")
+			r = st
+		}
+	}
+
+	if r == "" {
+		return "", fmt.Errorf("Could not find a proper street name.")
+	}
+
+	// Now check to see if the street name requires a number
+	for _, n := range NumberRequired {
+		if r != n {
+			continue
+		}
+		// The last index of a removed element (also read:  valid element).
+		l := removeQueue.PeekLast()
+
+		// That's an L, not a 1
+		_, err = strconv.Atoi((*s)[l+1])
+
+		// It's not a number so we don't want that crap.
+		if err != nil {
+			return "", fmt.Errorf("This kind of address requires a number in the street name.  Example:  CR 123;  County Road 100")
+			continue
+		}
+		st := strings.Join([]string{
+			r,
+			(*s)[(l + 1)],
+		}, " ")
+		r = st
+		removeQueue.Push(l + 1)
+	}
+
+	for {
+		t, err := removeQueue.Pop()
+		if err != nil {
+			// end of queue
+			break
+		}
+		del(s, t)
+
+		ra := removeQueue.Get()
+		for x, y := range ra {
+			if y > t {
+				ra[x] = y - 1
+			}
+		}
+	}
+
+	return r, nil
+}
+
+func (a *Address) getSuite(s *[]string) (suiteType string, suiteNumber string, err error) {
+	for i, e := range *s {
+		if n, ok := SuiteTypeAbbreviations[e]; ok {
+			suiteType = n
+			if len(*s) > (i + 1) {
+				suiteNumber = (*s)[i+1]
+				del(s, i)
+				del(s, i)
+				return suiteType, suiteNumber, nil
+			} else {
+				del(s, i)
+				return suiteType, "", fmt.Errorf("Suite type was found, but a suite number was not.")
+			}
+		}
+	}
+	return "", "", fmt.Errorf("No suitable suite type was found in the address.")
+}
+
+func normalizeStreetAddress(s string) (a Address, err error) {
+	if err != nil {
+		return Address{}, err
+	}
+
+	t := strings.Fields(s)
+
+	// Lowercase it all.
+	for i := range t {
+		t[i] = strings.ToLower(t[i])
+	}
+
+	// Strip out miscellaneous characters.
+	regIsNumeric, err := regexp.Compile("^(\\d|\\.)+$")
+	regMatchInvalid, err := regexp.Compile("[^a-zA-Z\\d\\s:]")
+
+	for i := range t {
+		// Match numeric fields and don't replace their decimals.
+		if regIsNumeric.MatchString(t[i]) == false {
+			// Remove stray periods and whatnot.
+			t[i] = regMatchInvalid.ReplaceAllString(t[i], "")
+		}
+	}
+	// Every address has a street name.  Start with that.
+	a.StreetName, err = a.getStreetName(&t)
+	if err != nil {
+		a.finalizeStreetAddress(&t)
+		return a, err
+	}
+
+	a.House, err = a.getHouseNumber(&t)
+	if err != nil {
+		a.finalizeStreetAddress(&t)
+		return a, nil
+	}
+
+	a.StreetType, err = a.getStreetType(&t)
+
+	a.SuiteType, a.SuiteNumber, err = a.getSuite(&t)
+
+	a.StreetDirection, err = a.getStreetDirection(&t)
+
+	a.finalizeStreetAddress(&t)
+	return a, nil
+}
+
 func buildPipeline(ctx context.Context, s beam.Scope) {
 	// nothing -> PCollection<Painting>
 	pubsubOptions := pubsubio.ReadOptions{WithAttributes: true}
 	messages := pubsubio.Read(s, ProjectID, PubsubTopic, &pubsubOptions)
 
-	// pre-process each record
+	// process each record
 	records := beam.ParDo(s, func(message pb.PubsubMessage, emit func(string)) {
 		var input InputRecord
 		err := json.Unmarshal(message.Data, &input)
@@ -352,30 +1583,133 @@ func buildPipeline(ctx context.Context, s beam.Scope) {
 				instance = append(instance, float64(feature))
 			}
 			instances = append(instances, instance)
-			reqJSON, _ := json.Marshal(instances)
-			req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
-			if err != nil {
-				log.Fatalf(ctx, "Error Occured. %+v", err)
-			}
-			req.Header.Set("Content-Type", "application/json")
-
-			response, err := httpClient.Do(req)
-			if err != nil && response == nil {
-				log.Fatalf(ctx, "Error sending request to API endpoint. %+v", err)
-			}
-			// Close the connection to reuse it
-			defer response.Body.Close()
-
-			// Let's check if the work actually is done
-			// We have seen inconsistencies even when we get 200 OK response
-			body, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				log.Fatalf(ctx, "Couldn't parse response body. %+v", err)
-			}
-			emit(string(body))
 		}
+		reqJSON, _ := json.Marshal(instances)
+		req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
+		if err != nil {
+			log.Fatalf(ctx, "Error Occured. %+v", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		response, err := httpClient.Do(req)
+		if err != nil && response == nil {
+			log.Fatalf(ctx, "Error sending request to API endpoint. %+v", err)
+		}
+		// Close the connection to reuse it
+		defer response.Body.Close()
+
+		body, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatalf(ctx, "Couldn't parse response body. %+v", err)
+		}
+		log.Infof(ctx, "Prediction returned %v", body)
+		// we now have the prediction
+		var prediction Prediction
+		err = json.Unmarshal(body, &prediction)
+		if err != nil {
+			log.Warnf(ctx, "error decoding json, %v", body)
+		}
+
+		// assignn columns and build MK output
+		var mkOutput IdentifiedRecord
+		var trustedID string
+		for index, column := range input.Columns {
+			predictionValue := prediction.Predictions[index]
+			predictionKey := strconv.Itoa(int(predictionValue))
+			matchKey := listLabels[predictionKey]
+			column.MatchKey = matchKey
+			if matchKey != "" {
+				// if it does not already have a value
+				if getMkField(&mkOutput, matchKey) != "" {
+					setMkField(&mkOutput, matchKey, column.Value)
+				}
+			}
+			if column.ERR.TrustedID == 1 {
+				trustedID = column.Value
+			}
+		}
+		mkJSON, _ := json.Marshal(mkOutput)
+		log.Infof(ctx, "MatchKey Columns %v", string(mkJSON))
+
+		// assemble output
+		output := new(OutputRecord)
+		if trustedID != "" {
+			outputTrustedId := OutputTrustedID{
+				Source:   input.Source,
+				SourceID: trustedID,
+			}
+			output.TrustedID = append(output.TrustedID, outputTrustedId)
+		}
+		if mkOutput.EMAIL != "" && strings.Contains(mkOutput.EMAIL, "@") {
+			emailComponents := strings.Split(mkOutput.EMAIL, "@")
+			outputEmail := OutputEmail{
+				Address:   mkOutput.EMAIL,
+				Domain:    emailComponents[1],
+				Confirmed: false,
+				Type:      "private",
+			}
+			output.Email = append(output.Email, outputEmail)
+		}
+		if mkOutput.PHONE != "" {
+			mkOutput.PHONE = reCleanupDigitsOnly.ReplaceAllString(mkOutput.PHONE, "")
+			if len(mkOutput.PHONE) > 10 {
+				outputPhone := OutputPhone{
+					Area:      mkOutput.PHONE[0:3],
+					Exchange:  mkOutput.PHONE[3:6],
+					Station:   mkOutput.PHONE[6:10],
+					Confirmed: false,
+					Country:   "1",
+					Type:      "Unknown",
+					Provider:  "Unknown",
+				}
+				output.Phone = append(output.Phone, outputPhone)
+			}
+		}
+		if mkOutput.AD1 != "" {
+			addressInput := mkOutput.AD1 + " " + mkOutput.AD2
+			addressParsed, _ := normalizeStreetAddress(addressInput)
+			outputAddress := OutputAddress{
+				Add1:                mkOutput.AD1,
+				Add2:                mkOutput.AD2,
+				City:                mkOutput.CITY,
+				Country:             mkOutput.COUNTRY,
+				DMA:                 "",
+				Directional:         addressParsed.StreetDirection,
+				Lat:                 0,
+				Long:                0,
+				MailRoute:           "",
+				Number:              strconv.Itoa(addressParsed.House),
+				OccupancyIdentifier: addressParsed.SuiteNumber,
+				OccupancyType:       addressParsed.SuiteType,
+				PostType:            "",
+				Postal:              mkOutput.ZIP,
+				State:               mkOutput.STATE,
+				StreetName:          addressParsed.StreetName,
+			}
+			output.Address = append(output.Address, outputAddress)
+		}
+		// TODO: add OutputBackground when the fields are returned by prediction -- Age, DOB, Gender, Race
+		if mkOutput.FNAME != "" || mkOutput.LNAME != "" {
+			outputName := OutputName{
+				First: mkOutput.FNAME,
+				Last:  mkOutput.LNAME,
+				Full:  strings.TrimSpace(mkOutput.FNAME + " " + mkOutput.LNAME),
+				//Middle
+				//Nick
+				//Salutation
+				//Suffix
+			}
+			output.Name = outputName
+		}
+		// TODO: organization?
+
+		outputJSON, _ := json.Marshal(output)
+
+		emit(string(outputJSON))
 	}, messages)
 
 	log.Infof(ctx, "PCollection size is %v", stats.Count(s, records))
-	//preprocessing := beam.ParDo
+
+	pubsubio.Write(s, ProjectID, OutputTopic, records)
+
 }
