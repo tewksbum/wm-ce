@@ -792,7 +792,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		docID := requestID + "-" + strconv.Itoa(row)
 		req := esapi.IndexRequest{
-			Index:        "training",
+			Index:        "streamer",
 			DocumentType: "record",
 			DocumentID:   docID,
 			Body:         bytes.NewReader(outputJSON),
