@@ -82,6 +82,11 @@ type Request struct {
 	ProcessedAt  time.Time
 }
 
+type IDColumn struct {
+	Source   string
+	IDColumn string
+}
+
 // Record is a dynamic map of the profile results
 type Record map[string]interface {
 }
@@ -231,27 +236,29 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 }
 
 type ERR struct {
-	FirstName       int
-	LastName        int
-	MiddleName      int
-	Suffix          int
-	FullName        int
-	Address1        int
-	Address2        int
-	City            int
-	State           int
-	ZipCode         int
-	County          int
-	Country         int
-	Email           int
-	ParentEmail     int
-	Gender          int
-	Phone           int
-	ParentFirstName int
-	ParentLastName  int
-	Birthday        int
-	Age             int
-	ParentName      int
+	Address1        int `json:"Address1"`
+	Address2        int `json:"Address2"`
+	Age             int `json:"Age"`
+	Birthday        int `json:"Birthday"`
+	City            int `json:"City"`
+	Country         int `json:"Country"`
+	County          int `json:"County"`
+	Email           int `json:"Email"`
+	FirstName       int `json:"FirstName"`
+	FullName        int `json:"FullName"`
+	Gender          int `json:"Gender"`
+	LastName        int `json:"LastName"`
+	MiddleName      int `json:"MiddleName"`
+	ParentEmail     int `json:"ParentEmail"`
+	ParentFirstName int `json:"ParentFirstName"`
+	ParentLastName  int `json:"ParentLastName"`
+	ParentName      int `json:"ParentName"`
+	Phone           int `json:"Phone"`
+	State           int `json:"State"`
+	Suffix          int `json:"Suffix"`
+	ZipCode         int `json:"ZipCode"`
+	TrustedID       int `json:"TrustedID"`
+	Title           int `json:"Title"`
 }
 
 type NERcolumns struct {
@@ -506,6 +513,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if strings.Contains(key, "email") {
 			err.Email = 1
 		}
+		if strings.Contains(key, "title") {
+			err.Title = 1
+		}
+
 		errResult[header] = err
 	}
 	errJson, _ := json.Marshal(errResult)
@@ -552,6 +563,29 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	if err := dsNstemplate.Execute(&recordNS, requests[0]); err != nil {
 		return err
+	}
+
+	var IDColumns []IDColumn
+	idQuery := datastore.NewQuery("id-column").Namespace(recordNS.String())
+	query.Filter("Source =", requests[0].Source)
+	var IDColumnList map[string]bool
+	if _, err := dsClient.GetAll(ctx, idQuery, &IDColumns); err != nil {
+		log.Fatalf("Error querying idcolumns: %v", err)
+		return nil
+	}
+	for _, p := range IDColumns {
+		IDColumnList[strings.ToLower(p.IDColumn)] = true
+	}
+
+	for _, header := range headers {
+		var err ERR
+		key := strings.ToLower(header)
+
+		err = errResult[header]
+		if _, ok := IDColumnList[key]; ok {
+			err.TrustedID = 1
+			errResult[header] = err
+		}
 	}
 
 	psclient, err := pubsub.NewClient(ctx, ProjectID)
