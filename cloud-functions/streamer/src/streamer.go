@@ -568,7 +568,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var IDColumns []IDColumn
 	idQuery := datastore.NewQuery("id-column").Namespace(recordNS.String())
 	query.Filter("Source =", requests[0].Source)
-	var IDColumnList map[string]bool
+	IDColumnList := make(map[string]bool)
 	if _, err := dsClient.GetAll(ctx, idQuery, &IDColumns); err != nil {
 		log.Fatalf("Error querying idcolumns: %v", err)
 		return nil
