@@ -808,14 +808,17 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			resB, _ := ioutil.ReadAll(res.Body)
 			log.Printf("[%s] Error indexing document ID=%v, Message=%v", res.Status(), docID, string(resB))
 		} else {
-			// Deserialize the response into a map.
-			var r map[string]interface{}
-			if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
-				log.Printf("Error parsing the response body: %s", err)
-			} else {
-				// Print the response status and indexed document version.
-				log.Printf("[%s] %s; version=%d", res.Status(), r["result"], int(r["_version"].(float64)))
-			}
+			resB, _ := ioutil.ReadAll(res.Body)
+			log.Printf("[%s] document ID=%v, Message=%v", res.Status(), docID, string(resB))
+
+			// // Deserialize the response into a map.
+			// var r map[string]interface{}
+			// if err := json.NewDecoder(res.Body).Decode(&r); err != nil {
+			// 	log.Printf("Error parsing the response body: %s", err)
+			// } else {
+			// 	// Print the response status and indexed document version.
+			// 	log.Printf("[%s] %s; version=%d, response=%v", res.Status(), r["result"], int(r["_version"].(float64)))
+			// }
 		}
 
 	}
