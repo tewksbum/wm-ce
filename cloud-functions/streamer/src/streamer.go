@@ -573,8 +573,11 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("Error querying idcolumns: %v", err)
 		return nil
 	}
-	for _, p := range IDColumns {
-		IDColumnList[strings.ToLower(p.IDColumn)] = true
+	if len(IDColumns) > 0 {
+		for _, p := range IDColumns {
+			IDColumnList[strings.ToLower(p.IDColumn)] = true
+		}
+
 	}
 
 	for _, header := range headers {
