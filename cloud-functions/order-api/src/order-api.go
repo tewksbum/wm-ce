@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func HelloWorld(w http.ResponseWriter, r *http.Request) {
+func SaveOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 	cfg := elasticsearch.Config{
 		Addresses: []string{
