@@ -17,8 +17,9 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
-// LogPubSub logs the pubsub message
-func LogPubSub(ctx context.Context, m PubSubMessage) error {
+// Main is the EDA entrypoint of the function, it flattens the json data from pubsub
+// and inserts the data into bigquery
+func Main(ctx context.Context, m PubSubMessage) error {
 	//logs pubsub message
 	log.Println(string(m.Data))
 
