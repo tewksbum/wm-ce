@@ -6,7 +6,7 @@ steps:
     'deploy','eda-$BRANCH_NAME', 
     '--entry-point', 'Main', 
     '--runtime','go111', 
-    '--trigger-topic', "${TRIGGER_TOPIC}"
+    '--trigger-topic', "${TRIGGER_TOPIC}",
     "--project", "${PROJECT_ID}", 
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
