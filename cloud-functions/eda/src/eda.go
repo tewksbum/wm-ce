@@ -72,7 +72,8 @@ type People360 struct {
 	} `json:"_source"`
 }
 
-type Record struct {
+//PeopleRecord is the database record target
+type PeopleRecord struct {
 	Address1        string
 	Address2        string
 	Age             string
@@ -131,8 +132,8 @@ func setField(v interface{}, name string, value string) error {
 }
 
 //GetRecord gets an People360 structs and extracts the golden record
-func GetRecord(input People360) Record {
-	var output Record
+func GetPeopleRecord(input People360) PeopleRecord {
+	var output PeopleRecord
 	for _, column := range input.Source.Columns {
 		v := reflect.ValueOf(column.ERR)
 		typeOfS := v.Type()
@@ -156,9 +157,9 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	//Flatten json
 	var jsonMessage People360
 	json.Unmarshal(m.Data, &jsonMessage)
-	pubSubRecord := GetRecord(jsonMessage)
+	pubSubPeopleRecord := GetPeopleRecord(jsonMessage)
 	//When we get the Record we should compare it with the same one on the database
-	log.Print(pubSubRecord)
+	log.Print(pubSubPeopleRecord)
 	client, err := bigquery.NewClient(ctx, ProjectID)
 	if err != nil {
 		log.Fatalf("Error connecting to big query: %v", err)
@@ -171,7 +172,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	//Insert flat data into BQ
 	log.Print("Inserting into database")
 	inserter := table.Inserter()
-	if err := inserter.Put(ctx, pubSubRecord); err != nil {
+	if err := inserter.Put(ctx, pubSubPeopleRecord); err != nil {
 		return err
 	}
 	// schema, err := bigquery.InferSchema(Record{})
