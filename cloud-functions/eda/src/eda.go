@@ -131,7 +131,7 @@ func setField(v interface{}, name string, value string) error {
 	return nil
 }
 
-//GetRecord gets an People360 structs and extracts the golden record
+//GetPeopleRecord gets an People360 structs and extracts the golden record
 func GetPeopleRecord(input People360) PeopleRecord {
 	var output PeopleRecord
 	for _, column := range input.Source.Columns {
