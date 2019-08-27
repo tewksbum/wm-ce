@@ -6,11 +6,11 @@ steps:
     'deploy','eda-$BRANCH_NAME', 
     '--entry-point', 'Main', 
     '--runtime','go111', 
-    '--trigger-topic', '$TOPIC',
+    '--trigger-topic', 'people360-output-$BRANCH_NAME',
     '--project', '${PROJECT_ID}',
     '--env-vars-file', '.env.$BRANCH_NAME.yaml',
     '--source','https://source.developers.google.com/projects/$PROJECT_ID/repos/$REPO_NAME/moveable-aliases/$BRANCH_NAME/cloud-functions/eda/src/'
     ]
-    env: ['GOPATH=/gopath','TOPIC=people360-output-$BRANCH_NAME']
+    env: ['GOPATH=/gopath']
     dir: './cloud-functions/eda/src'
 tags: ['$BRANCH_NAME']    
