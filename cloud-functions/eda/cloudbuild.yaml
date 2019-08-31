@@ -1,0 +1,15 @@
+timeout: 9m
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    'deploy','eda-$BRANCH_NAME', 
+    '--entry-point', 'Main', 
+    '--runtime','go111', 
+    '--trigger-topic', 'people360-output-$BRANCH_NAME',
+    '--project', '${PROJECT_ID}',
+    '--env-vars-file', '.env.$BRANCH_NAME.yaml',
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/eda/src'
+tags: ['$BRANCH_NAME']    
