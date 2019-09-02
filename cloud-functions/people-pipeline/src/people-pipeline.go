@@ -1,13 +1,13 @@
-package main
+package peoplepipelinepre
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"hash/fnv"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -17,37 +17,37 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/storage"
-	"github.com/apache/beam/sdks/go/pkg/beam"
-	"github.com/apache/beam/sdks/go/pkg/beam/io/pubsubio"
-	"github.com/apache/beam/sdks/go/pkg/beam/log"
-	"github.com/apache/beam/sdks/go/pkg/beam/x/beamx"
-	"github.com/daidokoro/beam/sdks/go/pkg/beam/x/debug"
+
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
-	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
+
+// PubSubMessage is the payload of a pubsub event
+type PubSubMessage struct {
+	Data []byte `json:"data"`
+}
 
 var PubsubTopic = "streamer-output-dev"
 var OutputTopic = "pipeline-output-dev"
 var ProjectID = "wemade-core"
 var BucketData = "wemade-ai-platform"
 
-var PredictionURL = "https://ml.googleapis.com/v1/projects/wemade-core/models/column_prediction_model:predict"
+type Prediction struct {
+	Predictions []float64 `json:"predictions"`
+}
 
-var listLabels map[string]string
-var listCities map[string]bool
-var listStates map[string]bool
-var listCountries map[string]bool
-var listFirstNames map[string]bool
-var listLastNames map[string]bool
-
-var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
-var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
-var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
-var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
-var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
-
-var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
+type IdentifiedRecord struct {
+	FNAME   string `json:"fname"`
+	LNAME   string `json:"lname"`
+	CITY    string `json:"city"`
+	STATE   string `json:"statte"`
+	ZIP     string `json:"zip"`
+	COUNTRY string `json:"counttry"`
+	EMAIL   string `json:"email"`
+	PHONE   string `json:"phone"`
+	AD1     string `json:"ad1"`
+	AD2     string `json:"ad2"`
+}
 
 type InputRecord struct {
 	Columns []struct {
@@ -107,21 +107,8 @@ type InputRecord struct {
 	TimeStamp string `json:"TimeStamp"`
 }
 
-type Prediction struct {
-	Predictions []float64 `json:"predictions"`
-}
-
-type IdentifiedRecord struct {
-	FNAME   string `json:"fname"`
-	LNAME   string `json:"lname"`
-	CITY    string `json:"city"`
-	STATE   string `json:"statte"`
-	ZIP     string `json:"zip"`
-	COUNTRY string `json:"counttry"`
-	EMAIL   string `json:"email"`
-	PHONE   string `json:"phone"`
-	AD1     string `json:"ad1"`
-	AD2     string `json:"ad2"`
+type MLInput struct {
+	Instances [][]float64 `json:"instances"`
 }
 
 type OutputAddress struct {
@@ -209,6 +196,30 @@ type Address struct {
 	SuiteType       string
 	SuiteNumber     string
 }
+
+var listLabels map[string]string
+var listCities map[string]bool
+var listStates map[string]bool
+var listCountries map[string]bool
+var listFirstNames map[string]bool
+var listLastNames map[string]bool
+
+var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
+var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
+var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
+var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
+
+var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
+
+var PredictionURL = "https://ml.googleapis.com/v1/projects/wemade-core/models/column_prediction_model:predict"
+
+var httpClient *http.Client
+
+const (
+	MaxIdleConnections int = 20
+	RequestTimeout     int = 5
+)
 
 var StreetTypeAbbreviations map[string]string = map[string]string{
 	"alley": "aly",
@@ -986,217 +997,6 @@ var NumberRequired []string = []string{
 	"cr",
 }
 
-var httpClient *http.Client
-
-const (
-	MaxIdleConnections int = 20
-	RequestTimeout     int = 5
-)
-
-func init() {
-	httpClient = createHTTPClient()
-}
-
-// createHTTPClient for connection re-use
-func createHTTPClient() *http.Client {
-	client := &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConnsPerHost: MaxIdleConnections,
-		},
-		Timeout: time.Duration(RequestTimeout) * time.Second,
-	}
-
-	return client
-}
-
-func readLines(ctx context.Context, client *storage.Client, bucket, object string) ([]string, error) {
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	return strings.Split(string(data), "\n"), nil
-}
-
-func readJsonArray(ctx context.Context, client *storage.Client, bucket, object string) (map[string]bool, error) {
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	var intermediate []string
-	json.Unmarshal(data, &intermediate)
-
-	result := make(map[string]bool)
-	for _, s := range intermediate {
-		result[s] = true
-	}
-	return result, nil
-}
-
-func readJsonMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]string, error) {
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
-
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	var result map[string]string
-	json.Unmarshal(data, &result)
-
-	return result, nil
-}
-
-func getHash(s string) uint32 {
-	h := fnv.New32a()
-	h.Write([]byte(s))
-	return h.Sum32()
-}
-
-func isMn(r rune) bool {
-	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
-}
-
-func removeDiacritics(value string) string {
-	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
-	result, _, _ := transform.String(t, value)
-	return result
-}
-
-func contains(dict map[string]bool, key string) uint32 {
-	if _, ok := dict[key]; ok {
-		return 1
-	}
-	return 0
-}
-
-func toUInt32(val bool) uint32 {
-	if val {
-		return 1
-	}
-	return 0
-}
-
-func toZeroIfNotInMap(dict map[string]int, key string) float64 {
-	if _, ok := dict[key]; ok {
-		return float64(dict[key])
-	}
-	return 0
-}
-
-func getFeatures(value string) []uint32 {
-	var val = strings.TrimSpace(value)
-	val = removeDiacritics(val)
-	var result []uint32
-	result[0] = getHash(val)
-	result[1] = contains(listFirstNames, val)
-	result[2] = contains(listLastNames, val)
-	result[3] = toUInt32(reStreet1.MatchString(val))
-	result[4] = toUInt32(reStreet2.MatchString(val))
-	result[5] = contains(listCities, val)
-	result[6] = contains(listStates, val)
-	result[7] = toUInt32(reZipcode.MatchString(val))
-	result[8] = contains(listCountries, val)
-	result[9] = toUInt32(reEmail.MatchString(val))
-	result[10] = toUInt32(rePhone.MatchString(val))
-	return result
-}
-
-func main() {
-	ctx := context.Background()
-
-	// If beamx or Go flags are used, flags must be parsed first.
-	flag.Parse()
-
-	//read the lists
-	sClient, err := storage.NewClient(ctx)
-	listLabels, err := readJsonMap(ctx, sClient, BucketData, "data/labels.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/labels.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listLabels), "data/labels.json")
-	}
-
-	listCities, err := readJsonArray(ctx, sClient, BucketData, "data/cities.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/cities.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listCities), "data/cities.json")
-	}
-
-	listStates, err := readJsonArray(ctx, sClient, BucketData, "data/states.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/states.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listStates), "data/states.json")
-	}
-
-	listCountries, err := readJsonArray(ctx, sClient, BucketData, "data/countries.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/countries.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listCountries), "data/countries.json")
-	}
-
-	listFirstNames, err := readJsonArray(ctx, sClient, BucketData, "data/first_names.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/first_names.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listFirstNames), "data/first_names.json")
-	}
-
-	listLastNames, err := readJsonArray(ctx, sClient, BucketData, "data/last_names.json")
-	if err != nil {
-		log.Fatalf(ctx, "Failed to read json %v from bucket", "data/last_names.json")
-	} else {
-		log.Infof(ctx, "read %v values from %v", len(listLastNames), "data/last_names.json")
-	}
-
-	// beam.Init() is an initialization hook that must called on startup. On
-	// distributed runners, it is used to intercept control.
-	log.Infof(ctx, "Starting pipeline")
-
-	log.Infof(ctx, "input project %v pubsub topic %v", ProjectID, PubsubTopic)
-	log.Infof(ctx, "output project %v pubsub topic %v", ProjectID, OutputTopic)
-	beam.Init()
-
-	p := beam.NewPipeline()
-	s := p.Root()
-
-	buildPipeline(ctx, s)
-
-	if err := beamx.Run(ctx, p); err != nil {
-		log.Fatalf(ctx, "Failed to execute job: %v", err)
-	}
-}
-
-func getMkField(v *IdentifiedRecord, field string) string {
-	r := reflect.ValueOf(v)
-	f := reflect.Indirect(r).FieldByName(field)
-	return f.String()
-}
-
-func setMkField(v *IdentifiedRecord, field string, value string) string {
-	r := reflect.ValueOf(v)
-	f := reflect.Indirect(r).FieldByName(field)
-	f.SetString(value)
-	return value
-}
-
 func (a *Address) finalizeStreetAddress(s *[]string) {
 	if len(*s) <= 0 {
 		return
@@ -1527,197 +1327,363 @@ func normalizeStreetAddress(s string) (a Address, err error) {
 	return a, nil
 }
 
-func buildPipeline(ctx context.Context, s beam.Scope) {
-	// nothing -> PCollection<Painting>
-	pubsubOptions := pubsubio.ReadOptions{WithAttributes: true}
-	//pubsubOptions := pubsubio.ReadOptions{}
-	messages := pubsubio.Read(s, ProjectID, PubsubTopic, &pubsubOptions)
+// createHTTPClient for connection re-use
+func createHTTPClient() *http.Client {
+	client := &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: MaxIdleConnections,
+		},
+		Timeout: time.Duration(RequestTimeout) * time.Second,
+	}
 
-	// process each record
-	records := beam.ParDo(s, func(message *pb.PubsubMessage, emit func(string)) {
-		var input InputRecord
-		err := json.Unmarshal(message.Data, &input)
-		if err != nil {
-			log.Warnf(ctx, "error decoding json, %v", string(message.Data))
+	return client
+}
+
+func getFeatures(value string) []uint32 {
+	var val = strings.TrimSpace(value)
+	val = removeDiacritics(val)
+	result := make([]uint32, 11)
+	result = append(result, getHash(val))
+	result = append(result, contains(listFirstNames, val))
+	result = append(result, contains(listLastNames, val))
+	result = append(result, toUInt32(reStreet1.MatchString(val)))
+	result = append(result, toUInt32(reStreet2.MatchString(val)))
+	result = append(result, contains(listCities, val))
+	result = append(result, contains(listStates, val))
+	result = append(result, toUInt32(reZipcode.MatchString(val)))
+	result = append(result, contains(listCountries, val))
+	result = append(result, toUInt32(reEmail.MatchString(val)))
+	result = append(result, toUInt32(rePhone.MatchString(val)))
+	return result
+}
+
+func readLines(ctx context.Context, client *storage.Client, bucket, object string) ([]string, error) {
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	return strings.Split(string(data), "\n"), nil
+}
+
+func readJsonArray(ctx context.Context, client *storage.Client, bucket, object string) (map[string]bool, error) {
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	var intermediate []string
+	json.Unmarshal(data, &intermediate)
+
+	result := make(map[string]bool)
+	for _, s := range intermediate {
+		result[s] = true
+	}
+	return result, nil
+}
+
+func readJsonMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]string, error) {
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]string
+	json.Unmarshal(data, &result)
+
+	return result, nil
+}
+
+func getHash(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
+}
+
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
+}
+func removeDiacritics(value string) string {
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+	result, _, _ := transform.String(t, value)
+	return result
+}
+
+func contains(dict map[string]bool, key string) uint32 {
+	if _, ok := dict[key]; ok {
+		return 1
+	}
+	return 0
+}
+
+func toUInt32(val bool) uint32 {
+	if val {
+		return 1
+	}
+	return 0
+}
+
+func getMkField(v *IdentifiedRecord, field string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.String()
+}
+
+func setMkField(v *IdentifiedRecord, field string, value string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.SetString(value)
+	return value
+}
+
+func Main(ctx context.Context, m PubSubMessage) error {
+	log.Println(string(m.Data))
+	var input InputRecord
+	if err := json.Unmarshal(m.Data, &input); err != nil {
+		log.Fatal(err)
+	}
+
+	sClient, err := storage.NewClient(ctx)
+	listLabels, err := readJsonMap(ctx, sClient, BucketData, "data/labels.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/labels.json")
+	} else {
+		log.Printf("read %v values from %v", len(listLabels), "data/labels.json")
+	}
+
+	listCities, err := readJsonArray(ctx, sClient, BucketData, "data/cities.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
+	} else {
+		log.Printf("read %v values from %v", len(listCities), "data/cities.json")
+	}
+
+	listStates, err := readJsonArray(ctx, sClient, BucketData, "data/states.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/states.json")
+	} else {
+		log.Printf("read %v values from %v", len(listStates), "data/states.json")
+	}
+
+	listCountries, err := readJsonArray(ctx, sClient, BucketData, "data/countries.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
+	} else {
+		log.Printf("read %v values from %v", len(listCountries), "data/countries.json")
+	}
+
+	listFirstNames, err := readJsonArray(ctx, sClient, BucketData, "data/first_names.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
+	} else {
+		log.Printf("read %v values from %v", len(listFirstNames), "data/first_names.json")
+	}
+
+	listLastNames, err := readJsonArray(ctx, sClient, BucketData, "data/last_names.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
+	} else {
+		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
+	}
+
+	var instances [][]float64
+	for _, column := range input.Columns {
+		var instance []float64
+		instance = append(instance, float64(column.ERR.FirstName))
+		instance = append(instance, float64(column.ERR.LastName))
+		instance = append(instance, float64(column.ERR.MiddleName))
+		instance = append(instance, float64(column.ERR.Suffix))
+		instance = append(instance, float64(column.ERR.FullName))
+		instance = append(instance, float64(column.ERR.Address1))
+		instance = append(instance, float64(column.ERR.Address2))
+		instance = append(instance, float64(column.ERR.City))
+		instance = append(instance, float64(column.ERR.State))
+		instance = append(instance, float64(column.ERR.ZipCode))
+		instance = append(instance, float64(column.ERR.County))
+		instance = append(instance, float64(column.ERR.Country))
+		instance = append(instance, float64(column.ERR.Email))
+		instance = append(instance, float64(column.ERR.ParentEmail))
+		instance = append(instance, float64(column.ERR.Gender))
+		instance = append(instance, float64(column.ERR.Phone))
+		instance = append(instance, float64(column.ERR.ParentFirstName))
+		instance = append(instance, float64(column.ERR.ParentLastName))
+		instance = append(instance, float64(column.ERR.Birthday))
+		instance = append(instance, float64(column.ERR.Age))
+		instance = append(instance, float64(column.ERR.ParentName))
+		instance = append(instance, float64(column.NER.PERSON))
+		instance = append(instance, float64(column.NER.NORP))
+		instance = append(instance, float64(column.NER.FAC))
+		instance = append(instance, float64(column.NER.ORG))
+		instance = append(instance, float64(column.NER.GPE))
+		instance = append(instance, float64(column.NER.LOC))
+		instance = append(instance, float64(column.NER.PRODUCT))
+		instance = append(instance, float64(column.NER.EVENT))
+		instance = append(instance, float64(column.NER.WORKOFART))
+		instance = append(instance, float64(column.NER.LAW))
+		instance = append(instance, float64(column.NER.LANGUAGE))
+		instance = append(instance, float64(column.NER.DATE))
+		instance = append(instance, float64(column.NER.TIME))
+		instance = append(instance, float64(column.NER.PERCENT))
+		instance = append(instance, float64(column.NER.MONEY))
+		instance = append(instance, float64(column.NER.QUANTITY))
+		instance = append(instance, float64(column.NER.ORDINAL))
+		instance = append(instance, float64(column.NER.CARDINAL))
+
+		features := getFeatures(column.Value)
+		for _, feature := range features {
+			instance = append(instance, float64(feature))
 		}
-		log.Infof(ctx, "input message %v", string(message.Data))
-		var instances [][]float64
-		for _, column := range input.Columns {
-			var instance []float64
-			instance = append(instance, float64(column.ERR.FirstName))
-			instance = append(instance, float64(column.ERR.LastName))
-			instance = append(instance, float64(column.ERR.MiddleName))
-			instance = append(instance, float64(column.ERR.Suffix))
-			instance = append(instance, float64(column.ERR.FullName))
-			instance = append(instance, float64(column.ERR.Address1))
-			instance = append(instance, float64(column.ERR.Address2))
-			instance = append(instance, float64(column.ERR.City))
-			instance = append(instance, float64(column.ERR.State))
-			instance = append(instance, float64(column.ERR.ZipCode))
-			instance = append(instance, float64(column.ERR.County))
-			instance = append(instance, float64(column.ERR.Country))
-			instance = append(instance, float64(column.ERR.Email))
-			instance = append(instance, float64(column.ERR.ParentEmail))
-			instance = append(instance, float64(column.ERR.Gender))
-			instance = append(instance, float64(column.ERR.Phone))
-			instance = append(instance, float64(column.ERR.ParentFirstName))
-			instance = append(instance, float64(column.ERR.ParentLastName))
-			instance = append(instance, float64(column.ERR.Birthday))
-			instance = append(instance, float64(column.ERR.Age))
-			instance = append(instance, float64(column.ERR.ParentName))
-			instance = append(instance, float64(column.NER.PERSON))
-			instance = append(instance, float64(column.NER.NORP))
-			instance = append(instance, float64(column.NER.FAC))
-			instance = append(instance, float64(column.NER.ORG))
-			instance = append(instance, float64(column.NER.GPE))
-			instance = append(instance, float64(column.NER.LOC))
-			instance = append(instance, float64(column.NER.PRODUCT))
-			instance = append(instance, float64(column.NER.EVENT))
-			instance = append(instance, float64(column.NER.WORKOFART))
-			instance = append(instance, float64(column.NER.LAW))
-			instance = append(instance, float64(column.NER.LANGUAGE))
-			instance = append(instance, float64(column.NER.DATE))
-			instance = append(instance, float64(column.NER.TIME))
-			instance = append(instance, float64(column.NER.PERCENT))
-			instance = append(instance, float64(column.NER.MONEY))
-			instance = append(instance, float64(column.NER.QUANTITY))
-			instance = append(instance, float64(column.NER.ORDINAL))
-			instance = append(instance, float64(column.NER.CARDINAL))
+		instances = append(instances, instance)
+	}
+	var mlInput MLInput
+	mlInput.Instances = instances
 
-			features := getFeatures(column.Value)
-			for _, feature := range features {
-				instance = append(instance, float64(feature))
+	reqJSON, _ := json.Marshal(mlInput)
+	log.Printf("ML request %v", string(reqJSON))
+
+	req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
+	if err != nil {
+		log.Fatalf("Error Occured. %+v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer ya29.c.Elp3B7wgFCbzYWgvHfDTopT61URQpQW3Jd1AQCrSn8ovLQo9x5LaMc3My9_iaE2dJcSClZD4sg4gUATKpXTtolFo_z4oRH3kvkJZhWVuxxwf42swCgzKmOpKk0s")
+
+	httpClient = createHTTPClient()
+
+	response, err := httpClient.Do(req)
+	if err != nil && response == nil {
+		log.Fatalf("Error sending request to API endpoint. %+v", err)
+	}
+	// Close the connection to reuse it
+	defer response.Body.Close()
+
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		log.Fatalf("Couldn't parse response body. %+v", err)
+	}
+	log.Printf("Prediction returned %v", string(body))
+	// we now have the prediction
+	var prediction Prediction
+	err = json.Unmarshal(body, &prediction)
+	if err != nil {
+		log.Fatalf("error decoding json, %v", body)
+	}
+	if len(prediction.Predictions) < 7 {
+		log.Fatalf("unexpected prediction returned, %v", body)
+		return nil
+	}
+	// assignn columns and build MK output
+	var mkOutput IdentifiedRecord
+	var trustedID string
+	for index, column := range input.Columns {
+		predictionValue := prediction.Predictions[index]
+		predictionKey := strconv.Itoa(int(predictionValue))
+		matchKey := listLabels[predictionKey]
+		column.MatchKey = matchKey
+		if matchKey != "" {
+			// if it does not already have a value
+			if getMkField(&mkOutput, matchKey) != "" {
+				setMkField(&mkOutput, matchKey, column.Value)
 			}
-			instances = append(instances, instance)
 		}
-		reqJSON, _ := json.Marshal(instances)
-		req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
-		if err != nil {
-			log.Fatalf(ctx, "Error Occured. %+v", err)
+		if column.ERR.TrustedID == 1 {
+			trustedID = column.Value
 		}
-		req.Header.Set("Content-Type", "application/json")
+	}
+	mkJSON, _ := json.Marshal(mkOutput)
+	log.Printf("MatchKey Columns %v", string(mkJSON))
 
-		response, err := httpClient.Do(req)
-		if err != nil && response == nil {
-			log.Fatalf(ctx, "Error sending request to API endpoint. %+v", err)
+	// assemble output
+	output := new(OutputRecord)
+	if trustedID != "" {
+		outputTrustedId := OutputTrustedID{
+			Source:   input.Source,
+			SourceID: trustedID,
 		}
-		// Close the connection to reuse it
-		defer response.Body.Close()
-
-		body, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Fatalf(ctx, "Couldn't parse response body. %+v", err)
+		output.TrustedID = append(output.TrustedID, outputTrustedId)
+	}
+	if mkOutput.EMAIL != "" && strings.Contains(mkOutput.EMAIL, "@") {
+		emailComponents := strings.Split(mkOutput.EMAIL, "@")
+		outputEmail := OutputEmail{
+			Address:   mkOutput.EMAIL,
+			Domain:    emailComponents[1],
+			Confirmed: false,
+			Type:      "private",
 		}
-		log.Infof(ctx, "Prediction returned %v", body)
-		// we now have the prediction
-		var prediction Prediction
-		err = json.Unmarshal(body, &prediction)
-		if err != nil {
-			log.Warnf(ctx, "error decoding json, %v", body)
-		}
-
-		// assignn columns and build MK output
-		var mkOutput IdentifiedRecord
-		var trustedID string
-		for index, column := range input.Columns {
-			predictionValue := prediction.Predictions[index]
-			predictionKey := strconv.Itoa(int(predictionValue))
-			matchKey := listLabels[predictionKey]
-			column.MatchKey = matchKey
-			if matchKey != "" {
-				// if it does not already have a value
-				if getMkField(&mkOutput, matchKey) != "" {
-					setMkField(&mkOutput, matchKey, column.Value)
-				}
-			}
-			if column.ERR.TrustedID == 1 {
-				trustedID = column.Value
-			}
-		}
-		mkJSON, _ := json.Marshal(mkOutput)
-		log.Infof(ctx, "MatchKey Columns %v", string(mkJSON))
-
-		// assemble output
-		output := new(OutputRecord)
-		if trustedID != "" {
-			outputTrustedId := OutputTrustedID{
-				Source:   input.Source,
-				SourceID: trustedID,
-			}
-			output.TrustedID = append(output.TrustedID, outputTrustedId)
-		}
-		if mkOutput.EMAIL != "" && strings.Contains(mkOutput.EMAIL, "@") {
-			emailComponents := strings.Split(mkOutput.EMAIL, "@")
-			outputEmail := OutputEmail{
-				Address:   mkOutput.EMAIL,
-				Domain:    emailComponents[1],
+		output.Email = append(output.Email, outputEmail)
+	}
+	if mkOutput.PHONE != "" {
+		mkOutput.PHONE = reCleanupDigitsOnly.ReplaceAllString(mkOutput.PHONE, "")
+		if len(mkOutput.PHONE) > 10 {
+			outputPhone := OutputPhone{
+				Area:      mkOutput.PHONE[0:3],
+				Exchange:  mkOutput.PHONE[3:6],
+				Station:   mkOutput.PHONE[6:10],
 				Confirmed: false,
-				Type:      "private",
+				Country:   "1",
+				Type:      "Unknown",
+				Provider:  "Unknown",
 			}
-			output.Email = append(output.Email, outputEmail)
+			output.Phone = append(output.Phone, outputPhone)
 		}
-		if mkOutput.PHONE != "" {
-			mkOutput.PHONE = reCleanupDigitsOnly.ReplaceAllString(mkOutput.PHONE, "")
-			if len(mkOutput.PHONE) > 10 {
-				outputPhone := OutputPhone{
-					Area:      mkOutput.PHONE[0:3],
-					Exchange:  mkOutput.PHONE[3:6],
-					Station:   mkOutput.PHONE[6:10],
-					Confirmed: false,
-					Country:   "1",
-					Type:      "Unknown",
-					Provider:  "Unknown",
-				}
-				output.Phone = append(output.Phone, outputPhone)
-			}
+	}
+	if mkOutput.AD1 != "" {
+		addressInput := mkOutput.AD1 + " " + mkOutput.AD2
+		addressParsed, _ := normalizeStreetAddress(addressInput)
+		outputAddress := OutputAddress{
+			Add1:                mkOutput.AD1,
+			Add2:                mkOutput.AD2,
+			City:                mkOutput.CITY,
+			Country:             mkOutput.COUNTRY,
+			DMA:                 "",
+			Directional:         addressParsed.StreetDirection,
+			Lat:                 0,
+			Long:                0,
+			MailRoute:           "",
+			Number:              strconv.Itoa(addressParsed.House),
+			OccupancyIdentifier: addressParsed.SuiteNumber,
+			OccupancyType:       addressParsed.SuiteType,
+			PostType:            "",
+			Postal:              mkOutput.ZIP,
+			State:               mkOutput.STATE,
+			StreetName:          addressParsed.StreetName,
 		}
-		if mkOutput.AD1 != "" {
-			addressInput := mkOutput.AD1 + " " + mkOutput.AD2
-			addressParsed, _ := normalizeStreetAddress(addressInput)
-			outputAddress := OutputAddress{
-				Add1:                mkOutput.AD1,
-				Add2:                mkOutput.AD2,
-				City:                mkOutput.CITY,
-				Country:             mkOutput.COUNTRY,
-				DMA:                 "",
-				Directional:         addressParsed.StreetDirection,
-				Lat:                 0,
-				Long:                0,
-				MailRoute:           "",
-				Number:              strconv.Itoa(addressParsed.House),
-				OccupancyIdentifier: addressParsed.SuiteNumber,
-				OccupancyType:       addressParsed.SuiteType,
-				PostType:            "",
-				Postal:              mkOutput.ZIP,
-				State:               mkOutput.STATE,
-				StreetName:          addressParsed.StreetName,
-			}
-			output.Address = append(output.Address, outputAddress)
+		output.Address = append(output.Address, outputAddress)
+	}
+	// TODO: add OutputBackground when the fields are returned by prediction -- Age, DOB, Gender, Race
+	if mkOutput.FNAME != "" || mkOutput.LNAME != "" {
+		outputName := OutputName{
+			First: mkOutput.FNAME,
+			Last:  mkOutput.LNAME,
+			Full:  strings.TrimSpace(mkOutput.FNAME + " " + mkOutput.LNAME),
+			//Middle
+			//Nick
+			//Salutation
+			//Suffix
 		}
-		// TODO: add OutputBackground when the fields are returned by prediction -- Age, DOB, Gender, Race
-		if mkOutput.FNAME != "" || mkOutput.LNAME != "" {
-			outputName := OutputName{
-				First: mkOutput.FNAME,
-				Last:  mkOutput.LNAME,
-				Full:  strings.TrimSpace(mkOutput.FNAME + " " + mkOutput.LNAME),
-				//Middle
-				//Nick
-				//Salutation
-				//Suffix
-			}
-			output.Name = outputName
-		}
-		// TODO: organization?
+		output.Name = outputName
+	}
+	// TODO: organization?
 
-		outputJSON, _ := json.Marshal(output)
+	outputJSON, _ := json.Marshal(output)
 
-		log.Infof(ctx, "output message %v", string(outputJSON))
-		emit(string(outputJSON))
-	}, messages)
+	log.Printf("output message %v", string(outputJSON))
 
-	debug.Print(s, records)
-	//log.Infof(ctx, "PCollection size is %v", stats.Count(s, records))
-
-	//pubsubio.Write(s, ProjectID, OutputTopic, records)
+	return nil
 
 }
