@@ -258,6 +258,7 @@ type ERR struct {
 	ZipCode         int `json:"ZipCode"`
 	TrustedID       int `json:"TrustedID"`
 	Title           int `json:"Title"`
+	Role            int `json:"Role"`
 }
 
 type NERcolumns struct {
@@ -456,15 +457,15 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.MiddleName = 1
 		case "suffix", "jr., iii, etc.":
 			err.Suffix = 1
-		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1":
+		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1":
 			err.Address1 = 1
-		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2":
+		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
 			err.Address2 = 1
-		case "city", "city ":
+		case "city", "city ", "street city":
 			err.City = 1
-		case "state", "st", "state ", "state_province", "st ", "state province":
+		case "state", "st", "state ", "state_province", "st ", "state province", "street state":
 			err.State = 1
-		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode":
+		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
 			err.ZipCode = 1
 		case "citystzip", "city/st/zip ":
 			err.City = 1
@@ -514,6 +515,18 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
 			err.Title = 1
+		}
+		if strings.Contains(key, "address") {
+			err.Address1 = 1
+		}
+		if strings.Contains(key, "city") {
+			err.City = 1
+		}
+		if strings.Contains(key, "state") {
+			err.State = 1
+		}
+		if strings.Contains(key, "zip") {
+			err.ZipCode = 1
 		}
 
 		errResult[header] = err
