@@ -1,4 +1,3 @@
-// Package streamer contains a series of cloud functions for streamer
 package streamer
 
 import (
@@ -513,7 +512,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if strings.Contains(key, "email") {
 			err.Email = 1
 		}
-		if strings.Contains(key, "title") {
+		if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
 			err.Title = 1
 		}
 
