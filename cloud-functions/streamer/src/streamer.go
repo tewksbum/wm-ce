@@ -528,6 +528,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if strings.Contains(key, "zip") {
 			err.ZipCode = 1
 		}
+		if strings.Contains(key, "phone") {
+			err.Phone = 1
+		}
 
 		errResult[header] = err
 	}
