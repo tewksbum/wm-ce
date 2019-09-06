@@ -783,7 +783,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	for row, d := range records {
 		output := Output{}
 		output.Owner = requests[0].CustomerID
-		output.Request = requests[0].RequestID
+		output.Request = requestID
 		output.Source = requests[0].Source
 		output.Row = row
 		output.TimeStamp = requests[0].SubmittedAt.String()
