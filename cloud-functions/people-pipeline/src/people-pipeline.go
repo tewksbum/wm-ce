@@ -40,71 +40,85 @@ type IdentifiedRecord struct {
 	FNAME   string `json:"fname"`
 	LNAME   string `json:"lname"`
 	CITY    string `json:"city"`
-	STATE   string `json:"statte"`
+	STATE   string `json:"state"`
 	ZIP     string `json:"zip"`
-	COUNTRY string `json:"counttry"`
+	COUNTRY string `json:"country"`
 	EMAIL   string `json:"email"`
 	PHONE   string `json:"phone"`
 	AD1     string `json:"ad1"`
 	AD2     string `json:"ad2"`
 }
 
+type InputColumn struct {
+	ERR struct {
+		Address1        int `json:"Address1"`
+		Address2        int `json:"Address2"`
+		Age             int `json:"Age"`
+		Birthday        int `json:"Birthday"`
+		City            int `json:"City"`
+		Country         int `json:"Country"`
+		County          int `json:"County"`
+		Email           int `json:"Email"`
+		FirstName       int `json:"FirstName"`
+		FullName        int `json:"FullName"`
+		Gender          int `json:"Gender"`
+		LastName        int `json:"LastName"`
+		MiddleName      int `json:"MiddleName"`
+		ParentEmail     int `json:"ParentEmail"`
+		ParentFirstName int `json:"ParentFirstName"`
+		ParentLastName  int `json:"ParentLastName"`
+		ParentName      int `json:"ParentName"`
+		Phone           int `json:"Phone"`
+		State           int `json:"State"`
+		Suffix          int `json:"Suffix"`
+		ZipCode         int `json:"ZipCode"`
+		TrustedID       int `json:"TrustedID"`
+		Title           int `json:"Title"`
+		Role            int `json:"Role"`
+	} `json:"ERR"`
+	NER struct {
+		FAC       float64 `json:"FAC"`
+		GPE       float64 `json:"GPE"`
+		LOC       float64 `json:"LOC"`
+		NORP      float64 `json:"NORP"`
+		ORG       float64 `json:"ORG"`
+		PERSON    float64 `json:"PERSON"`
+		PRODUCT   float64 `json:"PRODUCT"`
+		EVENT     float64 `json:"EVENT"`
+		WORKOFART float64 `json:"WORK_OF_ART"`
+		LAW       float64 `json:"LAW"`
+		LANGUAGE  float64 `json:"LANGUAGE"`
+		DATE      float64 `json:"DATE"`
+		TIME      float64 `json:"TIME"`
+		PERCENT   float64 `json:"PERCENT"`
+		MONEY     float64 `json:"MONEY"`
+		QUANTITY  float64 `json:"QUANTITY"`
+		ORDINAL   float64 `json:"ORDINAL"`
+		CARDINAL  float64 `json:"CARDINAL"`
+	} `json:"NER"`
+	VER struct {
+		IS_FIRSTNAME bool `json:"isFIRSTNAME"`
+		IS_LASTNAME  bool `json:"isLASTNAME"`
+		IS_STREET1   bool `json:"isSTREET1"`
+		IS_STREET2   bool `json:"isSTREET2"`
+		IS_CITY      bool `json:"isCITY"`
+		IS_STATE     bool `json:"isSTATE"`
+		IS_ZIPCODE   bool `json:"isZIPCODE"`
+		IS_COUNTRY   bool `json:"isCOUNTRY"`
+		IS_EMAIL     bool `json:"isEMAIL"`
+		IS_PHONE     bool `json:"isPHONE"`
+	} `json:"VER"`
+	Name     string `json:"Name"`
+	Value    string `json:"Value"`
+	MatchKey string `json:"MK"`
+}
 type InputRecord struct {
-	Columns []struct {
-		ERR struct {
-			Address1        int `json:"Address1"`
-			Address2        int `json:"Address2"`
-			Age             int `json:"Age"`
-			Birthday        int `json:"Birthday"`
-			City            int `json:"City"`
-			Country         int `json:"Country"`
-			County          int `json:"County"`
-			Email           int `json:"Email"`
-			FirstName       int `json:"FirstName"`
-			FullName        int `json:"FullName"`
-			Gender          int `json:"Gender"`
-			LastName        int `json:"LastName"`
-			MiddleName      int `json:"MiddleName"`
-			ParentEmail     int `json:"ParentEmail"`
-			ParentFirstName int `json:"ParentFirstName"`
-			ParentLastName  int `json:"ParentLastName"`
-			ParentName      int `json:"ParentName"`
-			Phone           int `json:"Phone"`
-			State           int `json:"State"`
-			Suffix          int `json:"Suffix"`
-			ZipCode         int `json:"ZipCode"`
-			TrustedID       int `json:"TrustedID"`
-			Title           int `json:"Title"`
-		} `json:"ERR"`
-		NER struct {
-			FAC       float64 `json:"FAC"`
-			GPE       float64 `json:"GPE"`
-			LOC       float64 `json:"LOC"`
-			NORP      float64 `json:"NORP"`
-			ORG       float64 `json:"ORG"`
-			PERSON    float64 `json:"PERSON"`
-			PRODUCT   float64 `json:"PRODUCT"`
-			EVENT     float64 `json:"EVENT"`
-			WORKOFART float64 `json:"WORK_OF_ART"`
-			LAW       float64 `json:"LAW"`
-			LANGUAGE  float64 `json:"LANGUAGE"`
-			DATE      float64 `json:"DATE"`
-			TIME      float64 `json:"TIME"`
-			PERCENT   float64 `json:"PERCENT"`
-			MONEY     float64 `json:"MONEY"`
-			QUANTITY  float64 `json:"QUANTITY"`
-			ORDINAL   float64 `json:"ORDINAL"`
-			CARDINAL  float64 `json:"CARDINAL"`
-		} `json:"NER"`
-		Name     string `json:"Name"`
-		Value    string `json:"Value"`
-		MatchKey string `json:"MK"`
-	} `json:"Columns"`
-	Owner     int    `json:"Owner"`
-	Request   string `json:"Request"`
-	Row       int    `json:"Row"`
-	Source    string `json:"Source"`
-	TimeStamp string `json:"TimeStamp"`
+	Columns   []InputColumn `json:"Columns"`
+	Owner     int           `json:"Owner"`
+	Request   string        `json:"Request"`
+	Row       int           `json:"Row"`
+	Source    string        `json:"Source"`
+	TimeStamp string        `json:"TimeStamp"`
 }
 
 type MLInput struct {
@@ -171,6 +185,7 @@ type OutputPhone struct {
 	Provider  string `json:"Provider"`
 	Station   string `json:"Station"`
 	Type      string `json:"Type"`
+	Number    string `json:"Number"`
 }
 
 type OutputTrustedID struct {
@@ -209,6 +224,8 @@ var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?
 var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
 var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
+var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reNumberOnly = regexp.MustCompile("[^0-9]+")
 
 var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -1339,21 +1356,31 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-func getFeatures(value string) []uint32 {
-	var val = strings.TrimSpace(value)
+func getFeatures(column *InputColumn) []uint32 {
+	var val = strings.TrimSpace(column.Value)
 	val = removeDiacritics(val)
-	result := make([]uint32, 11)
+	var result []uint32
 	result = append(result, getHash(val))
-	result = append(result, contains(listFirstNames, val))
-	result = append(result, contains(listLastNames, val))
-	result = append(result, toUInt32(reStreet1.MatchString(val)))
-	result = append(result, toUInt32(reStreet2.MatchString(val)))
-	result = append(result, contains(listCities, val))
-	result = append(result, contains(listStates, val))
-	result = append(result, toUInt32(reZipcode.MatchString(val)))
-	result = append(result, contains(listCountries, val))
-	result = append(result, toUInt32(reEmail.MatchString(val)))
-	result = append(result, toUInt32(rePhone.MatchString(val)))
+	column.VER.IS_FIRSTNAME = containsBool(listFirstNames, val)
+	result = append(result, toUInt32(column.VER.IS_FIRSTNAME))
+	column.VER.IS_LASTNAME = containsBool(listLastNames, val)
+	result = append(result, toUInt32(column.VER.IS_LASTNAME))
+	column.VER.IS_STREET1 = reStreet1.MatchString(val)
+	result = append(result, toUInt32(column.VER.IS_STREET1))
+	column.VER.IS_STREET2 = reStreet2.MatchString(val)
+	result = append(result, toUInt32(column.VER.IS_STREET2))
+	column.VER.IS_CITY = containsBool(listCities, val)
+	result = append(result, toUInt32(column.VER.IS_CITY))
+	column.VER.IS_STATE = containsBool(listStates, val)
+	result = append(result, toUInt32(column.VER.IS_STATE))
+	column.VER.IS_ZIPCODE = reZipcode.MatchString(val)
+	result = append(result, toUInt32(column.VER.IS_ZIPCODE))
+	column.VER.IS_COUNTRY = containsBool(listCountries, val)
+	result = append(result, toUInt32(column.VER.IS_COUNTRY))
+	column.VER.IS_EMAIL = reEmail.MatchString(val)
+	result = append(result, toUInt32(column.VER.IS_EMAIL))
+	column.VER.IS_PHONE = rePhone.MatchString(val) && len(val) >= 10
+	result = append(result, toUInt32(column.VER.IS_PHONE))
 	return result
 }
 
@@ -1431,6 +1458,13 @@ func contains(dict map[string]bool, key string) uint32 {
 	return 0
 }
 
+func containsBool(dict map[string]bool, key string) bool {
+	if _, ok := dict[key]; ok {
+		return true
+	}
+	return false
+}
+
 func toUInt32(val bool) uint32 {
 	if val {
 		return 1
@@ -1459,11 +1493,18 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	}
 
 	sClient, err := storage.NewClient(ctx)
-	listLabels, err := readJsonMap(ctx, sClient, BucketData, "data/labels.json")
-	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/labels.json")
-	} else {
-		log.Printf("read %v values from %v", len(listLabels), "data/labels.json")
+	listLabels := map[string]string{
+		"0":  "",
+		"1":  "AD1",
+		"2":  "AD2",
+		"3":  "CITY",
+		"4":  "COUNTRY",
+		"5":  "EMAIL",
+		"6":  "FNAME",
+		"7":  "LNAME",
+		"8":  "PHONE",
+		"9":  "STATE",
+		"10": "ZIP",
 	}
 
 	listCities, err := readJsonArray(ctx, sClient, BucketData, "data/cities.json")
@@ -1543,8 +1584,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		instance = append(instance, float64(column.NER.QUANTITY))
 		instance = append(instance, float64(column.NER.ORDINAL))
 		instance = append(instance, float64(column.NER.CARDINAL))
-
-		features := getFeatures(column.Value)
+		features := getFeatures(&column)
 		for _, feature := range features {
 			instance = append(instance, float64(feature))
 		}
@@ -1561,7 +1601,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error Occured. %+v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer ya29.c.Elp3B7wgFCbzYWgvHfDTopT61URQpQW3Jd1AQCrSn8ovLQo9x5LaMc3My9_iaE2dJcSClZD4sg4gUATKpXTtolFo_z4oRH3kvkJZhWVuxxwf42swCgzKmOpKk0s")
+	req.Header.Add("Authorization", "Bearer ya29.c.Elp6B5mpcM8XpvsURMun6u9mu-FuL2ayfZJo94DI9RfHFXJkjyVlbVnUQ6s6Y74jwsg2GQ2cXR2qqZRKZJYoFIpCn-gfncTxT2sGTQm-NIEoeYmyfVO6m0L2xes")
 
 	httpClient = createHTTPClient()
 
@@ -1587,24 +1627,73 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("unexpected prediction returned, %v", body)
 		return nil
 	}
+
+	log.Printf("MatchKey Labels %v", listLabels)
 	// assignn columns and build MK output
 	var mkOutput IdentifiedRecord
 	var trustedID string
+	var ClassYear string
 	for index, column := range input.Columns {
 		predictionValue := prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
 		matchKey := listLabels[predictionKey]
+		// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 		column.MatchKey = matchKey
 		if matchKey != "" {
 			// if it does not already have a value
-			if getMkField(&mkOutput, matchKey) != "" {
+			if getMkField(&mkOutput, matchKey) == "" {
 				setMkField(&mkOutput, matchKey, column.Value)
 			}
 		}
 		if column.ERR.TrustedID == 1 {
 			trustedID = column.Value
 		}
+		if matchKey == "" && column.ERR.Title == 1 && len(column.Value) > 0 {
+			if reGraduationYear.MatchString(column.Value) {
+				ClassYear = column.Value
+			} else {
+				switch strings.ToLower(column.Value) {
+				case "freshman", "frosh", "fresh":
+					ClassYear = strconv.Itoa(time.Now().Year() + 4)
+				case "sophomore", "soph":
+					ClassYear = strconv.Itoa(time.Now().Year() + 3)
+				case "junior", "jr":
+					ClassYear = strconv.Itoa(time.Now().Year() + 2)
+				case "senior", "sr":
+					ClassYear = strconv.Itoa(time.Now().Year() + 1)
+				default:
+					ClassYear = strconv.Itoa(time.Now().Year() + 4)
+				}
+			}
+		}
 	}
+
+	// model cleanup
+	for _, column := range input.Columns {
+		if len(column.MatchKey) == 0 {
+			if column.VER.IS_FIRSTNAME && len(mkOutput.FNAME) == 0 && column.ERR.Address1 == 0 && column.ERR.City == 0 {
+				mkOutput.FNAME = column.Value
+			} else if column.VER.IS_LASTNAME && len(mkOutput.LNAME) == 0 && column.ERR.Address1 == 0 && column.ERR.City == 0 {
+				mkOutput.LNAME = column.Value
+			} else if column.VER.IS_CITY && len(mkOutput.CITY) == 0 && column.ERR.FirstName == 0 && column.ERR.LastName == 0 {
+				mkOutput.CITY = column.Value
+			} else if column.VER.IS_STATE && len(mkOutput.STATE) == 0 {
+				mkOutput.STATE = column.Value
+			} else if column.VER.IS_ZIPCODE && len(mkOutput.ZIP) == 0 {
+				mkOutput.ZIP = column.Value
+			} else if column.VER.IS_STREET1 && len(mkOutput.AD1) == 0 && column.ERR.FirstName == 0 && column.ERR.LastName == 0 {
+				mkOutput.CITY = column.Value
+			} else if column.VER.IS_EMAIL && len(mkOutput.EMAIL) == 0 && column.ERR.Role == 0 {
+				mkOutput.EMAIL = column.Value
+			} else if column.VER.IS_PHONE && len(mkOutput.PHONE) == 0 && column.ERR.Role == 0 && len(column.Value) >= 10 {
+				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
+				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
+					mkOutput.PHONE = column.Value
+				}
+			}
+		}
+	}
+
 	mkJSON, _ := json.Marshal(mkOutput)
 	log.Printf("MatchKey Columns %v", string(mkJSON))
 
@@ -1617,6 +1706,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		}
 		output.TrustedID = append(output.TrustedID, outputTrustedId)
 	}
+
 	if mkOutput.EMAIL != "" && strings.Contains(mkOutput.EMAIL, "@") {
 		emailComponents := strings.Split(mkOutput.EMAIL, "@")
 		outputEmail := OutputEmail{
@@ -1638,6 +1728,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				Country:   "1",
 				Type:      "Unknown",
 				Provider:  "Unknown",
+				Number:    mkOutput.PHONE,
 			}
 			output.Phone = append(output.Phone, outputPhone)
 		}
@@ -1679,6 +1770,9 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Name = outputName
 	}
 	// TODO: organization?
+	output.Organization = append(output.Organization, OutputOrganization{
+		Title: ClassYear,
+	})
 
 	outputJSON, _ := json.Marshal(output)
 

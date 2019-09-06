@@ -532,6 +532,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.Phone = 1
 		}
 
+		if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") {
+			err.Role = 1
+		}
+
 		errResult[header] = err
 	}
 	errJson, _ := json.Marshal(errResult)
@@ -700,6 +704,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	log.Print("Starting with heuristics")
 	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(headers, records)
+
 	for i, col := range headers {
 		if contains(headers, col) {
 			colStats[col] = getColumnStats(csvMap[col])
