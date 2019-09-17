@@ -1,7 +1,6 @@
 package peoplepipelinepre
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,10 +15,11 @@ import (
 	"time"
 	"unicode"
 
+	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
-
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
+	"google.golang.org/api/ml/v1"
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -49,72 +49,78 @@ type IdentifiedRecord struct {
 	AD2     string `json:"ad2"`
 }
 
+type InputERR struct {
+	Address1        int `json:"Address1"`
+	Address2        int `json:"Address2"`
+	Age             int `json:"Age"`
+	Birthday        int `json:"Birthday"`
+	City            int `json:"City"`
+	Country         int `json:"Country"`
+	County          int `json:"County"`
+	Email           int `json:"Email"`
+	FirstName       int `json:"FirstName"`
+	FullName        int `json:"FullName"`
+	Gender          int `json:"Gender"`
+	LastName        int `json:"LastName"`
+	MiddleName      int `json:"MiddleName"`
+	ParentEmail     int `json:"ParentEmail"`
+	ParentFirstName int `json:"ParentFirstName"`
+	ParentLastName  int `json:"ParentLastName"`
+	ParentName      int `json:"ParentName"`
+	Phone           int `json:"Phone"`
+	State           int `json:"State"`
+	Suffix          int `json:"Suffix"`
+	ZipCode         int `json:"ZipCode"`
+	TrustedID       int `json:"TrustedID"`
+	Title           int `json:"Title"`
+	Role            int `json:"Role"`
+}
+type InputNER struct {
+	FAC       float64 `json:"FAC"`
+	GPE       float64 `json:"GPE"`
+	LOC       float64 `json:"LOC"`
+	NORP      float64 `json:"NORP"`
+	ORG       float64 `json:"ORG"`
+	PERSON    float64 `json:"PERSON"`
+	PRODUCT   float64 `json:"PRODUCT"`
+	EVENT     float64 `json:"EVENT"`
+	WORKOFART float64 `json:"WORK_OF_ART"`
+	LAW       float64 `json:"LAW"`
+	LANGUAGE  float64 `json:"LANGUAGE"`
+	DATE      float64 `json:"DATE"`
+	TIME      float64 `json:"TIME"`
+	PERCENT   float64 `json:"PERCENT"`
+	MONEY     float64 `json:"MONEY"`
+	QUANTITY  float64 `json:"QUANTITY"`
+	ORDINAL   float64 `json:"ORDINAL"`
+	CARDINAL  float64 `json:"CARDINAL"`
+}
+
+type InputVER struct {
+	HASHCODE     int64
+	IS_FIRSTNAME bool `json:"isFIRSTNAME"`
+	IS_LASTNAME  bool `json:"isLASTNAME"`
+	IS_STREET1   bool `json:"isSTREET1"`
+	IS_STREET2   bool `json:"isSTREET2"`
+	IS_CITY      bool `json:"isCITY"`
+	IS_STATE     bool `json:"isSTATE"`
+	IS_ZIPCODE   bool `json:"isZIPCODE"`
+	IS_COUNTRY   bool `json:"isCOUNTRY"`
+	IS_EMAIL     bool `json:"isEMAIL"`
+	IS_PHONE     bool `json:"isPHONE"`
+}
+
 type InputColumn struct {
-	ERR struct {
-		Address1        int `json:"Address1"`
-		Address2        int `json:"Address2"`
-		Age             int `json:"Age"`
-		Birthday        int `json:"Birthday"`
-		City            int `json:"City"`
-		Country         int `json:"Country"`
-		County          int `json:"County"`
-		Email           int `json:"Email"`
-		FirstName       int `json:"FirstName"`
-		FullName        int `json:"FullName"`
-		Gender          int `json:"Gender"`
-		LastName        int `json:"LastName"`
-		MiddleName      int `json:"MiddleName"`
-		ParentEmail     int `json:"ParentEmail"`
-		ParentFirstName int `json:"ParentFirstName"`
-		ParentLastName  int `json:"ParentLastName"`
-		ParentName      int `json:"ParentName"`
-		Phone           int `json:"Phone"`
-		State           int `json:"State"`
-		Suffix          int `json:"Suffix"`
-		ZipCode         int `json:"ZipCode"`
-		TrustedID       int `json:"TrustedID"`
-		Title           int `json:"Title"`
-		Role            int `json:"Role"`
-	} `json:"ERR"`
-	NER struct {
-		FAC       float64 `json:"FAC"`
-		GPE       float64 `json:"GPE"`
-		LOC       float64 `json:"LOC"`
-		NORP      float64 `json:"NORP"`
-		ORG       float64 `json:"ORG"`
-		PERSON    float64 `json:"PERSON"`
-		PRODUCT   float64 `json:"PRODUCT"`
-		EVENT     float64 `json:"EVENT"`
-		WORKOFART float64 `json:"WORK_OF_ART"`
-		LAW       float64 `json:"LAW"`
-		LANGUAGE  float64 `json:"LANGUAGE"`
-		DATE      float64 `json:"DATE"`
-		TIME      float64 `json:"TIME"`
-		PERCENT   float64 `json:"PERCENT"`
-		MONEY     float64 `json:"MONEY"`
-		QUANTITY  float64 `json:"QUANTITY"`
-		ORDINAL   float64 `json:"ORDINAL"`
-		CARDINAL  float64 `json:"CARDINAL"`
-	} `json:"NER"`
-	VER struct {
-		IS_FIRSTNAME bool `json:"isFIRSTNAME"`
-		IS_LASTNAME  bool `json:"isLASTNAME"`
-		IS_STREET1   bool `json:"isSTREET1"`
-		IS_STREET2   bool `json:"isSTREET2"`
-		IS_CITY      bool `json:"isCITY"`
-		IS_STATE     bool `json:"isSTATE"`
-		IS_ZIPCODE   bool `json:"isZIPCODE"`
-		IS_COUNTRY   bool `json:"isCOUNTRY"`
-		IS_EMAIL     bool `json:"isEMAIL"`
-		IS_PHONE     bool `json:"isPHONE"`
-	} `json:"VER"`
-	Name     string `json:"Name"`
-	Value    string `json:"Value"`
-	MatchKey string `json:"MK"`
+	ERR      InputERR `json:"ERR"`
+	NER      InputNER `json:"NER"`
+	VER      InputVER `json:"VER"`
+	Name     string   `json:"Name"`
+	Value    string   `json:"Value"`
+	MatchKey string   `json:"MK"`
 }
 type InputRecord struct {
 	Columns   []InputColumn `json:"Columns"`
-	Owner     int           `json:"Owner"`
+	Owner     int64         `json:"Owner"`
 	Request   string        `json:"Request"`
 	Row       int           `json:"Row"`
 	Source    string        `json:"Source"`
@@ -201,6 +207,11 @@ type OutputRecord struct {
 	Organization []OutputOrganization `json:"Organization"`
 	Phone        []OutputPhone        `json:"Phone"`
 	TrustedID    []OutputTrustedID    `json:"TrustedId"`
+	Owner        int64                `json:"Owner"`
+	Source       string               `json:"Source"`
+	Request      string               `json:"Request"`
+	Row          int                  `json:"Row"`
+	TimeStamp    string               `json:"TimeStamp"`
 }
 
 type Address struct {
@@ -218,6 +229,7 @@ var listStates map[string]bool
 var listCountries map[string]bool
 var listFirstNames map[string]bool
 var listLastNames map[string]bool
+var listError error
 
 var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
@@ -226,6 +238,8 @@ var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
+var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
+var reNewline = regexp.MustCompile(`\r?\n`)
 
 var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -1358,6 +1372,7 @@ func createHTTPClient() *http.Client {
 
 func getFeatures(column *InputColumn) []uint32 {
 	var val = strings.TrimSpace(column.Value)
+	log.Printf("features values is %v", val)
 	val = removeDiacritics(val)
 	var result []uint32
 	result = append(result, getHash(val))
@@ -1381,6 +1396,31 @@ func getFeatures(column *InputColumn) []uint32 {
 	result = append(result, toUInt32(column.VER.IS_EMAIL))
 	column.VER.IS_PHONE = rePhone.MatchString(val) && len(val) >= 10
 	result = append(result, toUInt32(column.VER.IS_PHONE))
+
+	columnJ, _ := json.Marshal(column.VER)
+	log.Printf("current VER %v", string(columnJ))
+	return result
+}
+
+func getVER(column *InputColumn) InputVER {
+	var val = strings.TrimSpace(column.Value)
+	log.Printf("features values is %v", val)
+	val = removeDiacritics(val)
+	result := InputVER{
+		HASHCODE:     int64(getHash(val)),
+		IS_FIRSTNAME: containsBool(listFirstNames, val),
+		IS_LASTNAME:  containsBool(listLastNames, val),
+		IS_STREET1:   reStreet1.MatchString(val),
+		IS_STREET2:   reStreet2.MatchString(val),
+		IS_CITY:      containsBool(listCities, val),
+		IS_STATE:     containsBool(listStates, val),
+		IS_ZIPCODE:   reZipcode.MatchString(val),
+		IS_COUNTRY:   containsBool(listCountries, val),
+		IS_EMAIL:     reEmail.MatchString(val),
+		IS_PHONE:     rePhone.MatchString(val) && len(val) >= 10,
+	}
+	columnJ, _ := json.Marshal(result)
+	log.Printf("current VER %v", string(columnJ))
 	return result
 }
 
@@ -1452,14 +1492,14 @@ func removeDiacritics(value string) string {
 }
 
 func contains(dict map[string]bool, key string) uint32 {
-	if _, ok := dict[key]; ok {
+	if _, ok := dict[strings.ToUpper(key)]; ok {
 		return 1
 	}
 	return 0
 }
 
 func containsBool(dict map[string]bool, key string) bool {
-	if _, ok := dict[key]; ok {
+	if _, ok := dict[strings.ToUpper(key)]; ok {
 		return true
 	}
 	return false
@@ -1485,15 +1525,10 @@ func setMkField(v *IdentifiedRecord, field string, value string) string {
 	return value
 }
 
-func Main(ctx context.Context, m PubSubMessage) error {
-	log.Println(string(m.Data))
-	var input InputRecord
-	if err := json.Unmarshal(m.Data, &input); err != nil {
-		log.Fatal(err)
-	}
-
+func init() {
+	ctx := context.Background()
 	sClient, err := storage.NewClient(ctx)
-	listLabels := map[string]string{
+	listLabels = map[string]string{
 		"0":  "",
 		"1":  "AD1",
 		"2":  "AD2",
@@ -1507,44 +1542,63 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		"10": "ZIP",
 	}
 
-	listCities, err := readJsonArray(ctx, sClient, BucketData, "data/cities.json")
+	listCities, err = readJsonArray(ctx, sClient, BucketData, "data/cities.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCities), "data/cities.json")
 	}
 
-	listStates, err := readJsonArray(ctx, sClient, BucketData, "data/states.json")
+	listStates, err = readJsonArray(ctx, sClient, BucketData, "data/states.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/states.json")
 	} else {
 		log.Printf("read %v values from %v", len(listStates), "data/states.json")
 	}
 
-	listCountries, err := readJsonArray(ctx, sClient, BucketData, "data/countries.json")
+	listCountries, err = readJsonArray(ctx, sClient, BucketData, "data/countries.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCountries), "data/countries.json")
 	}
 
-	listFirstNames, err := readJsonArray(ctx, sClient, BucketData, "data/first_names.json")
+	listFirstNames, err = readJsonArray(ctx, sClient, BucketData, "data/first_names.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listFirstNames), "data/first_names.json")
 	}
 
-	listLastNames, err := readJsonArray(ctx, sClient, BucketData, "data/last_names.json")
+	listLastNames, err = readJsonArray(ctx, sClient, BucketData, "data/last_names.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
 	}
+}
 
-	var instances [][]float64
+func Main(ctx context.Context, m PubSubMessage) error {
+	log.Println(string(m.Data))
+	var input InputRecord
+	if err := json.Unmarshal(m.Data, &input); err != nil {
+		log.Fatal(err)
+	}
+
+	var Columns []InputColumn
 	for _, column := range input.Columns {
+		column.VER = getVER(&column)
+		newColumn := column
+		Columns = append(Columns, newColumn)
+	}
+
+	for _, column := range Columns {
+		log.Printf("assigned VER %v", column.VER)
+	}
+	var instances [][]float64
+	for _, column := range Columns {
 		var instance []float64
+		log.Printf("column VER is %v", column.VER)
 		instance = append(instance, float64(column.ERR.FirstName))
 		instance = append(instance, float64(column.ERR.LastName))
 		instance = append(instance, float64(column.ERR.MiddleName))
@@ -1584,10 +1638,18 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		instance = append(instance, float64(column.NER.QUANTITY))
 		instance = append(instance, float64(column.NER.ORDINAL))
 		instance = append(instance, float64(column.NER.CARDINAL))
-		features := getFeatures(&column)
-		for _, feature := range features {
-			instance = append(instance, float64(feature))
-		}
+		instance = append(instance, float64(column.VER.HASHCODE))
+		instance = append(instance, float64(toUInt32(column.VER.IS_FIRSTNAME)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_LASTNAME)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_STREET1)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_STREET2)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_CITY)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_STATE)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_ZIPCODE)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_COUNTRY)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_EMAIL)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_PHONE)))
+
 		instances = append(instances, instance)
 	}
 	var mlInput MLInput
@@ -1595,45 +1657,74 @@ func Main(ctx context.Context, m PubSubMessage) error {
 
 	reqJSON, _ := json.Marshal(mlInput)
 	log.Printf("ML request %v", string(reqJSON))
+	reqBody := &ml.GoogleApi__HttpBody{
+		Data: string(reqJSON),
+	}
+	req := ml.GoogleCloudMlV1__PredictRequest{
+		HttpBody: reqBody,
+	}
+	req.HttpBody.ContentType = "application/json"
+	mlService, _ := ml.NewService(ctx)
 
-	req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
+	mlPredict := mlService.Projects.Predict(PredictionURL, &req)
+	r, err := mlPredict.Context(ctx).Do()
 	if err != nil {
-		log.Fatalf("Error Occured. %+v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer ya29.c.Elp6B5mpcM8XpvsURMun6u9mu-FuL2ayfZJo94DI9RfHFXJkjyVlbVnUQ6s6Y74jwsg2GQ2cXR2qqZRKZJYoFIpCn-gfncTxT2sGTQm-NIEoeYmyfVO6m0L2xes")
-
-	httpClient = createHTTPClient()
-
-	response, err := httpClient.Do(req)
-	if err != nil && response == nil {
-		log.Fatalf("Error sending request to API endpoint. %+v", err)
-	}
-	// Close the connection to reuse it
-	defer response.Body.Close()
-
-	body, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		log.Fatalf("Couldn't parse response body. %+v", err)
-	}
-	log.Printf("Prediction returned %v", string(body))
-	// we now have the prediction
-	var prediction Prediction
-	err = json.Unmarshal(body, &prediction)
-	if err != nil {
-		log.Fatalf("error decoding json, %v", body)
-	}
-	if len(prediction.Predictions) < 7 {
-		log.Fatalf("unexpected prediction returned, %v", body)
+		log.Fatalf("error calling mlService, %v", err)
 		return nil
 	}
+
+	var prediction Prediction
+
+	log.Printf("%#v", r.Data)
+
+	if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
+		if _, ok := err.(*json.SyntaxError); ok {
+			log.Fatalf("error decoding json, %v", string(r.Data))
+		}
+	}
+
+	if len(prediction.Predictions) == 0 {
+		log.Fatalf("unexpected prediction returned, %v", string(r.Data))
+		return nil
+	}
+	// req, err := http.NewRequest("POST", PredictionURL, bytes.NewBuffer(reqJSON))
+	// if err != nil {
+	// 	log.Fatalf("Error Occured. %+v", err)
+	// }
+	// req.Header.Set("Content-Type", "application/json")
+	// req.Header.Add("Authorization", "Bearer ya29.c.Elp7BwwZSCPn-V5bme0nNNinoACJnm9rRjEio7RryfrEKoSO9D-r6pzr11u8vG1TPC_2BYKWUVjA7ZrtT_wNmkhpq7skGBRdqs6u7wylmwqXoprpoYeNR7a0Fzs")
+
+	// httpClient = createHTTPClient()
+
+	// response, err := httpClient.Do(req)
+	// if err != nil && response == nil {
+	// 	log.Fatalf("Error sending request to API endpoint. %+v", err)
+	// }
+	// // Close the connection to reuse it
+	// defer response.Body.Close()
+
+	// body, err := ioutil.ReadAll(response.Body)
+	// if err != nil {
+	// 	log.Fatalf("Couldn't parse response body. %+v", err)
+	// }
+	// log.Printf("Prediction returned %v", string(body))
+	// we now have the prediction
+	// var prediction Prediction
+	// err = json.Unmarshal(body, &prediction)
+	// if err != nil {
+	// 	log.Fatalf("error decoding json, %v", body)
+	// }
+	// if len(prediction.Predictions) < 2 {
+	// 	log.Fatalf("unexpected prediction returned, %v", body)
+	// 	return nil
+	// }
 
 	log.Printf("MatchKey Labels %v", listLabels)
 	// assignn columns and build MK output
 	var mkOutput IdentifiedRecord
 	var trustedID string
 	var ClassYear string
-	for index, column := range input.Columns {
+	for index, column := range Columns {
 		predictionValue := prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
 		matchKey := listLabels[predictionKey]
@@ -1668,8 +1759,18 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	if len(ClassYear) == 0 {
+		ClassYear = strconv.Itoa(time.Now().Year() + 4)
+	}
+
+	columnJSON, _ := json.Marshal(input.Columns)
+	log.Printf("Processed Columns %v", string(columnJSON))
+
+	mkJSON, _ := json.Marshal(mkOutput)
+	log.Printf("MatchKey Columns with Prediction Only %v", string(mkJSON))
 	// model cleanup
-	for _, column := range input.Columns {
+	for _, column := range Columns {
+		log.Printf("Column name %v value %v MatchKey %v VER %v ERR %v", column.Name, column.Value, column.MatchKey, column.VER, column.ERR)
 		if len(column.MatchKey) == 0 {
 			if column.VER.IS_FIRSTNAME && len(mkOutput.FNAME) == 0 && column.ERR.Address1 == 0 && column.ERR.City == 0 {
 				mkOutput.FNAME = column.Value
@@ -1682,7 +1783,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			} else if column.VER.IS_ZIPCODE && len(mkOutput.ZIP) == 0 {
 				mkOutput.ZIP = column.Value
 			} else if column.VER.IS_STREET1 && len(mkOutput.AD1) == 0 && column.ERR.FirstName == 0 && column.ERR.LastName == 0 {
-				mkOutput.CITY = column.Value
+				mkOutput.AD1 = column.Value
 			} else if column.VER.IS_EMAIL && len(mkOutput.EMAIL) == 0 && column.ERR.Role == 0 {
 				mkOutput.EMAIL = column.Value
 			} else if column.VER.IS_PHONE && len(mkOutput.PHONE) == 0 && column.ERR.Role == 0 && len(column.Value) >= 10 {
@@ -1694,8 +1795,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
-	mkJSON, _ := json.Marshal(mkOutput)
-	log.Printf("MatchKey Columns %v", string(mkJSON))
+	mkJSON, _ = json.Marshal(mkOutput)
+	log.Printf("MatchKey Columns after Clean up %v", string(mkJSON))
 
 	// assemble output
 	output := new(OutputRecord)
@@ -1736,6 +1837,28 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	if mkOutput.AD1 != "" {
 		addressInput := mkOutput.AD1 + " " + mkOutput.AD2
 		addressParsed, _ := normalizeStreetAddress(addressInput)
+
+		if len(mkOutput.CITY) == 0 && len(mkOutput.STATE) == 0 && len(mkOutput.ZIP) == 0 {
+			addressInputCleansed := reNewline.ReplaceAllString(addressInput, ", ")
+			log.Printf("cleansed record %v", addressInputCleansed)
+			match := reConcatenatedAddress.FindStringSubmatch(addressInputCleansed)
+			log.Printf("matches %v %v", len(match), match)
+			for i, m := range match {
+				log.Printf("matches %v %v", i, m)
+			}
+
+			if len(match) == 5 {
+				mkOutput.CITY = match[2]
+				mkOutput.STATE = match[3]
+				mkOutput.ZIP = match[4]
+			}
+			var splits = strings.Split(addressInput, "\n")
+			if len(splits) > 1 {
+				mkOutput.AD1 = splits[0]
+				addressParsed, _ = normalizeStreetAddress(mkOutput.AD1)
+			}
+		}
+
 		outputAddress := OutputAddress{
 			Add1:                mkOutput.AD1,
 			Add2:                mkOutput.AD2,
@@ -1774,10 +1897,32 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		Title: ClassYear,
 	})
 
+	output.Owner = input.Owner
+	output.Request = input.Request
+	output.Source = input.Source
+	output.Row = input.Row
+	output.TimeStamp = input.TimeStamp
+
 	outputJSON, _ := json.Marshal(output)
 
 	log.Printf("output message %v", string(outputJSON))
 
-	return nil
+	psclient, err := pubsub.NewClient(ctx, ProjectID)
+	if err != nil {
+		log.Fatalf("Could not create pubsub Client: %v", err)
+		return nil
+	}
+	pstopic := psclient.Topic(OutputTopic)
+	psresult := pstopic.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
+	psid, err := psresult.Get(ctx)
+	_, err = psresult.Get(ctx)
+	if err != nil {
+		log.Fatalf("Could not pub to pubsub: %v", err)
+	} else {
+		log.Printf("pubbed record message id %v", psid)
+	}
 
+	return nil
 }
