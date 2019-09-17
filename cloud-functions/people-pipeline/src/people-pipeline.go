@@ -243,7 +243,8 @@ var reNewline = regexp.MustCompile(`\r?\n`)
 
 var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
-var PredictionURL = "https://ml.googleapis.com/v1/projects/wemade-core/models/column_prediction_model:predict"
+//var PredictionURL = "https://ml.googleapis.com/v1/projects/wemade-core/models/column_prediction_model:predict"
+var PredictionURL = "projects/wemade-core/models/column_prediction_model"
 
 var httpClient *http.Client
 
