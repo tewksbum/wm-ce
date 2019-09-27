@@ -532,7 +532,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.Phone = 1
 		}
 
-		if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") {
+		if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") {
 			err.Role = 1
 		}
 
