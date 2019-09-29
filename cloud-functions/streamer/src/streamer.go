@@ -501,10 +501,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.FirstName = 1
 			err.LastName = 1
 		}
-		if strings.Contains(key, "first") {
+		if strings.Contains(key, "first") || strings.Contains(key, "fname") {
 			err.FirstName = 1
 		}
-		if strings.Contains(key, "last") {
+		if strings.Contains(key, "last") || strings.Contains(key, "lname") {
 			err.LastName = 1
 		}
 		if strings.Contains(key, "country") {
