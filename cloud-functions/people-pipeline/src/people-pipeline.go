@@ -1956,6 +1956,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			emails = append(emails, column.Value)
 		}
 	}
+	log.Printf("MPR fname count %v, lname count %v, email count %v", mkFirstNameCount, mkLastNameCount, mkEmailCount)
+
 	if mkFirstNameCount > 1 {
 		// we have more than 1 person in the record, let's make some sets
 		for index, fname := range fnames {
