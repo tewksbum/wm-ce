@@ -49,6 +49,13 @@ type IdentifiedRecord struct {
 	AD2     string `json:"ad2"`
 }
 
+type MultiPersonRecord struct {
+	FNAME    string
+	LNAME    string
+	FULLNAME string
+	EMAIL    string
+}
+
 type InputERR struct {
 	Address1        int `json:"Address1"`
 	Address2        int `json:"Address2"`
@@ -118,6 +125,7 @@ type InputColumn struct {
 	Value    string   `json:"Value"`
 	MatchKey string   `json:"MK"`
 }
+
 type InputRecord struct {
 	Columns   []InputColumn `json:"Columns"`
 	Owner     int64         `json:"Owner"`
@@ -1924,6 +1932,89 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Could not pub to pubsub: %v", err)
 	} else {
 		log.Printf("pubbed record message id %v", psid)
+	}
+
+	// multi-person split
+	var parents []MultiPersonRecord
+	var fnames []string
+	var lnames []string
+	var emails []string
+	var mkFirstNameCount int
+	var mkLastNameCount int
+	var mkEmailCount int
+	for _, column := range Columns {
+		if column.MatchKey == "FNAME" {
+			mkFirstNameCount++
+			fnames = append(fnames, column.Value)
+		}
+		if column.MatchKey == "LNAME" {
+			mkLastNameCount++
+			lnames = append(lnames, column.Value)
+		}
+		if column.MatchKey == "EMAIL" {
+			mkEmailCount++
+			emails = append(emails, column.Value)
+		}
+	}
+	if mkFirstNameCount > 1 {
+		// we have more than 1 person in the record, let's make some sets
+		for index, fname := range fnames {
+			if index > 0 {
+				parent := MultiPersonRecord{
+					FNAME: fname,
+				}
+				if len(lnames) > index+1 {
+					parent.LNAME = lnames[index]
+				}
+				if len(emails) > index+1 {
+					parent.EMAIL = emails[index]
+				}
+				parents = append(parents, parent)
+			}
+		}
+	}
+	if len(parents) > 0 {
+		for _, parent := range parents {
+			outputName := OutputName{
+				First: parent.FNAME,
+				Last:  parent.LNAME,
+				Full:  strings.TrimSpace(parent.FNAME + " " + parent.LNAME),
+			}
+			output.Name = outputName
+
+			var emails []OutputEmail
+			if len(parent.EMAIL) > 0 {
+				emailComponents := strings.Split(parent.EMAIL, "@")
+				outputEmail := OutputEmail{
+					Address:   parent.EMAIL,
+					Confirmed: false,
+					Type:      "private",
+				}
+				if len(emailComponents) > 1 {
+					outputEmail.Domain = emailComponents[1]
+				}
+
+				emails = append(emails, outputEmail)
+			}
+			output.Email = emails
+
+			// okay let's publish these
+			parentJSON, _ := json.Marshal(output)
+
+			log.Printf("output message %v", string(parentJSON))
+
+			psresult := pstopic.Publish(ctx, &pubsub.Message{
+				Data: parentJSON,
+			})
+			psid, err := psresult.Get(ctx)
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("Could not pub to pubsub: %v", err)
+			} else {
+				log.Printf("pubbed record message id %v", psid)
+			}
+
+		}
 	}
 
 	return nil
