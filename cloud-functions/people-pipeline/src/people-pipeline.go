@@ -1767,6 +1767,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+		Columns[index] = column
 	}
 
 	if len(ClassYear) == 0 {
