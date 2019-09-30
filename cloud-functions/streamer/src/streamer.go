@@ -437,7 +437,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		// headers = csvHeader
 		// records = csvRecords
 	}
-
+	log.Printf("found %v rows in file", len(allrows))
 	// now scan through records
 	var maxColumns int
 	var maxColumnRowAt int
@@ -449,7 +449,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 	}
 
-	log.Printf("detected full record starting at row index %v", maxColumnRowAt)
+	log.Printf("detected full record starting at row index %v with %v columns", maxColumnRowAt, maxColumns)
 	headers = allrows[maxColumnRowAt]
 	records = allrows[maxColumnRowAt+1:]
 
