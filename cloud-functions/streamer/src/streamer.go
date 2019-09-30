@@ -438,6 +438,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		// records = csvRecords
 	}
 	log.Printf("found %v rows in file", len(allrows))
+	log.Printf("first 10 rows %v", allrows[0:9])
 	// now scan through records
 	var maxColumns int
 	var maxColumnRowAt int
