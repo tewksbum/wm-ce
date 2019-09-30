@@ -350,6 +350,16 @@ func getNERentry(structResponse NERresponse) NERentry {
 	return nerEntry
 }
 
+func CountSparseArray(inputArray []string) int {
+	var counter int
+	for _, c := range inputArray {
+		if len(c) > 0 {
+			counter++
+		}
+	}
+	return counter
+}
+
 // FileStreamer is the main function
 func FileStreamer(ctx context.Context, e GCSEvent) error {
 	if err := profiler.Start(profiler.Config{
@@ -443,7 +453,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	var maxColumns int
 	var maxColumnRowAt int
 	for index, row := range allrows {
-		cellCount := len(row)
+		cellCount := CountSparseArray(row)
 		if cellCount > maxColumns {
 			maxColumnRowAt = index
 			maxColumns = cellCount
