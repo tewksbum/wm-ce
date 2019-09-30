@@ -21,14 +21,12 @@ import (
 	"cloud.google.com/go/profiler"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
-	"contrib.go.opencensus.io/exporter/stackdriver"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
 	"github.com/jfyne/csvd"
 	"github.com/tealeg/xlsx"
-	"go.opencensus.io/trace"
 )
 
 // ProjectID is the GCP Project ID
@@ -362,12 +360,6 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	log.Printf("GS triggerred on file named %v created on %v\n", e.Name, e.TimeCreated)
 
-	exporter, err := stackdriver.NewExporter(stackdriver.Options{})
-	if err != nil {
-		log.Fatalf("Failed to start tracer client: %v", err)
-	}
-	trace.RegisterExporter(exporter)
-
 	sbclient, err := storage.NewClient(ctx)
 	if err != nil {
 		log.Fatalf("failed to create storage client: %v", err)
@@ -388,8 +380,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return nil
 	}
 
-	contentType := http.DetectContentType(slurp)
-	log.Printf("http detected file type as %v", contentType)
+	// contentType := http.DetectContentType(slurp)
+	// log.Printf("http detected file type as %v", contentType)
 
 	fileKind, _ := filetype.Match(slurp)
 	if fileKind == filetype.Unknown {
@@ -405,6 +397,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	var headers []string
 	var records [][]string
+	var allrows [][]string
 
 	// assume it is excel file if it is sniffed by http as application/zip
 	// if contentType == "application/zip" {
@@ -420,8 +413,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 
 		// assume data is in sheet 0
-		headers = sheetData[0][0]
-		records = sheetData[0][1:]
+		// headers = sheetData[0][0]
+		// records = sheetData[0][1:]
+		allrows = sheetData[0]
 	} else {
 		// open a csv reader
 		fileReader := bytes.NewReader(slurp)
@@ -429,19 +423,35 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		// Use the custom sniffer to parse the CSV
 		csvReader := csvd.NewReader(fileReader)
 		csvReader.FieldsPerRecord = -1
-		csvHeader, err := csvReader.Read()
+		allrows, err = csvReader.ReadAll()
+		// csvHeader, err := csvReader.Read()
 		if err != nil {
 			log.Fatalf("unable to read header: %v", err)
 			return nil
 		}
-		csvRecords, err := csvReader.ReadAll()
-		if err != nil {
-			log.Fatalf("unable to read file content: %v", err)
-			return nil
-		}
-		headers = csvHeader
-		records = csvRecords
+		// csvRecords, err := csvReader.ReadAll()
+		// if err != nil {
+		// 	log.Fatalf("unable to read file content: %v", err)
+		// 	return nil
+		// }
+		// headers = csvHeader
+		// records = csvRecords
 	}
+
+	// now scan through records
+	var maxColumns int
+	var maxColumnRowAt int
+	for index, row := range allrows {
+		cellCount := len(row)
+		if cellCount > maxColumns {
+			maxColumnRowAt = index
+			maxColumns = cellCount
+		}
+	}
+
+	log.Printf("detected full record starting at row index %v", maxColumnRowAt)
+	headers = allrows[maxColumnRowAt]
+	records = allrows[maxColumnRowAt+1:]
 
 	headers = RenameDuplicateColumns(headers)
 	errResult := make(map[string]ERR)
