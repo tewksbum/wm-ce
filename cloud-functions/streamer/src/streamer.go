@@ -578,27 +578,27 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	query.Filter("RequestID =", requestID).Limit(1)
 
 	if _, err := dsClient.GetAll(ctx, query, &requests); err != nil {
-		log.Fatalf("Error querying request: %v", err)
+		log.Fatalf("%v Error querying request: %v", requestID, err)
 		return nil
 	}
 	if len(requests) == 0 {
-		log.Fatalf("Unable to locate request: %v", err)
+		log.Fatalf("%v Unable to locate request: %v", requestID, err)
 		return nil
 	}
 
 	btInstanceID := "wemade-" + string(requests[0].CustomerID)
 	btClient, err := bigtable.NewClient(ctx, ProjectID, btInstanceID)
 	if err != nil {
-		log.Fatalf("Error accessing bigtable: %v", err)
+		log.Fatalf("%v Error accessing bigtable: %v", requestID, err)
 		return nil
 	}
-	log.Printf("btClient obtained, %v", btClient)
+	log.Printf("%v btClient obtained, %v", requestID, btClient)
 
 	// get the namespace
 	var recordNS bytes.Buffer
 	dsNstemplate, err := template.New("requests").Parse(NameSpaceRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse text template: %v", err)
+		log.Fatalf("%v Unable to parse text template: %v", requestID, err)
 		return nil
 	}
 	if err := dsNstemplate.Execute(&recordNS, requests[0]); err != nil {
@@ -610,14 +610,13 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	query.Filter("Source =", requests[0].Source)
 	IDColumnList := make(map[string]bool)
 	if _, err := dsClient.GetAll(ctx, idQuery, &IDColumns); err != nil {
-		log.Fatalf("Error querying idcolumns: %v", err)
+		log.Fatalf("%v Error querying idcolumns: %v", requestID, err)
 		return nil
 	}
 	if len(IDColumns) > 0 {
 		for _, p := range IDColumns {
 			IDColumnList[strings.ToLower(p.IDColumn)] = true
 		}
-
 	}
 
 	for _, header := range headers {
@@ -633,23 +632,23 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	psclient, err := pubsub.NewClient(ctx, ProjectID)
 	if err != nil {
-		log.Fatalf("Could not create pubsub Client: %v", err)
+		log.Fatalf("%v Could not create pubsub Client: %v", requestID, err)
 		return nil
 	}
 	pstopic := psclient.Topic(PubsubTopic)
-	log.Printf("pubsub topic is %v", pstopic)
+	log.Printf("%v pubsub topic is %v", requestID, pstopic)
 
 	var recordKind bytes.Buffer
 	dsKindtemplate, err := template.New("requests").Parse(KindRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse text template: %v", err)
+		log.Fatalf("%v Unable to parse text template: %v", requestID, err)
 		return nil
 	}
 	if err := dsKindtemplate.Execute(&recordKind, requests[0]); err != nil {
 		return err
 	}
 
-	log.Printf("Storing source records with namespace %v and kind %v", recordNS.String(), recordKind.String())
+	log.Printf("%v Storing source records with namespace %v and kind %v", requestID, recordNS.String(), recordKind.String())
 	sourceKey := datastore.IncompleteKey(recordKind.String(), nil)
 	sourceKey.Namespace = recordNS.String()
 	Records := []interface{}{}
@@ -706,23 +705,23 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		_, err = dsClient.PutMulti(ctx, keys[i:end], Records[i:end])
 		if err != nil {
-			log.Fatalf("Unable to store records: %v", err)
+			log.Fatalf("%v Unable to store records: %v", requestID, err)
 		}
 	}
 
-	log.Print("Done storing source records")
+	log.Printf("%v Done storing source records", requestID)
 	// Heuristics, NER and ERR are handled here
 	var heuristicsKind bytes.Buffer
 	hKindtemplate, err := template.New("requests").Parse(HeuristicRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse heuristic kind template: %v", err)
+		log.Fatalf("%v Unable to parse heuristic kind template: %v", requestID, err)
 		return nil
 	}
 	if err := hKindtemplate.Execute(&heuristicsKind, requests[0]); err != nil {
 		return err
 	}
 
-	log.Print("Starting with heuristics")
+	log.Printf("%v Starting with heuristics", requestID)
 	colStats := make(map[string]map[string]string)
 	csvMap := getCsvMap(headers, records)
 
@@ -739,15 +738,15 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	profileIKey.Namespace = recordNS.String()
 	_, err = dsClient.Put(ctx, profileIKey, &profile)
 	if err != nil {
-		log.Fatalf("Error storing profile: %v", err)
+		log.Fatalf("%v Error storing profile: %v", requestID, err)
 	}
-	log.Print("Done with heuristics")
+	log.Printf("%v Done with heuristics", requestID)
 
-	log.Print("Starting with NER")
+	log.Printf("%v Starting with NER", requestID)
 	var nerKind bytes.Buffer
 	nKindtemplate, err := template.New("requests").Parse(NERRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse NER kind template: %v", err)
+		log.Fatalf("%v Unable to parse NER kind template: %v", requestID, err)
 		return nil
 	}
 	if err := nKindtemplate.Execute(&nerKind, requests[0]); err != nil {
@@ -758,7 +757,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		Source: "we-made-streamer",
 		Data:   csvMap,
 	}
-	log.Print("Getting NER responses")
+	log.Printf("%v Getting NER responses", requestID)
 	nerResponse := getNERresponse(nerRequest)
 
 	nerResult := make(map[string]map[string]float64)
@@ -771,22 +770,22 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	nerIKey.Namespace = recordNS.String()
 	_, err = dsClient.Put(ctx, nerIKey, &nerEntry)
 	if err != nil {
-		log.Fatalf("Error storing NER data: %v", err)
+		log.Fatalf("%v Error storing NER data: %v", requestID, err)
 	}
-	log.Print("Done with NER")
+	log.Printf("%v Done with NER", requestID)
 
-	log.Print("Starting with ERR")
+	log.Printf("%v Starting with ERR", requestID)
 	var errKind bytes.Buffer
 	eKindtemplate, err := template.New("requests").Parse(ERRRecordTemplate)
 	if err != nil {
-		log.Fatalf("Unable to parse ERR kind template: %v", err)
+		log.Fatalf("%v Unable to parse ERR kind template: %v", requestID, err)
 		return nil
 	}
 	if err := eKindtemplate.Execute(&errKind, requests[0]); err != nil {
 		return err
 	}
 
-	log.Print("Done with NER")
+	log.Printf("%v Done with NER", requestID)
 
 	cfg := elasticsearch.Config{
 		Addresses: []string{
@@ -797,7 +796,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	}
 	es, err := elasticsearch.NewClient(cfg)
 	if err != nil {
-		log.Fatalf("Error creating the client: %s", err)
+		log.Fatalf("%v Error creating the client: %s", requestID, err)
 	}
 
 	// let's pub/store the records
@@ -829,9 +828,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		psid, err := psresult.Get(ctx)
 		_, err = psresult.Get(ctx)
 		if err != nil {
-			log.Fatalf("Could not pub to pubsub: %v", err)
+			log.Fatalf("%v Could not pub to pubsub: %v", requestID, err)
 		} else {
-			log.Printf("pubbed record %v as message id %v", row, psid)
+			log.Printf("%v pubbed record %v as message id %v", requestID, row, psid)
 		}
 
 		docID := requestID + "-" + strconv.Itoa(row)
@@ -844,16 +843,16 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		}
 		res, err := req.Do(ctx, es)
 		if err != nil {
-			log.Fatalf("Error getting response: %s", err)
+			log.Fatalf("%v Error getting response: %s", requestID, err)
 		}
 		defer res.Body.Close()
 
 		if res.IsError() {
 			resB, _ := ioutil.ReadAll(res.Body)
-			log.Printf("[%s] Error indexing document ID=%v, Message=%v", res.Status(), docID, string(resB))
+			log.Printf("%v [%s] Error indexing document ID=%v, Message=%v", requestID, res.Status(), docID, string(resB))
 		} else {
 			resB, _ := ioutil.ReadAll(res.Body)
-			log.Printf("[%s] document ID=%v, Message=%v", res.Status(), docID, string(resB))
+			log.Printf("%v [%s] document ID=%v, Message=%v", requestID, res.Status(), docID, string(resB))
 
 			// // Deserialize the response into a map.
 			// var r map[string]interface{}
