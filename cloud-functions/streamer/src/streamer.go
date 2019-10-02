@@ -105,6 +105,18 @@ func (d *Record) Save() (props []datastore.Property, err error) {
 	return
 }
 
+func EnsureColumnsHaveNames(s []string) []string {
+	var result []string
+	for _, item := range s {
+		if len(item) == 0 {
+			result = append(result, "Empty")
+		} else {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
 // RenameDuplicateColumns renames duplicate columns
 func RenameDuplicateColumns(s []string) []string {
 	m := make(map[string]int)
@@ -464,6 +476,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 	headers = allrows[maxColumnRowAt]
 	records = allrows[maxColumnRowAt+1:]
 
+	headers = EnsureColumnsHaveNames(headers)
 	headers = RenameDuplicateColumns(headers)
 	errResult := make(map[string]ERR)
 	for _, header := range headers {
@@ -613,6 +626,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		log.Fatalf("%v Error querying idcolumns: %v", requestID, err)
 		return nil
 	}
+
 	if len(IDColumns) > 0 {
 		for _, p := range IDColumns {
 			IDColumnList[strings.ToLower(p.IDColumn)] = true
