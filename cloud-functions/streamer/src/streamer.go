@@ -79,6 +79,7 @@ type Request struct {
 	ProcessedAt  time.Time
 }
 
+// IDColumn struct
 type IDColumn struct {
 	Source   string
 	IDColumn string
@@ -105,6 +106,7 @@ func (d *Record) Save() (props []datastore.Property, err error) {
 	return
 }
 
+// EnsureColumnsHaveNames ensures the columns have a name
 func EnsureColumnsHaveNames(s []string) []string {
 	var result []string
 	for _, item := range s {
@@ -168,6 +170,7 @@ func uniqueElements(s []string) []string {
 	return us
 }
 
+// ColumnStats stats for the columns
 type ColumnStats struct {
 	rows      int
 	unique    int
@@ -244,6 +247,7 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 	return profile
 }
 
+// ERR Entity Recognition
 type ERR struct {
 	Address1        int `json:"Address1"`
 	Address2        int `json:"Address2"`
@@ -271,10 +275,13 @@ type ERR struct {
 	Role            int `json:"Role"`
 }
 
+// NERcolumns coloumns for NER
 type NERcolumns struct {
 	ColumnName  string             `json:"ColumnName"`
 	NEREntities map[string]float64 `json:"NEREntities"`
 }
+
+//NERresponse response
 type NERresponse struct {
 	Columns     []NERcolumns `json:"Columns"`
 	ElapsedTime float64      `json:"ElapsedTime"`
@@ -283,13 +290,17 @@ type NERresponse struct {
 	TimeStamp   string       `json:"TimeStamp"`
 }
 
+// NERrequest request
 type NERrequest struct {
 	Owner  string
 	Source string
 	Data   map[string][]string
 }
+
+// NERentry entry
 type NERentry map[string]interface{}
 
+// Output output
 type Output struct {
 	Owner     int64          `json:"Owner"`
 	Source    string         `json:"Source"`
@@ -299,6 +310,7 @@ type Output struct {
 	TimeStamp string         `json:"TimeStamp"`
 }
 
+// OutputColumn output column
 type OutputColumn struct {
 	Name  string             `json:"Name"`
 	Value string             `json:"Value"`
@@ -362,6 +374,7 @@ func getNERentry(structResponse NERresponse) NERentry {
 	return nerEntry
 }
 
+// CountSparseArray count sparse array
 func CountSparseArray(inputArray []string) int {
 	var counter int
 	for _, c := range inputArray {
@@ -572,8 +585,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		errResult[header] = err
 	}
-	errJson, _ := json.Marshal(errResult)
-	log.Printf("ERR output %v", string(errJson))
+	errJSON, _ := json.Marshal(errResult)
+	log.Printf("ERR output %v", string(errJSON))
 
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
 	fileDetail := strings.Split(fileName, "/")
