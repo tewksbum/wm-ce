@@ -249,6 +249,8 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 
 // ERR Entity Recognition
 type ERR struct {
+	TrustedID int `json:"TrustedID"`
+	// People
 	Address1        int `json:"Address1"`
 	Address2        int `json:"Address2"`
 	Age             int `json:"Age"`
@@ -270,9 +272,25 @@ type ERR struct {
 	State           int `json:"State"`
 	Suffix          int `json:"Suffix"`
 	ZipCode         int `json:"ZipCode"`
-	TrustedID       int `json:"TrustedID"`
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
+	// Product - Could it be a nested struct like ProductERR?
+	ProductPID         int `json:"ProductID"`
+	ProductSKU         int `json:"ProductSKU"`
+	ProductUPC         int `json:"ProductUPC"`
+	ProductName        int `json:"ProductName"`
+	ProductDescription int `json:"ProductDescription"`
+	ProductSize        int `json:"ProductSize"`
+	ProductColor       int `json:"ProductColor"`
+	ProductUnitPrice   int `json:"ProductUnitPrice"`
+	ProductContains    int `json:"ProductContains"`
+	ProductType        int `json:"ProductType"`
+	ProductVendorID    int `json:"ProductVendorId"`
+	ProductVendor      int `json:"ProductVendor"`
+	ProductCost        int `json:"ProductCost"`
+	ProductStars       int `json:"ProductStars"`
+	ProductCategory    int `json:"ProductCategory"`
+	ProductMargin      int `json:"ProductMargin"`
 }
 
 // NERcolumns coloumns for NER
@@ -496,6 +514,50 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		var err ERR
 		key := strings.ToLower(header)
 		switch key {
+		case "productid", "product id", "pid", "p id":
+			err.ProductPID = 1
+		case "sku", "s k u", "sk u", "s ku":
+			err.ProductSKU = 1
+		case "upc", "u p c", "up c", "u pc":
+			err.ProductUPC = 1
+		case "product name", "productname", "prod name", "prodname": // p name could be parent name, right?
+			err.ProductName = 1
+		case "product description", "productdescription", "prod description",
+			"proddescription", "product desc", "productdesc", "prod desc",
+			"proddesc", "p desc", "pdesc":
+			err.ProductDescription = 1
+		case "product size", "productsize", "prod size",
+			"p size", "psize", "size":
+			err.ProductSize = 1
+		case "product color", "productcolor", "prod color",
+			"p color", "pcolor", "color":
+			err.ProductColor = 1
+		case "product unit price", "productunit price", "prod unit price",
+			"product unitprice", "productunitprice", "prod unitprice",
+			"p unit price", "punit price", "p unitprice", "punitprice",
+			"unit price", "unitprice":
+			err.ProductUnitPrice = 1
+		case "product type", "producttype", "prod type",
+			"p type", "ptype", "type":
+			err.ProductType = 1
+		case "product vendorid", "productvendorid", "prod vendorid",
+			"p vendorid", "pvendorid", "vendorid":
+			err.ProductVendorID = 1
+		case "product vendor", "productvendor", "prod vendor",
+			"p vendor", "pvendor", "vendor":
+			err.ProductVendor = 1
+		case "product cost", "productcost", "prod cost",
+			"p cost", "pcost", "cost":
+			err.ProductCost = 1
+		case "product stars", "productstars", "prod stars",
+			"p stars", "pstars", "stars":
+			err.ProductStars = 1
+		case "product category", "productcategory", "product cat",
+			"productcat", "prod cat", "prodcat", "p cat", "pcat":
+			err.ProductCategory = 1
+		case "product margin", "productmargin", "prod margin",
+			"p margin", "pmargin", "margin", "contibution":
+			err.ProductMargin = 1
 		case "fname", "f name", "first name", "name first", "first_name", "first":
 			err.FirstName = 1
 		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
