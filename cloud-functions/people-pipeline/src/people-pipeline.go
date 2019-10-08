@@ -1,6 +1,7 @@
 package peoplepipelinepre
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -17,6 +18,9 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/google/uuid"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	"google.golang.org/api/ml/v1"
@@ -1586,6 +1590,7 @@ func init() {
 	} else {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
 	}
+
 }
 
 func Main(ctx context.Context, m PubSubMessage) error {
@@ -1778,6 +1783,42 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Processed Columns %v", string(columnJSON))
 
 	mkJSON, _ := json.Marshal(mkOutput)
+
+	cfg := elasticsearch.Config{
+		Addresses: []string{
+			"http://104.198.136.122:9200",
+		},
+		Username: "elastic",
+		Password: "TsLv8BtM",
+	}
+	es, err := elasticsearch.NewClient(cfg)
+	if err != nil {
+		log.Fatalf("Error creating the client: %s", err)
+	}
+
+	indexName := "ml"
+	esDocId := uuid.New().String()
+	esReq := esapi.IndexRequest{
+		Index:        indexName,
+		DocumentType: "record", //input.Request,
+		DocumentID:   esDocId,
+		Body:         bytes.NewReader(m.Data),
+		Refresh:      "true",
+	}
+	esRes, err := esReq.Do(ctx, es)
+	if err != nil {
+		log.Fatalf("Error getting response: %s", err)
+	}
+	defer esRes.Body.Close()
+
+	if esRes.IsError() {
+		resB, _ := ioutil.ReadAll(esRes.Body)
+		log.Printf("[%s] Error indexing document ID=%v, Message=%v", esRes.Status(), esDocId, string(resB))
+	} else {
+		resB, _ := ioutil.ReadAll(esRes.Body)
+		log.Printf("[%s] document ID=%v, Message=%v", esRes.Status(), esDocId, string(resB))
+	}
+
 	log.Printf("MatchKey Columns with Prediction Only %v", string(mkJSON))
 	// model cleanup
 	for _, column := range Columns {
