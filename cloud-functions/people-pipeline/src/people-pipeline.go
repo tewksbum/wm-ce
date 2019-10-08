@@ -1779,7 +1779,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		ClassYear = strconv.Itoa(time.Now().Year() + 4)
 	}
 
-	columnJSON, _ := json.Marshal(input.Columns)
+	columnJSON, _ := json.Marshal(Columns)
 	log.Printf("Processed Columns %v", string(columnJSON))
 
 	mkJSON, _ := json.Marshal(mkOutput)
