@@ -30,6 +30,7 @@ type Request struct {
 	ProcessedAt  time.Time
 	Owner        string
 	Passthrough  string
+	Attributes   string
 }
 
 // Customer contains Customer fields
@@ -49,13 +50,13 @@ var NameSpace = os.Getenv("NSSTREAMER")
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
 
-func flattenPassthrough(passtrough map[string]string) string {
-	flat := "["
-	for key, value := range passtrough {
-		flat = flat + `{"` + key + `":"` + value + `"},`
+func flattenMap(mstring map[string]string) string {
+	flat := "{"
+	for key, value := range mstring {
+		flat = flat + `"` + key + `":"` + value + `",`
 	}
 	//remove extra comma
-	flat = flat[:len(flat)-1] + "]"
+	flat = flat[:len(flat)-1] + "}"
 
 	return flat
 }
@@ -69,6 +70,7 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		Source       string            `json:"source"`
 		Owner        string            `json:"owner"`
 		Passthrough  map[string]string `json:"passthrough"`
+		Attributes   map[string]string `json:"attributes"`
 	}
 
 	ctx := context.Background()
@@ -133,7 +135,8 @@ func Main(w http.ResponseWriter, r *http.Request) {
 		Source:       d.Source,
 		Organization: d.Organization,
 		Owner:        d.Owner,
-		Passthrough:  flattenPassthrough(d.Passthrough),
+		Passthrough:  flattenMap(d.Passthrough),
+		Attributes:   flattenMap(d.Attributes),
 	}
 
 	requestKey := datastore.IncompleteKey("Request", nil)
