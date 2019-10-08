@@ -1593,6 +1593,21 @@ func init() {
 
 }
 
+func isInt(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
+
+func LeftPad2Len(s string, padStr string, overallLen int) string {
+	var padCountInt = 1 + ((overallLen - len(padStr)) / len(padStr))
+	var retStr = strings.Repeat(padStr, padCountInt) + s
+	return retStr[(len(retStr) - overallLen):]
+}
+
 func Main(ctx context.Context, m PubSubMessage) error {
 	log.Println(string(m.Data))
 	var input InputRecord
@@ -1745,12 +1760,19 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		matchKey := listLabels[predictionKey]
 		// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 		column.MatchKey = matchKey
+
+		// fix zip code that has leading 0 stripped out
+		if matchKey == "ZIP" && isInt(column.Value) && len(column.Value) < 5 {
+			column.Value = LeftPad2Len(column.Value, "0", 5)
+		}
+
 		if matchKey != "" {
 			// if it does not already have a value
 			if getMkField(&mkOutput, matchKey) == "" {
 				setMkField(&mkOutput, matchKey, column.Value)
 			}
 		}
+
 		if column.ERR.TrustedID == 1 {
 			trustedID = column.Value
 		}
