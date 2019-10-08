@@ -52,7 +52,7 @@ var BucketName = os.Getenv("GSBUCKET")
 func flattenPassthrough(passtrough map[string]string) string {
 	flat := "["
 	for key, value := range passtrough {
-		flat = flat + `"` + key + `":"` + value + `",`
+		flat = flat + `{"` + key + `":"` + value + `"},`
 	}
 	//remove extra comma
 	flat = flat[:len(flat)-1] + "]"
