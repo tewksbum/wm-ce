@@ -558,6 +558,9 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		case "product margin", "productmargin", "prod margin",
 			"p margin", "pmargin", "margin", "contibution":
 			err.ProductMargin = 1
+		case "contains", "bundle items", "bundleitems", "bundled items", "bundleditems",
+			"kit items", "kititems":
+			err.ProductContains = 1
 		case "fname", "f name", "first name", "name first", "first_name", "first":
 			err.FirstName = 1
 		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
