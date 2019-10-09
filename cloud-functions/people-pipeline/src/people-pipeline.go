@@ -161,6 +161,7 @@ type OutputAddress struct {
 	Postal              string  `json:"Postal"`
 	State               string  `json:"State"`
 	StreetName          string  `json:"StreetName"`
+	Mismatch            bool    `json:"Mismatch"`
 }
 
 type OutputBackground struct {
@@ -259,6 +260,7 @@ var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
+var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 
@@ -1633,10 +1635,38 @@ func isInt(s string) bool {
 	return true
 }
 
+func indexOf(element string, data []string) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1 //not found.
+}
+
 func LeftPad2Len(s string, padStr string, overallLen int) string {
 	var padCountInt = 1 + ((overallLen - len(padStr)) / len(padStr))
 	var retStr = strings.Repeat(padStr, padCountInt) + s
 	return retStr[(len(retStr) - overallLen):]
+}
+
+func CheckCityStateZip(city string, state string, zip string) bool {
+	checkZip := zip
+	if len(checkZip) > 5 {
+		checkZip = checkZip[0:5]
+	}
+	checkCity := strings.TrimSpace(strings.ToLower(city))
+	checkState := strings.TrimSpace(strings.ToLower(state))
+	var result bool
+	result = false
+
+	// TODO: store this in binary search tree or something
+	for _, item := range listCityStateZip {
+		if indexOf(checkCity, item.Cities) > -1 && checkState == item.State && checkZip == item.Zip {
+			return true
+		}
+	}
+	return result
 }
 
 func Main(ctx context.Context, m PubSubMessage) error {
@@ -1947,6 +1977,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	}
 	if mkOutput.AD1 != "" {
 		addressInput := mkOutput.AD1 + " " + mkOutput.AD2
+		cityInput := mkOutput.CITY
 		addressParsed, _ := normalizeStreetAddress(addressInput)
 
 		if len(mkOutput.CITY) == 0 && len(mkOutput.STATE) == 0 && len(mkOutput.ZIP) == 0 {
@@ -1968,6 +1999,19 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				mkOutput.AD1 = splits[0]
 				addressParsed, _ = normalizeStreetAddress(mkOutput.AD1)
 			}
+		} else if len(mkOutput.STATE) == 0 && len(mkOutput.ZIP) == 0 {
+			cityInputClensed := reNewline.ReplaceAllString(cityInput, " ")
+			match := reConcatenatedCityStateZip.FindStringSubmatch(cityInputClensed)
+			log.Printf("matches %v %v", len(match), match)
+			for i, m := range match {
+				log.Printf("matches %v %v", i, m)
+			}
+
+			if len(match) == 4 {
+				mkOutput.CITY = strings.TrimSpace(match[1])
+				mkOutput.STATE = strings.TrimSpace(match[2])
+				mkOutput.ZIP = strings.TrimSpace(match[3])
+			}
 		}
 
 		outputAddress := OutputAddress{
@@ -1987,6 +2031,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			Postal:              mkOutput.ZIP,
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
+			Mismatch:            CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
 		}
 		output.Address = append(output.Address, outputAddress)
 	}
