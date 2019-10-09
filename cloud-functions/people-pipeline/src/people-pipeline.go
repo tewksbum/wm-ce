@@ -1511,8 +1511,6 @@ func readCityStateZip(ctx context.Context, client *storage.Client, bucket, objec
 		return nil, err
 	}
 	json.Unmarshal(data, &result)
-
-	log.Printf("read %v values from %v", len(result), "zip_city_state.json")
 	return result, nil
 }
 
