@@ -1510,7 +1510,7 @@ func readCityStateZip(ctx context.Context, client *storage.Client, bucket, objec
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("read %v values from %v", string(data), "city-state-zip.json")
+	log.Printf("read %v values from %v", string(data), "zip_city_state.json")
 	json.Unmarshal(data, &result)
 	return result, nil
 }
@@ -1616,11 +1616,11 @@ func init() {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
 	}
 
-	listCityStateZip, err = readCityStateZip(ctx, sClient, BucketData, "data/zip-city-state.json")
+	listCityStateZip, err = readCityStateZip(ctx, sClient, BucketData, "data/zip_city_state.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/zip-city-state.json")
+		log.Fatalf("Failed to read json %v from bucket", "data/zip_city_state.json")
 	} else {
-		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip-city-state.json")
+		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip_city_state.json")
 	}
 
 }
