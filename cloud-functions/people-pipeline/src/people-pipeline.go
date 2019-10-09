@@ -161,7 +161,7 @@ type OutputAddress struct {
 	Postal              string  `json:"Postal"`
 	State               string  `json:"State"`
 	StreetName          string  `json:"StreetName"`
-	Mismatch            bool    `json:"Mismatch"`
+	CityStateZipMatch   bool    `json:"CityStateZipMatch"`
 }
 
 type OutputBackground struct {
@@ -2031,7 +2031,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			Postal:              mkOutput.ZIP,
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
-			Mismatch:            CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
+			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
 		}
 		output.Address = append(output.Address, outputAddress)
 	}
