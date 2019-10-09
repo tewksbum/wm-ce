@@ -1831,7 +1831,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		Index:        indexName,
 		DocumentType: "record", //input.Request,
 		DocumentID:   esDocId,
-		Body:         bytes.NewReader(m.Data),
+		Body:         bytes.NewReader(columnJSON),
 		Refresh:      "true",
 	}
 	esRes, err := esReq.Do(ctx, es)
