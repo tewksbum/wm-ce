@@ -86,6 +86,7 @@ type InputERR struct {
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
 }
+
 type InputNER struct {
 	FAC       float64 `json:"FAC"`
 	GPE       float64 `json:"GPE"`
@@ -1761,6 +1762,11 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 		column.MatchKey = matchKey
 
+		// corrects the situation where FR is identified as a country
+		if column.ERR.Title == 1 && matchKey == "COUNTRY" {
+			column.MatchKey = ""
+		}
+
 		// fix zip code that has leading 0 stripped out
 		if matchKey == "ZIP" && isInt(column.Value) && len(column.Value) < 5 {
 			column.Value = LeftPad2Len(column.Value, "0", 5)
@@ -1794,6 +1800,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+
 		Columns[index] = column
 	}
 
