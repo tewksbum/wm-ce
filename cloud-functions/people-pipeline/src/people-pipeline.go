@@ -236,6 +236,12 @@ type Address struct {
 	SuiteNumber     string
 }
 
+type CityStateZip struct {
+	Cities []string `json:"cities"`
+	State  string   `json:"state"`
+	Zip    string   `json:"zip"`
+}
+
 var listLabels map[string]string
 var listCities map[string]bool
 var listStates map[string]bool
@@ -243,6 +249,7 @@ var listCountries map[string]bool
 var listFirstNames map[string]bool
 var listLastNames map[string]bool
 var listError error
+var listCityStateZip []CityStateZip
 
 var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
@@ -1491,6 +1498,22 @@ func readJsonMap(ctx context.Context, client *storage.Client, bucket, object str
 	return result, nil
 }
 
+func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
+	var result []CityStateZip
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(data, &result)
+	return result, nil
+}
+
 func getHash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
@@ -1590,6 +1613,13 @@ func init() {
 		log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
+	}
+
+	listCityStateZip, err = readCityStateZip(ctx, sClient, BucketData, "data/zip-city-state.json")
+	if err != nil {
+		log.Fatalf("Failed to read json %v from bucket", "data/zip-city-state.json")
+	} else {
+		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip-city-state.json")
 	}
 
 }
