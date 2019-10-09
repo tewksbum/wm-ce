@@ -1808,11 +1808,10 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		ClassYear = strconv.Itoa(time.Now().Year() + 4)
 	}
 
+	input.Columns = Columns
 	columnJSON, _ := json.Marshal(Columns)
 	log.Printf("Processed Columns %v", string(columnJSON))
-
-	mkJSON, _ := json.Marshal(mkOutput)
-
+	mlJSON, _ := json.Marshal(input)
 	cfg := elasticsearch.Config{
 		Addresses: []string{
 			"http://104.198.136.122:9200",
@@ -1831,7 +1830,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		Index:        indexName,
 		DocumentType: "record", //input.Request,
 		DocumentID:   esDocId,
-		Body:         bytes.NewReader(columnJSON),
+		Body:         bytes.NewReader(mlJSON),
 		Refresh:      "true",
 	}
 	esRes, err := esReq.Do(ctx, es)
@@ -1848,6 +1847,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Printf("[%s] document ID=%v, Message=%v", esRes.Status(), esDocId, string(resB))
 	}
 
+	mkJSON, _ := json.Marshal(mkOutput)
 	log.Printf("MatchKey Columns with Prediction Only %v", string(mkJSON))
 	// model cleanup
 	for _, column := range Columns {
