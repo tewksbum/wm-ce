@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"reflect"
 	"regexp"
 	"strconv"
@@ -1721,7 +1722,7 @@ func CheckCityStateZip(city string, state string, zip string) bool {
 func CorrectAddress(in string) OutputAddress {
 	var smartyStreetResponse SmartyStreetResponse
 	var correctedAddress OutputAddress
-	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, in)
+	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
 	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
 	response, err := http.Get(smartyStreetRequestURL)
 	if err != nil {
