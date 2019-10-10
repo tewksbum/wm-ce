@@ -1735,7 +1735,7 @@ func CorrectAddress(in string) OutputAddress {
 		if err != nil {
 			log.Fatalf("Couldn't read the smartystreet response: %v", err)
 		}
-		log.Printf("ner response %v", string(data))
+		log.Printf("smartystreet response %v", string(data))
 		json.Unmarshal(data, &smartyStreetResponse)
 
 		if len(smartyStreetResponse) > 0 {
