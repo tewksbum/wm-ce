@@ -320,12 +320,13 @@ type NERentry map[string]interface{}
 
 // Output output
 type Output struct {
-	Owner     int64          `json:"Owner"`
-	Source    string         `json:"Source"`
-	Request   string         `json:"Request"`
-	Row       int            `json:"Row"`
-	Columns   []OutputColumn `json:"Columns"`
-	TimeStamp string         `json:"TimeStamp"`
+	Owner        int64          `json:"Owner"`
+	Source       string         `json:"Source"`
+	Request      string         `json:"Request"`
+	Row          int            `json:"Row"`
+	Columns      []OutputColumn `json:"Columns"`
+	TimeStamp    string         `json:"TimeStamp"`
+	Organization string         `json:"TimeStamp"`
 }
 
 // OutputColumn output column
@@ -899,6 +900,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		output.Source = requests[0].Source
 		output.Row = row
 		output.TimeStamp = requests[0].SubmittedAt.String()
+		output.Organization = requests[0].Source
 		var outputColumns []OutputColumn
 
 		for j, y := range d {
