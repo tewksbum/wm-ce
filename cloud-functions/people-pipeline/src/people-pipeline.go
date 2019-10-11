@@ -1946,9 +1946,9 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				ClassYear = column.Value
 			} else {
 				switch strings.ToLower(column.Value) {
-				case "freshman", "frosh", "fresh":
+				case "freshman", "frosh", "fresh", "fr":
 					ClassYear = strconv.Itoa(time.Now().Year() + 4)
-				case "sophomore", "soph":
+				case "sophomore", "soph", "so":
 					ClassYear = strconv.Itoa(time.Now().Year() + 3)
 				case "junior", "jr":
 					ClassYear = strconv.Itoa(time.Now().Year() + 2)
