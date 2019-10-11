@@ -2220,10 +2220,10 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				parent := MultiPersonRecord{
 					FNAME: fname,
 				}
-				if len(lnames) > index+1 {
+				if len(lnames) > index {
 					parent.LNAME = lnames[index]
 				}
-				if len(emails) > index+1 {
+				if len(emails) > index {
 					parent.EMAIL = emails[index]
 				}
 				parents = append(parents, parent)
