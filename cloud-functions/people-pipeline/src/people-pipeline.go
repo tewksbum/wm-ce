@@ -2211,7 +2211,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			emails = append(emails, column.Value)
 		}
 	}
-	log.Printf("MPR fname count %v, lname count %v, email count %v", mkFirstNameCount, mkLastNameCount, mkEmailCount)
+	log.Printf("MPR fname count %v %v, lname count %v %v, email count %v %v", mkFirstNameCount, fnames, mkLastNameCount, lnames, mkEmailCount, emails)
 
 	if mkFirstNameCount > 1 {
 		// we have more than 1 person in the record, let's make some sets
