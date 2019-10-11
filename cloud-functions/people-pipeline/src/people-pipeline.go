@@ -2228,6 +2228,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 	}
+	log.Printf("MPR: %v", parents)
 	if len(parents) > 0 {
 		for _, parent := range parents {
 			outputName := OutputName{
