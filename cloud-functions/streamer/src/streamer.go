@@ -66,7 +66,7 @@ type GCSEvent struct {
 	Updated        time.Time `json:"updated"`
 }
 
-// Request contains a record for the request
+// Request contains a record for the request stored by streamer-api onto datastore
 type Request struct {
 	CustomerID   int64
 	RequestID    string
@@ -318,14 +318,16 @@ type NERrequest struct {
 // NERentry entry
 type NERentry map[string]interface{}
 
-// Output output
+// Output pubsub output to be consumed by other cloud-functions
+// like the people pipeline
 type Output struct {
-	Owner     int64          `json:"Owner"`
-	Source    string         `json:"Source"`
-	Request   string         `json:"Request"`
-	Row       int            `json:"Row"`
-	Columns   []OutputColumn `json:"Columns"`
-	TimeStamp string         `json:"TimeStamp"`
+	Owner        int64          `json:"Owner"`
+	Source       string         `json:"Source"`
+	Request      string         `json:"Request"`
+	Row          int            `json:"Row"`
+	Columns      []OutputColumn `json:"Columns"`
+	TimeStamp    string         `json:"TimeStamp"`
+	Organization string         `json:"TimeStamp"`
 }
 
 // OutputColumn output column
@@ -898,6 +900,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		output.Source = requests[0].Source
 		output.Row = row
 		output.TimeStamp = requests[0].SubmittedAt.String()
+		output.Organization = requests[0].Organization
 		var outputColumns []OutputColumn
 
 		for j, y := range d {

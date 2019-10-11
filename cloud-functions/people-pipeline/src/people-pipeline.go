@@ -134,12 +134,13 @@ type InputColumn struct {
 }
 
 type InputRecord struct {
-	Columns   []InputColumn `json:"Columns"`
-	Owner     int64         `json:"Owner"`
-	Request   string        `json:"Request"`
-	Row       int           `json:"Row"`
-	Source    string        `json:"Source"`
-	TimeStamp string        `json:"TimeStamp"`
+	Columns      []InputColumn `json:"Columns"`
+	Owner        int64         `json:"Owner"`
+	Request      string        `json:"Request"`
+	Row          int           `json:"Row"`
+	Source       string        `json:"Source"`
+	TimeStamp    string        `json:"TimeStamp"`
+	Organization string        `json:"TimeStamp"`
 }
 
 type MLInput struct {
@@ -2158,6 +2159,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	// TODO: organization?
 	output.Organization = append(output.Organization, OutputOrganization{
 		Title: ClassYear,
+		Name:  input.Organization,
 	})
 
 	output.Owner = input.Owner
