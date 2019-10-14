@@ -247,6 +247,38 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 	return profile
 }
 
+// OrderERR Entity Recognition
+type OrderERR struct {
+	//  Trusted ID
+	ID     int `json:"ID"`
+	Number int `json:"Number"`
+	//  Header
+	CustomerID int `json:"CustomerID"`
+	Date       int `json:"Date"`
+	Total      int `json:"Total"`
+	BillTo     int `json:"BillTo"`
+	//  Consignment
+	Consignment OrderConsignmentERR `json:"Consignment"`
+	//  Detail
+	Detail OrderDetailERR `json:"Detail"`
+}
+
+// OrderConsignmentERR Entity Recognition
+type OrderConsignmentERR struct {
+	ID       int `json:"ID"`
+	ShipDate int `json:"ShipDate"`
+}
+
+// OrderDetailERR Entity Recognition
+type OrderDetailERR struct {
+	ID           int `json:"ID"`
+	OrderID      int `json:"OrderID"`
+	ConsigmentID int `json:"ConsigmentID"`
+	ProductID    int `json:"ProductID"`
+	ProductSKU   int `json:"ProductSKU"`
+	ProductUPC   int `json:"ProductUPC"`
+}
+
 // ERR Entity Recognition
 type ERR struct {
 	TrustedID int `json:"TrustedID"`
@@ -291,6 +323,8 @@ type ERR struct {
 	ProductStars       int `json:"ProductStars"`
 	ProductCategory    int `json:"ProductCategory"`
 	ProductMargin      int `json:"ProductMargin"`
+	// Order
+	Order OrderERR `json:"Order"`
 }
 
 // NERcolumns coloumns for NER
@@ -515,13 +549,28 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		var err ERR
 		key := strings.ToLower(header)
 		switch key {
+		case "orderid", "invoiceid":
+			err.Order.ID = 1
+		case "ordernumber", "order number":
+			err.Order.Number = 1
+		case "order date", "orderdate", "invoice date", "invoicedate",
+			"placed date", "placeddate", "created at", "createdat":
+			err.Order.Date = 1
+		case "order total", "ordertotal", "total":
+			err.Order.Number = 1
+		case "ship date", "shipdate":
+			err.Order.Consignment.ShipDate = 1
+		case "shipment", "consignment", "consignment id", "consignmentid":
+			err.Order.Consignment.ID = 1
+		case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
+			err.Order.Detail.ID = 1
 		case "productid", "product id", "pid", "p id":
 			err.ProductPID = 1
-		case "sku", "s k u", "sk u", "s ku":
+		case "sku", "s k u", "sk u", "s ku", "product number", "productnumber":
 			err.ProductSKU = 1
 		case "upc", "u p c", "up c", "u pc":
 			err.ProductUPC = 1
-		case "product name", "productname", "prod name", "prodname": // p name could be parent name, right?
+		case "product name", "productname", "prod name", "prodname":
 			err.ProductName = 1
 		case "product description", "productdescription", "prod description",
 			"proddescription", "product desc", "productdesc", "prod desc",
@@ -614,6 +663,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.FirstName = 1
 			err.LastName = 1
 		}
+
 		if strings.Contains(key, "first") || strings.Contains(key, "fname") {
 			err.FirstName = 1
 		}
@@ -651,8 +701,21 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 		errResult[header] = err
 	}
-	errJSON, _ := json.Marshal(errResult)
-	log.Printf("ERR output %v", string(errJSON))
+
+	// TODO: check if this one could be stuffed into another of this loops... line 773?
+	for _, header := range headers {
+		var err ERR
+		key := strings.ToLower(header)
+		err = errResult[key]
+		// IF case ORDER ID/LINE exists, then this is product id
+		if err.Order.Detail.ID == 1 {
+			err.Order.Detail.ProductSKU = err.ProductSKU
+			err.Order.Detail.ProductID = err.ProductPID
+			err.Order.Detail.ProductUPC = err.ProductUPC
+			err.Order.Detail.OrderID = err.Order.ID
+			err.Order.Detail.ConsigmentID = err.Order.Consignment.ID
+		}
+	}
 
 	fileName := strings.TrimSuffix(e.Name, filepath.Ext(e.Name))
 	fileDetail := strings.Split(fileName, "/")
@@ -720,6 +783,12 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		if _, ok := IDColumnList[key]; ok {
 			err.TrustedID = 1
 			errResult[header] = err
+		}
+		// IF case ORDER ID/LINE exists, then this is product id
+		if err.Order.Detail.ID == 1 {
+			err.Order.Detail.ProductSKU = err.ProductSKU
+			err.Order.Detail.ProductID = err.ProductPID
+			err.Order.Detail.ProductUPC = err.ProductUPC
 		}
 	}
 
