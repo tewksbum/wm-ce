@@ -12,6 +12,7 @@ type OrderERR struct {
 	//  Header
 	CustomerID int `json:"CustomerID"`
 	OrderDate  int `json:"OrderDate"`
+	Terms      int `json:"Terms"`
 	Total      int `json:"Total"`
 	BillTo     int `json:"BillTo"`
 	//  Consignment
@@ -39,6 +40,9 @@ func parseOrderHeader(input *InputRecord, mkOutput *IdentifiedRecord) (err error
 		}
 		if column.ERR.Order.Total == 1 {
 			mkOutput.Total = column.Value
+		}
+		if column.ERR.Order.Terms == 1 {
+			mkOutput.Terms = column.Value
 		}
 	}
 	if mkOutput.OrderID == "" {

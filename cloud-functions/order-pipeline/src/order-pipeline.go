@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"strings"
 
 	"cloud.google.com/go/pubsub"
 )
@@ -42,8 +43,9 @@ type InputERR struct {
 
 // InputVER value regex
 type InputVER struct {
-	Hashcode  int64
-	IsOrderID bool `json:"isOrderID"`
+	Hashcode int64
+	// IsOrderID bool `json:"isOrderID"`
+	IsTerms bool `json:"isTerms"`
 }
 
 // InputColumn input column
@@ -81,6 +83,19 @@ type OutputRecord struct {
 	Record    IdentifiedRecord  `json:"Record" bigquery:"Order"`
 }
 
+func getVER(column *InputColumn) InputVER {
+	var val = strings.TrimSpace(column.Value)
+	log.Printf("features values is %v", val)
+	val = removeDiacritics(val)
+	result := InputVER{
+		Hashcode: int64(getHash(val)),
+		IsTerms:  reTerms.MatchString(val),
+	}
+	columnJ, _ := json.Marshal(result)
+	log.Printf("current VER %v", string(columnJ))
+	return result
+}
+
 func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	var mkOutput IdentifiedRecord
 
@@ -92,6 +107,20 @@ func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	}
 	if err = parseOrderDetail(&input, &mkOutput); err != nil {
 		return nil, err
+	}
+
+	var Columns []InputColumn
+	for _, column := range input.Columns {
+		column.VER = getVER(&column)
+		newColumn := column
+		Columns = append(Columns, newColumn)
+	}
+
+	for _, column := range Columns {
+		log.Printf("Column name: %v value: %v VER: %v ERR: %v", column.Name, column.Value, column.VER, column.ERR)
+		if column.VER.IsTerms && len(mkOutput.Terms) == 0 && column.ERR.Order.Terms == 0 {
+			mkOutput.Terms = column.Value
+		}
 	}
 
 	// assemble output
@@ -129,11 +158,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Could not parse input data: %v", err)
 		return nil
 	}
-
-	// if writeToBQ(strconv.FormatInt(input.Owner, 10), "orders", output) != nil {
-	// 	log.Fatalf("Could not store to bigquery: %v", err)
-	// 	return nil
-	// }
 
 	outputJSON, err := json.Marshal(output)
 	if err != nil {
