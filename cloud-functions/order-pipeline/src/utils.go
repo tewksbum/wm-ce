@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	reTerms = regexp.MustCompile(`visa|amex|american.*express|master.*card|net.?\d{0,2}`)
+	reTerms = regexp.MustCompile(`visa|amex|american.*express|master.*card|discover|net.?\d{0,2}`)
 )
 
 func getHash(s string) uint32 {

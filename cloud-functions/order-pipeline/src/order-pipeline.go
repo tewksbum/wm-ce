@@ -84,7 +84,7 @@ type OutputRecord struct {
 }
 
 func getVER(column *InputColumn) InputVER {
-	var val = strings.TrimSpace(column.Value)
+	var val = strings.ToLower(strings.TrimSpace(column.Value))
 	log.Printf("features values is %v", val)
 	val = removeDiacritics(val)
 	result := InputVER{
@@ -140,7 +140,7 @@ func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	output.Record = mkOutput
 
 	mkJSON, _ := json.Marshal(mkOutput)
-	log.Printf("MatchKey Columns after Clean up %v", string(mkJSON))
+	log.Printf("Columns after Clean up %v", string(mkJSON))
 
 	return output, err
 }
