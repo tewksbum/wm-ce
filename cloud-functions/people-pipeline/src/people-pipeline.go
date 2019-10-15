@@ -123,7 +123,7 @@ type InputVER struct {
 	IS_COUNTRY   bool `json:"isCOUNTRY"`
 	IS_EMAIL     bool `json:"isEMAIL"`
 	IS_PHONE     bool `json:"isPHONE"`
-	IS_DORM     bool `json:"isPHONE"`
+	IS_DORM      bool `json:"isDORM"`
 }
 
 type InputColumn struct {
