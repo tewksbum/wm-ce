@@ -1,17 +1,13 @@
 package order360
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"strconv"
 
 	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/pubsub"
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
 	"github.com/google/uuid"
 )
 
@@ -95,18 +91,6 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 		log.Fatal(err)
 	}
 
-	cfg := elasticsearch.Config{
-		Addresses: []string{
-			esAddress,
-		},
-		Username: esUser,
-		Password: esPassword,
-	}
-	es, err := elasticsearch.NewClient(cfg)
-	if err != nil {
-		log.Fatalf("Error creating the client: %s", err)
-	}
-
 	PubsubTopic := "order360-output-dev"
 	ProjectID := "wemade-core"
 
@@ -117,29 +101,6 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	}
 	pstopic := psclient.Topic(PubsubTopic)
 	log.Printf("pubsub topic is %v", pstopic)
-
-	docID := uuid.New().String()
-
-	req := esapi.IndexRequest{
-		Index:        indexName,
-		DocumentType: "record", //input.Request,
-		DocumentID:   docID,
-		Body:         bytes.NewReader(m.Data),
-		Refresh:      "true",
-	}
-	res, err := req.Do(ctx, es)
-	if err != nil {
-		log.Fatalf("Error getting response: %s", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		resB, _ := ioutil.ReadAll(res.Body)
-		log.Printf("[%s] Error indexing document ID=%v, Message=%v", res.Status(), docID, string(resB))
-	} else {
-		resB, _ := ioutil.ReadAll(res.Body)
-		log.Printf("[%s] document ID=%v, Message=%v", res.Status(), docID, string(resB))
-	}
 
 	// map the data
 	var output O3OutputRecord
