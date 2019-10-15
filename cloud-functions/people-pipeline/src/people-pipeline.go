@@ -53,6 +53,7 @@ type IdentifiedRecord struct {
 	PHONE   string `json:"phone"`
 	AD1     string `json:"ad1"`
 	AD2     string `json:"ad2"`
+	DORM    string `json:"dorm"`
 }
 
 type MultiPersonRecord struct {
@@ -122,6 +123,7 @@ type InputVER struct {
 	IS_COUNTRY   bool `json:"isCOUNTRY"`
 	IS_EMAIL     bool `json:"isEMAIL"`
 	IS_PHONE     bool `json:"isPHONE"`
+	IS_DORM     bool `json:"isPHONE"`
 }
 
 type InputColumn struct {
@@ -165,6 +167,7 @@ type OutputAddress struct {
 	State               string  `json:"State"`
 	StreetName          string  `json:"StreetName"`
 	CityStateZipMatch   bool    `json:"CityStateZipMatch"`
+	Dorm               string  `json:"Dorm"`
 }
 
 type OutputBackground struct {
@@ -1471,6 +1474,8 @@ func getFeatures(column *InputColumn) []uint32 {
 	result = append(result, toUInt32(column.VER.IS_EMAIL))
 	column.VER.IS_PHONE = rePhone.MatchString(val) && len(val) >= 10
 	result = append(result, toUInt32(column.VER.IS_PHONE))
+	column.VER.IS_DORM = reResidenceHall.MatchString(val) && len(val) >= 10
+	result = append(result, toUInt32(column.VER.IS_DORM))
 
 	columnJ, _ := json.Marshal(column.VER)
 	log.Printf("current VER %v", string(columnJ))
@@ -1493,6 +1498,7 @@ func getVER(column *InputColumn) InputVER {
 		IS_COUNTRY:   containsBool(listCountries, val),
 		IS_EMAIL:     reEmail.MatchString(val),
 		IS_PHONE:     rePhone.MatchString(val) && len(val) >= 10,
+		IS_DORM:      reResidenceHall.MatchString(val)
 	}
 	columnJ, _ := json.Marshal(result)
 	log.Printf("current VER %v", string(columnJ))
@@ -1839,6 +1845,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		instance = append(instance, float64(toUInt32(column.VER.IS_COUNTRY)))
 		instance = append(instance, float64(toUInt32(column.VER.IS_EMAIL)))
 		instance = append(instance, float64(toUInt32(column.VER.IS_PHONE)))
+		instance = append(instance, float64(toUInt32(column.VER.IS_DORM)))
 
 		instances = append(instances, instance)
 	}
@@ -2031,6 +2038,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
 					mkOutput.PHONE = column.Value
 				}
+			}else if column.VER.IS_DORM && len(mkOutput.DORM) == 0 && column.ERR.Role == 0 {
+				mkOutput.DORM = column.Value
 			}
 		}
 	}
@@ -2131,6 +2140,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
 			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
+			Dorm:                mkOutput.Dorm
 		}
 
 		// clean up address
