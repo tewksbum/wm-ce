@@ -274,6 +274,7 @@ type ERR struct {
 	ZipCode         int `json:"ZipCode"`
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
+	Dorm            int `json:"Dorm"`
 	// Product - Could it be a nested struct like ProductERR?
 	ProductPID         int `json:"ProductID"`
 	ProductSKU         int `json:"ProductSKU"`
@@ -613,6 +614,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.FullName = 1
 			err.FirstName = 1
 			err.LastName = 1
+		case "dorm","hall","building","alpha","alumni","apartment","apts","beta","building","campus","centennial","center","chi","college","common","community","complex","court","cross","delta","dorm","epsilon","eta","founder","fountain","fraternity","gamma","garden","greek","hall","height","heritage","high","hill","home","honor","hous","inn","international","iota","kappa","lambda","landing","learning","living","lodge","memorial","mu","nu","omega","omicron","park","phase","phi","pi","place","plaza","psi","residen","rho","river","scholarship","sigma","square","state","student","suite","tau","terrace","theta","tower","traditional","univ","university","upsilon","view","village","vista","wing","wood","xi","young","zeta":
+			err.Dorm = 1
 		}
 		if strings.Contains(key, "first") || strings.Contains(key, "fname") {
 			err.FirstName = 1
