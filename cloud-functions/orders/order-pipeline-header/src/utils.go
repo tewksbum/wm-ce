@@ -1,8 +1,11 @@
 package orderpipeline
 
 import (
+	"encoding/json"
 	"hash/fnv"
+	"log"
 	"regexp"
+	"strings"
 	"unicode"
 
 	"golang.org/x/text/transform"
@@ -26,5 +29,18 @@ func isMn(r rune) bool {
 func removeDiacritics(value string) string {
 	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
 	result, _, _ := transform.String(t, value)
+	return result
+}
+
+func getVER(column *InputColumn) InputVER {
+	var val = strings.ToLower(strings.TrimSpace(column.Value))
+	log.Printf("features values is %v", val)
+	val = removeDiacritics(val)
+	result := InputVER{
+		Hashcode: int64(getHash(val)),
+		IsTerms:  reTerms.MatchString(val),
+	}
+	columnJ, _ := json.Marshal(result)
+	log.Printf("current VER %v", string(columnJ))
 	return result
 }
