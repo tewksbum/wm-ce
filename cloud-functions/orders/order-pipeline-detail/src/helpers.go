@@ -6,28 +6,6 @@ import (
 	"log"
 )
 
-// IdentifiedRecord struct
-type IdentifiedRecord struct {
-	TrustedID    string `json:"TrustedId" bigquery:"trustedid"`
-	OrderID      string `json:"OrderId" bigquery:"orderid"`
-	DetailID     string `json:"DetailId" bigquery:"detailid"`
-	ConsigmentID string `json:"ConsigmentId" bigquery:"consigmentid"`
-	ProductID    string `json:"ProductId" bigquery:"productid"`
-	SKU          string `json:"SKU" bigquery:"sku"`
-	UPC          string `json:"UPC" bigquery:"upc"`
-}
-
-// OutputRecord the output result
-type OutputRecord struct {
-	TrustedID []OutputTrustedID `json:"TrustedId"`
-	Owner     int64             `json:"Owner"`
-	Source    string            `json:"Source"`
-	Request   string            `json:"Request"`
-	Row       int               `json:"Row"`
-	TimeStamp string            `json:"TimeStamp"`
-	Record    IdentifiedRecord  `json:"Record" bigquery:"OrderDetail"`
-}
-
 func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	var mkOutput IdentifiedRecord
 	var trustedID string
@@ -78,25 +56,25 @@ func parseOrderDetail(input *InputRecord, mkOutput *IdentifiedRecord) (err error
 			mkOutput.OrderID = column.Value
 		}
 		if column.ERR.Order.Detail.ID == 1 {
-			mkOutput.DetailID = column.Value
+			mkOutput.Detail.DetailID = column.Value
 		}
 		if column.ERR.Order.Detail.ConsigmentID == 1 {
-			mkOutput.ConsigmentID = column.Value
+			mkOutput.Detail.ConsigmentID = column.Value
 		}
 		if column.ERR.Order.Detail.ProductID == 1 {
-			mkOutput.ProductID = column.Value
+			mkOutput.Detail.ProductID = column.Value
 		}
 		if column.ERR.Order.Detail.ProductSKU == 1 {
-			mkOutput.SKU = column.Value
+			mkOutput.Detail.SKU = column.Value
 		}
 		if column.ERR.Order.Detail.ProductUPC == 1 {
-			mkOutput.UPC = column.Value
+			mkOutput.Detail.UPC = column.Value
 		}
 	}
 	if mkOutput.OrderID == "" {
 		err = errors.New("[parseOrderDetail]: OrderID not found")
 	}
-	if mkOutput.DetailID == "" {
+	if mkOutput.Detail.DetailID == "" {
 		err = errors.New("[parseOrderDetail]: OrderDetailID not found")
 	}
 	return err

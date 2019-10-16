@@ -25,12 +25,13 @@ type OrderConsignmentERR struct {
 
 // OrderDetailERR Entity Recognition
 type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
+	ID           int    `json:"ID"`
+	OrderID      int    `json:"OrderID"`
+	ConsigmentID int    `json:"ConsigmentID"`
+	CustomerID   string `json:"CustomerId"`
+	ProductID    int    `json:"ProductID"`
+	ProductSKU   int    `json:"ProductSKU"`
+	ProductUPC   int    `json:"ProductUPC"`
 }
 
 // Consignment detail
@@ -90,4 +91,29 @@ type OutputTrustedID struct {
 // PubSubMessage is the payload of a pubsub event
 type PubSubMessage struct {
 	Data []byte `json:"data"`
+}
+
+// IdentifiedRecord struct
+type IdentifiedRecord struct {
+	TrustedID   string      `json:"TrustedId" bigquery:"trustedid"`
+	OrderID     string      `json:"OrderId" bigquery:"orderid"`
+	OrderNumber string      `json:"OrderNumber" bigquery:"ordernumber"`
+	CustomerID  string      `json:"CustomerId" bigquery:"customerid"`
+	OrderDate   string      `json:"OrderDate" bigquery:"orderdate"`
+	BillTo      string      `json:"BillTo" bigquery:"billto"`
+	Terms       string      `json:"Terms" bigquery:"terms"`
+	Total       string      `json:"Total" bigquery:"total"`
+	Consignment Consignment `json:"Consigment" bigquery:"consigment"`
+	Detail      Detail      `json:"Detail" bigquery:"detail"`
+}
+
+// OutputRecord the output result
+type OutputRecord struct {
+	TrustedID []OutputTrustedID `json:"TrustedId"`
+	Owner     int64             `json:"Owner"`
+	Source    string            `json:"Source"`
+	Request   string            `json:"Request"`
+	Row       int               `json:"Row"`
+	TimeStamp string            `json:"TimeStamp"`
+	Record    IdentifiedRecord  `json:"Record" bigquery:"OrderDetail"`
 }

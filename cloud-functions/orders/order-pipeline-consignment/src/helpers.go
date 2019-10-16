@@ -6,25 +6,6 @@ import (
 	"log"
 )
 
-// IdentifiedRecord struct
-type IdentifiedRecord struct {
-	TrustedID    string `json:"TrustedId" bigquery:"trustedid"`
-	OrderID      string `json:"OrderId" bigquery:"orderid"`
-	ConsigmentID string `json:"ConsigmentId" bigquery:"consigmentid"`
-	ShipDate     string `json:"ShipDate" bigquery:"shipdate"`
-}
-
-// OutputRecord the output result
-type OutputRecord struct {
-	TrustedID []OutputTrustedID `json:"TrustedId"`
-	Owner     int64             `json:"Owner"`
-	Source    string            `json:"Source"`
-	Request   string            `json:"Request"`
-	Row       int               `json:"Row"`
-	TimeStamp string            `json:"TimeStamp"`
-	Record    IdentifiedRecord  `json:"Record" bigquery:"OrderConsignment"`
-}
-
 func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	var mkOutput IdentifiedRecord
 	var trustedID string
@@ -72,18 +53,19 @@ func parseOrderConsignment(input *InputRecord, mkOutput *IdentifiedRecord) (err 
 	for _, column := range input.Columns {
 		if column.ERR.TrustedID == 1 {
 			mkOutput.OrderID = column.Value
+			mkOutput.Consignment.OrderID = column.Value
 		}
 		if column.ERR.Order.Consignment.ID == 1 {
-			mkOutput.ConsigmentID = column.Value
+			mkOutput.Consignment.ConsigmentID = column.Value
 		}
 		if column.ERR.Order.Consignment.ShipDate == 1 {
-			mkOutput.ShipDate = column.Value
+			mkOutput.Consignment.ShipDate = column.Value
 		}
 	}
 	if mkOutput.OrderID == "" {
 		err = errors.New("[parseOrderConsignment]: OrderID not found")
 	}
-	if mkOutput.ConsigmentID == "" {
+	if mkOutput.Consignment.ConsigmentID == "" {
 		err = errors.New("[parseOrderConsignment]: ConsignmentID not found")
 	}
 	return err

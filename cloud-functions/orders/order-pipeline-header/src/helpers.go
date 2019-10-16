@@ -6,29 +6,6 @@ import (
 	"log"
 )
 
-// IdentifiedRecord struct
-type IdentifiedRecord struct {
-	TrustedID   string `json:"TrustedId" bigquery:"trustedid"`
-	OrderID     string `json:"OrderId" bigquery:"orderid"`
-	OrderNumber string `json:"OrderNumber" bigquery:"ordernumber"`
-	CustomerID  string `json:"CustomerId" bigquery:"customerid"`
-	OrderDate   string `json:"OrderDate" bigquery:"orderdate"`
-	BillTo      string `json:"BillTo" bigquery:"billto"`
-	Terms       string `json:"Terms" bigquery:"terms"`
-	Total       string `json:"Total" bigquery:"total"`
-}
-
-// OutputRecord the output result
-type OutputRecord struct {
-	TrustedID []OutputTrustedID `json:"TrustedId"`
-	Owner     int64             `json:"Owner"`
-	Source    string            `json:"Source"`
-	Request   string            `json:"Request"`
-	Row       int               `json:"Row"`
-	TimeStamp string            `json:"TimeStamp"`
-	Record    IdentifiedRecord  `json:"Record" bigquery:"OrderHeader"`
-}
-
 func pipelineParse(input InputRecord) (output *OutputRecord, err error) {
 	var mkOutput IdentifiedRecord
 	var trustedID string
