@@ -6,6 +6,7 @@ import pandas as pd
 import os
 from google.cloud import datastore
 
+
 def get_column_headers(columns):
     """
     Returns only the valid column names (filtering out empty or "Unnamed"
@@ -22,14 +23,16 @@ def get_column_headers(columns):
             res.append(col)
     return res
 
+
 def get_column_stats(series):
     return {
-        "rows" : series[~series.isnull()].shape[0],
+        "rows": series[~series.isnull()].shape[0],
         "unique": len(series.unique()),
         "min": series[~series.isnull()].min(),
         "max": series[~series.isnull()].max(),
         "populated": series[~series.isnull()].shape[0] / series.shape[0]
     }
+
 
 def flatten_stats(col_stats):
     flattened = {}
@@ -39,6 +42,7 @@ def flatten_stats(col_stats):
             flattened[flat_key] = value
     return flattened
 
+
 def save_profiler_stats(file_name, columns, column_headers, flat_col_stats):
     """
     Write the profile stats to Datastore
@@ -47,7 +51,7 @@ def save_profiler_stats(file_name, columns, column_headers, flat_col_stats):
 
     owner, request_file = os.path.split(file_name)
     request, file_extension = os.path.splitext(request_file)
-    
+
     kind = request
     incomplete_key = client.key(kind)
 
@@ -62,6 +66,7 @@ def save_profiler_stats(file_name, columns, column_headers, flat_col_stats):
         profile[key] = value
 
     client.put(profile)
+
 
 def main(data, context):
     """

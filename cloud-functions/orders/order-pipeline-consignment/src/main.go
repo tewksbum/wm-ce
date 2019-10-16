@@ -1,6 +1,7 @@
 package orderpipeline
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -21,6 +22,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		log.Fatal(err)
 		return nil
 	}
+
+	esLog(&ctx, bytes.NewReader(m.Data)) // Log data
 
 	output, err := pipelineParse(input)
 	if err != nil {
