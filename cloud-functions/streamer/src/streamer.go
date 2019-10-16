@@ -549,9 +549,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		var err ERR
 		key := strings.ToLower(header)
 		switch key {
-		case "orderid", "invoiceid":
+		case "orderid", "order id", "invoiceid", "invoice id":
 			err.Order.ID = 1
-		case "ordernumber", "order number":
+		case "order number", "ordernumber", "full order number", "full ordernumber",
+			"fullorder number", "fullordernumber":
 			err.Order.Number = 1
 		case "order date", "orderdate", "invoice date", "invoicedate",
 			"placed date", "placeddate", "created at", "createdat":
@@ -789,6 +790,10 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.Order.Detail.ProductSKU = err.ProductSKU
 			err.Order.Detail.ProductID = err.ProductPID
 			err.Order.Detail.ProductUPC = err.ProductUPC
+		}
+		if err.Order.ID > 0 || err.Order.Number > 0 {
+			err.TrustedID = 1
+			errResult[header] = err
 		}
 	}
 

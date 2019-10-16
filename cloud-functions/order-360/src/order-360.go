@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	esAddress  = "http://104.198.136.122:9200"
-	esUser     = "elastic"
-	esPassword = "TsLv8BtM"
+	pubsubTopic = "order-output-dev"    //"streamer-output-prod"
+	outputTopic = "order360-output-dev" // "order-output-prod"
+	projectID   = "wemade-core"
 )
 
 // OPOutputTrustedID trusted id
@@ -91,15 +91,12 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 		log.Fatal(err)
 	}
 
-	PubsubTopic := "order360-output-dev"
-	ProjectID := "wemade-core"
-
-	psclient, err := pubsub.NewClient(ctx, ProjectID)
+	psclient, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		log.Fatalf("Could not create pubsub Client: %v", err)
 		return nil
 	}
-	pstopic := psclient.Topic(PubsubTopic)
+	pstopic := psclient.Topic(outputTopic)
 	log.Printf("pubsub topic is %v", pstopic)
 
 	// map the data
@@ -114,7 +111,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	output.Order = input.Order
 
 	// write to BQ
-	bqClient, err := bigquery.NewClient(ctx, ProjectID)
+	bqClient, err := bigquery.NewClient(ctx, projectID)
 
 	orderSchema, err := bigquery.InferSchema(O3OutputRecord{})
 	orderMetaData := &bigquery.TableMetadata{
@@ -135,5 +132,24 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("%v %v", bqClient, orderSchema)
+
+	outputJSON, err := json.Marshal(output)
+	if err != nil {
+		log.Fatalf("Could not parse output data: %v", err)
+		return nil
+	}
+
+	log.Printf("output message %v", string(outputJSON))
+
+	psresult := pstopic.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
+	psid, err := psresult.Get(ctx)
+	if err != nil {
+		log.Fatalf("Could not pub to pubsub: %v", err)
+	} else {
+		log.Printf("Published record message id %v", psid)
+	}
+
 	return nil
 }
