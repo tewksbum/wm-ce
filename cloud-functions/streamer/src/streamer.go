@@ -469,8 +469,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		return nil
 	}
 
-	// contentType := http.DetectContentType(slurp)
-	// log.Printf("http detected file type as %v", contentType)
+	contentType := http.DetectContentType(slurp)
+	log.Printf("http detected file type as %v", contentType)
 
 	fileKind, _ := filetype.Match(slurp)
 	if fileKind == filetype.Unknown {
@@ -490,7 +490,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 
 	// assume it is excel file if it is sniffed by http as application/zip
 	// if contentType == "application/zip" {
-	if fileKind.Extension == "xlsx" {
+	if fileKind.Extension == "xlsx" || contentType == "application/zip" {
 		xlsxFile, err := xlsx.OpenBinary(slurp)
 		if err != nil {
 			log.Fatalf("unable to parse xlsx: %v", err)
