@@ -1474,7 +1474,7 @@ func getFeatures(column *InputColumn) []uint32 {
 	result = append(result, toUInt32(column.VER.IS_EMAIL))
 	column.VER.IS_PHONE = rePhone.MatchString(val) && len(val) >= 10
 	result = append(result, toUInt32(column.VER.IS_PHONE))
-	column.VER.IS_DORM = reResidenceHall.MatchString(val) && len(val) >= 10
+	column.VER.IS_DORM = reResidenceHall.MatchString(val)
 	result = append(result, toUInt32(column.VER.IS_DORM))
 
 	columnJ, _ := json.Marshal(column.VER)
@@ -1680,7 +1680,12 @@ func init() {
 	} else {
 		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip_city_state.json")
 	}
-
+	listDorms, err = readLines(ctx, sClient, BucketData, "data/residence_halls_lower.txt")
+	if err != nil {
+		log.Fatalf("Failed to read txt %v from bucket", "data/residence_halls_lower.txt")
+	} else {
+		log.Printf("read %v values from %v", len(listDorms), "data/residence_halls_lower.txt")
+	}
 }
 
 func isInt(s string) bool {
@@ -1724,6 +1729,16 @@ func CheckCityStateZip(city string, state string, zip string) bool {
 		}
 	}
 	return result
+}
+
+func CheckDorm(dorm string) bool{
+	checkDorm :=strings.ToLower(dorm)
+	for _, item := range listDorms {
+		if indexOf(checkDorm, item) > -1{
+			return true
+		}
+	}
+	return false
 }
 
 func CorrectAddress(in string) OutputAddress {
@@ -2039,7 +2054,10 @@ func Main(ctx context.Context, m PubSubMessage) error {
 					mkOutput.PHONE = column.Value
 				}
 			}else if column.VER.IS_DORM && len(mkOutput.DORM) == 0 && column.ERR.Role == 0 {
-				mkOutput.DORM = column.Value
+				// If the dorm is in the residence halls list, then we save the dorm
+				if CheckDorm(mkOutput.DORM){
+					mkOutput.DORM = column.Value
+				}
 			}
 		}
 	}
@@ -2140,7 +2158,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
 			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
-			Dorm:                mkOutput.Dorm
+			Dorm:                mkOutput.DORM
 		}
 
 		// clean up address
