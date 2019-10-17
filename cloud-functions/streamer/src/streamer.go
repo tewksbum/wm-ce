@@ -552,13 +552,13 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		case "orderid", "order id", "invoiceid", "invoice id":
 			err.Order.ID = 1
 		case "order number", "ordernumber", "full order number", "full ordernumber",
-			"fullorder number", "fullordernumber":
+			"fullorder number", "fullordernumber", "ecometryordernumber":
 			err.Order.Number = 1
 		case "order date", "orderdate", "invoice date", "invoicedate",
 			"placed date", "placeddate", "created at", "createdat":
 			err.Order.Date = 1
 		case "order total", "ordertotal", "total":
-			err.Order.Number = 1
+			err.Order.Total = 1
 		case "ship date", "shipdate":
 			err.Order.Consignment.ShipDate = 1
 		case "shipment", "consignment", "consignment id", "consignmentid":
