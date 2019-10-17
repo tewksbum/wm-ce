@@ -361,7 +361,7 @@ type Output struct {
 	Row          int            `json:"Row"`
 	Columns      []OutputColumn `json:"Columns"`
 	TimeStamp    string         `json:"TimeStamp"`
-	Organization string         `json:"TimeStamp"`
+	Organization string         `json:"Organization"`
 }
 
 // OutputColumn output column
