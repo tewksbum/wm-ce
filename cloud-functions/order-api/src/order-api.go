@@ -21,5 +21,5 @@ func SaveOrder(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("[SaveOrder]: Not a valid JSON. err: %s", err)
 	}
 	esLog(&ctx, bytes.NewReader(b), "order", "record", "true")
-	parseOrderJSON(string(b))
+	// parseOrderJSON(string(b))
 }
