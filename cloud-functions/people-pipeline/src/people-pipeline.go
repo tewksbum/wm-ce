@@ -167,7 +167,7 @@ type OutputAddress struct {
 	State               string  `json:"State"`
 	StreetName          string  `json:"StreetName"`
 	CityStateZipMatch   bool    `json:"CityStateZipMatch"`
-	Dorm               string  `json:"Dorm"`
+	Dorm                string  `json:"Dorm"`
 }
 
 type OutputBackground struct {
@@ -305,6 +305,7 @@ var listFirstNames map[string]bool
 var listLastNames map[string]bool
 var listError error
 var listCityStateZip []CityStateZip
+var listDorms []string
 
 var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
@@ -1474,8 +1475,6 @@ func getFeatures(column *InputColumn) []uint32 {
 	result = append(result, toUInt32(column.VER.IS_EMAIL))
 	column.VER.IS_PHONE = rePhone.MatchString(val) && len(val) >= 10
 	result = append(result, toUInt32(column.VER.IS_PHONE))
-	column.VER.IS_DORM = reResidenceHall.MatchString(val)
-	result = append(result, toUInt32(column.VER.IS_DORM))
 
 	columnJ, _ := json.Marshal(column.VER)
 	log.Printf("current VER %v", string(columnJ))
@@ -1498,7 +1497,7 @@ func getVER(column *InputColumn) InputVER {
 		IS_COUNTRY:   containsBool(listCountries, val),
 		IS_EMAIL:     reEmail.MatchString(val),
 		IS_PHONE:     rePhone.MatchString(val) && len(val) >= 10,
-		IS_DORM:      reResidenceHall.MatchString(val)
+		IS_DORM:      reResidenceHall.MatchString(val) || CheckDorm(val),
 	}
 	columnJ, _ := json.Marshal(result)
 	log.Printf("current VER %v", string(columnJ))
@@ -1731,10 +1730,10 @@ func CheckCityStateZip(city string, state string, zip string) bool {
 	return result
 }
 
-func CheckDorm(dorm string) bool{
-	checkDorm :=strings.ToLower(dorm)
+func CheckDorm(dorm string) bool {
+	checkDorm := strings.ToLower(dorm)
 	for _, item := range listDorms {
-		if indexOf(checkDorm, item) > -1{
+		if indexOf(checkDorm, item) > -1 {
 			return true
 		}
 	}
@@ -1860,7 +1859,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		instance = append(instance, float64(toUInt32(column.VER.IS_COUNTRY)))
 		instance = append(instance, float64(toUInt32(column.VER.IS_EMAIL)))
 		instance = append(instance, float64(toUInt32(column.VER.IS_PHONE)))
-		instance = append(instance, float64(toUInt32(column.VER.IS_DORM)))
 
 		instances = append(instances, instance)
 	}
@@ -2053,7 +2051,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
 					mkOutput.PHONE = column.Value
 				}
-			}else if column.VER.IS_DORM && len(mkOutput.DORM) == 0 && column.ERR.Role == 0 {
+			}else if column.VER.IS_DORM && column.ERR.Role == 0 {
 				// If the dorm is in the residence halls list, then we save the dorm
 				if CheckDorm(mkOutput.DORM){
 					mkOutput.DORM = column.Value
@@ -2158,7 +2156,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
 			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
-			Dorm:                mkOutput.DORM
+			Dorm:                "", //If its not a matchkey I'm not sure where to get this value from, where do can I use the inputVER
 		}
 
 		// clean up address
