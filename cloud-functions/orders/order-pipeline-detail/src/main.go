@@ -23,7 +23,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
-	esLog(&ctx, bytes.NewReader(m.Data)) // Log data
+	// Log data
+	esLog(&ctx, bytes.NewReader(m.Data), "order-pipeline", "record", "true")
 
 	output, err := pipelineParse(input)
 	if err != nil {

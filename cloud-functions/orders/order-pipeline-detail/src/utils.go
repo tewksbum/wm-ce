@@ -30,7 +30,7 @@ var (
 	esPassword = "TsLv8BtM"
 )
 
-func esLog(ctx *context.Context, body *bytes.Reader) {
+func esLog(ctx *context.Context, body *bytes.Reader, index string, doctype string, refresh string) {
 	cfg := elasticsearch.Config{
 		Addresses: []string{
 			esAddress,
@@ -41,16 +41,16 @@ func esLog(ctx *context.Context, body *bytes.Reader) {
 	es, err := elasticsearch.NewClient(cfg)
 	docID := uuid.New().String()
 	req := esapi.IndexRequest{
-		Index:        "order",
-		DocumentType: "record",
+		Index:        index,
+		DocumentType: doctype,
 		DocumentID:   docID,
 		Body:         body,
-		Refresh:      "true",
+		Refresh:      refresh,
 	}
 
 	res, err := req.Do(*ctx, es)
 	if err != nil {
-		log.Fatalf("Error getting response: %s", err)
+		log.Printf("Error getting response: %s", err)
 	}
 	defer res.Body.Close()
 
@@ -62,7 +62,6 @@ func esLog(ctx *context.Context, body *bytes.Reader) {
 		log.Printf("[%s] document ID=%v, Message=%v", res.Status(), docID, string(resB))
 	}
 }
-
 func getHash(s string) uint32 {
 	h := fnv.New32a()
 	h.Write([]byte(s))
