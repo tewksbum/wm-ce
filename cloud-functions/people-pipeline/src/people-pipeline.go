@@ -1934,6 +1934,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	var mkOutput IdentifiedRecord
 	var trustedID string
 	var ClassYear string
+	var dorm string
+
 	for index, column := range Columns {
 		predictionValue := prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
@@ -2051,11 +2053,12 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
 					mkOutput.PHONE = column.Value
 				}
-			}else if column.VER.IS_DORM && column.ERR.Role == 0 {
-				// If the dorm is in the residence halls list, then we save the dorm
-				if CheckDorm(mkOutput.DORM){
-					mkOutput.DORM = column.Value
-				}
+			}
+		}
+		if column.VER.IS_DORM && column.ERR.Role == 0 {
+			// If the dorm is in the residence halls list, then we save the dorm
+			if CheckDorm(column.Value) {
+				dorm = column.Value
 			}
 		}
 	}
@@ -2156,7 +2159,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
 			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
-			Dorm:                "", //If its not a matchkey I'm not sure where to get this value from, where do can I use the inputVER
+			Dorm:                dorm,
 		}
 
 		// clean up address
