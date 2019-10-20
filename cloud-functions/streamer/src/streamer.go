@@ -143,6 +143,7 @@ func RenameDuplicateColumns(s []string) []string {
 
 func getCsvMap(headers []string, data [][]string) map[string][]string {
 	csvMap := make(map[string][]string)
+	log.Printf("getcsvmap header %v data %v", headers, data)
 	for j, col := range headers {
 		for index := 0; index < len(data); index++ {
 			csvMap[col] = append(csvMap[col], data[index][j])
