@@ -146,7 +146,11 @@ func getCsvMap(headers []string, data [][]string) map[string][]string {
 	log.Printf("getcsvmap header %v data %v", headers, data)
 	for j, col := range headers {
 		for index := 0; index < len(data); index++ {
-			csvMap[col] = append(csvMap[col], data[index][j])
+			if len(data[index]) > j {
+				csvMap[col] = append(csvMap[col], data[index][j])
+			} else {
+				csvMap[col] = append(csvMap[col], "")
+			}
 		}
 	}
 	return csvMap
