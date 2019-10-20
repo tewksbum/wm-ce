@@ -77,6 +77,10 @@ type Request struct {
 	Status       string
 	SubmittedAt  time.Time
 	ProcessedAt  time.Time
+	Attributes   string
+	Data         string
+	Owner        string
+	Passthrough  string
 }
 
 // IDColumn struct
