@@ -53,6 +53,7 @@ type IdentifiedRecord struct {
 	PHONE   string `json:"phone"`
 	AD1     string `json:"ad1"`
 	AD2     string `json:"ad2"`
+	DORM    string `json:"dorm"`
 }
 
 type MultiPersonRecord struct {
@@ -122,6 +123,7 @@ type InputVER struct {
 	IS_COUNTRY   bool `json:"isCOUNTRY"`
 	IS_EMAIL     bool `json:"isEMAIL"`
 	IS_PHONE     bool `json:"isPHONE"`
+	IS_DORM      bool `json:"isDORM"`
 }
 
 type InputColumn struct {
@@ -165,6 +167,7 @@ type OutputAddress struct {
 	State               string  `json:"State"`
 	StreetName          string  `json:"StreetName"`
 	CityStateZipMatch   bool    `json:"CityStateZipMatch"`
+	Dorm                string  `json:"Dorm"`
 }
 
 type OutputBackground struct {
@@ -302,6 +305,7 @@ var listFirstNames map[string]bool
 var listLastNames map[string]bool
 var listError error
 var listCityStateZip []CityStateZip
+var listDorms []string
 
 var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
@@ -1493,6 +1497,7 @@ func getVER(column *InputColumn) InputVER {
 		IS_COUNTRY:   containsBool(listCountries, val),
 		IS_EMAIL:     reEmail.MatchString(val),
 		IS_PHONE:     rePhone.MatchString(val) && len(val) >= 10,
+		IS_DORM:      reResidenceHall.MatchString(val) || CheckDorm(val),
 	}
 	columnJ, _ := json.Marshal(result)
 	log.Printf("current VER %v", string(columnJ))
@@ -1674,7 +1679,12 @@ func init() {
 	} else {
 		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip_city_state.json")
 	}
-
+	listDorms, err = readLines(ctx, sClient, BucketData, "data/residence_halls_lower.txt")
+	if err != nil {
+		log.Fatalf("Failed to read txt %v from bucket", "data/residence_halls_lower.txt")
+	} else {
+		log.Printf("read %v values from %v", len(listDorms), "data/residence_halls_lower.txt")
+	}
 }
 
 func isInt(s string) bool {
@@ -1718,6 +1728,16 @@ func CheckCityStateZip(city string, state string, zip string) bool {
 		}
 	}
 	return result
+}
+
+func CheckDorm(dorm string) bool {
+	checkDorm := strings.ToLower(dorm)
+	for _, item := range listDorms {
+		if indexOf(checkDorm, item) > -1 {
+			return true
+		}
+	}
+	return false
 }
 
 func CorrectAddress(in string) OutputAddress {
@@ -1914,6 +1934,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	var mkOutput IdentifiedRecord
 	var trustedID string
 	var ClassYear string
+	var dorm string
+
 	for index, column := range Columns {
 		predictionValue := prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
@@ -2033,6 +2055,12 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+		if column.VER.IS_DORM && column.ERR.Role == 0 {
+			// If the dorm is in the residence halls list, then we save the dorm
+			if CheckDorm(column.Value) {
+				dorm = column.Value
+			}
+		}
 	}
 
 	mkJSON, _ = json.Marshal(mkOutput)
@@ -2131,6 +2159,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			State:               mkOutput.STATE,
 			StreetName:          addressParsed.StreetName,
 			CityStateZipMatch:   CheckCityStateZip(mkOutput.CITY, mkOutput.STATE, mkOutput.ZIP),
+			Dorm:                dorm,
 		}
 
 		// clean up address

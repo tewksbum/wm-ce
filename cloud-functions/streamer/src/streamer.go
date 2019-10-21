@@ -315,6 +315,7 @@ type ERR struct {
 	ZipCode         int `json:"ZipCode"`
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
+	Dorm            int `json:"Dorm"`
 	// Product - Could it be a nested struct like ProductERR?
 	ProductPID         int `json:"ProductID"`
 	ProductSKU         int `json:"ProductSKU"`
@@ -672,6 +673,8 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.FullName = 1
 			err.FirstName = 1
 			err.LastName = 1
+		case "dorm","hall","building","dormitory","apartment","fraternity","residence":
+			err.Dorm = 1
 		}
 
 		if strings.Contains(key, "first") || strings.Contains(key, "fname") {
