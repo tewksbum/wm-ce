@@ -256,6 +256,18 @@ func getProfilerStats(file string, columns int, columnHeaders []string, colStats
 	return profile
 }
 
+// CampaignERR Entity Recognition
+type CampaignERR struct {
+	TrustedID  int `json:"TrustedID"`
+	CampaignID int `json:"CampaignId"`
+	Name       int `json:"Name"`
+	Type       int `json:"Type"`
+	Channel    int `json:"Channel"`
+	StartDate  int `json:"StartDate"`
+	EndDate    int `json:"EndDate"`
+	Budget     int `json:"Budget"`
+}
+
 // OrderERR Entity Recognition
 type OrderERR struct {
 	//  Trusted ID
@@ -335,6 +347,8 @@ type ERR struct {
 	ProductMargin      int `json:"ProductMargin"`
 	// Order
 	Order OrderERR `json:"Order"`
+	//Campaign
+	Campaign CampaignERR `json:"Campaign"`
 }
 
 // NERcolumns coloumns for NER
@@ -559,6 +573,20 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 		var err ERR
 		key := strings.ToLower(header)
 		switch key {
+		case "campaign id", "campaignid":
+			err.Campaign.CampaignID = 1
+		case "campaign", "campaign name", "campaignname":
+			err.Campaign.Name = 1
+		case "campaign type", "campaigntype":
+			err.Campaign.Type = 1
+		case "campaign budget", "campaignbudget", "budget":
+			err.Campaign.Budget = 1
+		case "campaign channel", "campaignchannel":
+			err.Campaign.Channel = 1
+		case "campaign start date", "campaign startdate", "campaignstartdate":
+			err.Campaign.StartDate = 1
+		case "campaign end date", "campaign enddate", "campaignenddate":
+			err.Campaign.EndDate = 1
 		case "orderid", "order id", "invoiceid", "invoice id":
 			err.Order.ID = 1
 		case "order number", "ordernumber", "full order number", "full ordernumber",
@@ -673,7 +701,7 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.FullName = 1
 			err.FirstName = 1
 			err.LastName = 1
-		case "dorm","hall","building","dormitory","apartment","fraternity","residence":
+		case "dorm", "hall", "building", "dormitory", "apartment", "fraternity", "residence":
 			err.Dorm = 1
 		}
 
@@ -807,6 +835,11 @@ func FileStreamer(ctx context.Context, e GCSEvent) error {
 			err.TrustedID = 1
 			errResult[header] = err
 		}
+		if err.Campaign.CampaignID == 1 {
+			err.TrustedID = 1
+			errResult[header] = err
+		}
+
 	}
 
 	psclient, err := pubsub.NewClient(ctx, ProjectID)
