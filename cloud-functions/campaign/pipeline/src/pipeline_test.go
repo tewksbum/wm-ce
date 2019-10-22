@@ -11,39 +11,45 @@ var (
 		"Columns": [
 			{
 				"ERR": {
-					"CampaignID": 0,
-					"Name": 1,
-					"Type": 0,
-					"CampaignName": 1,
-					"CampaignDescription": 0,
-					"CampaignSize": 0,
-					"CampaignColor": 0,
-					"CampaignUnitPrice": 0,
-					"CampaignContains": 0,
-					"CampaignType": 0,
-					"CampaignVendorId": 0,
-					"CampaignVendor": 0,
-					"CampaignCost": 0,
-					"CampaignStars": 0,
-					"CampaignCategory": 0,
-					"CampaignMargin": 0
+					"TrustedID":0,
+					"CampaignId":0,
+					"Name":1,
+					"Type":0,
+					"Channel":0,
+					"StartDate":0,
+					"EndDate":0,
+					"Budget":0
 				},
 				"Name": "pname",
 				"Value": "A campaign NAME"
+			},
+			{
+				"ERR": {
+					"TrustedID":0,
+					"CampaignId":0,
+					"Name":0,
+					"Type":0,
+					"Channel":0,
+					"StartDate":0,
+					"EndDate":0,
+					"Budget":1
+				},
+				"Name": "budget",
+				"Value": "108108"
 			}
 		],
 		"Owner": 108108108,
-		"Request": "req",
+		"Request": "857e551e-5f36-47ee-9699-f04fed5756e6",
 		"Row": 1,
 		"Source": "source",
-		"TimeStamp": "2019-10-08"
+		"TimeStamp": "2019-10-22"
 	}`)
 	outputRecord = &OutputRecord{
 		Owner:     108108108,
-		Request:   "req",
+		Request:   "857e551e-5f36-47ee-9699-f04fed5756e6",
 		Row:       1,
 		Source:    "source",
-		TimeStamp: "2019-10-08",
+		TimeStamp: "2019-10-22",
 		// TrustedID: []OutputTrustedID{
 		// 	OutputTrustedID{
 		// 		Source:   "source",
@@ -51,7 +57,8 @@ var (
 		// 	},
 		// },
 		Record: IdentifiedRecord{
-			Name: "A campaign NAME",
+			Name:   "A campaign NAME",
+			Budget: "108108",
 		},
 	}
 )
@@ -87,7 +94,7 @@ func Test_pipelineParse(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(gotOutput, tt.wantOutput) {
-				t.Errorf("pipelineParse() = %v, want %v", gotOutput, tt.wantOutput)
+				t.Errorf("pipelineParse() = \n%v, want \n%v", gotOutput, tt.wantOutput)
 			}
 		})
 	}

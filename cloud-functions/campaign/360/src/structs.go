@@ -30,7 +30,7 @@ type OutputRecord struct {
 }
 
 // O3OutputRecord output record to bq
-type O3OutputRecord struct {
+type ThreeSixtyOutputRecord struct {
 	Campaign  Record `json:"Campaign" bigquery:"campaign"`
 	Owner     int64  `json:"owner" bigquery:"owner"`
 	Source    string `json:"source" bigquery:"source"`

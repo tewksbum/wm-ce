@@ -36,7 +36,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	log.Printf("pubsub topic is %v", pstopic)
 
 	// map the data
-	var output O3OutputRecord
+	var output ThreeSixtyOutputRecord
 	output.Owner = input.Owner
 	output.Source = input.Source
 	output.Request = input.Request
@@ -49,7 +49,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	// write to BQ
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 
-	campaignSchema, err := bigquery.InferSchema(O3OutputRecord{})
+	campaignSchema, err := bigquery.InferSchema(ThreeSixtyOutputRecord{})
 	campaignMetaData := &bigquery.TableMetadata{
 		Schema: campaignSchema,
 	}
