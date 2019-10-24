@@ -58,9 +58,6 @@ var ProjectID = os.Getenv("PROJECTID")
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
 
-// BucketName the GS storage bucket name
-var BucketName = os.Getenv("GSBUCKET")
-
 var PubSubTopicFile = os.Getenv("PSTOPICFILE")
 var PubSubTopicData = os.Getenv("PSTOPICDATA")
 

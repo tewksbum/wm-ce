@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"cloud.google.com/go/pubsub"
+
+	"github.com/google/uuid"
 )
 
 // BLACKLIST is a list of json nodes that will be ignored
@@ -25,6 +27,7 @@ type Signature struct {
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
+	RecordID  string `json:"recordId"`
 }
 
 type Input struct {
@@ -90,6 +93,9 @@ func UnNest(sig Signature, ps map[string]string, attr map[string]string, prefix 
 
 	var output Output
 	output.Signature = sig
+	if len(output.Signature.RecordID) == 0 {
+		output.Signature.RecordID = uuid.New().String()
+	}
 	output.Fields = fields
 	output.Passthrough = ps
 
