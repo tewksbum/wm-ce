@@ -194,14 +194,24 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		EventType: input.EventType,
 	}
 
+	outputJSON, _ := json.Marshal(output)
+
 	// check if eventdate contains file info
 	if _, ok := input.EventData[FileUrlKey]; ok {
 		// this is a file request
+		psresult := psf.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+		})
+
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", output.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
+		}
 	} else {
 		// this is a data request, drop to eventdata pubsub
-		outputJSON, _ := json.Marshal(output)
-
-		// push into pubsub
 		psresult := psd.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
 		})

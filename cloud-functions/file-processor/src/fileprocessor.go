@@ -3,6 +3,7 @@ package fileprocessor
 import (
 	"bytes"
 	"context"
+	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,10 +12,12 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 
+	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 	"github.com/h2non/filetype"
 	"github.com/jfyne/csvd"
@@ -50,6 +53,31 @@ type Output struct {
 	Fields      map[string]string `json:"fields"`
 }
 
+// NERcolumns coloumns for NER
+type NERcolumns struct {
+	ColumnName  string             `json:"ColumnName"`
+	NEREntities map[string]float64 `json:"NEREntities"`
+}
+
+//NERresponse response
+type NERresponse struct {
+	Columns     []NERcolumns `json:"Columns"`
+	ElapsedTime float64      `json:"ElapsedTime"`
+	Owner       string       `json:"Owner"`
+	Source      string       `json:"Source"`
+	TimeStamp   string       `json:"TimeStamp"`
+}
+
+// NERrequest request
+type NERrequest struct {
+	Owner  string
+	Source string
+	Data   map[string][]string
+}
+
+// NERentry entry
+type NERentry map[string]interface{}
+
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
@@ -58,17 +86,26 @@ var PubSubTopic = os.Getenv("PSOUTPUT")
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
 
+var RedisAddress = os.Getenv("MEMSTORE")
+var NERApi = os.Getenv("NERAPI")
+
 // global vars
 var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var sb *storage.Client
+var msPool *redis.Pool
 
 func init() {
 	ctx = context.Background()
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	var maxConnections = 2
+	msPool = redis.NewPool(func() (redis.Conn, error) {
+		return redis.Dial("tcp", RedisAddress)
+	}, maxConnections)
+
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -170,10 +207,22 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headers = allrows[maxColumnRowAt]
 			records = allrows[maxColumnRowAt+1:]
 
-			headers = EnsureColumnsHaveNames(headers)
-			headers = RenameDuplicateColumns(headers)
+			headers = EnsureColumnsHaveNames(RenameDuplicateColumns(headers))
 
-			// TODO: add NER here
+			// Call NER API
+			NerRequest := NERrequest{
+				Owner:  fmt.Sprintf("%v", input.Signature.OwnerID),
+				Source: "wemade",
+				Data:   GetColumnars(headers, records),
+			}
+			log.Printf("%v Getting NER responses", input.Signature.EventID)
+			NerResponse := GetNERresponse(NerRequest)
+
+			// Store NER in Redis if we have a NER
+			NerKey := GetNERKey(input.Signature, headers)
+			if len(NerResponse.Owner) > 0 {
+				PersistNER(NerKey, NerResponse)
+			}
 
 			// push the records into pubsub
 			var output Output
@@ -192,17 +241,13 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				for key, value := range input.Attributes {
 					fields["Attr."+key] = value
 				}
-
 				output.Fields = fields
 
 				// let's pub it
 				outputJSON, _ := json.Marshal(output)
-
-				// push into pubsub
 				psresult := topic.Publish(ctx, &pubsub.Message{
 					Data: outputJSON,
 				})
-
 				psid, err := psresult.Get(ctx)
 				_, err = psresult.Get(ctx)
 				if err != nil {
@@ -210,6 +255,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				} else {
 					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 				}
+
 			}
 		} else {
 			log.Fatalf("Unable to fetch file %v, response code %v", url, resp.StatusCode)
@@ -259,4 +305,76 @@ func RenameDuplicateColumns(s []string) []string {
 	}
 
 	return result
+}
+
+func GetNERresponse(nerData NERrequest) NERresponse {
+	jsonValue, err := json.Marshal(nerData)
+	log.Printf("calling NER endpoint with %v", nerData)
+	if err != nil {
+		log.Panicf("Could not convert the NERrequest to json: %v", err)
+	}
+	var structResponse NERresponse
+	response, err := http.Post(NERApi, "application/json", bytes.NewBuffer(jsonValue))
+	if err != nil {
+		log.Fatalf("The NER request failed: %v", err)
+	} else {
+		if response.StatusCode != 200 {
+			log.Fatalf("NER request failed, status code:%v", response.StatusCode)
+		}
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatalf("Couldn't read the NER response: %v", err)
+		}
+		log.Printf("ner response %v", string(data))
+		json.Unmarshal(data, &structResponse)
+	}
+	return structResponse
+}
+
+func GetNERentry(structResponse NERresponse) NERentry {
+	var nerEntry = NERentry{
+		"ElapsedTime": structResponse.ElapsedTime,
+		"Owner":       structResponse.Owner,
+		"Source":      structResponse.Source,
+		"TimeStamp":   structResponse.TimeStamp,
+	}
+	//flatten the columns
+	for _, col := range structResponse.Columns {
+		for key, value := range col.NEREntities {
+			nerEntry["columns."+col.ColumnName+"."+key] = value
+		}
+	}
+	return nerEntry
+}
+
+func GetColumnars(headers []string, data [][]string) map[string][]string {
+	dataColumns := make(map[string][]string)
+	//log.Printf("getcsvmap header %v data %v", headers, data)
+	for j, col := range headers {
+		for index := 0; index < len(data); index++ {
+			if len(data[index]) > j {
+				dataColumns[col] = append(dataColumns[col], data[index][j])
+			} else {
+				dataColumns[col] = append(dataColumns[col], "")
+			}
+		}
+	}
+	return dataColumns
+}
+
+func GetNERKey(sig Signature, columns []string) string {
+	// concatenate all columnn headers together, in lower case
+	keys := strings.ToLower(strings.Join(columns[:], "-"))
+	hasher := sha1.New()
+	io.WriteString(hasher, keys)
+	return fmt.Sprintf("%v:%v:%v:%x", sig.OwnerID, strings.ToLower(sig.Source), strings.ToLower(sig.EventType), hasher.Sum(nil))
+}
+
+func PersistNER(key string, ner NERresponse) {
+	ms := msPool.Get()
+	nerJSON, _ := json.Marshal(ner)
+	_, err := ms.Do("SET", key, string(nerJSON))
+	if err != nil {
+		log.Fatalf("error storing NER %v", err)
+	}
 }
