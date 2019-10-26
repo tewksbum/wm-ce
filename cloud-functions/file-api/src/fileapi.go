@@ -65,8 +65,6 @@ var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 
-var FileUrlKey = "fileUrl"
-
 func init() {
 	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
@@ -84,7 +82,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Attributes  map[string]string      `json:"attributes"`
 		EventID     string                 `json:"eventId"`
 		EventType   string                 `json:"eventType"`
-		EventData   map[string]interface{} `json:"eventData"`
+		FileUrl     map[string]interface{} `json:"eventData"`
 	}
 
 	if r.Method == http.MethodOptions {
@@ -166,7 +164,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Attributes:  input.Attributes,
 		EventID:     input.EventID,
 		EventType:   input.EventType,
-		Endpoint:    "EVENT",
+		Endpoint:    "FILE",
 	}
 
 	eventKey := datastore.IncompleteKey("Event", nil)
@@ -182,7 +180,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	var output Output
 	output.Passthrough = input.Passthrough
 	output.Attributes = input.Attributes
-	output.EventData = input.EventData
+	output.EventData = make(map[string]interface{})
+	output.EventData["fileUrl"] = input.FileUrl
 	output.Signature = Signature{
 		OwnerID:   customer.Key.ID,
 		Source:    input.Source,
@@ -192,7 +191,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 
 	outputJSON, _ := json.Marshal(output)
 
-	// this is a data request, drop to eventdata pubsub
+	// this is a file request
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
 	})
@@ -204,4 +203,5 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
 	}
+
 }
