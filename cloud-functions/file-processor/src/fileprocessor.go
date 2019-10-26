@@ -11,8 +11,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
@@ -51,6 +53,7 @@ type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
 	Fields      map[string]string `json:"fields"`
+	Attributes  map[string]string `json:"attributes"`
 }
 
 // NERcolumns coloumns for NER
@@ -66,6 +69,14 @@ type NERresponse struct {
 	Owner       string       `json:"Owner"`
 	Source      string       `json:"Source"`
 	TimeStamp   string       `json:"TimeStamp"`
+}
+
+type NERCache struct {
+	Columns      []NERcolumns `json:"columns"`
+	TimeStamp    time.Time    `json:"time"`
+	ApplyCounter int          `json:"counter"`
+	Recompute    bool         `json:"dirty"`
+	Source       string       `json:"source`
 }
 
 // NERrequest request
@@ -227,6 +238,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			// push the records into pubsub
 			var output Output
 			output.Signature = input.Signature
+			output.Attributes = input.Attributes
 			if len(output.Signature.RecordID) == 0 {
 				output.Signature.RecordID = uuid.New().String()
 			}
@@ -237,11 +249,12 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				for j, y := range d {
 					fields[headers[j]] = y
 				}
-				// append attributes
-				for key, value := range input.Attributes {
-					fields["Attr."+key] = value
-				}
-				output.Fields = fields
+
+				// // do not append attributes until after record processor, otherwise interferes with NER lookup
+				// for key, value := range input.Attributes {
+				// 	fields["Attr."+key] = value
+				// }
+				// output.Fields = fields
 
 				// let's pub it
 				outputJSON, _ := json.Marshal(output)
@@ -353,27 +366,50 @@ func GetColumnars(headers []string, data [][]string) map[string][]string {
 	for j, col := range headers {
 		for index := 0; index < len(data); index++ {
 			if len(data[index]) > j {
-				dataColumns[col] = append(dataColumns[col], data[index][j])
+				// skip empty values
+				if len(data[index][j]) > 0 {
+					dataColumns[col] = append(dataColumns[col], data[index][j])
+				}
 			} else {
-				dataColumns[col] = append(dataColumns[col], "")
+				//dataColumns[col] = append(dataColumns[col], "")
+			}
+			// only calculates for up to 100 records
+			if len(dataColumns[col]) > 100 {
+				break
 			}
 		}
 	}
 	return dataColumns
 }
 
+func GetLowerCaseSorted(m []string) []string {
+	var result []string
+	for _, k := range m {
+		result = append(result, strings.ToLower(k))
+	}
+	sort.Strings(result)
+	return result
+}
+
 func GetNERKey(sig Signature, columns []string) string {
 	// concatenate all columnn headers together, in lower case
-	keys := strings.ToLower(strings.Join(columns[:], "-"))
+	keys := strings.Join(GetLowerCaseSorted(columns[:]), "-")
 	hasher := sha1.New()
 	io.WriteString(hasher, keys)
-	return fmt.Sprintf("%v:%v:%v:%x", sig.OwnerID, strings.ToLower(sig.Source), strings.ToLower(sig.EventType), hasher.Sum(nil))
+	return fmt.Sprintf("ner:%v:%v:%v:%x", sig.OwnerID, strings.ToLower(sig.Source), strings.ToLower(sig.EventType), hasher.Sum(nil))
 }
 
 func PersistNER(key string, ner NERresponse) {
 	ms := msPool.Get()
-	nerJSON, _ := json.Marshal(ner)
-	_, err := ms.Do("SET", key, string(nerJSON))
+	var cache NERCache
+
+	cache.Columns = ner.Columns
+	cache.TimeStamp = time.Now()
+	cache.Recompute = false
+	cache.Source = "FILE"
+
+	cacheJSON, _ := json.Marshal(cache)
+	_, err := ms.Do("SET", key, string(cacheJSON))
 	if err != nil {
 		log.Fatalf("error storing NER %v", err)
 	}
