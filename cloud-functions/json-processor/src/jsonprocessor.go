@@ -41,6 +41,7 @@ type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
 	Fields      map[string]string `json:"fields"`
+	Attributes  map[string]string `json:"attributes"`
 }
 
 // ProjectID is the env var of project id
@@ -86,10 +87,10 @@ func UnNest(sig Signature, ps map[string]string, attr map[string]string, prefix 
 		UnNestField(fields, prefix+"."+key, reflect.ValueOf(raw), sig, ps, attr)
 	}
 
-	// append attributes
-	for key, value := range attr {
-		fields["Attr."+key] = value
-	}
+	// do not append attributes here
+	// for key, value := range attr {
+	// 	fields["Attr."+key] = value
+	// }
 
 	var output Output
 	output.Signature = sig
@@ -97,6 +98,7 @@ func UnNest(sig Signature, ps map[string]string, attr map[string]string, prefix 
 		output.Signature.RecordID = uuid.New().String()
 	}
 	output.Fields = fields
+	output.Attributes = attr
 	output.Passthrough = ps
 
 	// let's pub it

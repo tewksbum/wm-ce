@@ -35,7 +35,7 @@ type Signature struct {
 	RecordID  string `json:"recordId"`
 }
 
-type RecordInput struct {
+type Input struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
 	Fields      map[string]string `json:"fields"`
@@ -80,6 +80,14 @@ type NERrequest struct {
 	Data   map[string][]string
 }
 
+type Output struct {
+	Signature   Signature         `json:"signature"`
+	Passthrough map[string]string `json:"passthrough"`
+	Fields      map[string]string `json:"fields"`
+	Attributes  map[string]string `json:"attributes"`
+}
+
+
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
@@ -109,7 +117,7 @@ func init() {
 }
 
 func ProcessRecord(ctx context.Context, m PubSubMessage) error {
-	var input RecordInput
+	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
@@ -173,6 +181,30 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 
 		}
 	}
+
+	// pub the record without attributes appended to fields
+	var output Output
+	output.Signature = input.Signature
+	output.Fields = input.Fields
+	output.Attributes = input.Attributes
+	output.Passthrough = input.Passthrough
+
+	// let's pub it
+	outputJSON, _ := json.Marshal(output)
+
+	// push into pubsub
+	psresult := topic.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
+
+	psid, err := psresult.Get(ctx)
+	_, err = psresult.Get(ctx)
+	if err != nil {
+		log.Fatalf("%v Could not pub to pubsub: %v", sig.EventID, err)
+	} else {
+		log.Printf("%v pubbed record as message id %v: %v", sig.EventID, psid, string(outputJSON))
+	}
+
 	return nil
 }
 
