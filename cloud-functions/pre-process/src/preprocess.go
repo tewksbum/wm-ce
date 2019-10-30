@@ -77,6 +77,72 @@ type PeopleERR struct {
 	TrustedID       int `json:"TrustedID"`
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
+	Dorm            int `json:"Dorm"`
+}
+
+type CampaignERR struct {
+	TrustedID  int `json:"TrustedID"`
+	CampaignID int `json:"CampaignId"`
+	Name       int `json:"Name"`
+	Type       int `json:"Type"`
+	Channel    int `json:"Channel"`
+	StartDate  int `json:"StartDate"`
+	EndDate    int `json:"EndDate"`
+	Budget     int `json:"Budget"`
+}
+
+type OrderERR struct {
+	ID         int `json:"ID"`
+	Number     int `json:"Number"`
+	CustomerID int `json:"CustomerID"`
+	Date       int `json:"Date"`
+	Total      int `json:"Total"`
+	BillTo     int `json:"BillTo"`
+}
+
+type ConsignmentERR struct {
+	ID       int `json:"ID"`
+	ShipDate int `json:"ShipDate"`
+}
+
+type OrderDetailERR struct {
+	ID           int `json:"ID"`
+	OrderID      int `json:"OrderID"`
+	ConsigmentID int `json:"ConsigmentID"`
+	ProductID    int `json:"ProductID"`
+	ProductSKU   int `json:"ProductSKU"`
+	ProductUPC   int `json:"ProductUPC"`
+}
+
+type ProductERR struct {
+	PID         int `json:"ID"`
+	SKU         int `json:"SKU"`
+	UPC         int `json:"UPC"`
+	Name        int `json:"Name"`
+	Description int `json:"Description"`
+	Size        int `json:"Size"`
+	Color       int `json:"Color"`
+	UnitPrice   int `json:"UnitPrice"`
+	Contains    int `json:"Contains"`
+	Type        int `json:"Type"`
+	VendorID    int `json:"VendorId"`
+	Vendor      int `json:"Vendor"`
+	Cost        int `json:"Cost"`
+	Stars       int `json:"Stars"`
+	Category    int `json:"Category"`
+	Margin      int `json:"Margin"`
+}
+
+type ERRFlags struct {
+	PeopleAddress1  bool
+	PeopleFirstName bool
+	PeopleLastName  bool
+	ProductID       bool
+	CampaignID      bool
+	EventID         bool
+	OrderID         bool
+	ConsignmentID   bool
+	OrderDetailID   bool
 }
 
 type NER struct {
@@ -115,12 +181,17 @@ type PeopleVER struct {
 }
 
 type InputColumn struct {
-	NER       NER       `json:"NER"`
-	PeopleERR PeopleERR `json:"ERR"`
-	PeopleVER PeopleVER `json:"VER"`
-	Name      string    `json:"Name"`
-	Value     string    `json:"Value"`
-	MatchKey  string    `json:"MK"`
+	NER            NER            `json:"NER"`
+	PeopleERR      PeopleERR      `json:"PeopleERR"`
+	ProductERR     ProductERR     `json:"ProductERR"`
+	CampaignERR    CampaignERR    `json:"CampaignERR"`
+	OrderERR       OrderERR       `json:"OrderERR"`
+	ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
+	OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
+	PeopleVER      PeopleVER      `json:"VER"`
+	Name           string         `json:"Name"`
+	Value          string         `json:"Value"`
+	MatchKey       string         `json:"MK"`
 }
 
 type CityStateZip struct {
@@ -288,9 +359,64 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 	columns := GetColumnsFromInput(input)
 	var flags OutputFlag
+	var columnFlags ERRFlags
 	// run all ERRs
+	for _, column := range columns {
+		column.PeopleERR = GetPeopleERR(column.Name)
+		column.ProductERR = GetProductERR(column.Name)
+		column.CampaignERR = GetCampaignERR(column.Name)
+		column.OrderERR = GetOrderERR(column.Name)
+		column.ConsignmentERR = GetConsignmentERR(column.Name)
+		column.OrderDetailERR = GetOrderDetailERR(column.Name)
+
+		if column.PeopleERR.FirstName == 1 {
+			columnFlags.PeopleFirstName = true
+		}
+		if column.PeopleERR.LastName == 1 {
+			columnFlags.PeopleLastName = true
+		}
+		if column.PeopleERR.Address1 == 1 {
+			columnFlags.PeopleAddress1 = true
+		}
+		if column.ProductERR.PID == 1 {
+			columnFlags.ProductID = true
+		}
+		if column.CampaignERR.CampaignID == 1 {
+			columnFlags.CampaignID = true
+		}
+		if column.OrderERR.ID == 1 {
+			columnFlags.OrderID = true
+		}
+		if column.ConsignmentERR.ID == 1 {
+			columnFlags.ConsignmentID = true
+		}
+		if column.OrderDetailERR.ID == 1 {
+			columnFlags.OrderDetailID = true
+		}
+	}
 
 	// update the flags
+	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
+		flags.People = true
+	}
+	if columnFlags.ProductID {
+		flags.Product = true
+	}
+	if columnFlags.EventID {
+		flags.Event = true
+	}
+	if columnFlags.CampaignID {
+		flags.Campaign = true
+	}
+	if columnFlags.OrderID {
+		flags.Order = true
+	}
+	if columnFlags.ConsignmentID {
+		flags.Consignment = true
+	}
+	if columnFlags.OrderDetailID {
+		flags.OrderDetail = true
+	}
 
 	// look up NER and call ML if People
 	var prediction Prediction
@@ -435,6 +561,216 @@ func MapNER(column InputColumn, ner map[string]float64) {
 	}
 }
 
+func GetPeopleERR(column string) PeopleERR {
+	var err PeopleERR
+	key := strings.ToLower(column)
+	switch key {
+	case "fname", "f name", "first name", "name first", "first_name", "first":
+		err.FirstName = 1
+	case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
+		err.LastName = 1
+	case "mi", "mi ", "mname", "m", "middle name":
+		err.MiddleName = 1
+	case "suffix", "jr., iii, etc.":
+		err.Suffix = 1
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1":
+		err.Address1 = 1
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
+		err.Address2 = 1
+	case "city", "city ", "street city":
+		err.City = 1
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+		err.State = 1
+	case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
+		err.ZipCode = 1
+	case "citystzip", "city/st/zip ":
+		err.City = 1
+		err.State = 1
+		err.ZipCode = 1
+	case "county":
+		err.County = 1
+	case "country", "country (blank for us)":
+		err.Country = 1
+	case "email", "student email", "email ", "email1", "emali address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
+		err.Email = 1
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+		err.Email = 1
+		err.ParentEmail = 1
+	case "gender", "m/f":
+		err.Gender = 1
+	case "pfname", "pfname1", "pfname2":
+		err.ParentFirstName = 1
+	case "plname", "plname1", "plname2":
+		err.ParentLastName = 1
+	case "phone", "phone1", "hphone", "cphone", "mphone":
+		err.Phone = 1
+	case "bday", "birthday":
+		err.Birthday = 1
+	case "age":
+		err.Age = 1
+	case "pname", "pname1", "pname2", "pname 1", "pname 2":
+		err.ParentFirstName = 1
+		err.ParentLastName = 1
+		err.ParentName = 1
+	case "fullname", "full name":
+		err.FullName = 1
+		err.FirstName = 1
+		err.LastName = 1
+	case "dorm", "hall", "building", "dormitory", "apartment", "fraternity", "residence":
+		err.Dorm = 1
+	}
+
+	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
+		err.FirstName = 1
+	}
+	if strings.Contains(key, "last") || strings.Contains(key, "lname") {
+		err.LastName = 1
+	}
+	if strings.Contains(key, "country") {
+		err.Country = 1
+	}
+	if strings.Contains(key, "email") {
+		err.Email = 1
+	}
+	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
+		err.Title = 1
+	}
+	if strings.Contains(key, "address") {
+		err.Address1 = 1
+	}
+	if strings.Contains(key, "city") {
+		err.City = 1
+	}
+	if strings.Contains(key, "state") {
+		err.State = 1
+	}
+	if strings.Contains(key, "zip") {
+		err.ZipCode = 1
+	}
+	if strings.Contains(key, "phone") {
+		err.Phone = 1
+	}
+
+	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") {
+		err.Role = 1
+	}
+
+	return err
+}
+
+func GetCampaignERR(column string) CampaignERR {
+	var err CampaignERR
+	key := strings.ToLower(column)
+	switch key {
+	case "campaign id", "campaignid":
+		err.CampaignID = 1
+	case "campaign", "campaign name", "campaignname":
+		err.Name = 1
+	case "campaign type", "campaigntype":
+		err.Type = 1
+	case "campaign budget", "campaignbudget", "budget":
+		err.Budget = 1
+	case "campaign channel", "campaignchannel":
+		err.Channel = 1
+	case "campaign start date", "campaign startdate", "campaignstartdate":
+		err.StartDate = 1
+	case "campaign end date", "campaign enddate", "campaignenddate":
+		err.EndDate = 1
+
+	}
+	return err
+}
+
+func GetOrderERR(column string) OrderERR {
+	var err OrderERR
+	key := strings.ToLower(column)
+	switch key {
+	case "orderid", "order id", "invoiceid", "invoice id":
+		err.ID = 1
+	case "order number", "ordernumber", "full order number", "full ordernumber",
+		"fullorder number", "fullordernumber", "ecometryordernumber":
+		err.Number = 1
+	case "order date", "orderdate", "invoice date", "invoicedate",
+		"placed date", "placeddate", "created at", "createdat":
+		err.Date = 1
+	case "order total", "ordertotal", "total":
+		err.Total = 1
+	}
+	return err
+}
+
+func GetConsignmentERR(column string) ConsignmentERR {
+	var err ConsignmentERR
+	key := strings.ToLower(column)
+	switch key {
+	case "ship date", "shipdate":
+		err.ShipDate = 1
+	case "shipment", "consignment", "consignment id", "consignmentid":
+		err.ID = 1
+	}
+	return err
+}
+
+func GetOrderDetailERR(column string) OrderDetailERR {
+	var err OrderDetailERR
+	key := strings.ToLower(column)
+	switch key {
+	case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
+		err.ID = 1
+	}
+	return err
+}
+
+func GetProductERR(column string) ProductERR {
+	var err ProductERR
+	key := strings.ToLower(column)
+	switch key {
+	case "product name", "productname", "prod name", "prodname":
+		err.Name = 1
+	case "product description", "productdescription", "prod description",
+		"proddescription", "product desc", "productdesc", "prod desc",
+		"proddesc", "p desc", "pdesc":
+		err.Description = 1
+	case "product size", "productsize", "prod size",
+		"p size", "psize", "size":
+		err.Size = 1
+	case "product color", "productcolor", "prod color",
+		"p color", "pcolor", "color":
+		err.Color = 1
+	case "product unit price", "productunit price", "prod unit price",
+		"product unitprice", "productunitprice", "prod unitprice",
+		"p unit price", "punit price", "p unitprice", "punitprice",
+		"unit price", "unitprice":
+		err.UnitPrice = 1
+	case "product type", "producttype", "prod type",
+		"p type", "ptype", "type":
+		err.Type = 1
+	case "product vendorid", "productvendorid", "prod vendorid",
+		"p vendorid", "pvendorid", "vendorid":
+		err.VendorID = 1
+	case "product vendor", "productvendor", "prod vendor",
+		"p vendor", "pvendor", "vendor":
+		err.Vendor = 1
+	case "product cost", "productcost", "prod cost",
+		"p cost", "pcost", "cost":
+		err.Cost = 1
+	case "product stars", "productstars", "prod stars",
+		"p stars", "pstars", "stars":
+		err.Stars = 1
+	case "product category", "productcategory", "product cat",
+		"productcat", "prod cat", "prodcat", "p cat", "pcat":
+		err.Category = 1
+	case "product margin", "productmargin", "prod margin",
+		"p margin", "pmargin", "margin", "contibution":
+		err.Margin = 1
+	case "contains", "bundle items", "bundleitems", "bundled items", "bundleditems",
+		"kit items", "kititems":
+		err.Contains = 1
+
+	}
+	return err
+}
+
 func PubMessage(topic *pubsub.Topic, data []byte) {
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: data,
@@ -465,14 +801,6 @@ func GetColumnsFromInput(input Input) []InputColumn {
 }
 
 func GetMapKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	return keys
-}
-
-func GetMapKeysFromSlice(m map[string][]string) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
