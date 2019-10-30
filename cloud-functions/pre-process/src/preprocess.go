@@ -167,17 +167,17 @@ type NER struct {
 }
 
 type PeopleVER struct {
-	HASHCODE     int64
-	IS_FIRSTNAME bool `json:"isFIRSTNAME"`
-	IS_LASTNAME  bool `json:"isLASTNAME"`
-	IS_STREET1   bool `json:"isSTREET1"`
-	IS_STREET2   bool `json:"isSTREET2"`
-	IS_CITY      bool `json:"isCITY"`
-	IS_STATE     bool `json:"isSTATE"`
-	IS_ZIPCODE   bool `json:"isZIPCODE"`
-	IS_COUNTRY   bool `json:"isCOUNTRY"`
-	IS_EMAIL     bool `json:"isEMAIL"`
-	IS_PHONE     bool `json:"isPHONE"`
+	HASHCODE     int64 `json:"HASH"`
+	IS_FIRSTNAME bool  `json:"isFIRSTNAME"`
+	IS_LASTNAME  bool  `json:"isLASTNAME"`
+	IS_STREET1   bool  `json:"isSTREET1"`
+	IS_STREET2   bool  `json:"isSTREET2"`
+	IS_CITY      bool  `json:"isCITY"`
+	IS_STATE     bool  `json:"isSTATE"`
+	IS_ZIPCODE   bool  `json:"isZIPCODE"`
+	IS_COUNTRY   bool  `json:"isCOUNTRY"`
+	IS_EMAIL     bool  `json:"isEMAIL"`
+	IS_PHONE     bool  `json:"isPHONE"`
 }
 
 type InputColumn struct {
@@ -216,7 +216,6 @@ type NERcolumns struct {
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	Attributes  map[string]string `json:"attributes"`
 	Prediction  Prediction        `json:"prediction`
 	Columns     []InputColumn     `json:"columns`
 }
@@ -358,6 +357,17 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 
 	columns := GetColumnsFromInput(input)
+
+	// append attributes
+	// append attributes
+	for k, v := range input.Attributes {
+		attribute := InputColumn{
+			Name:  k,
+			Value: v,
+		}
+		columns = append(columns, attribute)
+	}
+
 	var flags OutputFlag
 	var columnFlags ERRFlags
 	// run all ERRs
@@ -469,7 +479,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	output.Signature = input.Signature
 	output.Passthrough = input.Passthrough
 	output.Columns = columns
-	output.Attributes = input.Attributes
 	output.Prediction = prediction
 
 	outputJSON, _ := json.Marshal(output)
