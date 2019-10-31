@@ -1941,6 +1941,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		if column.ERR.TrustedID == 1 {
 			trustedID = column.Value
 		}
+
 		if matchKey == "" && column.ERR.Title == 1 && len(column.Value) > 0 {
 			if reGraduationYear.MatchString(column.Value) {
 				ClassYear = column.Value
@@ -1962,6 +1963,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 
 		Columns[index] = column
 	}
+	
 
 	if len(ClassYear) == 0 {
 		ClassYear = strconv.Itoa(time.Now().Year() + 4)

@@ -259,7 +259,6 @@ var ai *ml.Service
 var cs *storage.Client
 var msPool *redis.Pool
 
-var listLabels map[string]string
 var listCities map[string]bool
 var listStates map[string]bool
 var listCountries map[string]bool
@@ -273,8 +272,6 @@ var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?
 var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
 var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
-var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
-var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
@@ -302,8 +299,6 @@ func init() {
 	}, maxConnections)
 
 	// preload the lists
-	listLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
-
 	var err error
 	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
@@ -471,6 +466,14 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 		if len(prediction.Predictions) == 0 {
 			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
+		}
+
+	}
+
+	// run VER
+	if flags.People {
+		for _, column := range columns {
+			column.PeopleVER = GetPeopleVER(&column)
 		}
 	}
 
