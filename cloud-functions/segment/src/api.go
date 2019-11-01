@@ -18,8 +18,8 @@ var (
 // API the api entrypoint main func
 func API(w http.ResponseWriter, r *http.Request) {
 	// TODO: remove these assignments before mergeging to dev
-	projectID = "wemade-core"
-	namespace = "wemade.streamer-api.dev"
+	// projectID = "wemade-core"
+	// namespace = "wemade.streamer-api.dev"
 
 	if err := wemade.SetHeaders(w, r); err != nil {
 		// pack these lines into a API err func
