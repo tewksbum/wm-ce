@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"reflect"
 
 	"cloud.google.com/go/pubsub"
 )
@@ -50,8 +51,29 @@ type Input struct {
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	Prediction  Prediction        `json:"prediction`
-	Columns     []InputColumn     `json:"columns`
+	MatchKeys   ProductOutput     `json:"matchkeys`
+}
+
+type MatchKeyField struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
+}
+
+type ProductOutput struct {
+	PID MatchKeyField `json:"pid"`
+	SKU MatchKeyField `json:"sku"`
+	UPC MatchKeyField `json:"upc"`
+
+	NAME        MatchKeyField `json:"name"`
+	DESCRIPTION MatchKeyField `json:"description"`
+	SIZE        MatchKeyField `json:"size"`
+	COLOR       MatchKeyField `json:"color"`
+	UNITPRICE   MatchKeyField `json:"unitPrice"`
+	TYPE        MatchKeyField `json:"type"`
+	VENDORID    MatchKeyField `json:"vendorId"`
+	VENDOR      MatchKeyField `json:"vendor"`
+	STARS       MatchKeyField `json:"stars"`
+	CATEGORY    MatchKeyField `json:"category"`
 }
 
 type PeopleERR struct {
@@ -190,12 +212,100 @@ func PostProcessProduct(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	var mkOutput ProductOutput
+	for index, column := range input.Columns {
+		if column.ProductERR.Category == 1 {
+			matchKey := "CATEGORY"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.PID == 1 {
+			matchKey := "PID"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.SKU == 1 {
+			matchKey := "SKU"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.UPC == 1 {
+			matchKey := "UPC"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Name == 1 {
+			matchKey := "NAME"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Description == 1 {
+			matchKey := "DESCRIPTION"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Size == 1 {
+			matchKey := "SIZE"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Color == 1 {
+			matchKey := "COLOR"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.UnitPrice == 1 {
+			matchKey := "UNITPRICE"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Type == 1 {
+			matchKey := "TYPE"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.VendorID == 1 {
+			matchKey := "VendorID"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Vendor == 1 {
+			matchKey := "VENDOR"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Stars == 1 {
+			matchKey := "STARS"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ProductERR.Category == 1 {
+			matchKey := "CATEGORY"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		input.Columns[index] = column
+	}
+
 	// pub the record
 	var output Output
 	output.Signature = input.Signature
-	output.Columns = input.Columns
-	output.Prediction = input.Prediction
 	output.Passthrough = input.Passthrough
+	output.MatchKeys = mkOutput
 
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
@@ -211,4 +321,18 @@ func PostProcessProduct(ctx context.Context, m PubSubMessage) error {
 	}
 
 	return nil
+}
+
+func GetMkField(v *ProductOutput, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func SetMkField(v *ProductOutput, field string, value string, source string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+
+	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
+	return value
 }
