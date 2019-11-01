@@ -1,13 +1,16 @@
-package main
+package api
 
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"segment/wemade"
 	"testing"
+	"time"
 )
 
 func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter, *http.Request) {
@@ -19,14 +22,14 @@ func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter
 	w := httptest.NewRecorder()
 	handler(w, req)
 
+	resp := w.Result()
+	b, _ := ioutil.ReadAll(resp.Body)
+
+	fmt.Println(resp.StatusCode)
+	fmt.Println(resp.Header.Get("Content-Type"))
+	fmt.Println(string(b))
+
 	return w, req
-
-	// resp := w.Result()
-	// body, _ := ioutil.ReadAll(resp.Body)
-
-	// fmt.Println(resp.StatusCode)
-	// fmt.Println(resp.Header.Get("Content-Type"))
-	// fmt.Println(string(body))
 }
 
 func TestAPI(t *testing.T) {
@@ -35,13 +38,14 @@ func TestAPI(t *testing.T) {
 		r *http.Request
 	}
 	input, _ := json.Marshal(wemade.APIInput{
-		AccessKey:  "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3",
+		AccessKey:  "",
 		EntityType: "orderHeader",
 		Source:     "test",
 		Owner:      "OCM",
 		Data: wemade.OrderHeader{
-			OrderID:  "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
-			SubTotal: "108.92",
+			OrderID:   "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
+			SubTotal:  "108.92",
+			OrderDate: time.Now(),
 			// URL:     "https://foo.bar",
 		},
 	})
@@ -73,21 +77,6 @@ func TestAPI(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			API(tt.args.w, tt.args.r)
-		})
-	}
-}
-
-func Test_main(t *testing.T) {
-	tests := []struct {
-		name string
-	}{
-		{
-			name: "All green",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			main()
 		})
 	}
 }

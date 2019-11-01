@@ -87,7 +87,7 @@ type People struct {
 	FirstName    string `json:"firstName" bigquery:"firstname"`
 	LastName     string `json:"lastName" bigquery:"lastname"`
 	Gender       string `json:"gender" bigquery:"gender"`
-	Age          int    `json:"age" bigquery:"age"`
+	Age          string `json:"age" bigquery:"age"`
 	Organization string `json:"organization" bigquery:"organization"`
 	Title        string `json:"title" bigquery:"title"`
 	Role         string `json:"role" bigquery:"role"`

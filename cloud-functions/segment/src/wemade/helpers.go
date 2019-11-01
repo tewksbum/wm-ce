@@ -3,7 +3,6 @@ package wemade
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"segment/utils"
@@ -15,12 +14,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// Error messages
 var (
-	errDecodingRequest      string = "Error decoding request %#v"
-	errInternalErrorOcurred string = "Internal error occurred %#v"
-	errInvalidAccessKey     string = "Invalid access key %#v"
-	errAccountNotEnabled    string = "Account not enabled %#v"
-	errStatusNoContent      string = "Method Options: No content"
+	ErrDecodingRequest      string = "Error decoding request %#v"
+	ErrInternalErrorOcurred string = "Internal error occurred %#v"
+	ErrInvalidAccessKey     string = "Invalid access key"
+	ErrAccountNotEnabled    string = "Account not enabled"
+	ErrStatusNoContent      string = "Method Options: No content"
 )
 
 // DecodeAPIInput serialize a json into a wemade.Request struct, checks the API key and
@@ -29,32 +29,32 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 	ctx := context.Background()
 	requestID := uuid.New()
 	if err := json.NewDecoder(body).Decode(&input); err != nil {
-		return nil, logger.ErrFmt(errDecodingRequest, err)
+		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
+	logger.InfoFmt("input! : %#v", input.AccessKey)
 
 	dsClient, err := datastore.GetClient(&ctx, projectID)
 	if err != nil {
-		return nil, logger.ErrFmt(errInternalErrorOcurred, err)
+		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
 	query := datastore.QueryTableNamespace("Customer", namespace)
-	query.Filter("AccessKey =", input.AccessKey).Limit(1)
+	query.Filter("AccessKey = ", input.AccessKey).Limit(1)
 
 	var entities []WMCustomer
 
 	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
-		// fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -2\"}")
-		return nil, logger.ErrFmt(errInternalErrorOcurred, err)
+		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
+
 	if len(entities) == 0 {
-		// fmt.Fprint(w, "{success: false, message: \"Invalid access key, -10\"}")
-		return nil, logger.Err(fmt.Errorf(errInternalErrorOcurred, -10))
+		return nil, logger.ErrStr(ErrInvalidAccessKey)
 	}
 
 	customer := entities[0]
 	if customer.Enabled == false {
-		// fmt.Fprint(w, "{success: false, message: \"Account is not enabled, -11\"}")
-		return nil, logger.ErrStr(errAccountNotEnabled)
+		return nil, logger.ErrStr(ErrAccountNotEnabled)
 	}
+
 	output := BaseRecord{
 		RequestID:    requestID.String(),
 		EntityType:   input.EntityType,
@@ -62,8 +62,8 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 		Organization: customer.Name,
 		Owner:        customer.Key.Name,
 		Source:       input.Source,
-		Passthrough:  utils.FlattenMap(input.Passthrough), // Do we need
-		Attributes:   utils.FlattenMap(input.Attributes),  // these?
+		Passthrough:  utils.FlattenMap(input.Passthrough),
+		Attributes:   utils.FlattenMap(input.Attributes),
 		Timestamp:    time.Now(),
 	}
 	// logger.InfoFmt("record: %+v", output)
@@ -116,7 +116,7 @@ func SetHeaders(w http.ResponseWriter, r *http.Request) error {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Access-Control-Max-Age", "3600")
 		w.WriteHeader(http.StatusNoContent)
-		return logger.ErrStr(errStatusNoContent)
+		return logger.ErrStr(ErrStatusNoContent)
 	}
 	// Set CORS headers for the main request.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
