@@ -104,7 +104,11 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 			Data:       getOrderDetailFromDTO(input.Data),
 		}, nil
 	default:
-		return &output, nil
+		datab, _ := json.Marshal(input.Data)
+		return &FallbackRecord{
+			BaseRecord: output,
+			Data:       string(datab),
+		}, nil
 	}
 }
 
