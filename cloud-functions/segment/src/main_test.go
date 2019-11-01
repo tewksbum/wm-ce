@@ -39,7 +39,7 @@ func TestAPI(t *testing.T) {
 		EntityType: "orderHeader",
 		Source:     "test",
 		Owner:      "OCM",
-		Data: wemade.Order{
+		Data: wemade.OrderHeader{
 			OrderID: "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
 			// URL:     "https://foo.bar",
 		},
