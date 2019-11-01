@@ -39,8 +39,8 @@ func InfoFmt(fmtstr string, args ...interface{}) {
 
 // Log main logging func, returns the formatted message string
 func Log(level string, msg string, args ...interface{}) string {
-	strfmt := fmt.Sprintf("%s ["+level+"]: %s", time.Now().UTC().String(), msg)
-	logmsg := fmt.Sprintf(strfmt, args...)
+	strmsg := fmt.Sprintf(msg, args...)
+	logmsg := fmt.Sprintf("%s ["+level+"]: %s", time.Now().UTC().String(), strmsg)
 	log.Println(logmsg)
-	return logmsg
+	return strmsg
 }
