@@ -21,13 +21,15 @@ func API(w http.ResponseWriter, r *http.Request) {
 	// projectID = "wemade-core"
 	// namespace = "wemade.streamer-api.dev"
 
+	ctx := r.Context()
+
 	if err := wemade.SetHeaders(w, r); err != nil {
 		// pack these lines into a API err func
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, apiOutput(false, wemade.ErrStatusNoContent))
 		return
 	}
-	o, err := wemade.DecodeAPIInput(projectID, namespace, r.Body)
+	o, err := wemade.DecodeAPIInput(&ctx, projectID, namespace, r.Body)
 	if err != nil {
 		strErr := err.Error()
 		switch strErr {
@@ -44,7 +46,7 @@ func API(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// logger.InfoFmt("output: %+v", o)
-	err = bq.Write(projectID, o.GetStrCustomerID(), o.GetEntityType(), o)
+	err = bq.Write(r.Context(), projectID, o.GetStrCustomerID(), o.GetEntityType(), o)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -3", err.Error())))

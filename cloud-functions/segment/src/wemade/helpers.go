@@ -24,16 +24,15 @@ var (
 )
 
 // DecodeAPIInput serialize a json into a wemade.Request struct, checks the API key and
-func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Record, error) {
+func DecodeAPIInput(ctx *context.Context, projectID string, namespace string, body io.ReadCloser) (Record, error) {
 	var input APIInput
-	ctx := context.Background()
 	requestID := uuid.New()
 	if err := json.NewDecoder(body).Decode(&input); err != nil {
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
-	logger.InfoFmt("input! : %#v", input.AccessKey)
+	logger.InfoFmt("input: %#v", input)
 
-	dsClient, err := datastore.GetClient(&ctx, projectID)
+	dsClient, err := datastore.GetClient(ctx, projectID)
 	if err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
@@ -42,7 +41,7 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 
 	var entities []WMCustomer
 
-	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
+	if _, err := dsClient.GetAll(*ctx, query, &entities); err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
 
@@ -51,6 +50,7 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 	}
 
 	customer := entities[0]
+	logger.InfoFmt("customer: %+v", customer)
 	if customer.Enabled == false {
 		return nil, logger.ErrStr(ErrAccountNotEnabled)
 	}

@@ -1,8 +1,6 @@
 package bq
 
 import (
-	// "strconv"
-	// "strings"
 	"context"
 	"segment/utils/logger"
 	"strings"
@@ -11,8 +9,7 @@ import (
 )
 
 // Write writes the interface into BQ
-func Write(projectID string, datasetID string, tableID string, obj interface{}) error {
-	ctx := context.Background()
+func Write(ctx context.Context, projectID string, datasetID string, tableID string, obj interface{}) error {
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
 		return logger.Err(err)

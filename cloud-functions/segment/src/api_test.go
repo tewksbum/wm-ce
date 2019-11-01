@@ -3,9 +3,7 @@ package segment
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"segment/wemade"
@@ -15,19 +13,19 @@ import (
 
 func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter, *http.Request) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "<html><body>Hello World!</body></html>")
+
 	}
 
 	req := httptest.NewRequest(verb, addr, body)
 	w := httptest.NewRecorder()
 	handler(w, req)
 
-	resp := w.Result()
-	b, _ := ioutil.ReadAll(resp.Body)
+	// resp := w.Result()
+	// b, _ := ioutil.ReadAll(resp.Body)
 
-	fmt.Println(resp.StatusCode)
-	fmt.Println(resp.Header.Get("Content-Type"))
-	fmt.Println(string(b))
+	// fmt.Println(resp.StatusCode)
+	// fmt.Println(resp.Header.Get("Content-Type"))
+	// fmt.Println(string(b))
 
 	return w, req
 }
@@ -61,12 +59,6 @@ func TestAPI(t *testing.T) {
 				w: w1, r: r1,
 			},
 		},
-		// {
-		// 	name: "API err != nil",
-		// 	args: args{
-		// 		w: w1, r: r1,
-		// 	},
-		// },
 		{
 			name: "API Options",
 			args: args{
