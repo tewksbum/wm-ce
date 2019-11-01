@@ -12,8 +12,9 @@ func FlattenMap(mstring map[string]string) string {
 	}
 	//remove extra comma if there's one
 	if flat[:len(flat)-1] == "," {
-		flat = flat[:len(flat)-1] + "}"
+		flat = flat[:len(flat)-1]
 	}
+	flat += "}"
 	return flat
 }
 

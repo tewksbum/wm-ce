@@ -40,7 +40,8 @@ func TestAPI(t *testing.T) {
 		Source:     "test",
 		Owner:      "OCM",
 		Data: wemade.OrderHeader{
-			OrderID: "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
+			OrderID:  "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
+			SubTotal: "108.92",
 			// URL:     "https://foo.bar",
 		},
 	})
