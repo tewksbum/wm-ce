@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
 	"segment/bq"
 	"strings"
 	"time"
@@ -151,13 +152,22 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 	// 		Record:     record,
 	// 	}, nil
 	default:
-		dbyte, _ := json.Marshal(input.Data)
-		output.bqOpts = bq.Options{IsPartitioned: false}
-		// the Shed - shabby werehouse where any dummy requests die in.
-		output.EntityType = tblShed
+		datab, _ := json.Marshal(input.Data)
 		return &FallbackRecord{
 			BaseRecord: output,
-			Record:     FallbackData{Data: string(dbyte)},
+			Data:       string(datab),
 		}, nil
+	}
+}
+
+// SetHeaders sets the headers for the response
+func SetHeaders(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Max-Age", "3600")
+		w.WriteHeader(http.StatusNoContent)
+		return logger.ErrStr(ErrStatusNoContent)
 	}
 }

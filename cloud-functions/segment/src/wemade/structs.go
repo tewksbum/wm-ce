@@ -218,3 +218,9 @@ type FallbackRecord struct {
 type FallbackData struct {
 	Data string `json:"data" bigquery:"data"`
 }
+
+// FallbackRecord a event type record
+type FallbackRecord struct {
+	BaseRecord
+	Data string `json:"record" bigquery:"record"`
+}
