@@ -1,6 +1,7 @@
 package wemade
 
 import (
+	"segment/bq"
 	"segment/utils"
 	"time"
 
@@ -15,18 +16,29 @@ type WMCustomer struct {
 	Key       *datastore.Key `datastore:"__key__"`
 }
 
+// Household data
+type Household struct {
+	HouseholdID string `json:"householdId" bigquery:"householdid"`
+	Address1    string `json:"address1" bigquery:"address1"`
+	Address2    string `json:"address2" bigquery:"address2"`
+	City        string `json:"city" bigquery:"city"`
+	State       string `json:"state" bigquery:"state"`
+	Zip         string `json:"zip" bigquery:"zip"`
+	Country     string `json:"country" bigquery:"country"`
+	HashedSigs  string `json:"hashedSigs" bigquery:"hashedsigs"`
+}
+
 // Event data
 type Event struct {
-	EventID    string `json:"eventId" bigquery:"eventid"` // signature#
-	WMPeopleID string `json:"wmPeopleId" bigquery:"wmpeopleid"`
-	Type       string `json:"type" bigquery:"type"`
-	Browser    string `json:"browser" bigquery:"browser"`
-	OS         string `json:"os" bigquery:"os"`
-	Channel    string `json:"channel" bigquery:"channel"`
-	Location   string `json:"location" bigquery:"location"`
-	Domain     string `json:"domain" bigquery:"domain"`
-	URL        string `json:"url" bigquery:"url"`
-	Referrer   string `json:"referrer" bigquery:"referrer"`
+	EventID  string `json:"eventId" bigquery:"eventid"` // signature#
+	Type     string `json:"type" bigquery:"type"`
+	Browser  string `json:"browser" bigquery:"browser"`
+	OS       string `json:"os" bigquery:"os"`
+	Channel  string `json:"channel" bigquery:"channel"`
+	Location string `json:"location" bigquery:"location"`
+	Domain   string `json:"domain" bigquery:"domain"`
+	URL      string `json:"url" bigquery:"url"`
+	Referrer string `json:"referrer" bigquery:"referrer"`
 }
 
 // Campaign data
@@ -96,7 +108,6 @@ type People struct {
 
 // APIInput input for the API
 type APIInput struct {
-	RequestID    string            `json:"requestId"`
 	AccessKey    string            `json:"accessKey"`
 	EntityType   string            `json:"entityType"` //events, order, product
 	Organization string            `json:"organization"`
@@ -117,19 +128,21 @@ type APIOutput struct {
 type Record interface {
 	GetStrCustomerID() string
 	GetEntityType() string
+	GetBQOptions() bq.Options
 }
 
 // BaseRecord input for the API
 type BaseRecord struct {
-	CustomerID   int64     `json:"customerId" bigquery:"customerid"`
-	RequestID    string    `json:"requestId" bigquery:"requestid"`
-	EntityType   string    `json:"entityType" bigquery:"entitytype"`
-	Organization string    `json:"organization" bigquery:"organization"`
-	Source       string    `json:"source" bigquery:"source"`
-	Owner        string    `json:"owner" bigquery:"owner"`
-	Passthrough  string    `json:"passthrough" bigquery:"passthrough"`
-	Attributes   string    `json:"attributes" bigquery:"attributes"`
-	Timestamp    time.Time `json:"timestamp" bigquery:"timestamp"`
+	CustomerID  int64  `json:"customerId" bigquery:"customerid"`
+	SurrogateID string `json:"surrogateId" bigquery:"surrogateid"`
+	EntityType  string `json:"entityType" bigquery:"entitytype"`
+	// Organization string    `json:"organization" bigquery:"organization"`
+	Source      string    `json:"source" bigquery:"source"`
+	Owner       string    `json:"owner" bigquery:"owner"`
+	Passthrough string    `json:"passthrough" bigquery:"passthrough"`
+	Attributes  string    `json:"attributes" bigquery:"attributes"`
+	Timestamp   time.Time `json:"timestamp" bigquery:"timestamp"`
+	bqOpts      bq.Options
 }
 
 // GetStrCustomerID gets the customer id
@@ -142,44 +155,66 @@ func (br *BaseRecord) GetEntityType() string {
 	return br.EntityType
 }
 
+// GetBQOptions gets the customer id
+func (br *BaseRecord) GetBQOptions() bq.Options {
+	return br.bqOpts
+}
+
+// HouseholdRecord a Household type record
+type HouseholdRecord struct {
+	BaseRecord
+	Record Household `json:"record" bigquery:"record"`
+}
+
 // EventRecord a event type record
 type EventRecord struct {
 	BaseRecord
-	Data Event `json:"record" bigquery:"record"`
+	Record Event `json:"record" bigquery:"record"`
 }
 
 // CampaignRecord a Campaign type record
 type CampaignRecord struct {
 	BaseRecord
-	Data Campaign `json:"record" bigquery:"record"`
+	Record Campaign `json:"record" bigquery:"record"`
 }
 
 // ProductRecord a Product type record
 type ProductRecord struct {
 	BaseRecord
-	Data Product `json:"record" bigquery:"record"`
+	Record Product `json:"record" bigquery:"record"`
 }
 
 // OrderHeaderRecord a event type record
 type OrderHeaderRecord struct {
 	BaseRecord
-	Data OrderHeader `json:"record" bigquery:"record"`
+	Record OrderHeader `json:"record" bigquery:"record"`
 }
 
 // OrderConsignmentRecord a event type record
 type OrderConsignmentRecord struct {
 	BaseRecord
-	Data OrderConsignment `json:"record" bigquery:"record"`
+	Record OrderConsignment `json:"record" bigquery:"record"`
 }
 
 // OrderDetailRecord a event type record
 type OrderDetailRecord struct {
 	BaseRecord
-	Data OrderDetail `json:"record" bigquery:"record"`
+	Record OrderDetail `json:"record" bigquery:"record"`
 }
 
 // PeopleRecord a event type record
 type PeopleRecord struct {
 	BaseRecord
-	Data People `json:"record" bigquery:"record"`
+	Record People `json:"record" bigquery:"record"`
+}
+
+// FallbackRecord a fallback type record
+type FallbackRecord struct {
+	BaseRecord
+	Record FallbackData `json:"record" bigquery:"record"`
+}
+
+// FallbackData fallback data struct
+type FallbackData struct {
+	Data string `json:"data" bigquery:"data"`
 }

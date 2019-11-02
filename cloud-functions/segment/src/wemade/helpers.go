@@ -4,11 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"net/http"
-	"segment/utils"
+	"segment/bq"
+	"strings"
 	"time"
 
 	"segment/datastore"
+	"segment/utils"
 	"segment/utils/logger"
 
 	"github.com/google/uuid"
@@ -23,25 +24,41 @@ var (
 	ErrStatusNoContent      string = "Method Options: No content"
 )
 
+// Table names
+var (
+	tblEvent            string = "events"
+	tblOrderHeader      string = "orderheaders"
+	tblOrderDetail      string = "orderdetails"
+	tblOrderConsignment string = "orderconsignments"
+	tblHousehold        string = "households"
+	tblProduct          string = "products"
+	tblPeople           string = "people"
+	tblShed             string = "shed"
+	// tblCampaign         string = "campaign"
+	defPartitionField string = "timestamp"
+	dstblCustomers    string = "Customer"
+	dsfilterCustomers string = "AccessKey = "
+)
+
 // DecodeAPIInput serialize a json into a wemade.Request struct, checks the API key and
-func DecodeAPIInput(ctx *context.Context, projectID string, namespace string, body io.ReadCloser) (Record, error) {
+func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Record, error) {
 	var input APIInput
-	requestID := uuid.New()
+	ctx := context.Background()
+	surrogateID := uuid.New()
 	if err := json.NewDecoder(body).Decode(&input); err != nil {
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
-	logger.InfoFmt("input: %#v", input)
 
-	dsClient, err := datastore.GetClient(ctx, projectID)
+	dsClient, err := datastore.GetClient(&ctx, projectID)
 	if err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
-	query := datastore.QueryTableNamespace("Customer", namespace)
-	query.Filter("AccessKey = ", input.AccessKey).Limit(1)
+	query := datastore.QueryTableNamespace(dstblCustomers, namespace)
+	query.Filter(dsfilterCustomers, input.AccessKey).Limit(1)
 
 	var entities []WMCustomer
 
-	if _, err := dsClient.GetAll(*ctx, query, &entities); err != nil {
+	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
 
@@ -50,122 +67,97 @@ func DecodeAPIInput(ctx *context.Context, projectID string, namespace string, bo
 	}
 
 	customer := entities[0]
-	logger.InfoFmt("customer: %+v", customer)
 	if customer.Enabled == false {
 		return nil, logger.ErrStr(ErrAccountNotEnabled)
 	}
 
 	output := BaseRecord{
-		RequestID:    requestID.String(),
-		EntityType:   input.EntityType,
-		CustomerID:   customer.Key.ID,
-		Organization: customer.Name,
-		Owner:        customer.Key.Name,
-		Source:       input.Source,
-		Passthrough:  utils.FlattenMap(input.Passthrough),
-		Attributes:   utils.FlattenMap(input.Attributes),
-		Timestamp:    time.Now(),
+		SurrogateID: surrogateID.String(),
+		EntityType:  input.EntityType,
+		CustomerID:  customer.Key.ID,
+		Owner:       input.Owner,
+		Source:      input.Source,
+		Passthrough: utils.FlattenMap(input.Passthrough),
+		Attributes:  utils.FlattenMap(input.Attributes),
+		Timestamp:   time.Now(),
 	}
-	// logger.InfoFmt("record: %+v", output)
-	switch input.EntityType {
-	case "event":
+
+	entityType := strings.ToLower(input.EntityType)
+	b, _ := json.Marshal(input.Data)
+
+	switch entityType {
+	case tblHousehold:
+		output.bqOpts = bq.Options{IsPartitioned: true, PartitionField: defPartitionField}
+		record := Household{}
+		json.Unmarshal(b, &record)
+		return &HouseholdRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
+	case tblEvent:
+		output.bqOpts = bq.Options{IsPartitioned: true, PartitionField: defPartitionField}
+		record := Event{}
+		json.Unmarshal(b, &record)
 		return &EventRecord{
 			BaseRecord: output,
-			Data:       getEventFromDTO(input.Data),
+			Record:     record,
 		}, nil
-	case "campaign":
-		return &CampaignRecord{
-			BaseRecord: output,
-			Data:       getCampaignFromDTO(input.Data),
-		}, nil
-	case "product":
+	case tblProduct:
+		record := Product{}
+		json.Unmarshal(b, &record)
+		output.bqOpts = bq.Options{IsPartitioned: false}
 		return &ProductRecord{
 			BaseRecord: output,
-			Data:       getProductFromDTO(input.Data),
+			Record:     record,
 		}, nil
-	case "people":
+	case tblPeople:
+		output.bqOpts = bq.Options{IsPartitioned: false}
+		record := People{}
+		json.Unmarshal(b, &record)
 		return &PeopleRecord{
 			BaseRecord: output,
-			Data:       getPeopleFromDTO(input.Data),
+			Record:     record,
 		}, nil
-	case "orderHeader":
+	case tblOrderHeader:
+		output.bqOpts = bq.Options{IsPartitioned: false}
+		record := OrderHeader{}
+		json.Unmarshal(b, &record)
 		return &OrderHeaderRecord{
 			BaseRecord: output,
-			Data:       getOrderHeaderFromDTO(input.Data),
+			Record:     record,
 		}, nil
-	case "orderConsignment":
+	case tblOrderConsignment:
+		output.bqOpts = bq.Options{IsPartitioned: false}
+		record := OrderConsignment{}
+		json.Unmarshal(b, &record)
 		return &OrderConsignmentRecord{
 			BaseRecord: output,
-			Data:       getOrderConsignmentFromDTO(input.Data),
+			Record:     record,
 		}, nil
-	case "orderDetail":
+	case tblOrderDetail:
+		output.bqOpts = bq.Options{IsPartitioned: false}
+		record := OrderDetail{}
+		json.Unmarshal(b, &record)
 		return &OrderDetailRecord{
 			BaseRecord: output,
-			Data:       getOrderDetailFromDTO(input.Data),
+			Record:     record,
 		}, nil
+	// case tblCampaign:
+	//  output.bqOpts = bq.Options{IsPartitioned: false}
+	//  record := Campaign{}
+	//  json.Unmarshal(b, &record)
+	// 	return &CampaignRecord{
+	// 		BaseRecord: output,
+	// 		Record:     record,
+	// 	}, nil
 	default:
-		return &output, nil
+		dbyte, _ := json.Marshal(input.Data)
+		output.bqOpts = bq.Options{IsPartitioned: false}
+		// the Shed - shabby werehouse where any dummy requests die in.
+		output.EntityType = tblShed
+		return &FallbackRecord{
+			BaseRecord: output,
+			Record:     FallbackData{Data: string(dbyte)},
+		}, nil
 	}
-}
-
-// SetHeaders sets the headers for the response
-func SetHeaders(w http.ResponseWriter, r *http.Request) error {
-	if r.Method == http.MethodOptions {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Set("Access-Control-Max-Age", "3600")
-		w.WriteHeader(http.StatusNoContent)
-		return logger.ErrStr(ErrStatusNoContent)
-	}
-	// Set CORS headers for the main request.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	return nil
-}
-
-// Not exported funcs
-
-func getEventFromDTO(data interface{}) Event {
-	record := Event{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-
-func getCampaignFromDTO(data interface{}) Campaign {
-	record := Campaign{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-func getProductFromDTO(data interface{}) Product {
-	record := Product{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-func getOrderHeaderFromDTO(data interface{}) OrderHeader {
-	record := OrderHeader{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-func getOrderConsignmentFromDTO(data interface{}) OrderConsignment {
-	record := OrderConsignment{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-func getOrderDetailFromDTO(data interface{}) OrderDetail {
-	record := OrderDetail{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
-}
-
-func getPeopleFromDTO(data interface{}) People {
-	record := People{}
-	b, _ := json.Marshal(data)
-	json.Unmarshal(b, &record)
-	return record
 }
