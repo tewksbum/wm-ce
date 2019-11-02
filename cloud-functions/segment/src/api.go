@@ -20,8 +20,8 @@ var (
 // API the api entrypoint main func
 func API(w http.ResponseWriter, r *http.Request) {
 	// TODO: remove these assignments before mergeging to dev
-	// projectID = "wemade-core"
-	// namespace = "wemade.streamer-api.dev"
+	projectID = "wemade-core"
+	namespace = "wemade.streamer-api.dev"
 
 	if err := setHeaders(w, r); err != nil {
 		// pack these lines into a API err func
@@ -60,6 +60,21 @@ func apiOutput(success bool, msg string, args ...interface{}) string {
 	fmsg := fmt.Sprintf(msg, args...)
 	o, _ := json.Marshal(wemade.APIOutput{Success: success, Message: fmsg})
 	return string(o)
+}
+
+// SetHeaders sets the headers for the response
+func setHeaders(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Set("Access-Control-Max-Age", "3600")
+		w.WriteHeader(http.StatusNoContent)
+		return logger.ErrStr(wemade.ErrStatusNoContent)
+	}
+	// Set CORS headers for the main request.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	return nil
 }
 
 // SetHeaders sets the headers for the response
