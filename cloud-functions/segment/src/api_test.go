@@ -3,31 +3,28 @@ package segment
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"segment/wemade"
 	"testing"
-	"time"
 )
 
 func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter, *http.Request) {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		io.WriteString(w, "<html><body>Hello World!</body></html>")
-	}
+	// handler := func(w http.ResponseWriter, r *http.Request) {
+
+	// }
 
 	req := httptest.NewRequest(verb, addr, body)
 	w := httptest.NewRecorder()
-	handler(w, req)
+	// handler(w, req)
 
-	resp := w.Result()
-	b, _ := ioutil.ReadAll(resp.Body)
+	// resp := w.Result()
+	// b, _ := ioutil.ReadAll(resp.Body)
 
-	fmt.Println(resp.StatusCode)
-	fmt.Println(resp.Header.Get("Content-Type"))
-	fmt.Println(string(b))
+	// fmt.Println(resp.StatusCode)
+	// fmt.Println(resp.Header.Get("Content-Type"))
+	// fmt.Println(string(b))
 
 	return w, req
 }
@@ -38,15 +35,14 @@ func TestAPI(t *testing.T) {
 		r *http.Request
 	}
 	input, _ := json.Marshal(wemade.APIInput{
-		AccessKey:  "",
-		EntityType: "orderHeader",
+		AccessKey:  "81efed5f-57e8-4076-9506-6527d6532b00",
+		EntityType: "event",
 		Source:     "test",
 		Owner:      "OCM",
-		Data: wemade.OrderHeader{
-			OrderID:   "7803aee4-717e-4a4c-80cc-4a08d63c4d73",
-			SubTotal:  "108.92",
-			OrderDate: time.Now(),
-			// URL:     "https://foo.bar",
+		Data: wemade.Event{ // map[string]interface{}{
+			URL:     "https://wemade.io",
+			Browser: "faek browser 1.0.8",
+			// "":       "",,
 		},
 	})
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))

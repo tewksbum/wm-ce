@@ -1,8 +1,6 @@
 package bq
 
 import (
-	// "strconv"
-	// "strings"
 	"context"
 	"segment/utils/logger"
 	"strings"
@@ -10,8 +8,14 @@ import (
 	"cloud.google.com/go/bigquery"
 )
 
+// Options options for bigquery
+type Options struct {
+	IsPartitioned  bool
+	PartitionField string
+}
+
 // Write writes the interface into BQ
-func Write(projectID string, datasetID string, tableID string, obj interface{}) error {
+func Write(projectID string, datasetID string, tableID string, opts Options, obj interface{}) error {
 	ctx := context.Background()
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
@@ -21,11 +25,14 @@ func Write(projectID string, datasetID string, tableID string, obj interface{}) 
 	if err != nil {
 		return logger.Err(err)
 	}
+
 	recordMetaData := &bigquery.TableMetadata{
 		Schema: recordSchema,
-		TimePartitioning: &bigquery.TimePartitioning{
-			Field: "timestamp",
-		},
+	}
+	if opts.IsPartitioned {
+		recordMetaData.TimePartitioning = &bigquery.TimePartitioning{
+			Field: opts.PartitionField,
+		}
 	}
 	recordTableRef := bqClient.Dataset(datasetID).Table(tableID)
 	if err := recordTableRef.Create(ctx, recordMetaData); err != nil {
