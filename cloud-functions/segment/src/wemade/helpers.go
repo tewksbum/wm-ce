@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"segment/bq"
+	"segment/db"
 	"strings"
 	"time"
 
@@ -34,14 +35,14 @@ var (
 	tblProduct          string = "products"
 	tblPeople           string = "people"
 	tblShed             string = "shed"
-	// tblCampaign         string = "campaign"
-	defPartitionField string = "timestamp"
-	dstblCustomers    string = "Customer"
-	dsfilterCustomers string = "AccessKey = "
+	tblCampaign         string = "campaign"
+	defPartitionField   string = "timestamp"
+	dstblCustomers      string = "Customer"
+	dsfilterCustomers   string = "AccessKey = "
 )
 
 // DecodeAPIInput serialize a json into a wemade.Request struct, checks the API key and
-func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Record, error) {
+func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (db.Record, error) {
 	var input APIInput
 	ctx := context.Background()
 	surrogateID := uuid.New()
@@ -56,7 +57,7 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 	query := datastore.QueryTableNamespace(dstblCustomers, namespace)
 	query.Filter(dsfilterCustomers, input.AccessKey).Limit(1)
 
-	var entities []WMCustomer
+	var entities []DSCustomer
 
 	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
@@ -87,7 +88,10 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 
 	switch entityType {
 	case tblHousehold:
-		output.bqOpts = bq.Options{IsPartitioned: true, PartitionField: defPartitionField}
+		output.dbOpts = db.Options{
+			Type:      db.BQ,
+			BQOptions: bq.Options{IsPartitioned: true, PartitionField: defPartitionField},
+		}
 		record := Household{}
 		json.Unmarshal(b, &record)
 		return &HouseholdRecord{
@@ -95,7 +99,10 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 			Record:     record,
 		}, nil
 	case tblEvent:
-		output.bqOpts = bq.Options{IsPartitioned: true, PartitionField: defPartitionField}
+		output.dbOpts = db.Options{
+			Type:      db.BQ,
+			BQOptions: bq.Options{IsPartitioned: true, PartitionField: defPartitionField},
+		}
 		record := Event{}
 		json.Unmarshal(b, &record)
 		return &EventRecord{
@@ -105,13 +112,17 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 	case tblProduct:
 		record := Product{}
 		json.Unmarshal(b, &record)
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		return &ProductRecord{
 			BaseRecord: output,
 			Record:     record,
 		}, nil
 	case tblPeople:
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		record := People{}
 		json.Unmarshal(b, &record)
 		return &PeopleRecord{
@@ -119,7 +130,9 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 			Record:     record,
 		}, nil
 	case tblOrderHeader:
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		record := OrderHeader{}
 		json.Unmarshal(b, &record)
 		return &OrderHeaderRecord{
@@ -127,7 +140,9 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 			Record:     record,
 		}, nil
 	case tblOrderConsignment:
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		record := OrderConsignment{}
 		json.Unmarshal(b, &record)
 		return &OrderConsignmentRecord{
@@ -135,24 +150,30 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (Rec
 			Record:     record,
 		}, nil
 	case tblOrderDetail:
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		record := OrderDetail{}
 		json.Unmarshal(b, &record)
 		return &OrderDetailRecord{
 			BaseRecord: output,
 			Record:     record,
 		}, nil
-	// case tblCampaign:
-	//  output.bqOpts = bq.Options{IsPartitioned: false}
-	//  record := Campaign{}
-	//  json.Unmarshal(b, &record)
-	// 	return &CampaignRecord{
-	// 		BaseRecord: output,
-	// 		Record:     record,
-	// 	}, nil
+	case tblCampaign:
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
+		record := Campaign{}
+		json.Unmarshal(b, &record)
+		return &CampaignRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
 	default:
 		dbyte, _ := json.Marshal(input.Data)
-		output.bqOpts = bq.Options{IsPartitioned: false}
+		output.dbOpts = db.Options{
+			Type: db.CSQL,
+		}
 		// the Shed - shabby werehouse where any dummy requests die in.
 		output.EntityType = tblShed
 		return &FallbackRecord{

@@ -29,7 +29,7 @@ func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter
 	return w, req
 }
 
-func TestAPI(t *testing.T) {
+func TestUpsert(t *testing.T) {
 	type args struct {
 		w http.ResponseWriter
 		r *http.Request
