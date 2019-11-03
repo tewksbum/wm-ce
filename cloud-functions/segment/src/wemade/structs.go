@@ -1,15 +1,15 @@
 package wemade
 
 import (
-	"segment/bq"
+	"segment/db"
 	"segment/utils"
 	"time"
 
 	"cloud.google.com/go/datastore"
 )
 
-// WMCustomer contains Customer fields
-type WMCustomer struct {
+// DSCustomer contains wemade Customer fields
+type DSCustomer struct {
 	Name      string
 	AccessKey string
 	Enabled   bool
@@ -124,13 +124,6 @@ type APIOutput struct {
 	Message string `json:"message"`
 }
 
-//Record interface
-type Record interface {
-	GetStrCustomerID() string
-	GetEntityType() string
-	GetBQOptions() bq.Options
-}
-
 // BaseRecord input for the API
 type BaseRecord struct {
 	CustomerID  int64  `json:"customerId" bigquery:"customerid"`
@@ -142,7 +135,13 @@ type BaseRecord struct {
 	Passthrough string    `json:"passthrough" bigquery:"passthrough"`
 	Attributes  string    `json:"attributes" bigquery:"attributes"`
 	Timestamp   time.Time `json:"timestamp" bigquery:"timestamp"`
-	bqOpts      bq.Options
+	storageType string    // csql or bq
+	dbOpts      db.Options
+}
+
+// GetStorageType gets the customer id
+func (br *BaseRecord) GetStorageType() string {
+	return br.storageType
 }
 
 // GetStrCustomerID gets the customer id
@@ -155,9 +154,9 @@ func (br *BaseRecord) GetEntityType() string {
 	return br.EntityType
 }
 
-// GetBQOptions gets the customer id
-func (br *BaseRecord) GetBQOptions() bq.Options {
-	return br.bqOpts
+// GetDBOptions gets the customer id
+func (br *BaseRecord) GetDBOptions() db.Options {
+	return br.dbOpts
 }
 
 // HouseholdRecord a Household type record
