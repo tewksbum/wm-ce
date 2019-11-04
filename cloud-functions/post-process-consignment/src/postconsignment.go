@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"os"
+	"reflect"
 
 	"cloud.google.com/go/pubsub"
 )
@@ -28,13 +29,8 @@ type Prediction struct {
 
 type InputColumn struct {
 	NER            NER            `json:"NER"`
-	PeopleERR      PeopleERR      `json:"PeopleERR"`
-	ProductERR     ProductERR     `json:"ProductERR"`
-	CampaignERR    CampaignERR    `json:"CampaignERR"`
 	OrderERR       OrderERR       `json:"OrderERR"`
 	ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
-	OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
-	PeopleVER      PeopleVER      `json:"VER"`
 	Name           string         `json:"Name"`
 	Value          string         `json:"Value"`
 	MatchKey       string         `json:"MK"`
@@ -50,47 +46,18 @@ type Input struct {
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	Prediction  Prediction        `json:"prediction`
-	Columns     []InputColumn     `json:"columns`
+	MatchKeys   ConsignmentOutput `json:"matchkeys`
 }
 
-type PeopleERR struct {
-	Address1        int `json:"Address1"`
-	Address2        int `json:"Address2"`
-	Age             int `json:"Age"`
-	Birthday        int `json:"Birthday"`
-	City            int `json:"City"`
-	Country         int `json:"Country"`
-	County          int `json:"County"`
-	Email           int `json:"Email"`
-	FirstName       int `json:"FirstName"`
-	FullName        int `json:"FullName"`
-	Gender          int `json:"Gender"`
-	LastName        int `json:"LastName"`
-	MiddleName      int `json:"MiddleName"`
-	ParentEmail     int `json:"ParentEmail"`
-	ParentFirstName int `json:"ParentFirstName"`
-	ParentLastName  int `json:"ParentLastName"`
-	ParentName      int `json:"ParentName"`
-	Phone           int `json:"Phone"`
-	State           int `json:"State"`
-	Suffix          int `json:"Suffix"`
-	ZipCode         int `json:"ZipCode"`
-	TrustedID       int `json:"TrustedID"`
-	Title           int `json:"Title"`
-	Role            int `json:"Role"`
-	Dorm            int `json:"Dorm"`
+type MatchKeyField struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }
 
-type CampaignERR struct {
-	TrustedID  int `json:"TrustedID"`
-	CampaignID int `json:"CampaignId"`
-	Name       int `json:"Name"`
-	Type       int `json:"Type"`
-	Channel    int `json:"Channel"`
-	StartDate  int `json:"StartDate"`
-	EndDate    int `json:"EndDate"`
-	Budget     int `json:"Budget"`
+type ConsignmentOutput struct {
+	ID MatchKeyField `json:"id"`
+
+	SHIPDATE MatchKeyField `json:"shipDate"`
 }
 
 type OrderERR struct {
@@ -105,34 +72,6 @@ type OrderERR struct {
 type ConsignmentERR struct {
 	ID       int `json:"ID"`
 	ShipDate int `json:"ShipDate"`
-}
-
-type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
-}
-
-type ProductERR struct {
-	PID         int `json:"ID"`
-	SKU         int `json:"SKU"`
-	UPC         int `json:"UPC"`
-	Name        int `json:"Name"`
-	Description int `json:"Description"`
-	Size        int `json:"Size"`
-	Color       int `json:"Color"`
-	UnitPrice   int `json:"UnitPrice"`
-	Contains    int `json:"Contains"`
-	Type        int `json:"Type"`
-	VendorID    int `json:"VendorId"`
-	Vendor      int `json:"Vendor"`
-	Cost        int `json:"Cost"`
-	Stars       int `json:"Stars"`
-	Category    int `json:"Category"`
-	Margin      int `json:"Margin"`
 }
 
 type NER struct {
@@ -156,20 +95,6 @@ type NER struct {
 	CARDINAL  float64 `json:"CARDINAL"`
 }
 
-type PeopleVER struct {
-	HASHCODE     int64 `json:"HASH"`
-	IS_FIRSTNAME bool  `json:"isFIRSTNAME"`
-	IS_LASTNAME  bool  `json:"isLASTNAME"`
-	IS_STREET1   bool  `json:"isSTREET1"`
-	IS_STREET2   bool  `json:"isSTREET2"`
-	IS_CITY      bool  `json:"isCITY"`
-	IS_STATE     bool  `json:"isSTATE"`
-	IS_ZIPCODE   bool  `json:"isZIPCODE"`
-	IS_COUNTRY   bool  `json:"isCOUNTRY"`
-	IS_EMAIL     bool  `json:"isEMAIL"`
-	IS_PHONE     bool  `json:"isPHONE"`
-}
-
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 
@@ -190,12 +115,28 @@ func PostProcessConsignment(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	var mkOutput ConsignmentOutput
+	for index, column := range input.Columns {
+		if column.ConsignmentERR.ID == 1 {
+			matchKey := "ID"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.ConsignmentERR.ShipDate == 1 {
+			matchKey := "SHIPDATE"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		input.Columns[index] = column
+	}
+
 	// pub the record
 	var output Output
 	output.Signature = input.Signature
-	output.Columns = input.Columns
-	output.Prediction = input.Prediction
 	output.Passthrough = input.Passthrough
+	output.MatchKeys = mkOutput
 
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
@@ -211,4 +152,18 @@ func PostProcessConsignment(ctx context.Context, m PubSubMessage) error {
 	}
 
 	return nil
+}
+
+func GetMkField(v *ConsignmentOutput, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func SetMkField(v *ConsignmentOutput, field string, value string, source string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+
+	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
+	return value
 }

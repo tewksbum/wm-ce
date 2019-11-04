@@ -28,17 +28,11 @@ type Prediction struct {
 }
 
 type InputColumn struct {
-	NER            NER            `json:"NER"`
-	PeopleERR      PeopleERR      `json:"PeopleERR"`
-	ProductERR     ProductERR     `json:"ProductERR"`
-	CampaignERR    CampaignERR    `json:"CampaignERR"`
-	OrderERR       OrderERR       `json:"OrderERR"`
-	ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
-	OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
-	PeopleVER      PeopleVER      `json:"VER"`
-	Name           string         `json:"Name"`
-	Value          string         `json:"Value"`
-	MatchKey       string         `json:"MK"`
+	NER        NER        `json:"NER"`
+	ProductERR ProductERR `json:"ProductERR"`
+	Name       string     `json:"Name"`
+	Value      string     `json:"Value"`
+	MatchKey   string     `json:"MK"`
 }
 
 type Input struct {
@@ -74,68 +68,6 @@ type ProductOutput struct {
 	VENDOR      MatchKeyField `json:"vendor"`
 	STARS       MatchKeyField `json:"stars"`
 	CATEGORY    MatchKeyField `json:"category"`
-}
-
-type PeopleERR struct {
-	Address1        int `json:"Address1"`
-	Address2        int `json:"Address2"`
-	Age             int `json:"Age"`
-	Birthday        int `json:"Birthday"`
-	City            int `json:"City"`
-	Country         int `json:"Country"`
-	County          int `json:"County"`
-	Email           int `json:"Email"`
-	FirstName       int `json:"FirstName"`
-	FullName        int `json:"FullName"`
-	Gender          int `json:"Gender"`
-	LastName        int `json:"LastName"`
-	MiddleName      int `json:"MiddleName"`
-	ParentEmail     int `json:"ParentEmail"`
-	ParentFirstName int `json:"ParentFirstName"`
-	ParentLastName  int `json:"ParentLastName"`
-	ParentName      int `json:"ParentName"`
-	Phone           int `json:"Phone"`
-	State           int `json:"State"`
-	Suffix          int `json:"Suffix"`
-	ZipCode         int `json:"ZipCode"`
-	TrustedID       int `json:"TrustedID"`
-	Title           int `json:"Title"`
-	Role            int `json:"Role"`
-	Dorm            int `json:"Dorm"`
-}
-
-type CampaignERR struct {
-	TrustedID  int `json:"TrustedID"`
-	CampaignID int `json:"CampaignId"`
-	Name       int `json:"Name"`
-	Type       int `json:"Type"`
-	Channel    int `json:"Channel"`
-	StartDate  int `json:"StartDate"`
-	EndDate    int `json:"EndDate"`
-	Budget     int `json:"Budget"`
-}
-
-type OrderERR struct {
-	ID         int `json:"ID"`
-	Number     int `json:"Number"`
-	CustomerID int `json:"CustomerID"`
-	Date       int `json:"Date"`
-	Total      int `json:"Total"`
-	BillTo     int `json:"BillTo"`
-}
-
-type ConsignmentERR struct {
-	ID       int `json:"ID"`
-	ShipDate int `json:"ShipDate"`
-}
-
-type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
 }
 
 type ProductERR struct {
