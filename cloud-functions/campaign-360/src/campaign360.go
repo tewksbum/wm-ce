@@ -37,6 +37,14 @@ type CampaignInput struct {
 	MatchKeys   CampaignOutput    `json:"matchkeys`
 }
 
+type CampaignFiber struct {
+	Signature   Signature         `json:"signature" bigquery:"signature"`
+	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
+	MatchKeys   CampaignOutput    `json:"matchkeys bigquery:"matchkeys"`
+	FiberID     string            `json:"fiberId" bigquery:"id"`
+	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
+}
+
 type MatchKeyField struct {
 	Value  string `json:"value"`
 	Source string `json:"source"`
@@ -61,10 +69,10 @@ type Signature360 struct {
 }
 
 type MatchKey360 struct {
-	Key   string `json:"key" bigquery:"key"`
-	Type  string `json:"type" bigquery:"type"`
-	Value string `json:"value" bigquery:"value"`
-	//Values []string `json:"values" bigquery:"values"`
+	Key    string   `json:"key" bigquery:"key"`
+	Type   string   `json:"type" bigquery:"type"`
+	Value  string   `json:"value" bigquery:"value"`
+	Values []string `json:"values" bigquery:"values"`
 }
 
 type Passthrough360 struct {
@@ -80,19 +88,19 @@ type Campaign360Output struct {
 	Fibers       []string         `json:"fibers" bigquery:"fibers"`
 	Passthroughs []Passthrough360 `json:"passthroughs" bigquery:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
-
-	TrustedIDs []string `json:"trustedId" bigquery:"trustedId"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
-var BigQueryTable = os.Getenv("BQTABLE")
+var SetTable = os.Getenv("SETTABLE")
+var FiberTable = os.Getenv("FIBERTABLE")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
 
 var bq bigquery.Client
 var bs bigquery.Schema
+var bc bigquery.Schema
 
 // var setSchema bigquery.Schema
 
@@ -102,8 +110,9 @@ func init() {
 	topic = ps.Topic(PubSubTopic)
 	bq, _ := bigquery.NewClient(ctx, ProjectID)
 	bs, _ := bigquery.InferSchema(Campaign360Output{})
+	bc, _ := bigquery.InferSchema(CampaignFiber{})
 
-	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v", topic, bq, bs)
+	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
 
 func Campaign360(ctx context.Context, m PubSubMessage) error {
@@ -116,6 +125,9 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	setMeta := &bigquery.TableMetadata{
 		Schema: bs,
 	}
+	fiberMeta := &bigquery.TableMetadata{
+		Schema: bc,
+	}
 	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
@@ -123,14 +135,31 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	}
 	if err := bq.Dataset(DatasetID).Create(ctx, dsmeta); err != nil {
 	}
-	setTable := bq.Dataset(DatasetID).Table(BigQueryTable)
-	if err := setTable.Create(ctx, setMeta); err != nil {
+	SetTable := bq.Dataset(DatasetID).Table(SetTable)
+	if err := SetTable.Create(ctx, setMeta); err != nil {
+	}
+	FiberTable := bq.Dataset(DatasetID).Table(FiberTable)
+	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
+	}
+
+	// store the fiber
+	var fiber CampaignFiber
+	fiber.CreatedAt = time.Now()
+	fiber.FiberID = uuid.New().String()
+	fiber.MatchKeys = input.MatchKeys
+	fiber.Passthrough = input.Passthrough
+	fiber.Signature = input.Signature
+
+	FiberInserter := SetTable.Inserter()
+	if err := FiberInserter.Put(ctx, fiber); err != nil {
+		log.Fatalf("error insertinng into fiber table %v", err)
+		return nil
 	}
 
 	// locate existing set
 	MatchByKey := "trustedId"
 	MatchByValue := strings.Replace(input.MatchKeys.CAMPAIGNID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(%s) u WHERE u = '%s' ", ProjectID, DatasetID, BigQueryTable, MatchByKey, MatchByValue)
+	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(%s) u WHERE u = '%s' ", ProjectID, DatasetID, SetTable, MatchByKey, MatchByValue)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
@@ -158,6 +187,23 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 		return err
 	}
 
+	MatchKeyList := structs.Names(&CampaignOutput{})
+	HasNewValues := false
+	// check to see if there are any new values
+	for _, name := range MatchKeyList {
+		mk := GetMatchKeyFields(output.MatchKeys, name)
+		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		if !Contains(mk.Values, mk.Value) {
+			HasNewValues = true
+			break
+		}
+	}
+
+	// stop processing if no new values
+	if !HasNewValues {
+		return nil
+	}
+
 	// append to the output value
 	output.ID = uuid.New().String()
 	output.Signatures = append(output.Signatures, input.Signature)
@@ -167,7 +213,9 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 		EventID:   input.Signature.EventID,
 		EventType: input.Signature.EventType,
 	}
-	output.CreatedAt = time.Now()
+	if output.CreatedAt.IsZero() {
+		output.CreatedAt = time.Now()
+	}
 	output.Fibers = append(output.Fibers, input.Signature.RecordID)
 	if len(input.Passthrough) > 0 {
 		for mapKey, mapValue := range input.Passthrough {
@@ -178,14 +226,23 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 			output.Passthroughs = append(output.Passthroughs, pt)
 		}
 	}
-	output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
-	FieldNames := structs.Names(&CampaignOutput{})
-	for _, name := range FieldNames {
-		mk := MatchKey360{
-			Key:   name,
-			Value: GetMkField(&input.MatchKeys, name).Value,
+	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
+	var OutputMatchKeys []MatchKey360
+	for _, name := range MatchKeyList {
+		mk := GetMatchKeyFields(output.MatchKeys, name)
+		mk.Key = name
+		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		if !Contains(mk.Values, mk.Value) {
+			mk.Values = append(mk.Values, mk.Value)
 		}
-		output.MatchKeys = append(output.MatchKeys, mk)
+		OutputMatchKeys = append(OutputMatchKeys, mk)
+	}
+
+	// store the set
+	SetInserter := SetTable.Inserter()
+	if err := SetInserter.Put(ctx, output); err != nil {
+		log.Fatalf("error insertinng into set table %v", err)
+		return nil
 	}
 
 	// push into pubsub
@@ -208,4 +265,23 @@ func GetMkField(v *CampaignOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
+}
+
+func GetMatchKeyFields(v []MatchKey360, key string) MatchKey360 {
+	for _, m := range v {
+		if m.Key == key {
+			return m
+		}
+	}
+	return MatchKey360{}
+}
+
+func Contains(slice []string, item string) bool {
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+
+	_, ok := set[item]
+	return ok
 }
