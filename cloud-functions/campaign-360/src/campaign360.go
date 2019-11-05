@@ -85,6 +85,7 @@ type Campaign360Output struct {
 	Signature    Signature360     `json:"signature" bigquery:"signature"`
 	Signatures   []Signature      `json:"signatures" bigquery:"signatures"`
 	CreatedAt    time.Time        `json:"createdAt" bigquery:"createdAt"`
+	TimeStamp    time.Time        `json:"timestamp" bigquery:"timestamp"`
 	Fibers       []string         `json:"fibers" bigquery:"fibers"`
 	Passthroughs []Passthrough360 `json:"passthroughs" bigquery:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
@@ -159,7 +160,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	// locate existing set
 	MatchByKey := "CAMPAIGNID"
 	MatchByValue := strings.Replace(input.MatchKeys.CAMPAIGNID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
+	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
@@ -206,6 +207,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 
 	// append to the output value
 	output.ID = uuid.New().String()
+	output.TimeStamp = time.Now()
 	output.Signatures = append(output.Signatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
