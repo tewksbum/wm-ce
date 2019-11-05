@@ -15,6 +15,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// we store things in 3 tables -- fiber, set and people
+
 type PPOutputAddress struct {
 	Add1                string  `json:"Add1"`
 	Add2                string  `json:"Add2"`
@@ -98,6 +100,23 @@ type PPOutputRecord struct {
 	TimeStamp    string                 `json:"TimeStamp"`
 }
 
+type P3Fiber struct {
+	FiberID   string `json:"fiber" bigquery:"id"`
+	Owner     int64  `json:"owner" bigquery:"owner"`
+	Source    string `json:"source" bigquery:"source"`
+	Request   string `json:"request" bigquery:"request"`
+	Row       int    `json:"row" bigquery:"row"`
+	TimeStamp string `json:"timestamp" bigquery:"timestamp"`
+
+	Address      []PPOutputAddress      `json:"addresses" bigquery:"addresses"`
+	Background   PPOutputBackground     `json:"background" bigquery:"background"`
+	Email        []PPOutputEmail        `json:"emails" bigquery:"emails"`
+	Name         PPOutputName           `json:"name" bigquery:"name"`
+	Organization []PPOutputOrganization `json:"organization" bigquery:"organization"`
+	Phone        []PPOutputPhone        `json:"phones" bigquery:"phones"`
+	TrustedID    []PPOutputTrustedID    `json:"trustedId" bigquery:"trustedId"`
+}
+
 type P3OutputAddress struct {
 	Add1   string `json:"add1" bigquery:"add1"`
 	Add2   string `json:"add2" bigquery:"add2"`
@@ -130,19 +149,20 @@ type P3OutputPhone struct {
 	Phone string `json:"phone" json:"phone"`
 }
 
-type P3OutputRecord struct {
-	Address      []P3OutputAddress    `json:"addresses" bigquery:"addresses"`
-	Background   P3OutputBackground   `json:"background" bigquery:"background"`
-	Email        []P3OutputEmail      `json:"emails" bigquery:"emails"`
-	Name         P3OutputName         `json:"name" bigquery:"name"`
-	Organization P3OutputOrganization `json:"organization" bigquery:"organization"`
-	Phone        []P3OutputPhone      `json:"phones" bigquery:"phones"`
-	Owner        int64                `json:"owner" bigquery:"owner"`
-	Source       string               `json:"source" bigquery:"source"`
-	Request      string               `json:"request" bigquery:"request"`
-	Row          int                  `json:"row" bigquery:"row"`
-	TimeStamp    string               `json:"timestamp" bigquery:"timestamp"`
-	SetID        string               `json:"set" bigquery:"set"`
+type P3Set struct {
+	SetID        string   `json:"set" bigquery:"id"`
+	FiberID      []string `json:"fibers" bigquery:"fibers"`
+	TrustedID    []string `json:"trustedId" bigquery:"trustedID"`
+	Email        []string `json:"email" bigquery:"email"`
+	Phone        []string `json:"phone" bigquery:"phone"`
+	FirstName    []string `json:"firstName" bigquery:"firstName"`
+	FirstInitial []string `json:"firstInitial" bigquery:"firstInitial"`
+	LastName     []string `json:"lastName" bigquery:"lastName"`
+	City         []string `json:"city" bigquery:"city"`
+	State        []string `json:"state" bigquery:"state"`
+	Zip5         []string `json:"zip5" bigquery:"zip5"`
+	StreetNumber []string `json:"streetNumber" bigquery:"streetNumber"`
+	StreetName   []string `json:"streetName" bigquery:"streetName"`
 }
 
 type PubSubMessage struct {
@@ -150,6 +170,14 @@ type PubSubMessage struct {
 }
 
 var indexName = "people"
+var ProjectID = "wemade-core"
+var bqClient bigquery.Client
+var fiberSchema bigquery.Schema
+var setSchema bigquery.Schema
+
+func init() {
+
+}
 
 func People360(ctx context.Context, m PubSubMessage) error {
 	log.Println(string(m.Data))
@@ -171,7 +199,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	PubsubTopic := "people360-output-dev"
-	ProjectID := "wemade-core"
+
+	bqClient, _ := bigquery.NewClient(ctx, ProjectID)
+	log.Print("init created bqClient %v", bqClient.Location)
+	// store the fiber
+	fiberSchema, _ := bigquery.InferSchema(P3Fiber{})
+	log.Print("init created fiber schema %v", fiberSchema)
+
+	setSchema, _ := bigquery.InferSchema(P3Set{})
+	log.Print("init created set schema %v", setSchema)
 
 	psclient, err := pubsub.NewClient(ctx, ProjectID)
 	if err != nil {
@@ -224,65 +260,107 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// map the data
-	var output P3OutputRecord
+	var output P3Fiber
 	output.Owner = input.Owner
 	output.Source = input.Source
 	output.Request = input.Request
 	output.Request = input.Request
 	output.Row = input.Row
 	output.TimeStamp = input.TimeStamp
-	output.SetID = uuid.New().String()
+	output.FiberID = uuid.New().String()
+	output.Address = input.Address
+	output.Email = input.Email
+	output.Name = input.Name
+	output.Phone = input.Phone
+	output.Organization = input.Organization
+	output.Background = input.Background
+	output.TrustedID = input.TrustedID
 
-	for _, inputEmail := range input.Email {
-		outputEmail := P3OutputEmail{
-			Address: inputEmail.Address,
-		}
-		output.Email = append(output.Email, outputEmail)
-	}
-
-	for _, inputAddress := range input.Address {
-		outputAddress := P3OutputAddress{
-			Add1:   inputAddress.Add1,
-			Add2:   inputAddress.Add2,
-			City:   inputAddress.City,
-			State:  inputAddress.State,
-			Postal: inputAddress.Postal,
-		}
-		output.Address = append(output.Address, outputAddress)
-	}
-
-	for _, inputPhone := range input.Phone {
-		outputPhone := P3OutputPhone{
-			Phone: inputPhone.Number,
-		}
-		output.Phone = append(output.Phone, outputPhone)
-	}
-	// Background   P3OutputBackground   `json:"background"`
-	// Name         P3OutputName         `json:"name"`
-	// Organization P3OutputOrganization `json:"organization"`
-	// Phone        []P3OutputPhone      `json:"phones"`
+	// check for
 
 	// write to BQ
-	bqClient, err := bigquery.NewClient(ctx, ProjectID)
-
-	peopleSchema, err := bigquery.InferSchema(P3OutputRecord{})
-	peopleMetaData := &bigquery.TableMetadata{
-		Schema: peopleSchema,
+	fiberMeta := &bigquery.TableMetadata{
+		Schema: fiberSchema,
 	}
+
+	setMeta := &bigquery.TableMetadata{
+		Schema: setSchema,
+	}
+
 	datasetID := strconv.FormatInt(input.Owner, 10)
-	tableID := "people"
-	peopleTableRef := bqClient.Dataset(datasetID).Table(tableID)
-	if err := peopleTableRef.Create(ctx, peopleMetaData); err != nil {
-		log.Fatalf("error making table %v", err)
+
+	// make sure dataset exists
+	dsmeta := &bigquery.DatasetMetadata{
+		Location: "US", // Create the dataset in the US.
+	}
+	if err := bqClient.Dataset(datasetID).Create(ctx, dsmeta); err != nil {
+	}
+
+	fiberTableID := "people_fiber"
+	fiberTable := bqClient.Dataset(datasetID).Table(fiberTableID)
+	if err := fiberTable.Create(ctx, fiberMeta); err != nil {
+		// log.Fatalf("error making table %v", err)
+		// return nil
+	}
+
+	setTableID := "people_set"
+	setTable := bqClient.Dataset(datasetID).Table(setTableID)
+	if err := setTable.Create(ctx, setMeta); err != nil {
+		// log.Fatalf("error making table %v", err)
+		// return nil
+	}
+
+	fiberInserter := fiberTable.Inserter()
+	if err := fiberInserter.Put(ctx, output); err != nil {
+		log.Fatalf("error insertinng into fiber table %v", err)
 		return nil
 	}
 
-	peopleInserter := peopleTableRef.Inserter()
-	if err := peopleInserter.Put(ctx, output); err != nil {
-		log.Fatalf("error insertinng into table %v", err)
+	// new set
+	var set P3Set
+	set.FiberID = []string{output.FiberID}
+	set.SetID = uuid.New().String()
+
+	if len(output.TrustedID) > 0 {
+		for _, TrustedID := range output.TrustedID {
+			set.TrustedID = append(set.TrustedID, TrustedID.SourceID)
+		}
+	}
+	if len(output.Email) > 0 {
+		for _, Email := range output.Email {
+			set.Email = append(set.Email, Email.Address)
+		}
+	}
+	if len(output.Phone) > 0 {
+		for _, Phone := range output.Phone {
+			set.Phone = append(set.Phone, Phone.Number)
+		}
+	}
+	if len(output.Name.First) > 0 {
+		set.FirstName = append(set.FirstName, output.Name.First)
+		set.FirstInitial = append(set.FirstInitial, output.Name.First[0:1])
+	}
+	if len(output.Name.Last) > 0 {
+		set.LastName = append(set.LastName, output.Name.Last)
+	}
+
+	if len(output.Address) > 0 {
+		for _, Address := range output.Address {
+			set.City = append(set.City, Address.City)
+			set.State = append(set.State, Address.State)
+			if len(Address.Postal) > 5 {
+				set.Zip5 = append(set.Zip5, Address.Postal[0:5])
+			}
+			set.StreetNumber = append(set.StreetNumber, Address.Number)
+			set.StreetName = append(set.StreetName, Address.StreetName)
+		}
+	}
+
+	setInserter := setTable.Inserter()
+	if err := setInserter.Put(ctx, set); err != nil {
+		log.Fatalf("error insertinng into set table %v", err)
 		return nil
 	}
 
-	log.Printf("%v %v", bqClient, peopleSchema)
 	return nil
 }
