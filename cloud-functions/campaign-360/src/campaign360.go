@@ -92,8 +92,8 @@ type Campaign360Output struct {
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
-var SetTable = os.Getenv("SETTABLE")
-var FiberTable = os.Getenv("FIBERTABLE")
+var SetTableName = os.Getenv("SETTABLE")
+var FiberTableName = os.Getenv("FIBERTABLE")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -135,10 +135,10 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	}
 	if err := bq.Dataset(DatasetID).Create(ctx, dsmeta); err != nil {
 	}
-	SetTable := bq.Dataset(DatasetID).Table(SetTable)
+	SetTable := bq.Dataset(DatasetID).Table(SetTableName)
 	if err := SetTable.Create(ctx, setMeta); err != nil {
 	}
-	FiberTable := bq.Dataset(DatasetID).Table(FiberTable)
+	FiberTable := bq.Dataset(DatasetID).Table(FiberTableName)
 	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
 	}
 
@@ -157,9 +157,9 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
-	MatchByKey := "trustedId"
+	MatchByKey := "CAMPAIGNID"
 	MatchByValue := strings.Replace(input.MatchKeys.CAMPAIGNID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(%s) u WHERE u = '%s' ", ProjectID, DatasetID, SetTable, MatchByKey, MatchByValue)
+	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
