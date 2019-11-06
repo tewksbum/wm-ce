@@ -22,31 +22,6 @@ func compareSlices(a, b []string) bool {
 	}
 	return true
 }
-func TestFlattenPassthrough(t *testing.T) {
-	var tests = []struct {
-		input    map[string]string
-		expected []string
-	}{
-		{map[string]string{"A": "1", "B": "2"},
-			[]string{`{"A":"1","B":"2"}`,
-				`{"B":"2","A":"1"}`}},
-		{map[string]string{"firstProperty": "1"},
-			[]string{`{"firstProperty":"1"}`}},
-	}
-	for _, test := range tests {
-		flatInput := flattenMap(test.input)
-		pass := false
-
-		for _, exp := range test.expected {
-			if flatInput == exp {
-				pass = true
-			}
-		}
-		if !pass {
-			t.Errorf("Expecting %s got %s", test.expected, flatInput)
-		}
-	}
-}
 
 //Basic json unmarshalling tests.
 func TestUnmarshalToString(t *testing.T) {
