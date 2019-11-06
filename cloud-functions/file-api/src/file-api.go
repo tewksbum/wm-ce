@@ -34,8 +34,8 @@ type Event struct {
 	Status      string
 	Created     time.Time
 	Endpoint    string
-	Passthrough map[string]string
-	Attributes  map[string]string
+	Passthrough string
+	Attributes  string
 }
 
 type Signature struct {
@@ -144,8 +144,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Created:     time.Now(),
 		Source:      input.Source,
 		Owner:       input.Owner,
-		Passthrough: input.Passthrough,
-		Attributes:  input.Attributes,
+		Passthrough: ToJson(&input.Passthrough),
+		Attributes:  ToJson(&input.Attributes),
 		EventID:     uuid.New().String(),
 		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
@@ -186,6 +186,17 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("%v Could not pub to pubsub: %v", output.Signature.EventID, err)
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
+	}
+
+}
+
+func ToJson(v *map[string]string) string {
+	jsonString, err := json.Marshal(v)
+	if err == nil {
+		return string(jsonString)
+	} else {
+		log.Fatalf("%v Could not convert map %v to json: %v", v, err)
+		return ""
 	}
 
 }
