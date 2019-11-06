@@ -3,8 +3,8 @@ steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    'deploy','streamer-api-$BRANCH_NAME', 
-    '--entry-point', 'Main', 
+    'deploy','wm-fileprocessor-$BRANCH_NAME', 
+    '--entry-point', 'ProcessFile', 
     '--runtime','go111', 
     '--trigger-http', 
     "--project", "${PROJECT_ID}", 
