@@ -1,4 +1,4 @@
-package postpeople
+package peoplepost
 
 import (
 	"context"

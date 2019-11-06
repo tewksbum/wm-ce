@@ -1,4 +1,4 @@
-module postcampaign
+module campaignpost
 
 require (
 	cloud.google.com/go/datastore v1.0.0

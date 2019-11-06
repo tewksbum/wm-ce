@@ -1,4 +1,4 @@
-package postcampaign
+package orderpost
 
 import (
 	"context"
@@ -28,10 +28,11 @@ type Prediction struct {
 }
 
 type InputColumn struct {
-	CampaignERR CampaignERR `json:"CampaignERR"`
-	Name        string      `json:"Name"`
-	Value       string      `json:"Value"`
-	MatchKey    string      `json:"MK"`
+	NER      NER      `json:"NER"`
+	OrderERR OrderERR `json:"OrderERR"`
+	Name     string   `json:"Name"`
+	Value    string   `json:"Value"`
+	MatchKey string   `json:"MK"`
 }
 
 type Input struct {
@@ -44,7 +45,7 @@ type Input struct {
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   CampaignOutput    `json:"matchkeys`
+	MatchKeys   OrderOutput       `json:"matchkeys`
 }
 
 type MatchKeyField struct {
@@ -52,26 +53,23 @@ type MatchKeyField struct {
 	Source string `json:"source"`
 }
 
-type CampaignOutput struct {
-	CAMPAIGNID MatchKeyField `json:"campaignId"`
+type OrderOutput struct {
+	ID         MatchKeyField `json:"id"`
+	NUMBER     MatchKeyField `json:"number"`
+	CUSTOMERID MatchKeyField `json:"customerId"`
 
-	NAME      MatchKeyField `json:"name"`
-	TYPE      MatchKeyField `json:"type"`
-	CHANNEL   MatchKeyField `json:"channel"`
-	STARTDATE MatchKeyField `json:"startDate"`
-	ENDDATE   MatchKeyField `json:"endDate"`
-	BUDGET    MatchKeyField `json:"budget"`
+	DATE   MatchKeyField `json:"date"`
+	TOTAL  MatchKeyField `json:"total"`
+	BILLTO MatchKeyField `json:"billTo"`
 }
 
-type CampaignERR struct {
-	TrustedID  int `json:"TrustedID"`
-	CampaignID int `json:"CampaignId"`
-	Name       int `json:"Name"`
-	Type       int `json:"Type"`
-	Channel    int `json:"Channel"`
-	StartDate  int `json:"StartDate"`
-	EndDate    int `json:"EndDate"`
-	Budget     int `json:"Budget"`
+type OrderERR struct {
+	ID         int `json:"ID"`
+	Number     int `json:"Number"`
+	CustomerID int `json:"CustomerID"`
+	Date       int `json:"Date"`
+	Total      int `json:"Total"`
+	BillTo     int `json:"BillTo"`
 }
 
 type NER struct {
@@ -109,53 +107,47 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
-func PostProcessCampaign(ctx context.Context, m PubSubMessage) error {
+func PostProcessOrder(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	var mkOutput CampaignOutput
+	var mkOutput OrderOutput
 	for index, column := range input.Columns {
+		if column.OrderERR.ID == 1 {
+			matchKey := "ID"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.Number == 1 {
+			matchKey := "NUMBER"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.CustomerID == 1 {
+			matchKey := "CUSTOMERID"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
 
-		if column.CampaignERR.CampaignID == 1 {
-			matchKey := "CAMPAIGNID"
+		if column.OrderERR.Date == 1 {
+			matchKey := "DATE"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-		if column.CampaignERR.Name == 1 {
-			matchKey := "NAME"
+		if column.OrderERR.Total == 1 {
+			matchKey := "TOTAL"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-		if column.CampaignERR.Type == 1 {
-			matchKey := "TYPE"
-			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			}
-		}
-		if column.CampaignERR.Channel == 1 {
-			matchKey := "CHANNEL"
-			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			}
-		}
-		if column.CampaignERR.StartDate == 1 {
-			matchKey := "STARTDATE"
-			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			}
-		}
-		if column.CampaignERR.EndDate == 1 {
-			matchKey := "ENDDATE"
-			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			}
-		}
-		if column.CampaignERR.Budget == 1 {
-			matchKey := "BUDGET"
+		if column.OrderERR.BillTo == 1 {
+			matchKey := "BILLTO"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
@@ -185,13 +177,13 @@ func PostProcessCampaign(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetMkField(v *CampaignOutput, field string) MatchKeyField {
+func GetMkField(v *OrderOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
 }
 
-func SetMkField(v *CampaignOutput, field string, value string, source string) string {
+func SetMkField(v *OrderOutput, field string, value string, source string) string {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 

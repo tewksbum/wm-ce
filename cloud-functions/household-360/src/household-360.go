@@ -1,4 +1,4 @@
-package campaign360
+package household360
 
 import (
 	"context"
@@ -31,16 +31,16 @@ type Signature struct {
 	RecordID  string `json:"recordId"`
 }
 
-type CampaignInput struct {
+type HouseholdInput struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   CampaignOutput    `json:"matchkeys`
+	MatchKeys   HouseholdOutput   `json:"matchkeys`
 }
 
-type CampaignFiber struct {
+type HouseholdFiber struct {
 	Signature   Signature         `json:"signature" bigquery:"signature"`
 	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   CampaignOutput    `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   HouseholdOutput   `json:"matchkeys bigquery:"matchkeys"`
 	FiberID     string            `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
 }
@@ -50,7 +50,7 @@ type MatchKeyField struct {
 	Source string `json:"source"`
 }
 
-type CampaignOutput struct {
+type HouseholdOutput struct {
 	CAMPAIGNID MatchKeyField `json:"campaignId"`
 
 	NAME      MatchKeyField `json:"name"`
@@ -80,7 +80,7 @@ type Passthrough360 struct {
 	Value string `json:"value" bigquery:"value"`
 }
 
-type Campaign360Output struct {
+type Household360Output struct {
 	ID           string           `json:"id" bigquery:"id"`
 	Signature    Signature360     `json:"signature" bigquery:"signature"`
 	Signatures   []Signature      `json:"signatures" bigquery:"signatures"`
@@ -110,14 +110,14 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	bq, _ := bigquery.NewClient(ctx, ProjectID)
-	bs, _ := bigquery.InferSchema(Campaign360Output{})
-	bc, _ := bigquery.InferSchema(CampaignFiber{})
+	bs, _ := bigquery.InferSchema(Household360Output{})
+	bc, _ := bigquery.InferSchema(HouseholdFiber{})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
 
-func Campaign360(ctx context.Context, m PubSubMessage) error {
-	var input CampaignInput
+func Household360(ctx context.Context, m PubSubMessage) error {
+	var input HouseholdInput
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
@@ -144,7 +144,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store the fiber
-	var fiber CampaignFiber
+	var fiber HouseholdFiber
 	fiber.CreatedAt = time.Now()
 	fiber.FiberID = uuid.New().String()
 	fiber.MatchKeys = input.MatchKeys
@@ -180,7 +180,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	BQIterator, err := BQJob.Read(ctx)
 
 	// only need the first value
-	var output Campaign360Output
+	var output Household360Output
 	err = BQIterator.Next(&output)
 	if err == iterator.Done {
 	} else if err != nil {
@@ -188,7 +188,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 		return err
 	}
 
-	MatchKeyList := structs.Names(&CampaignOutput{})
+	MatchKeyList := structs.Names(&HouseholdOutput{})
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
@@ -263,7 +263,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetMkField(v *CampaignOutput, field string) MatchKeyField {
+func GetMkField(v *HouseholdOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)

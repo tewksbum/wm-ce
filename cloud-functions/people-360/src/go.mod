@@ -1,4 +1,4 @@
-module campaign360
+module people360
 
 require (
 	cloud.google.com/go/bigquery v1.0.1

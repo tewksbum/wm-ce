@@ -1,4 +1,4 @@
-module postpeople
+module peoplepost
 
 require (
 	cloud.google.com/go v0.45.1

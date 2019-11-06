@@ -1,4 +1,4 @@
-module peoplepre
+module preprocess
 
 require (
 	cloud.google.com/go v0.45.1

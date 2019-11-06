@@ -1,4 +1,4 @@
-module postorder
+module orderpost
 
 require (
 	cloud.google.com/go/datastore v1.0.0

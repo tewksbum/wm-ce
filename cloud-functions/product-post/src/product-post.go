@@ -1,4 +1,4 @@
-package postproduct
+package productpost
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-module postconsignment
+module consignmentpost
 
 require (
 	cloud.google.com/go/datastore v1.0.0

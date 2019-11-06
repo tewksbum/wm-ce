@@ -1,5 +1,5 @@
 // Package streamerapi contains a series of cloud functions for streamer
-package eventapi
+package fileapi
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-module order360
+module household360
 
 require (
 	cloud.google.com/go/bigquery v1.0.1
