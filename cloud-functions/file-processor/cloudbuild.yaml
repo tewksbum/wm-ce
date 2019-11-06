@@ -8,7 +8,6 @@ steps:
     "--runtime","go111", 
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
-    "--clear-env-vars",
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
