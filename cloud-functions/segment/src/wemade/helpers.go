@@ -182,9 +182,15 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (mod
 		}, nil
 	case tblDecode: // FCD table
 		record := &models.DecodeRecord{}
+		record.IDField = "signature"
+		record.ColumnList = []string{"signature", "people_id"}
+		record.ColumnBlackList = []string{"passthrough", "attributes", "source",
+			"owner_id", "owner", "entity_type", "timestamp"}
 		record.DBopts = models.Options{
-			Type:          models.CSQL,
-			IsPartitioned: false,
+			Type:              models.CSQL,
+			IsPartitioned:     false,
+			TableName:         tblDecode,
+			IsTableNameSuffix: true,
 		}
 		json.Unmarshal(b, record)
 		return record, nil

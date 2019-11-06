@@ -17,19 +17,19 @@ var (
 	csqlRegion     string = os.Getenv("CSQL_REGION")
 	csqlInstanceID string = os.Getenv("CSQL_INSTANCEID")
 	csqlCnn        string = os.Getenv("CSQLCNN")
-	// csqlDSN        string = fmt.Sprintf(csqlCnn, projectID, csqlRegion, csqlInstanceID)
-	successMsg string = "Record successfully processed"
+	csqlDSN        string = fmt.Sprintf(csqlCnn, projectID, csqlRegion, csqlInstanceID)
+	successMsg     string = "Record successfully processed"
 )
 
 // Upsert the api entrypoint main func
 func Upsert(w http.ResponseWriter, r *http.Request) {
 	// TODO: remove these assignments before merging to dev
-	projectID = "wemade-core"
-	namespace = "wemade.streamer-api.dev"
-	csqlRegion = "us-central1"
-	csqlInstanceID = "wemade"
-	// csqlCnn = "segment:RLWOrYOntAINtRatioNtURaI@unix(/cloudsql/%s:%s:%s)/segment?charset=utf8mb4,utf8&parseTime=true"
-	csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment?charset=utf8mb4,utf8&parseTime=true"
+	// projectID = "wemade-core"
+	// namespace = "wemade.streamer-api.dev"
+	// csqlRegion = "us-central1"
+	// csqlInstanceID = "wemade"
+	// // csqlCnn = "segment:RLWOrYOntAINtRatioNtURaI@unix(/cloudsql/%s:%s:%s)/segment?charset=utf8mb4,utf8&parseTime=true"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment?charset=utf8mb4,utf8&parseTime=true"
 
 	if err := setHeaders(w, r); err != nil {
 		// pack these lines into a API err func

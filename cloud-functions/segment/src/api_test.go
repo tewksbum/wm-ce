@@ -35,19 +35,20 @@ func TestUpsert(t *testing.T) {
 		w http.ResponseWriter
 		r *http.Request
 	}
+	data := models.DecodeRecord{ // map[string]interface{}{
+		// URL:     "https://wemade.io",
+		// Browser: "faek browser 1.0.8",
+		// "":       "",,
+		Signature: "8154cc47-c37f-4c45-b386-56c9f1c42c96",
+		PeopleID:  "popósss",
+	}
+	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(wemade.APIInput{
 		AccessKey:  "81efed5f-57e8-4076-9506-6527d6532b00",
 		EntityType: "decode",
 		Source:     "test",
 		Owner:      "OCM",
-		Data: models.DecodeRecord{ // map[string]interface{}{
-			// URL:     "https://wemade.io",
-			// Browser: "faek browser 1.0.8",
-			// "":       "",,
-			Signature: "8154cc47-c37f-4c45-b386-56c9f1c42c96",
-			OwnerID:   5648073946562560,
-			PeopleID:  "6d7cbd3a-add0-4f7d-9c54-8516654bdc37",
-		},
+		Data:       data,
 	})
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
