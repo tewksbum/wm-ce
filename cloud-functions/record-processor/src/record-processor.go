@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -87,7 +86,6 @@ type Output struct {
 	Attributes  map[string]string `json:"attributes"`
 }
 
-
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
@@ -110,7 +108,6 @@ func init() {
 	msPool = redis.NewPool(func() (redis.Conn, error) {
 		return redis.Dial("tcp", RedisAddress)
 	}, maxConnections)
-	NERThreshold, _ = strconv.Atoi(os.Getenv("NERTHRESHOLD"))
 	topic = ps.Topic(PubSubTopic)
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
@@ -200,9 +197,9 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
 	if err != nil {
-		log.Fatalf("%v Could not pub to pubsub: %v", sig.EventID, err)
+		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
-		log.Printf("%v pubbed record as message id %v: %v", sig.EventID, psid, string(outputJSON))
+		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
 
 	return nil
