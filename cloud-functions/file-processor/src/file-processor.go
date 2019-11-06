@@ -112,10 +112,11 @@ func init() {
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	var maxConnections = 2
-	msPool = redis.NewPool(func() (redis.Conn, error) {
-		return redis.Dial("tcp", RedisAddress)
-	}, maxConnections)
+
+	// var maxConnections = 2
+	// msPool = redis.NewPool(func() (redis.Conn, error) {
+	// 	return redis.Dial("tcp", RedisAddress)
+	// }, maxConnections)
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -407,6 +408,11 @@ func PersistNER(key string, ner NERresponse) {
 	cache.TimeStamp = time.Now()
 	cache.Recompute = false
 	cache.Source = "FILE"
+
+	var maxConnections = 2
+	msPool = redis.NewPool(func() (redis.Conn, error) {
+		return redis.Dial("tcp", RedisAddress)
+	}, maxConnections)
 
 	cacheJSON, _ := json.Marshal(cache)
 	_, err := ms.Do("SET", key, string(cacheJSON))
