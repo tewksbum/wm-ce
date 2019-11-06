@@ -6,7 +6,7 @@ steps:
     'deploy','wm-fileprocessor-$BRANCH_NAME', 
     '--entry-point', 'ProcessFile', 
     '--runtime','go111', 
-    '--trigger-topic", "wm-eventfile-dev', 
+    '--trigger-topic", "wm-eventfile-$BRANCH_NAME', 
     "--project", "${PROJECT_ID}", 
     "--clear-env-vars",
     "--timeout", "540",
