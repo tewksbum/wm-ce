@@ -7,82 +7,99 @@ import (
 
 // Options db options for entities
 type Options struct {
-	Type           string // csql or bq
-	IsPartitioned  bool
-	PartitionField string
+	Type              string // csql or bq
+	IsPartitioned     bool
+	PartitionField    string
+	TableName         string
+	IsTableNameSuffix bool
 }
 
 //Record interface
 type Record interface {
+	GetTableName() string
+	GetTableNameAsSuffix() string
 	GetStrOwnerID() string
 	GetEntityType() string
-	GetStorageType() string
 	GetDBOptions() Options
+	GetIDField() string
+	GetColumnList() []string
+	GetColumnBlackList() []string
+	GetMap() map[string]interface{}
 }
 
 // DecodeRecord decode table record
 type DecodeRecord struct {
-	Signature   string    `json:"signature" bigquery:"signature" sql:"signature"`
-	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
-	CreatedAt   time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
-	UpdatedAt   time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
-	OwnerID     int64     `json:"ownerId" sql:"-" bigquery:"-"`
-	EntityType  string    `json:"-" sql:"-" bigquery:"-"`
-	DBopts      Options   `json:"-" sql:"-" bigquery:"-"`
-	StorageType string    `json:"-" sql:"-" bigquery:"-"` // csql or bq
+	BaseRecord
+	Signature string    `json:"signature" bigquery:"signature" sql:"signature"`
+	PeopleID  string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
+	CreatedAt time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
+	UpdatedAt time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
 }
 
-// GetStorageType gets the Customer id
-func (br *DecodeRecord) GetStorageType() string {
-	return br.StorageType
-}
-
-// GetStrOwnerID gets the Customer id
-func (br *DecodeRecord) GetStrOwnerID() string {
-	return utils.I64toa(br.OwnerID)
-}
-
-// GetEntityType gets the Customer id
-func (br *DecodeRecord) GetEntityType() string {
-	return br.EntityType
-}
-
-// GetDBOptions gets the Customer id
-func (br *DecodeRecord) GetDBOptions() Options {
-	return br.DBopts
+// GetMap gets the column list for DecodeRecord
+func (r *DecodeRecord) GetMap() map[string]interface{} {
+	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
 // BaseRecord input for the API
 type BaseRecord struct {
-	OwnerID     int64     `json:"ownerId" bigquery:"ownerid"`
-	EntityType  string    `json:"entityType" bigquery:"entitytype"`
-	Source      string    `json:"source" bigquery:"source"`
-	Owner       string    `json:"owner" bigquery:"owner"`
-	Passthrough string    `json:"passthrough" bigquery:"passthrough"`
-	Attributes  string    `json:"attributes" bigquery:"attributes"`
-	StorageType string    `json:"-" bigquery:"-"` // csql or bq
-	DBopts      Options   `json:"-" bigquery:"-"`
-	Timestamp   time.Time `json:"timestamp" bigquery:"timestamp"`
-}
-
-// GetStorageType gets the Customer id
-func (br *BaseRecord) GetStorageType() string {
-	return br.StorageType
+	OwnerID         int64     `json:"ownerId" bigquery:"ownerid"`
+	EntityType      string    `json:"entityType" bigquery:"entitytype"`
+	Source          string    `json:"source" bigquery:"source"`
+	Owner           string    `json:"owner" bigquery:"owner"`
+	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
+	Attributes      string    `json:"attributes" bigquery:"attributes"`
+	StorageType     string    `json:"-" bigquery:"-"` // csql or bq
+	DBopts          Options   `json:"-" bigquery:"-"`
+	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
+	IDField         string    `json:"-" sql:"-" bigquery:"-"`
+	ColumnList      []string  `json:"-" sql:"-" bigquery:"-"`
+	ColumnBlackList []string  `json:"-" sql:"-" bigquery:"-"`
 }
 
 // GetStrOwnerID gets the Customer id
-func (br *BaseRecord) GetStrOwnerID() string {
-	return utils.I64toa(br.OwnerID)
+func (r *BaseRecord) GetStrOwnerID() string {
+	return utils.I64toa(r.OwnerID)
 }
 
 // GetEntityType gets the Customer id
-func (br *BaseRecord) GetEntityType() string {
-	return br.EntityType
+func (r *BaseRecord) GetEntityType() string {
+	return r.EntityType
 }
 
 // GetDBOptions gets the Customer id
-func (br *BaseRecord) GetDBOptions() Options {
-	return br.DBopts
+func (r *BaseRecord) GetDBOptions() Options {
+	return r.DBopts
+}
+
+// GetTableName gets table name as a suffix
+func (r *BaseRecord) GetTableName() string {
+	return r.DBopts.TableName
+}
+
+// GetTableNameAsSuffix gets table name as a suffix
+func (r *BaseRecord) GetTableNameAsSuffix() string {
+	return "_" + r.DBopts.TableName
+}
+
+// GetMap gets the column list
+func (r *BaseRecord) GetMap() map[string]interface{} {
+	return utils.StructToMap(r, r.ColumnBlackList)
+}
+
+// GetIDField gets the column list
+func (r *BaseRecord) GetIDField() string {
+	return r.IDField
+}
+
+// GetColumnList gets the column list
+func (r *BaseRecord) GetColumnList() []string {
+	return r.ColumnList
+}
+
+// GetColumnBlackList gets the column list
+func (r *BaseRecord) GetColumnBlackList() []string {
+	return r.ColumnBlackList
 }
 
 // Record Structs
