@@ -139,7 +139,7 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
 
-func People360(ctx context.Context, m PubSubMessage) error {
+func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	var input PeopleInput
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
