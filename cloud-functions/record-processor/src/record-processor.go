@@ -88,7 +88,6 @@ type Output struct {
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
-
 var DSNameSpace = os.Getenv("DATASTORENS")
 var RedisAddress = os.Getenv("MEMSTORE")
 var PubSubTopic = os.Getenv("PSOUTPUT")
