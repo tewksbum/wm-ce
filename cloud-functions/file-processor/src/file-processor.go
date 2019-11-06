@@ -414,7 +414,9 @@ func PersistNER(key string, ner NERresponse) {
 		return redis.Dial("tcp", RedisAddress)
 	}, maxConnections)
 
+	ms = msPool.Get()
 	cacheJSON, _ := json.Marshal(cache)
+
 	_, err := ms.Do("SET", key, string(cacheJSON))
 	if err != nil {
 		log.Fatalf("error storing NER %v", err)
