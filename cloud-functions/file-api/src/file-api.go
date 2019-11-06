@@ -75,14 +75,12 @@ func init() {
 // ProcessEvent Receives a http event request
 func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Owner       string                 `json:"owner"`
-		Source      string                 `json:"source"`
-		AccessKey   string                 `json:"accessKey"`
-		Passthrough map[string]string      `json:"passthrough"`
-		Attributes  map[string]string      `json:"attributes"`
-		EventID     string                 `json:"eventId"`
-		EventType   string                 `json:"eventType"`
-		FileUrl     map[string]interface{} `json:"eventData"`
+		Owner       string            `json:"owner"`
+		Source      string            `json:"source"`
+		AccessKey   string            `json:"accessKey"`
+		Passthrough map[string]string `json:"passthrough"`
+		Attributes  map[string]string `json:"attributes"`
+		FileURL     string            `json:"fileUrl"`
 	}
 
 	if r.Method == http.MethodOptions {
@@ -140,20 +138,6 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(input.EventID) == 0 {
-		input.EventID = uuid.New().String()
-		log.Printf("event assingned id %v", input.EventID)
-	} else {
-		log.Printf("event supplied with id %v", input.EventID)
-	}
-
-	if len(input.EventType) == 0 {
-		input.EventType = "Unknown"
-		log.Printf("event assingned type %v", input.EventType)
-	} else {
-		log.Printf("event supplied with type %v", input.EventType)
-	}
-
 	// log the request
 	event := &Event{
 		CustomerID:  customer.Key.ID,
@@ -162,8 +146,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Owner:       input.Owner,
 		Passthrough: input.Passthrough,
 		Attributes:  input.Attributes,
-		EventID:     input.EventID,
-		EventType:   input.EventType,
+		EventID:     uuid.New().String(),
+		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
 	}
 
@@ -175,18 +159,18 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -3\"}")
 		return
 	}
-	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", id: \"%v\"}", input.EventID)
+	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", id: \"%v\"}", event.EventID)
 
 	var output Output
 	output.Passthrough = input.Passthrough
 	output.Attributes = input.Attributes
 	output.EventData = make(map[string]interface{})
-	output.EventData["fileUrl"] = input.FileUrl
+	output.EventData["fileUrl"] = input.FileURL
 	output.Signature = Signature{
 		OwnerID:   customer.Key.ID,
 		Source:    input.Source,
-		EventID:   input.EventID,
-		EventType: input.EventType,
+		EventID:   event.EventID,
+		EventType: event.EventType,
 	}
 
 	outputJSON, _ := json.Marshal(output)
