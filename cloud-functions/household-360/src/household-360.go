@@ -31,16 +31,16 @@ type Signature struct {
 	RecordID  string `json:"recordId"`
 }
 
-type HouseholdInput struct {
+type PeopleInput struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   HouseholdOutput   `json:"matchkeys`
+	MatchKeys   PeopleOutput      `json:"matchkeys`
 }
 
-type HouseholdFiber struct {
+type HouseHoldFiber struct {
 	Signature   Signature         `json:"signature" bigquery:"signature"`
 	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   HouseholdOutput   `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   PeopleOutput      `json:"matchkeys bigquery:"matchkeys"`
 	FiberID     string            `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
 }
@@ -48,17 +48,40 @@ type HouseholdFiber struct {
 type MatchKeyField struct {
 	Value  string `json:"value"`
 	Source string `json:"source"`
+	Type   string `json:"type"`
 }
 
-type HouseholdOutput struct {
-	CAMPAIGNID MatchKeyField `json:"campaignId"`
+type PeopleOutput struct {
+	FNAME    MatchKeyField `json:"fname"`
+	FINITIAL MatchKeyField `json:"finitial"`
+	LNAME    MatchKeyField `json:"lname"`
+	CITY     MatchKeyField `json:"city"`
+	STATE    MatchKeyField `json:"state"`
+	ZIP      MatchKeyField `json:"zip"`
+	ZIP5     MatchKeyField `json:"zip5"`
+	COUNTRY  MatchKeyField `json:"country"`
+	EMAIL    MatchKeyField `json:"email"`
+	PHONE    MatchKeyField `json:"phone"`
+	AD1      MatchKeyField `json:"ad1"`
+	AD2      MatchKeyField `json:"ad2"`
+	ADTYPE   MatchKeyField `json:"adType"`
 
-	NAME      MatchKeyField `json:"name"`
-	TYPE      MatchKeyField `json:"type"`
-	CHANNEL   MatchKeyField `json:"channel"`
-	STARTDATE MatchKeyField `json:"startDate"`
-	ENDDATE   MatchKeyField `json:"endDate"`
-	BUDGET    MatchKeyField `json:"budget"`
+	TRUSTEDID MatchKeyField `json:"trustedId"`
+
+	CLIENTID   MatchKeyField `json:"clientId"`
+	SALUTATION MatchKeyField `json:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname"`
+
+	GENDER MatchKeyField `json:"gender"`
+	AGE    MatchKeyField `json:"age"`
+	DOB    MatchKeyField `json:"dob"`
+
+	MAILROUTE MatchKeyField `json:"mailRoute"`
+
+	ORGANIZATION MatchKeyField `json:"organization"`
+	TITLE        MatchKeyField `json:"title"`
+	ROLE         MatchKeyField `json:"role"`
+	STATUS       MatchKeyField `json:"status"`
 }
 
 type Signature360 struct {
@@ -80,7 +103,7 @@ type Passthrough360 struct {
 	Value string `json:"value" bigquery:"value"`
 }
 
-type Household360Output struct {
+type HouseHold360Output struct {
 	ID           string           `json:"id" bigquery:"id"`
 	Signature    Signature360     `json:"signature" bigquery:"signature"`
 	Signatures   []Signature      `json:"signatures" bigquery:"signatures"`
@@ -110,16 +133,30 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	bq, _ := bigquery.NewClient(ctx, ProjectID)
-	bs, _ := bigquery.InferSchema(Household360Output{})
-	bc, _ := bigquery.InferSchema(HouseholdFiber{})
+	bs, _ := bigquery.InferSchema(HouseHold360Output{})
+	bc, _ := bigquery.InferSchema(HouseHoldFiber{})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
 
-func Household360(ctx context.Context, m PubSubMessage) error {
-	var input HouseholdInput
+func People360(ctx context.Context, m PubSubMessage) error {
+	var input PeopleInput
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+	}
+
+	// assign first initial and zip5
+	if len(input.MatchKeys.FNAME.Value) > 0 {
+		input.MatchKeys.FINITIAL = MatchKeyField{
+			Value:  input.MatchKeys.FNAME.Value[0:0],
+			Source: input.MatchKeys.FNAME.Source,
+		}
+	}
+	if len(input.MatchKeys.ZIP.Value) > 0 {
+		input.MatchKeys.ZIP5 = MatchKeyField{
+			Value:  input.MatchKeys.ZIP.Value[0:4],
+			Source: input.MatchKeys.ZIP.Source,
+		}
 	}
 
 	// locate by key (trusted id)
@@ -144,7 +181,7 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store the fiber
-	var fiber HouseholdFiber
+	var fiber HouseHoldFiber
 	fiber.CreatedAt = time.Now()
 	fiber.FiberID = uuid.New().String()
 	fiber.MatchKeys = input.MatchKeys
@@ -158,9 +195,35 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
-	MatchByKey := "CAMPAIGNID"
-	MatchByValue := strings.Replace(input.MatchKeys.CAMPAIGNID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
+	MatchByKey4A := "ZIP5"
+	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	MatchByKey4B := "LNAME"
+	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	// MISSING STREET NUMBER
+
+	MatchByKey5A := "CITY"
+	MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", "\\'", -1)
+	MatchByKey5B := "STATE"
+	MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", "\\'", -1)
+	MatchByKey5C := "LNAME"
+	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	// MISSING STREET NUMBER
+
+	MatchByKey6A := "AD2"
+	MatchByValue6A := strings.Replace(input.MatchKeys.AD2.Value, "'", "\\'", -1)
+	MatchByKey6B := "ZIP5"
+	MatchByValue6B := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	// MISSING STREET NUMBER
+
+	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
+		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B,
+		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C,
+		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B)
+
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
@@ -179,16 +242,65 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 	}
 	BQIterator, err := BQJob.Read(ctx)
 
-	// only need the first value
-	var output Household360Output
-	err = BQIterator.Next(&output)
-	if err == iterator.Done {
-	} else if err != nil {
-		log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
-		return err
+	// Collect all fiber IDs
+	var FiberCollection []string
+	for {
+		var fibers []string
+		err = BQIterator.Next(&fibers)
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+		} else {
+			for _, f := range fibers {
+				if !Contains(FiberCollection, f) {
+					FiberCollection = append(FiberCollection, f)
+				}
+			}
+		}
 	}
 
-	MatchKeyList := structs.Names(&HouseholdOutput{})
+	// get all the Fibers
+	var Fibers []HouseHoldFiber
+	if len(FiberCollection) > 0 {
+		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
+		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
+		BQQuery := bq.Query(QueryText)
+		BQQuery.Location = "US"
+		BQJob, err := BQQuery.Run(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not query bq fibers: %v", input.Signature.EventID, err)
+			return err
+		}
+		BQStatus, err := BQJob.Wait(ctx)
+		if err != nil {
+			log.Fatalf("%v Error while waiting for bq fibers job: %v", input.Signature.EventID, err)
+			return err
+		}
+		if err := BQStatus.Err(); err != nil {
+			log.Fatalf("%v bq fibers execution error: %v", input.Signature.EventID, err)
+			return err
+		}
+		BQIterator, err := BQJob.Read(ctx)
+
+		// Collect all fiber IDs
+		for {
+			var fiber HouseHoldFiber
+			err = BQIterator.Next(&fiber)
+			if err == iterator.Done {
+				break
+			} else if err != nil {
+				log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+			} else {
+				Fibers = append(Fibers, fiber)
+			}
+		}
+	}
+
+	var output HouseHold360Output
+	var FiberMatchKeys []MatchKey360
+
+	MatchKeyList := structs.Names(&PeopleOutput{})
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
@@ -204,6 +316,19 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 	if !HasNewValues {
 		return nil
 	}
+
+	// collect all fiber match key values
+	for _, fiber := range Fibers {
+		for _, name := range MatchKeyList {
+			mk := GetMatchKeyFields(output.MatchKeys, name)
+			value := GetMkField(&fiber.MatchKeys, name).Value
+			if !Contains(mk.Values, value) && len(value) > 0 {
+				mk.Values = append(mk.Values, value)
+			}
+		}
+
+	}
+	output.MatchKeys = FiberMatchKeys
 
 	// append to the output value
 	output.ID = uuid.New().String()
@@ -234,7 +359,10 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
 		mk.Value = GetMkField(&input.MatchKeys, name).Value
-		if !Contains(mk.Values, mk.Value) {
+		if len(mk.Value) == 0 && len(mk.Values) > 0 {
+			mk.Value = mk.Values[0]
+		}
+		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
 		OutputMatchKeys = append(OutputMatchKeys, mk)
@@ -264,7 +392,7 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetMkField(v *HouseholdOutput, field string) MatchKeyField {
+func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
