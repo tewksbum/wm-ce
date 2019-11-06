@@ -48,17 +48,40 @@ type PeopleFiber struct {
 type MatchKeyField struct {
 	Value  string `json:"value"`
 	Source string `json:"source"`
+	Type   string `json:"type"`
 }
 
 type PeopleOutput struct {
-	CAMPAIGNID MatchKeyField `json:"campaignId"`
+	FNAME    MatchKeyField `json:"fname"`
+	FINITIAL MatchKeyField `json:"finitial"`
+	LNAME    MatchKeyField `json:"lname"`
+	CITY     MatchKeyField `json:"city"`
+	STATE    MatchKeyField `json:"state"`
+	ZIP      MatchKeyField `json:"zip"`
+	ZIP5     MatchKeyField `json:"zip5"`
+	COUNTRY  MatchKeyField `json:"country"`
+	EMAIL    MatchKeyField `json:"email"`
+	PHONE    MatchKeyField `json:"phone"`
+	AD1      MatchKeyField `json:"ad1"`
+	AD2      MatchKeyField `json:"ad2"`
+	ADTYPE   MatchKeyField `json:"adType"`
 
-	NAME      MatchKeyField `json:"name"`
-	TYPE      MatchKeyField `json:"type"`
-	CHANNEL   MatchKeyField `json:"channel"`
-	STARTDATE MatchKeyField `json:"startDate"`
-	ENDDATE   MatchKeyField `json:"endDate"`
-	BUDGET    MatchKeyField `json:"budget"`
+	TRUSTEDID MatchKeyField `json:"trustedId"`
+
+	CLIENTID   MatchKeyField `json:"clientId"`
+	SALUTATION MatchKeyField `json:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname"`
+
+	GENDER MatchKeyField `json:"gender"`
+	AGE    MatchKeyField `json:"age"`
+	DOB    MatchKeyField `json:"dob"`
+
+	MAILROUTE MatchKeyField `json:"mailRoute"`
+
+	ORGANIZATION MatchKeyField `json:"organization"`
+	TITLE        MatchKeyField `json:"title"`
+	ROLE         MatchKeyField `json:"role"`
+	STATUS       MatchKeyField `json:"status"`
 }
 
 type Signature360 struct {
@@ -122,6 +145,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	// assign first initial and zip5
+	if len(input.MatchKeys.FNAME.Value) > 0 {
+		input.MatchKeys.FINITIAL = MatchKeyField{
+			Value:  input.MatchKeys.FNAME.Value[0:0],
+			Source: input.MatchKeys.FNAME.Source,
+		}
+	}
+	if len(input.MatchKeys.ZIP.Value) > 0 {
+		input.MatchKeys.ZIP5 = MatchKeyField{
+			Value:  input.MatchKeys.ZIP.Value[0:4],
+			Source: input.MatchKeys.ZIP.Source,
+		}
+	}
+
 	// locate by key (trusted id)
 	setMeta := &bigquery.TableMetadata{
 		Schema: bs,
@@ -158,9 +195,62 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
-	MatchByKey := "CAMPAIGNID"
-	MatchByValue := strings.Replace(input.MatchKeys.CAMPAIGNID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
+	MatchByKey1 := "TRUSTEDID"
+	MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", "\\'", -1)
+
+	MatchByKey2 := "EMAIL"
+	MatchByValue2 := strings.Replace(input.MatchKeys.EMAIL.Value, "'", "\\'", -1)
+
+	MatchByKey3A := "PHONE"
+	MatchByValue3A := strings.Replace(input.MatchKeys.PHONE.Value, "'", "\\'", -1)
+	MatchByKey3B := "FINITIAL"
+	MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
+
+	MatchByKey4A := "ZIP5"
+	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	MatchByKey4B := "LNAME"
+	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	MatchByKey4C := "FINITIAL"
+	MatchByValue4C := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
+	MatchByKey4D := "ADTYPE"
+	MatchByValue4D := "HOME"
+	// MISSING STREET NUMBER
+
+	MatchByKey5A := "CITY"
+	MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", "\\'", -1)
+	MatchByKey5B := "STATE"
+	MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", "\\'", -1)
+	MatchByKey5C := "LNAME"
+	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	MatchByKey5D := "FINITIAL"
+	MatchByValue5D := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
+	MatchByKey5E := "ADTYPE"
+	MatchByValue5E := "HOME"
+	// MISSING STREET NUMBER
+
+	MatchByKey6A := "ORGANIZATION"
+	MatchByValue6A := strings.Replace(input.MatchKeys.ORGANIZATION.Value, "'", "\\'", -1)
+	MatchByKey6B := "LNAME"
+	MatchByValue6B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	MatchByKey6C := "FNAME"
+	MatchByValue6C := strings.Replace(input.MatchKeys.FNAME.Value, "'", "\\'", -1)
+	MatchByKey6D := "TITLE"
+	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
+
+	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
+		"(m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
+		MatchByKey1, MatchByValue1,
+		MatchByKey2, MatchByValue2,
+		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
+		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C, MatchByKey4D, MatchByValue4D,
+		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E,
+		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B, MatchByKey6C, MatchByValue6C, MatchByKey6D, MatchByValue6D)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
@@ -179,14 +269,63 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	BQIterator, err := BQJob.Read(ctx)
 
-	// only need the first value
-	var output People360Output
-	err = BQIterator.Next(&output)
-	if err == iterator.Done {
-	} else if err != nil {
-		log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
-		return err
+	// Collect all fiber IDs
+	var FiberCollection []string
+	for {
+		var fibers []string
+		err = BQIterator.Next(&fibers)
+		if err == iterator.Done {
+			break
+		} else if err != nil {
+			log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+		} else {
+			for _, f := range fibers {
+				if !Contains(FiberCollection, f) {
+					FiberCollection = append(FiberCollection, f)
+				}
+			}
+		}
 	}
+
+	// get all the Fibers
+	var Fibers []PeopleFiber
+	if len(FiberCollection) > 0 {
+		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
+		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
+		BQQuery := bq.Query(QueryText)
+		BQQuery.Location = "US"
+		BQJob, err := BQQuery.Run(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not query bq fibers: %v", input.Signature.EventID, err)
+			return err
+		}
+		BQStatus, err := BQJob.Wait(ctx)
+		if err != nil {
+			log.Fatalf("%v Error while waiting for bq fibers job: %v", input.Signature.EventID, err)
+			return err
+		}
+		if err := BQStatus.Err(); err != nil {
+			log.Fatalf("%v bq fibers execution error: %v", input.Signature.EventID, err)
+			return err
+		}
+		BQIterator, err := BQJob.Read(ctx)
+
+		// Collect all fiber IDs
+		for {
+			var fiber PeopleFiber
+			err = BQIterator.Next(&fiber)
+			if err == iterator.Done {
+				break
+			} else if err != nil {
+				log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+			} else {
+				Fibers = append(Fibers, fiber)
+			}
+		}
+	}
+
+	var output People360Output
+	var FiberMatchKeys []MatchKey360
 
 	MatchKeyList := structs.Names(&PeopleOutput{})
 	HasNewValues := false
@@ -204,6 +343,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if !HasNewValues {
 		return nil
 	}
+
+	// collect all fiber match key values
+	for _, fiber := range Fibers {
+		for _, name := range MatchKeyList {
+			mk := GetMatchKeyFields(output.MatchKeys, name)
+			value := GetMkField(&fiber.MatchKeys, name).Value
+			if !Contains(mk.Values, value) && len(value) > 0 {
+				mk.Values = append(mk.Values, value)
+			}
+		}
+
+	}
+	output.MatchKeys = FiberMatchKeys
 
 	// append to the output value
 	output.ID = uuid.New().String()
@@ -234,11 +386,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
 		mk.Value = GetMkField(&input.MatchKeys, name).Value
-		if !Contains(mk.Values, mk.Value) {
+		if len(mk.Value) == 0 && len(mk.Values) > 0 {
+			mk.Value = mk.Values[0]
+		}
+		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
 		OutputMatchKeys = append(OutputMatchKeys, mk)
 	}
+	output.MatchKeys = OutputMatchKeys
 
 	// store the set
 	SetInserter := SetTable.Inserter()

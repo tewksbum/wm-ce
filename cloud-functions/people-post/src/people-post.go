@@ -67,6 +67,7 @@ type Output struct {
 type MatchKeyField struct {
 	Value  string `json:"value"`
 	Source string `json:"source"`
+	Type   string `json:"type"`
 }
 
 type PeopleOutput struct {
@@ -80,6 +81,9 @@ type PeopleOutput struct {
 	PHONE   MatchKeyField `json:"phone"`
 	AD1     MatchKeyField `json:"ad1"`
 	AD2     MatchKeyField `json:"ad2"`
+	ADTYPE  MatchKeyField `json:"adType"`
+
+	TRUSTEDID MatchKeyField `json:"trustedId"`
 
 	CLIENTID   MatchKeyField `json:"clientId"`
 	SALUTATION MatchKeyField `json:"salutation"`
@@ -89,15 +93,7 @@ type PeopleOutput struct {
 	AGE    MatchKeyField `json:"age"`
 	DOB    MatchKeyField `json:"dob"`
 
-	ADTYPE    MatchKeyField `json:"adType"`
 	MAILROUTE MatchKeyField `json:"mailRoute"`
-
-	WORKEMAIL     MatchKeyField `json:"workEmail"`
-	PERSONALEMAIL MatchKeyField `json:"personalEmail"`
-
-	MOBILEPHONE MatchKeyField `json:"mobilePhone"`
-	HOMEPHONE   MatchKeyField `json:"homePhone"`
-	WORKPHONE   MatchKeyField `json:"workPhone"`
 
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`

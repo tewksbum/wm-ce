@@ -239,6 +239,7 @@ func Household360(ctx context.Context, m PubSubMessage) error {
 		}
 		OutputMatchKeys = append(OutputMatchKeys, mk)
 	}
+	output.MatchKeys = OutputMatchKeys
 
 	// store the set
 	SetInserter := SetTable.Inserter()

@@ -234,11 +234,12 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
 		mk.Value = GetMkField(&input.MatchKeys, name).Value
-		if !Contains(mk.Values, mk.Value) {
+		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
 		OutputMatchKeys = append(OutputMatchKeys, mk)
 	}
+	output.MatchKeys = OutputMatchKeys
 
 	// store the set
 	SetInserter := SetTable.Inserter()
