@@ -9,7 +9,7 @@ steps:
     '--trigger-topic", "wm-eventfile-dev', 
     "--project", "${PROJECT_ID}", 
     "--clear-env-vars",
-    "--timeout", "540"
+    "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
