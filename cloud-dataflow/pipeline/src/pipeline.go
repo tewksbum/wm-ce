@@ -1527,6 +1527,15 @@ func normalizeStreetAddress(s string) (a Address, err error) {
 	return a, nil
 }
 
+func isInt(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
+
 func buildPipeline(ctx context.Context, s beam.Scope) {
 	// nothing -> PCollection<Painting>
 	pubsubOptions := pubsubio.ReadOptions{WithAttributes: true}

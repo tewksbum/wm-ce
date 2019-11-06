@@ -1,0 +1,15 @@
+timeout: 10m
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    'deploy','post-process-people-$BRANCH_NAME', 
+    '--entry-point', 'PostProcessPeople', 
+    '--runtime','go111', 
+    '--trigger-http', 
+    "--project", "${PROJECT_ID}", 
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/post-process-people/src'
+tags: ['$BRANCH_NAME']    
