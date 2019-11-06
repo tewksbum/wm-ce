@@ -3,15 +3,21 @@ steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    "deploy", "wm-fileprocessor-$BRANCH_NAME", 
-    "--entry-point", "ProcessFile", 
+    "deploy", "wm-${_FUNCTION_NAME}-$BRANCH_NAME", 
+    "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
-    "--trigger-topic", "wm-eventfile-$BRANCH_NAME", 
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "{PROJECT_ID}", 
     "--clear-env-vars",
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
-    dir: './cloud-functions/file-processor/src'
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: file-processor
+    _TRIGGER_TOPIC: eventfile
+    _ENTRY_POINT: ProcessFile
+options:
+    substitution_option: 'ALLOW_LOOSE'
