@@ -15,7 +15,7 @@ steps:
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: event-api
+    _FUNCTION_NAME: file-api
     _ENTRY_POINT: ProcessEvent
 options:
     substitution_option: 'ALLOW_LOOSE'
