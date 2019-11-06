@@ -3,13 +3,20 @@ steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    'deploy','streamer-api-$BRANCH_NAME', 
-    '--entry-point', 'Main', 
-    '--runtime','go111', 
-    '--trigger-http', 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime","go111", 
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
+    "--timeout", "30",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
-    dir: './cloud-functions/event-api/src'
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: order-360
+    _TRIGGER_TOPIC: order360
+    _ENTRY_POINT: Order360
+options:
+    substitution_option: 'ALLOW_LOOSE'

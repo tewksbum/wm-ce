@@ -3,7 +3,7 @@ steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    "deploy", "wm-${_FUNCTION_NAME}-$BRANCH_NAME", 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
     "--trigger-http", 
