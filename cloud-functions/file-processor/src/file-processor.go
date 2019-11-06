@@ -105,7 +105,7 @@ var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var sb *storage.Client
-var msPool *redis.Pool
+var msp *redis.Pool
 
 func init() {
 	ctx = context.Background()
@@ -113,10 +113,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 
-	// var maxConnections = 2
-	// msPool = redis.NewPool(func() (redis.Conn, error) {
-	// 	return redis.Dial("tcp", RedisAddress)
-	// }, maxConnections)
+	msp = NewPool(RedisAddress)
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -401,24 +398,27 @@ func GetNERKey(sig Signature, columns []string) string {
 }
 
 func PersistNER(key string, ner NERresponse) {
-	ms := msPool.Get()
 	var cache NERCache
-
 	cache.Columns = ner.Columns
 	cache.TimeStamp = time.Now()
 	cache.Recompute = false
 	cache.Source = "FILE"
 
-	var maxConnections = 2
-	msPool = redis.NewPool(func() (redis.Conn, error) {
-		return redis.Dial("tcp", RedisAddress)
-	}, maxConnections)
-
-	ms = msPool.Get()
 	cacheJSON, _ := json.Marshal(cache)
+
+	ms := msp.Get()
+	defer ms.Close()
 
 	_, err := ms.Do("SET", key, string(cacheJSON))
 	if err != nil {
 		log.Fatalf("error storing NER %v", err)
+	}
+}
+
+func NewPool(addr string) *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
 	}
 }
