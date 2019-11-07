@@ -485,7 +485,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	output.Prediction = prediction
 
 	outputJSON, _ := json.Marshal(output)
-
+	log.Printf("ERR flags %v", flags)
 	if flags.People {
 		PubMessage(topicPeople, outputJSON)
 	}
