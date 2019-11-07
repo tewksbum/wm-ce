@@ -49,6 +49,14 @@ type Immutable struct {
 	TimeStamp time.Time         `datastore:"Created"`
 }
 
+type ImmutableDS struct {
+	EventType string    `datastore:"Type"`
+	EventID   string    `datastore:"EventID"`
+	RecordID  string    `datastore:"RecordID"`
+	Fields    string    `datastore:"Fields"`
+	TimeStamp time.Time `datastore:"Created"`
+}
+
 // NERcolumns coloumns for NER
 type NERcolumns struct {
 	ColumnName  string             `json:"ColumnName"`
@@ -103,10 +111,7 @@ func init() {
 	ctx := context.Background()
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	var maxConnections = 2
-	msPool = redis.NewPool(func() (redis.Conn, error) {
-		return redis.Dial("tcp", RedisAddress)
-	}, maxConnections)
+	msPool = NewPool(RedisAddress)
 	topic = ps.Topic(PubSubTopic)
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
@@ -127,11 +132,19 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 		TimeStamp: time.Now(),
 	}
 
+	immutableDS := ImmutableDS{
+		EventID:   immutable.EventID,
+		EventType: immutable.EventType,
+		RecordID:  immutable.RecordID,
+		Fields:    ToJson(&immutable.Fields),
+		TimeStamp: immutable.TimeStamp,
+	}
+
 	// store this in DS
 	dsKind := fmt.Sprintf("%v-%v", input.Signature.OwnerID, input.Signature.Source)
 	dsKey := datastore.IncompleteKey(dsKind, nil)
 	dsKey.Namespace = DSNameSpace
-	if _, err := ds.Put(ctx, dsKey, immutable); err != nil {
+	if _, err := ds.Put(ctx, dsKey, immutableDS); err != nil {
 		log.Fatalf("Exception storing record %v, %v", input.Signature, err)
 	}
 
@@ -285,4 +298,23 @@ func PersistNER(key string, ner NERresponse) {
 	if err != nil {
 		log.Fatalf("error storing NER %v", err)
 	}
+}
+
+func NewPool(addr string) *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+	}
+}
+
+func ToJson(v *map[string]string) string {
+	jsonString, err := json.Marshal(v)
+	if err == nil {
+		return string(jsonString)
+	} else {
+		log.Fatalf("%v Could not convert map %v to json: %v", v, err)
+		return ""
+	}
+
 }
