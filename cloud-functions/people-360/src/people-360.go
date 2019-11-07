@@ -132,9 +132,9 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	bq, _ := bigquery.NewClient(ctx, ProjectID)
-	bs, _ := bigquery.InferSchema(People360Output{})
-	bc, _ := bigquery.InferSchema(PeopleFiber{})
+	bq, _ = bigquery.NewClient(ctx, ProjectID)
+	bs, _ = bigquery.InferSchema(People360Output{})
+	bc, _ = bigquery.InferSchema(PeopleFiber{})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
