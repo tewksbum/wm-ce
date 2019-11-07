@@ -418,10 +418,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.OrderID {
 		flags.Order = true
 	}
-	if columnFlags.ConsignmentID {
+	if columnFlags.ConsignmentID && columnFlags.OrderID {
 		flags.Consignment = true
 	}
-	if columnFlags.OrderDetailID {
+	if (columnFlags.OrderDetailID && columnFlags.OrderID) || (columnFlags.ProductID && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
 
