@@ -293,10 +293,7 @@ func init() {
 	ai, _ := ml.NewService(ctx)
 	cs, _ = storage.NewClient(ctx)
 
-	var maxConnections = 2
-	msPool = redis.NewPool(func() (redis.Conn, error) {
-		return redis.Dial("tcp", RedisAddress)
-	}, maxConnections)
+	msPool = NewPool(RedisAddress)
 
 	// preload the lists
 	var err error
@@ -469,7 +466,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if len(prediction.Predictions) == 0 {
 			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
 		}
-
+		log.Printf("ML result is %v", string(r.Data))
 	}
 
 	// run VER
@@ -1022,4 +1019,12 @@ func ToUInt32(val bool) uint32 {
 
 func IsMn(r rune) bool {
 	return unicode.Is(unicode.Mn, r) // Mn: nonspacing marks
+}
+
+func NewPool(addr string) *redis.Pool {
+	return &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+	}
 }
