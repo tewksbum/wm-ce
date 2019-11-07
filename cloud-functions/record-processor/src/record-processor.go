@@ -144,7 +144,7 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 	dsKind := fmt.Sprintf("%v-%v", input.Signature.OwnerID, input.Signature.Source)
 	dsKey := datastore.IncompleteKey(dsKind, nil)
 	dsKey.Namespace = DSNameSpace
-	if _, err := ds.Put(ctx, dsKey, immutableDS); err != nil {
+	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
 		log.Fatalf("Exception storing record kind %v sig %v, error %v", dsKind, input.Signature, err)
 	}
 
