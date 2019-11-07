@@ -371,7 +371,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
 		column.OrderDetailERR = GetOrderDetailERR(column.Name)
 
-		//log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
+		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 
 		if column.PeopleERR.FirstName == 1 {
 			columnFlags.PeopleFirstName = true
@@ -399,7 +399,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 		columns[i] = column
 	}
-
+	log.Printf("columns %v", columns)
 	//log.Printf("column flags %v", columnFlags)
 
 	// update the flags
@@ -442,6 +442,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				}
 				columns[i] = column
 			}
+			log.Printf("columns %v", columns)
 		}
 
 		mlInput := BuildMLData(columns)
@@ -482,6 +483,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 			columns[i] = column
 		}
+		log.Printf("columns %v", columns)
 	}
 
 	// pub
