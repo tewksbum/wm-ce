@@ -374,6 +374,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
 		column.OrderDetailERR = GetOrderDetailERR(column.Name)
 
+		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 		if column.PeopleERR.FirstName == 1 {
 			columnFlags.PeopleFirstName = true
 		}
@@ -400,6 +401,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	log.Printf("column flags %v", columnFlags)
 	// update the flags
 	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
 		flags.People = true
