@@ -252,7 +252,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				// for key, value := range input.Attributes {
 				// 	fields["Attr."+key] = value
 				// }
-				// output.Fields = fields
+				output.Fields = fields
 
 				// let's pub it
 				outputJSON, _ := json.Marshal(output)
