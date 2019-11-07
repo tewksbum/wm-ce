@@ -53,7 +53,7 @@ type ImmutableDS struct {
 	EventType string    `datastore:"Type"`
 	EventID   string    `datastore:"EventID"`
 	RecordID  string    `datastore:"RecordID"`
-	Fields    string    `datastore:"Fields"`
+	Fields    string    `datastore:"Fields,noindex"`
 	TimeStamp time.Time `datastore:"Created"`
 }
 
