@@ -1,9 +1,11 @@
 package people360
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -17,6 +19,9 @@ import (
 	"github.com/fatih/structs"
 	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
+
+	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esapi"
 )
 
 type PubSubMessage struct {
@@ -119,6 +124,10 @@ var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
+var ESUrl = os.Getenv("ELASTICURL")
+var ESUid = os.Getenv("ELASTICUSER")
+var ESPwd = os.Getenv("ELASTICPWD")
+var ESIndex = os.Getenv("ELASTICINDEX")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -126,6 +135,7 @@ var topic *pubsub.Topic
 var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
+var es *elasticsearch.Client
 
 // var setSchema bigquery.Schema
 
@@ -136,6 +146,12 @@ func init() {
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
 	bs, _ = bigquery.InferSchema(People360Output{})
 	bc, _ = bigquery.InferSchema(PeopleFiber{})
+
+	es, _ = elasticsearch.NewClient(elasticsearch.Config{
+		Addresses: []string{ESUrl},
+		Username:  ESUid,
+		Password:  ESPwd,
+	})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
@@ -191,6 +207,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiber.MatchKeys = input.MatchKeys
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
+
+	// let's log this into ES
+	_ = PersistInES(ctx, fiber)
 
 	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
@@ -452,4 +471,30 @@ func ConvertPassthrough(v map[string]string) []Passthrough360 {
 		}
 	}
 	return result
+}
+
+func PersistInES(ctx context.Context, v interface{}) bool {
+	esJSON, _ := json.Marshal(v)
+	esID := uuid.New().String()
+	esReq := esapi.IndexRequest{
+		Index:      ESIndex,
+		DocumentID: esID,
+		Body:       bytes.NewReader(esJSON),
+		Refresh:    "true",
+	}
+	esRes, err := esReq.Do(ctx, es)
+	if err != nil {
+		log.Fatalf("Error getting response: %s", err)
+	}
+	defer esRes.Body.Close()
+
+	if esRes.IsError() {
+		resB, _ := ioutil.ReadAll(esRes.Body)
+		log.Printf("[%s] Error indexing document ID=%v, Message=%v", esRes.Status(), esID, string(resB))
+		return false
+	} else {
+		resB, _ := ioutil.ReadAll(esRes.Body)
+		log.Printf("[%s] document ID=%v, Message=%v", esRes.Status(), esID, string(resB))
+		return true
+	}
 }
