@@ -371,7 +371,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
 		column.OrderDetailERR = GetOrderDetailERR(column.Name)
 
-		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
+		//log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
+
 		if column.PeopleERR.FirstName == 1 {
 			columnFlags.PeopleFirstName = true
 		}
@@ -398,7 +399,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
-	log.Printf("column flags %v", columnFlags)
+	//log.Printf("column flags %v", columnFlags)
+
 	// update the flags
 	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
 		flags.People = true
@@ -441,6 +443,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 
 		mlInput := BuildMLData(columns)
+		log.Printf("columns: %v", columns)
+		log.Printf("mlinput: %v", mlInput)
 		mlJSON, _ := json.Marshal(mlInput)
 		log.Printf("ML request %v", string(mlJSON))
 		reqBody := &ml.GoogleApi__HttpBody{
@@ -484,7 +488,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	output.Prediction = prediction
 
 	outputJSON, _ := json.Marshal(output)
-	log.Printf("ERR flags %v", flags)
 	if flags.People {
 		PubMessage(topicPeople, outputJSON)
 	}
@@ -874,9 +877,9 @@ func GetHash(s string) uint32 {
 	return h.Sum32()
 }
 
-func BuildMLData(columns []InputColumn) MLInput {
+func BuildMLData(cols []InputColumn) MLInput {
 	var instances [][]float64
-	for _, column := range columns {
+	for _, column := range cols {
 		var instance []float64
 		instance = append(instance, float64(column.PeopleERR.FirstName))
 		instance = append(instance, float64(column.PeopleERR.LastName))
