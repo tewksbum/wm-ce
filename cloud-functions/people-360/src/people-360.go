@@ -165,13 +165,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// assign first initial and zip5
 	if len(input.MatchKeys.FNAME.Value) > 0 {
 		input.MatchKeys.FINITIAL = MatchKeyField{
-			Value:  input.MatchKeys.FNAME.Value[0:0],
+			Value:  input.MatchKeys.FNAME.Value[0:1],
 			Source: input.MatchKeys.FNAME.Source,
 		}
 	}
 	if len(input.MatchKeys.ZIP.Value) > 0 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
-			Value:  input.MatchKeys.ZIP.Value[0:4],
+			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
 		}
 	}
