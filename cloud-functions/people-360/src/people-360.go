@@ -122,7 +122,7 @@ var FiberTableName = os.Getenv("FIBERTABLE")
 var ps *pubsub.Client
 var topic *pubsub.Topic
 
-var bq bigquery.Client
+var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
 
