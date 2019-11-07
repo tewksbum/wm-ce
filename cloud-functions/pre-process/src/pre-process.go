@@ -450,7 +450,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			HttpBody: reqBody,
 		}
 		req.HttpBody.ContentType = "application/json"
-
+		ai, _ = ml.NewService(ctx)
 		mlPredict := ai.Projects.Predict(MLUrl, &req)
 		r, err := mlPredict.Context(ctx).Do()
 		if err != nil {
