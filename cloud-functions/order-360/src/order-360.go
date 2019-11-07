@@ -152,7 +152,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
-	FiberInserter := SetTable.Inserter()
+	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
 		log.Fatalf("error insertinng into fiber table %v", err)
 		return nil
