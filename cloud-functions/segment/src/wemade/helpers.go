@@ -35,7 +35,7 @@ var (
 	tblProduct          string = "products"
 	tblPeople           string = "people"
 	tblShed             string = "shed"
-	tblCampaign         string = "campaign"
+	tblCampaign         string = "campaigns"
 	defPartitionField   string = "timestamp"
 	dstblCustomers      string = "Customer"
 	dsfilterCustomers   string = "AccessKey = "
@@ -54,8 +54,8 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (mod
 	if err != nil {
 		return nil, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
-	query := datastore.QueryTableNamespace(dstblCustomers, namespace)
-	query.Filter(dsfilterCustomers, input.AccessKey).Limit(1)
+	query := datastore.QueryTableNamespace(dstblCustomers, namespace).
+		Filter(dsfilterCustomers, input.AccessKey).Limit(1)
 
 	var entities []DSCustomer
 
@@ -182,6 +182,8 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (mod
 		}, nil
 	case tblDecode: // FCD table
 		record := &models.DecodeRecord{}
+		json.Unmarshal(b, record)
+		record.BaseRecord = output
 		record.IDField = "signature"
 		record.ColumnList = []string{"signature", "people_id"}
 		record.ColumnBlackList = []string{"passthrough", "attributes", "source",
@@ -192,7 +194,6 @@ func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (mod
 			TableName:         tblDecode,
 			IsTableNameSuffix: true,
 		}
-		json.Unmarshal(b, record)
 		return record, nil
 	default:
 		dbyte, _ := json.Marshal(input.Data)

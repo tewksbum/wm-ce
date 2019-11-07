@@ -5,6 +5,43 @@ import (
 	"time"
 )
 
+// LinkOperation link operation type
+type LinkOperation string
+
+// Operation operation type
+type Operation string
+
+// Operation types
+const (
+	OperationEquals           Operation     = "Equals"
+	OperationNotEquals        Operation     = "NotEquals"
+	OperationLessThan         Operation     = "LessThan"
+	OperationLessThanEqual    Operation     = "LessThanEqual"
+	OperationGreaterThan      Operation     = "GreaterThan"
+	OperationGreaterThanEqual Operation     = "GreaterThanEqual"
+	OperationIs               Operation     = "Is"
+	OperationIsNull           Operation     = "IsNull"
+	OperationIsNotNull        Operation     = "IsNotNull"
+	OperationIn               Operation     = "In"
+	OperationNotIn            Operation     = "NotIn"
+	OperationLike             Operation     = "Like"
+	OperationILike            Operation     = "ILike"
+	OperationNotLike          Operation     = "NotLike"
+	OperationBetween          Operation     = "Between"
+	OperationMatch            Operation     = "Match"
+	LinkOperationAnd          LinkOperation = "AND"
+	LinkOperationOr           LinkOperation = "OR"
+)
+
+// QueryFilter filter for queries
+type QueryFilter struct {
+	Field         string         `json:"field"`
+	LinkOperation *LinkOperation `json:"linkOperation"`
+	Op            Operation      `json:"op"`
+	Value         *interface{}   `json:"value"`
+	Values        []interface{}  `json:"values"`
+}
+
 // Options db options for entities
 type Options struct {
 	Type              string // csql or bq
