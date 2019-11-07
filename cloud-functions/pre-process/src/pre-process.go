@@ -705,7 +705,7 @@ func GetOrderERR(column string) OrderERR {
 	var err OrderERR
 	key := strings.ToLower(column)
 	switch key {
-	case "orderid", "order id", "invoiceid", "invoice id":
+	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
 		err.ID = 1
 	case "order number", "ordernumber", "full order number", "full ordernumber",
 		"fullorder number", "fullordernumber", "ecometryordernumber":
@@ -728,6 +728,12 @@ func GetConsignmentERR(column string) ConsignmentERR {
 	case "shipment", "consignment", "consignment id", "consignmentid":
 		err.ID = 1
 	}
+
+	// adding logic for flattened order source
+	if strings.Contains(column.name, "order.consignments") && strings.Contains(column.name, "consignments") && strings.Contains(column.name, "consignmentid") { 
+		err.ID = 1 
+	}
+
 	return err
 }
 
@@ -738,6 +744,12 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
 		err.ID = 1
 	}
+
+	// adding logic for flattened order source
+	if strings.Contains(column.name, "order.consignments") && strings.Contains(column.name, "shipments") && strings.Contains(column.name, "shipitems") && strings.Contains(column.name, ".id") { 
+		err.ID = 1 
+	}
+
 	return err
 }
 
