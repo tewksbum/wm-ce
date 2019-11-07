@@ -20,8 +20,8 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
 
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v6"
+	"github.com/elastic/go-elasticsearch/v6/esapi"
 )
 
 type PubSubMessage struct {
@@ -477,10 +477,11 @@ func PersistInES(ctx context.Context, v interface{}) bool {
 	esJSON, _ := json.Marshal(v)
 	esID := uuid.New().String()
 	esReq := esapi.IndexRequest{
-		Index:      ESIndex,
-		DocumentID: esID,
-		Body:       bytes.NewReader(esJSON),
-		Refresh:    "true",
+		Index:        ESIndex,
+		DocumentType: "record",
+		DocumentID:   esID,
+		Body:         bytes.NewReader(esJSON),
+		Refresh:      "true",
 	}
 	esRes, err := esReq.Do(ctx, es)
 	if err != nil {
