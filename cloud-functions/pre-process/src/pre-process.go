@@ -729,8 +729,8 @@ func GetConsignmentERR(column string) ConsignmentERR {
 	}
 
 	// adding logic for flattened order source
-	if strings.Contains(column.name, "order.consignments") && strings.Contains(column.name, "consignments") && strings.Contains(column.name, ".id") { 
-		err.ID = 1 
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "consignments") && strings.Contains(key, ".id") {
+		err.ID = 1
 	}
 
 	return err
@@ -745,8 +745,8 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	}
 
 	// adding logic for flattened order source
-	if strings.Contains(column.name, "order.consignments") && strings.Contains(column.name, "shipments") && strings.Contains(column.name, "shipitems") && strings.Contains(column.name, ".id") { 
-		err.ID = 1 
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
+		err.ID = 1
 	}
 
 	return err
