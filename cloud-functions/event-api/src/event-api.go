@@ -34,8 +34,8 @@ type Event struct {
 	Status      string
 	Created     time.Time
 	Endpoint    string
-	Passthrough map[string]string
-	Attributes  map[string]string
+	Passthrough string
+	Attributes  string
 }
 
 type Signature struct {
@@ -162,8 +162,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Created:     time.Now(),
 		Source:      input.Source,
 		Owner:       input.Owner,
-		Passthrough: input.Passthrough,
-		Attributes:  input.Attributes,
+		Passthrough: ToJson(&input.Passthrough),
+		Attributes:  ToJson(&input.Attributes),
 		EventID:     input.EventID,
 		EventType:   input.EventType,
 		Endpoint:    "EVENT",

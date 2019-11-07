@@ -3,6 +3,7 @@ package eventapi
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 	"testing"
 )
@@ -45,4 +46,15 @@ func TestUnmarshalToString(t *testing.T) {
 	if err := json.NewDecoder(strings.NewReader(jsonEx)).Decode(&d); err != nil {
 		fmt.Println(err)
 	}
+}
+
+func ToJson(v *map[string]string) string {
+	jsonString, err := json.Marshal(v)
+	if err == nil {
+		return string(jsonString)
+	} else {
+		log.Fatalf("%v Could not convert map %v to json: %v", v, err)
+		return ""
+	}
+
 }
