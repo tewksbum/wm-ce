@@ -38,8 +38,9 @@ type OrderDetailInput struct {
 }
 
 type OrderDetailFiber struct {
-	Signature   Signature         `json:"signature" bigquery:"signature"`
-	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
+	Signature Signature `json:"signature" bigquery:"signature"`
+	//Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
+	Passthrough []Passthrough360  `json:"passthrough" bigquery:"passthrough"`
 	MatchKeys   OrderDetailOutput `json:"matchkeys bigquery:"matchkeys"`
 	FiberID     string            `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
@@ -99,7 +100,7 @@ var FiberTableName = os.Getenv("FIBERTABLE")
 var ps *pubsub.Client
 var topic *pubsub.Topic
 
-var bq bigquery.Client
+var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
 
@@ -109,9 +110,9 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	bq, _ := bigquery.NewClient(ctx, ProjectID)
-	bs, _ := bigquery.InferSchema(OrderDetail360Output{})
-	bc, _ := bigquery.InferSchema(OrderDetailFiber{})
+	bq, _ = bigquery.NewClient(ctx, ProjectID)
+	bs, _ = bigquery.InferSchema(OrderDetail360Output{})
+	bc, _ = bigquery.InferSchema(OrderDetailFiber{})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
@@ -144,11 +145,12 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store the fiber
+	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber OrderDetailFiber
 	fiber.CreatedAt = time.Now()
 	fiber.FiberID = uuid.New().String()
 	fiber.MatchKeys = input.MatchKeys
-	fiber.Passthrough = input.Passthrough
+	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
 	FiberInserter := SetTable.Inserter()
@@ -219,15 +221,8 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 		output.CreatedAt = time.Now()
 	}
 	output.Fibers = append(output.Fibers, input.Signature.RecordID)
-	if len(input.Passthrough) > 0 {
-		for mapKey, mapValue := range input.Passthrough {
-			pt := Passthrough360{
-				Name:  mapKey,
-				Value: mapValue,
-			}
-			output.Passthroughs = append(output.Passthroughs, pt)
-		}
-	}
+	output.Passthroughs = OutputPassthrough
+
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
 	for _, name := range MatchKeyList {
@@ -287,4 +282,18 @@ func Contains(slice []string, item string) bool {
 
 	_, ok := set[item]
 	return ok
+}
+
+func ConvertPassthrough(v map[string]string) []Passthrough360 {
+	var result []Passthrough360
+	if len(v) > 0 {
+		for mapKey, mapValue := range v {
+			pt := Passthrough360{
+				Name:  mapKey,
+				Value: mapValue,
+			}
+			result = append(result, pt)
+		}
+	}
+	return result
 }

@@ -99,7 +99,7 @@ var FiberTableName = os.Getenv("FIBERTABLE")
 var ps *pubsub.Client
 var topic *pubsub.Topic
 
-var bq bigquery.Client
+var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
 
@@ -109,9 +109,9 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	bq, _ := bigquery.NewClient(ctx, ProjectID)
-	bs, _ := bigquery.InferSchema(Campaign360Output{})
-	bc, _ := bigquery.InferSchema(CampaignFiber{})
+	bq, _ = bigquery.NewClient(ctx, ProjectID)
+	bs, _ = bigquery.InferSchema(Campaign360Output{})
+	bc, _ = bigquery.InferSchema(CampaignFiber{})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
