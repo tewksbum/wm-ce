@@ -44,7 +44,7 @@ func TestUpsert(t *testing.T) {
 	}
 	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(wemade.APIInput{
-		AccessKey:  "81efed5f-57e8-4076-9506-6527d6532b00",
+		AccessKey:  "05c8da151b6281c92ad9c6971a7786ab",
 		EntityType: "decode",
 		Source:     "test",
 		Owner:      "OCM",
