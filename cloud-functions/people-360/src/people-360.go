@@ -176,9 +176,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	SetTable := bq.Dataset(DatasetID).Table(SetTableName)
 	if err := SetTable.Create(ctx, setMeta); err != nil {
+		log.Printf("error creating set table %v", err)
 	}
 	FiberTable := bq.Dataset(DatasetID).Table(FiberTableName)
 	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
+		log.Printf("error creating fiber table %v", err)
 	}
 
 	// store the fiber
