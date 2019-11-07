@@ -363,7 +363,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var flags OutputFlag
 	var columnFlags ERRFlags
 	// run all ERRs
-	for _, column := range columns {
+	for i, column := range columns {
 		column.PeopleERR = GetPeopleERR(column.Name)
 		column.ProductERR = GetProductERR(column.Name)
 		column.CampaignERR = GetCampaignERR(column.Name)
@@ -397,6 +397,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.OrderDetailERR.ID == 1 {
 			columnFlags.OrderDetailID = true
 		}
+		columns[i] = column
 	}
 
 	//log.Printf("column flags %v", columnFlags)
@@ -433,12 +434,13 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 		if len(PeopleNER.Columns) > 0 {
 			// copy NER into the columns
-			for _, column := range columns {
+			for i, column := range columns {
 				for _, ner := range PeopleNER.Columns {
 					if strings.EqualFold(column.Name, ner.ColumnName) {
 						MapNER(column, ner.NEREntities)
 					}
 				}
+				columns[i] = column
 			}
 		}
 
@@ -475,8 +477,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 	// run VER
 	if flags.People {
-		for _, column := range columns {
+		for i, column := range columns {
 			column.PeopleVER = GetPeopleVER(&column)
+
+			columns[i] = column
 		}
 	}
 
