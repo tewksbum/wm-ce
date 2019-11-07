@@ -138,6 +138,10 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(input.Source) == 0 {
+		input.Source = "Default"
+	}
+
 	// log the request
 	event := &Event{
 		CustomerID:  customer.Key.ID,

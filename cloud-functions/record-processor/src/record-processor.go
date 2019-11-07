@@ -145,7 +145,7 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 	dsKey := datastore.IncompleteKey(dsKind, nil)
 	dsKey.Namespace = DSNameSpace
 	if _, err := ds.Put(ctx, dsKey, immutableDS); err != nil {
-		log.Fatalf("Exception storing record %v, %v", input.Signature, err)
+		log.Fatalf("Exception storing record kind %v sig %v, error %v", dsKind, input.Signature, err)
 	}
 
 	// check if NER exists
