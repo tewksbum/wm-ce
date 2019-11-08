@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"segment/models"
 	"segment/wemade"
 	"testing"
 )
@@ -29,21 +30,25 @@ func createReqRes(verb string, addr string, body io.Reader) (http.ResponseWriter
 	return w, req
 }
 
-func TestAPI(t *testing.T) {
+func TestUpsert(t *testing.T) {
 	type args struct {
 		w http.ResponseWriter
 		r *http.Request
 	}
+	data := models.DecodeRecord{ // map[string]interface{}{
+		// URL:     "https://wemade.io",
+		// Browser: "faek browser 1.0.8",
+		// "":       "",,
+		Signature: "f462a513-6af2-4252-81be-51d1e5bc8bb6",
+		PeopleID:  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+	}
+	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(wemade.APIInput{
-		AccessKey:  "81efed5f-57e8-4076-9506-6527d6532b00",
-		EntityType: "event",
+		AccessKey:  "05c8da151b6281c92ad9c6971a7786ab",
+		EntityType: "decode",
 		Source:     "test",
 		Owner:      "OCM",
-		Data: wemade.Event{ // map[string]interface{}{
-			URL:     "https://wemade.io",
-			Browser: "faek browser 1.0.8",
-			// "":       "",,
-		},
+		Data:       data,
 	})
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
@@ -66,7 +71,7 @@ func TestAPI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			API(tt.args.w, tt.args.r)
+			Upsert(tt.args.w, tt.args.r)
 		})
 	}
 }
