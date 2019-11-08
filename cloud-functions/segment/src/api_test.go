@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"segment/models"
+	"segment/utils/logger"
 	"segment/wemade"
 	"testing"
 )
@@ -50,6 +51,7 @@ func TestUpsert(t *testing.T) {
 		Owner:      "OCM",
 		Data:       data,
 	})
+	logger.InfoFmt("input: %s", input)
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
 	tests := []struct {
