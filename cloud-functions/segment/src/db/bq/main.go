@@ -2,20 +2,15 @@ package bq
 
 import (
 	"context"
+	"segment/models"
 	"segment/utils/logger"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
 )
 
-// Options options for bigquery
-type Options struct {
-	IsPartitioned  bool
-	PartitionField string
-}
-
 // Write writes the interface into BQ
-func Write(projectID string, datasetID string, tableID string, opts Options, obj interface{}) error {
+func Write(projectID string, datasetID string, tableID string, isPartitioned bool, partitionField string, obj interface{}) error {
 	ctx := context.Background()
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
@@ -29,9 +24,9 @@ func Write(projectID string, datasetID string, tableID string, opts Options, obj
 	recordMetaData := &bigquery.TableMetadata{
 		Schema: recordSchema,
 	}
-	if opts.IsPartitioned {
+	if isPartitioned {
 		recordMetaData.TimePartitioning = &bigquery.TimePartitioning{
-			Field: opts.PartitionField,
+			Field: partitionField,
 		}
 	}
 	recordTableRef := bqClient.Dataset(datasetID).Table(tableID)
@@ -43,7 +38,15 @@ func Write(projectID string, datasetID string, tableID string, opts Options, obj
 	}
 	recordInserter := recordTableRef.Inserter()
 	if err := recordInserter.Put(ctx, obj); err != nil {
-		return logger.Err(err)
+		return logger.ErrFmt("[BQ.Write.recordInserter] %#v", err)
 	}
 	return nil
+}
+
+// Read the interfae from BQ
+func Read(projectID string, datasetID string, tableID string, q []models.QueryFilter) (err error) {
+	for _, filter := range q {
+		logger.InfoFmt("filter: %#v", filter)
+	}
+	return err
 }
