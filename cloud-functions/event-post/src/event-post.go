@@ -84,14 +84,17 @@ type NER struct {
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var topic2 *pubsub.Topic
 
 func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	topic2 = ps.Topic(PubSubTopic2)
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -131,6 +134,10 @@ func PostProcessEvent(ctx context.Context, m PubSubMessage) error {
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
+
+	topic2.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
 
 	return nil
 }

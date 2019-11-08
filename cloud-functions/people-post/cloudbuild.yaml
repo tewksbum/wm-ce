@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: people-post
-    _TRIGGER_TOPIC: postpeople
+    _TRIGGER_TOPIC: people-prepipe
     _ENTRY_POINT: PostProcessPeople
 options:
     substitution_option: 'ALLOW_LOOSE'

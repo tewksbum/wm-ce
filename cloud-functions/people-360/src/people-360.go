@@ -20,8 +20,8 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
 
-	"github.com/elastic/go-elasticsearch/v8"
-	"github.com/elastic/go-elasticsearch/v8/esapi"
+	"github.com/elastic/go-elasticsearch/v6"
+	"github.com/elastic/go-elasticsearch/v6/esapi"
 )
 
 type PubSubMessage struct {
@@ -46,7 +46,7 @@ type PeopleFiber struct {
 	Signature Signature `json:"signature" bigquery:"signature"`
 	// Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   PeopleOutput     `json:"matchkeys" bigquery:"matchkeys"`
 	FiberID     string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
@@ -122,6 +122,7 @@ type People360Output struct {
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
@@ -131,6 +132,7 @@ var ESIndex = os.Getenv("ELASTICINDEX")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var topic2 *pubsub.Topic
 
 var bq *bigquery.Client
 var bs bigquery.Schema
@@ -143,6 +145,7 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	topic2 = ps.Topic(PubSubTopic2)
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
 	bs, _ = bigquery.InferSchema(People360Output{})
 	bc, _ = bigquery.InferSchema(PeopleFiber{})
@@ -165,13 +168,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// assign first initial and zip5
 	if len(input.MatchKeys.FNAME.Value) > 0 {
 		input.MatchKeys.FINITIAL = MatchKeyField{
-			Value:  input.MatchKeys.FNAME.Value[0:0],
+			Value:  input.MatchKeys.FNAME.Value[0:1],
 			Source: input.MatchKeys.FNAME.Source,
 		}
 	}
 	if len(input.MatchKeys.ZIP.Value) > 0 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
-			Value:  input.MatchKeys.ZIP.Value[0:4],
+			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
 		}
 	}
@@ -431,6 +434,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
 
+	topic2.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
+
 	return nil
 }
 
@@ -477,10 +484,11 @@ func PersistInES(ctx context.Context, v interface{}) bool {
 	esJSON, _ := json.Marshal(v)
 	esID := uuid.New().String()
 	esReq := esapi.IndexRequest{
-		Index:      ESIndex,
-		DocumentID: esID,
-		Body:       bytes.NewReader(esJSON),
-		Refresh:    "true",
+		Index:        ESIndex,
+		DocumentType: "record",
+		DocumentID:   esID,
+		Body:         bytes.NewReader(esJSON),
+		Refresh:      "true",
 	}
 	esRes, err := esReq.Do(ctx, es)
 	if err != nil {

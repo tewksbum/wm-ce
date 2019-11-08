@@ -418,10 +418,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.OrderID {
 		flags.Order = true
 	}
-	if columnFlags.ConsignmentID {
+	if columnFlags.ConsignmentID && columnFlags.OrderID {
 		flags.Consignment = true
 	}
-	if columnFlags.OrderDetailID {
+	if (columnFlags.OrderDetailID && columnFlags.OrderID) || (columnFlags.ProductID && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
 
@@ -682,21 +682,20 @@ func GetCampaignERR(column string) CampaignERR {
 	var err CampaignERR
 	key := strings.ToLower(column)
 	switch key {
-	case "campaign id", "campaignid":
+	case "campaign id", "campaignid", "campaign.id":
 		err.CampaignID = 1
-	case "campaign", "campaign name", "campaignname":
+	case "campaign", "campaign name", "campaignname", "campaign.name":
 		err.Name = 1
-	case "campaign type", "campaigntype":
+	case "campaign type", "campaigntype", "campaign.type":
 		err.Type = 1
-	case "campaign budget", "campaignbudget", "budget":
+	case "campaign budget", "campaignbudget", "budget", "campaign.budget":
 		err.Budget = 1
-	case "campaign channel", "campaignchannel":
+	case "campaign channel", "campaignchannel", "campaign.channel":
 		err.Channel = 1
-	case "campaign start date", "campaign startdate", "campaignstartdate":
+	case "campaign start date", "campaign startdate", "campaignstartdate", "campaign.startdate":
 		err.StartDate = 1
-	case "campaign end date", "campaign enddate", "campaignenddate":
+	case "campaign end date", "campaign enddate", "campaignenddate", "campaignend.date":
 		err.EndDate = 1
-
 	}
 	return err
 }
@@ -705,7 +704,7 @@ func GetOrderERR(column string) OrderERR {
 	var err OrderERR
 	key := strings.ToLower(column)
 	switch key {
-	case "orderid", "order id", "invoiceid", "invoice id":
+	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
 		err.ID = 1
 	case "order number", "ordernumber", "full order number", "full ordernumber",
 		"fullorder number", "fullordernumber", "ecometryordernumber":
@@ -728,6 +727,12 @@ func GetConsignmentERR(column string) ConsignmentERR {
 	case "shipment", "consignment", "consignment id", "consignmentid":
 		err.ID = 1
 	}
+
+	// adding logic for flattened order source
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "consignments") && strings.Contains(key, ".id") {
+		err.ID = 1
+	}
+
 	return err
 }
 
@@ -738,6 +743,12 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
 		err.ID = 1
 	}
+
+	// adding logic for flattened order source
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
+		err.ID = 1
+	}
+
 	return err
 }
 
@@ -745,24 +756,24 @@ func GetProductERR(column string) ProductERR {
 	var err ProductERR
 	key := strings.ToLower(column)
 	switch key {
-	case "product name", "productname", "prod name", "prodname":
+	case "product name", "productname", "prod name", "prodname", "product.name":
 		err.Name = 1
-	case "product description", "productdescription", "prod description",
+	case "product description", "productdescription", "prod description", "product.description",
 		"proddescription", "product desc", "productdesc", "prod desc",
 		"proddesc", "p desc", "pdesc":
 		err.Description = 1
-	case "product size", "productsize", "prod size",
+	case "product size", "productsize", "prod size", "product.size",
 		"p size", "psize", "size":
 		err.Size = 1
-	case "product color", "productcolor", "prod color",
+	case "product color", "productcolor", "prod color", "product.color",
 		"p color", "pcolor", "color":
 		err.Color = 1
-	case "product unit price", "productunit price", "prod unit price",
+	case "product unit price", "productunit price", "prod unit price", "product.unitprice",
 		"product unitprice", "productunitprice", "prod unitprice",
 		"p unit price", "punit price", "p unitprice", "punitprice",
 		"unit price", "unitprice":
 		err.UnitPrice = 1
-	case "product type", "producttype", "prod type",
+	case "product type", "producttype", "prod type", "product.type",
 		"p type", "ptype", "type":
 		err.Type = 1
 	case "product vendorid", "productvendorid", "prod vendorid",
@@ -771,22 +782,21 @@ func GetProductERR(column string) ProductERR {
 	case "product vendor", "productvendor", "prod vendor",
 		"p vendor", "pvendor", "vendor":
 		err.Vendor = 1
-	case "product cost", "productcost", "prod cost",
+	case "product cost", "productcost", "prod cost", "product.cost",
 		"p cost", "pcost", "cost":
 		err.Cost = 1
-	case "product stars", "productstars", "prod stars",
+	case "product stars", "productstars", "prod stars", "product.stars",
 		"p stars", "pstars", "stars":
 		err.Stars = 1
-	case "product category", "productcategory", "product cat",
+	case "product category", "productcategory", "product cat", "product.category",
 		"productcat", "prod cat", "prodcat", "p cat", "pcat":
 		err.Category = 1
-	case "product margin", "productmargin", "prod margin",
+	case "product margin", "productmargin", "prod margin", "product.margin",
 		"p margin", "pmargin", "margin", "contibution":
 		err.Margin = 1
 	case "contains", "bundle items", "bundleitems", "bundled items", "bundleditems",
 		"kit items", "kititems":
 		err.Contains = 1
-
 	}
 	return err
 }

@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: consignment-post
-    _TRIGGER_TOPIC: postconsignment
+    _TRIGGER_TOPIC: consignment-prepipe
     _ENTRY_POINT: PostProcessConsignment
 options:
     substitution_option: 'ALLOW_LOOSE'

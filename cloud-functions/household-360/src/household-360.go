@@ -41,7 +41,7 @@ type HouseHoldFiber struct {
 	Signature Signature `json:"signature" bigquery:"signature"`
 	//Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   PeopleOutput     `json:"matchkeys" bigquery:"matchkeys"`
 	FiberID     string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
@@ -117,11 +117,13 @@ type HouseHold360Output struct {
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var topic2 *pubsub.Topic
 
 var bq *bigquery.Client
 var bs bigquery.Schema
@@ -133,6 +135,7 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	topic2 = ps.Topic(PubSubTopic2)
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
 	bs, _ = bigquery.InferSchema(HouseHold360Output{})
 	bc, _ = bigquery.InferSchema(HouseHoldFiber{})
@@ -149,13 +152,13 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	// assign first initial and zip5
 	if len(input.MatchKeys.FNAME.Value) > 0 {
 		input.MatchKeys.FINITIAL = MatchKeyField{
-			Value:  input.MatchKeys.FNAME.Value[0:0],
+			Value:  input.MatchKeys.FNAME.Value[0:1],
 			Source: input.MatchKeys.FNAME.Source,
 		}
 	}
 	if len(input.MatchKeys.ZIP.Value) > 0 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
-			Value:  input.MatchKeys.ZIP.Value[0:4],
+			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
 		}
 	}
@@ -383,6 +386,10 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
+
+	topic2.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+	})
 
 	return nil
 }

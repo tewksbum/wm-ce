@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: event-post
-    _TRIGGER_TOPIC: postevent
+    _TRIGGER_TOPIC: event-prepipe
     _ENTRY_POINT: PostProcessEvent
 options:
     substitution_option: 'ALLOW_LOOSE'
