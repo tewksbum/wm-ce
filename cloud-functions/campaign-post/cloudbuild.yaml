@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: campaign-post
-    _TRIGGER_TOPIC: postcampaign
+    _TRIGGER_TOPIC: campaign-prepipe
     _ENTRY_POINT: PostProcessCampaign
 options:
     substitution_option: 'ALLOW_LOOSE'

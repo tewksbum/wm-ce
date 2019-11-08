@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: event-360
-    _TRIGGER_TOPIC: event360
+    _TRIGGER_TOPIC: event-postpipe
     _ENTRY_POINT: Event360
 options:
     substitution_option: 'ALLOW_LOOSE'

@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: product-post
-    _TRIGGER_TOPIC: postproduct
+    _TRIGGER_TOPIC: product-prepipe
     _ENTRY_POINT: PostProcessProduct
 options:
     substitution_option: 'ALLOW_LOOSE'
