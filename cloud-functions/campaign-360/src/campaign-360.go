@@ -40,7 +40,7 @@ type CampaignInput struct {
 type CampaignFiber struct {
 	Signature   Signature         `json:"signature" bigquery:"signature"`
 	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   CampaignOutput    `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   CampaignOutput    `json:"matchkeys" bigquery:"matchkeys"`
 	FiberID     string            `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
 }

@@ -41,7 +41,7 @@ type ProductFiber struct {
 	Signature Signature `json:"signature" bigquery:"signature"`
 	//Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   ProductOutput    `json:"matchkeys bigquery:"matchkeys"`
+	MatchKeys   ProductOutput    `json:"matchkeys" bigquery:"matchkeys"`
 	FiberID     string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
