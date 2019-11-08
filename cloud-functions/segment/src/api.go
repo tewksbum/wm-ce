@@ -31,17 +31,20 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 
 	// Set returning headers
 	if err := setHeaders(w, r); err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// Get and parse the object
-	o, err := wemade.DecodeAPIQuery(projectID, namespace, r.Body)
+	o, err := wemade.DecodeAPIInput(projectID, namespace, r.Body)
 	if err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// logger.InfoFmt("output: %+v", o)
 	// Write to db
 	err = db.Write(projectID, csqlDSN, o)
 	if err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// If all goes well...
@@ -61,17 +64,20 @@ func Read(w http.ResponseWriter, r *http.Request) {
 
 	// Set returning headers
 	if err := setHeaders(w, r); err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// Get and parse the object
 	o, err := wemade.DecodeAPIQuery(projectID, namespace, r.Body)
 	if err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// logger.InfoFmt("output: %+v", o)
 	// Write to db
 	err = db.Read(projectID, csqlDSN, o)
 	if err != nil {
+		errToHTTP(w, r, err)
 		return
 	}
 	// If all goes well...
