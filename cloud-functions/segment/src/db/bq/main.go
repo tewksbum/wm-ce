@@ -2,6 +2,7 @@ package bq
 
 import (
 	"context"
+	"segment/models"
 	"segment/utils/logger"
 	"strings"
 
@@ -40,4 +41,12 @@ func Write(projectID string, datasetID string, tableID string, isPartitioned boo
 		return logger.ErrFmt("[BQ.Write.recordInserter] %#v", err)
 	}
 	return nil
+}
+
+// Read the interfae from BQ
+func Read(projectID string, datasetID string, tableID string, q []models.QueryFilter) (err error) {
+	for _, filter := range q {
+		logger.InfoFmt("filter: %#v", filter)
+	}
+	return err
 }

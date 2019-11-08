@@ -34,7 +34,7 @@ func initDB(dsn string) *dbr.Session {
 	return conn.NewSession(nil)
 }
 
-// Write writes the interface into BQ
+// Write the interface into CSQL
 func Write(dsn string, r models.Record) (err error) {
 	sess := initDB(dsn)
 	tx, err := sess.Begin()
@@ -92,5 +92,13 @@ func Write(dsn string, r models.Record) (err error) {
 		return logger.ErrFmt("[csql.Write.Commit] %v#", err)
 	}
 	// sess.InsertInto(models.CSQL)
+	return err
+}
+
+// Read the interface from CSQL
+func Read(dsn string, q []models.QueryFilter) (err error) {
+	for _, filter := range q {
+		logger.InfoFmt("filter: %#v", filter)
+	}
 	return err
 }

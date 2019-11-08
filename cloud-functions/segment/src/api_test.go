@@ -39,8 +39,8 @@ func TestUpsert(t *testing.T) {
 		// URL:     "https://wemade.io",
 		// Browser: "faek browser 1.0.8",
 		// "":       "",,
-		Signature: "8154cc47-c37f-4c45-b386-56c9f1c42c96",
-		PeopleID:  "popósss",
+		Signature: "f462a513-6af2-4252-81be-51d1e5bc8bb6",
+		PeopleID:  "91de1279-46c2-4fdc-9566-2b2506415fdb",
 	}
 	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(wemade.APIInput{

@@ -36,6 +36,7 @@ const (
 // QueryFilter filter for queries
 type QueryFilter struct {
 	Field         string         `json:"field"`
+	Type          string         `json:"type"`
 	LinkOperation *LinkOperation `json:"linkOperation"`
 	Op            Operation      `json:"op"`
 	Value         *interface{}   `json:"value"`
@@ -49,6 +50,7 @@ type Options struct {
 	PartitionField    string
 	TableName         string
 	IsTableNameSuffix bool
+	Filters           []QueryFilter
 }
 
 //Record interface

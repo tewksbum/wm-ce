@@ -1,19 +1,23 @@
 package wemade
 
 import (
+	"segment/models"
+
 	"cloud.google.com/go/datastore"
 )
 
 // APIInput input for the API
 type APIInput struct {
-	AccessKey    string            `json:"accessKey"`
-	EntityType   string            `json:"entityType"` //events, order, product
-	Organization string            `json:"organization"`
-	Source       string            `json:"source"`
-	Owner        string            `json:"owner"`
-	Passthrough  map[string]string `json:"passthrough"`
-	Attributes   map[string]string `json:"attributes"`
-	Data         interface{}       `json:"data"`
+	AccessKey    string               `json:"accessKey"`
+	EntityType   string               `json:"entityType"` //events, order, product
+	Organization string               `json:"organization"`
+	Source       string               `json:"source"`
+	OwnerID      int64                `json:"ownerId"`
+	Owner        string               `json:"owner"`
+	Passthrough  map[string]string    `json:"passthrough"`
+	Attributes   map[string]string    `json:"attributes"`
+	Data         interface{}          `json:"data"`
+	Filters      []models.QueryFilter `json:"filters"`
 }
 
 // DSCustomer contains wemade Customer fields
