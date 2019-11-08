@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: orderdetail-post
-    _TRIGGER_TOPIC: postorderdetail
+    _TRIGGER_TOPIC: orderdetail-prepipe
     _ENTRY_POINT: PostProcessOrderDetail
 options:
     substitution_option: 'ALLOW_LOOSE'
