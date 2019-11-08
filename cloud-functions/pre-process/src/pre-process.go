@@ -425,6 +425,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.OrderDetail = true
 	}
 
+	log.Printf("flags %v", flags)
+
 	// look up NER and call ML if People
 	var prediction Prediction
 
