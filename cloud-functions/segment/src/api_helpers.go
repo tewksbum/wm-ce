@@ -31,10 +31,10 @@ func errToHTTP(w http.ResponseWriter, r *http.Request, err error) error {
 }
 
 // funcs
-func apiOutput(success bool, msg string, args ...interface{}) []byte {
+func apiOutput(success bool, msg string, args ...interface{}) string {
 	fmsg := fmt.Sprintf(msg, args...)
 	o, _ := json.Marshal(wemade.APIOutput{Success: success, Message: fmsg})
-	return o
+	return string(o)
 }
 
 // SetHeaders sets the headers for the response
