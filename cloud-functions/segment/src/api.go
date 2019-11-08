@@ -48,7 +48,7 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// If all goes well...
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	fmt.Fprint(w, apiOutput(true, successMsg))
 }
 
