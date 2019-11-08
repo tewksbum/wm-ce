@@ -425,6 +425,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.OrderDetail = true
 	}
 
+	log.Printf("flags %v", flags)
+
 	// look up NER and call ML if People
 	var prediction Prediction
 
@@ -655,7 +657,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
 		err.Title = 1
 	}
-	if strings.Contains(key, "address") {
+	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
 		err.Address1 = 1
 	}
 	if strings.Contains(key, "city") {
@@ -670,7 +672,6 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.Phone = 1
 	}
-
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") {
 		err.Role = 1
 	}
