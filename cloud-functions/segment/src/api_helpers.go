@@ -18,12 +18,15 @@ func errToHTTP(w http.ResponseWriter, r *http.Request, err error) error {
 	case wemade.ErrAccountNotEnabled:
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -11", strErr)))
+		return err
 	case wemade.ErrInvalidAccessKey:
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -10", strErr)))
+		return err
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -2", strErr)))
+		return err
 	}
 	w.WriteHeader(http.StatusInternalServerError)
 	fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -3", err.Error())))
