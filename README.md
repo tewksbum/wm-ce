@@ -1,15 +1,19 @@
 # WeMade Data Intelligence Pipelines
 
-# Current Release
+## Current Release
 
-# Branches
+## Branches
+
+---
 
 - dev
 - prod
 
 We do not use master branch
 
-# Cloud Functions
+## Cloud Functions
+
+---
 
 ## Entry Points
 
