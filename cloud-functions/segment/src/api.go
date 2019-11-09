@@ -25,12 +25,12 @@ var (
 // Upsert api entry point for upserting (create|update) a resource
 func Upsert(w http.ResponseWriter, r *http.Request) {
 	// Local test variables
-	projectID = "wemade-core"
-	namespace = "wemade.streamer-api.dev"
-	csqlRegion = "us-central1"
-	csqlInstanceID = "wemade"
-	csqlSchema = "segment_dev"
-	csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
+	// projectID = "wemade-core"
+	// namespace = "wemade.streamer-api.dev"
+	// csqlRegion = "us-central1"
+	// csqlInstanceID = "wemade"
+	// csqlSchema = "segment_dev"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
