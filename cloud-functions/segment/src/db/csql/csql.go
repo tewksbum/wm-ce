@@ -47,7 +47,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	if rdbOpts.IsTableNameSuffix {
 		tblName = r.GetStrOwnerID() + r.GetTableNameAsSuffix()
 	}
-	_, err = tx.Exec(fmt.Sprintf(rdbOpts.SchemaName, tblDecodeCreateStmt, tblName))
+	_, err = tx.Exec(fmt.Sprintf(tblDecodeCreateStmt, rdbOpts.SchemaName, tblName))
 	if err != nil {
 		return updated, logger.Err(err)
 	}
@@ -60,8 +60,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	logger.Info(buf.String())
 	exists, err := stmt.ReturnString()
 	if err != nil {
-		logger.Info("horror: ", err.Error())
-		if !strings.Contains(err.Error(), "1146") {
+		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
 		}
 	}

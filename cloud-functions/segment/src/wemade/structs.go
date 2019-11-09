@@ -38,6 +38,7 @@ type APIOutput struct {
 // DatastoreCustomer contains wemade Customer fields
 type DatastoreCustomer struct {
 	Name      string
+	Owner     string
 	AccessKey string
 	Enabled   bool
 	Key       *datastore.Key `datastore:"__key__"`

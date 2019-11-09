@@ -78,7 +78,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get and parse the object
-	rec, err := wemade.BuildFilterRecordFromInput(projectID, namespace, r.Body)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -113,7 +113,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get and parse the object
-	rec, err := wemade.BuildFilterRecordFromInput(projectID, namespace, r.Body)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
