@@ -53,6 +53,9 @@ func FlattenMap(mstring map[string]string) string {
 		flat = flat[:len(flat)-1]
 	}
 	flat += "}"
+	if flat == "{}" {
+		return ""
+	}
 	return flat
 }
 

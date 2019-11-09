@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -15,360 +16,42 @@ import (
 	"github.com/google/uuid"
 )
 
-// Error messages
+// Table and type names
 var (
-	ErrDecodingRequest      string = "Error decoding request %#v"
-	ErrInternalErrorOcurred string = "Internal error occurred %#v"
-	ErrInvalidAccessKey     string = "Invalid access key"
-	ErrAccountNotEnabled    string = "Account not enabled"
-	ErrStatusNoContent      string = "Method Options: No content"
+	typeDecode           = "decode"
+	typeEvent            = "event"
+	typeOrderHeader      = "orderheader"
+	typeOrderDetail      = "orderdetail"
+	typeOrderConsignment = "orderconsignment"
+	typeHousehold        = "household"
+	typeProduct          = "product"
+	typePeople           = "people"
+	typeCampaign         = "campaigns"
+	tblDecode            = "decode"
+	tblEvent             = "events"
+	tblOrderHeader       = "orderheaders"
+	tblOrderDetail       = "orderdetails"
+	tblOrderConsignment  = "orderconsignments"
+	tblHousehold         = "households"
+	tblProduct           = "products"
+	tblPeople            = "people"
+	tblShed              = "shed"
+	tblCampaign          = "campaigns"
+	defPartitionField    = "timestamp"
+	dstblCustomers       = "Customer"
+	dsfilterCustomers    = "AccessKey = "
 )
 
-// Table names
+// "Decode" specific variables
 var (
-	tblDecode           string = "decode"
-	tblEvent            string = "events"
-	tblOrderHeader      string = "orderheaders"
-	tblOrderDetail      string = "orderdetails"
-	tblOrderConsignment string = "orderconsignments"
-	tblHousehold        string = "households"
-	tblProduct          string = "products"
-	tblPeople           string = "people"
-	tblShed             string = "shed"
-	tblCampaign         string = "campaigns"
-	defPartitionField   string = "timestamp"
-	dstblCustomers      string = "Customer"
-	dsfilterCustomers   string = "AccessKey = "
+	decodeIDField    = "signature"
+	decodeColumnList = []string{"signature", "people_id"}
+	decodeBlackList  = []string{"passthrough", "attributes", "source",
+		"owner_id", "owner", "entity_type", "timestamp"}
 )
 
-// DecodeAPIInput serialize a json into a wemade.Request struct, checks the API key and
-func DecodeAPIInput(projectID string, namespace string, body io.ReadCloser) (models.Record, error) {
-	var input APIInput
-	ctx := context.Background()
-	surrogateID := uuid.New().String()
-	if err := json.NewDecoder(body).Decode(&input); err != nil {
-		return nil, logger.ErrFmt(ErrDecodingRequest, err)
-	}
-
-	cust, err := validateAndGetCustomer(ctx, projectID, namespace, input.AccessKey)
-	if err != nil {
-		return nil, err
-	}
-
-	output := models.BaseRecord{
-		EntityType:  input.EntityType,
-		OwnerID:     cust.Key.ID,
-		Owner:       input.Owner,
-		Source:      input.Source,
-		Passthrough: utils.FlattenMap(input.Passthrough),
-		Attributes:  utils.FlattenMap(input.Attributes),
-		Timestamp:   time.Now(),
-	}
-
-	entityType := strings.ToLower(input.EntityType)
-	b, _ := json.Marshal(input.Data)
-
-	switch entityType {
-	case tblHousehold:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Household{}
-		json.Unmarshal(b, &record)
-		return &models.HouseholdRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblEvent:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Event{}
-		json.Unmarshal(b, &record)
-		return &models.EventRecord{
-			BaseRecord: output,
-			Record:     record,
-		}, nil
-	case tblProduct:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Product{}
-		json.Unmarshal(b, &record)
-		return &models.ProductRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblPeople:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.People{}
-		json.Unmarshal(b, &record)
-		return &models.PeopleRecord{
-			BaseRecord: output,
-			Record:     record,
-		}, nil
-	case tblOrderHeader:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderHeader{}
-		json.Unmarshal(b, &record)
-		return &models.OrderHeaderRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblOrderConsignment:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderConsignment{}
-		json.Unmarshal(b, &record)
-		return &models.OrderConsignmentRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblOrderDetail:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderDetail{}
-		json.Unmarshal(b, &record)
-		return &models.OrderDetailRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblCampaign:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Campaign{}
-		json.Unmarshal(b, &record)
-		return &models.CampaignRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblDecode: // FCD table
-		record := &models.DecodeRecord{}
-		json.Unmarshal(b, record)
-		record.BaseRecord = output
-		record.IDField = "signature"
-		record.ColumnList = []string{"signature", "people_id"}
-		record.ColumnBlackList = []string{"passthrough", "attributes", "source",
-			"owner_id", "owner", "entity_type", "timestamp"}
-		record.DBopts = models.Options{
-			Filters:           input.Filters,
-			Type:              models.CSQL,
-			IsPartitioned:     false,
-			TableName:         tblDecode,
-			IsTableNameSuffix: true,
-		}
-		return record, nil
-	default:
-		dbyte, _ := json.Marshal(input.Data)
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		// the Shed - shabby werehouse where any dummy requests die in.
-		output.EntityType = tblShed
-		return &models.FallbackRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      models.FallbackData{Data: string(dbyte)},
-		}, nil
-	}
-}
-
-// DecodeAPIQuery serialize a json into a wemade.Request struct, checks the API key and
-func DecodeAPIQuery(projectID string, namespace string, body io.ReadCloser) (models.Record, error) {
-	var input APIInput
-	ctx := context.Background()
-	surrogateID := uuid.New().String()
-	if err := json.NewDecoder(body).Decode(&input); err != nil {
-		return nil, logger.ErrFmt(ErrDecodingRequest, err)
-	}
-
-	cust, err := validateAndGetCustomer(ctx, projectID, namespace, input.AccessKey)
-	if err != nil {
-		return nil, err
-	}
-
-	output := models.BaseRecord{
-		EntityType:  input.EntityType,
-		OwnerID:     cust.Key.ID,
-		Owner:       input.Owner,
-		Source:      input.Source,
-		Passthrough: utils.FlattenMap(input.Passthrough),
-		Attributes:  utils.FlattenMap(input.Attributes),
-		Timestamp:   time.Now(),
-	}
-
-	entityType := strings.ToLower(input.EntityType)
-	b, _ := json.Marshal(input.Data)
-
-	switch entityType {
-	case tblHousehold:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Household{}
-		json.Unmarshal(b, &record)
-		return &models.HouseholdRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblEvent:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Event{}
-		json.Unmarshal(b, &record)
-		return &models.EventRecord{
-			BaseRecord: output,
-			Record:     record,
-		}, nil
-	case tblProduct:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Product{}
-		json.Unmarshal(b, &record)
-		return &models.ProductRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblPeople:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.People{}
-		json.Unmarshal(b, &record)
-		return &models.PeopleRecord{
-			BaseRecord: output,
-			Record:     record,
-		}, nil
-	case tblOrderHeader:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderHeader{}
-		json.Unmarshal(b, &record)
-		return &models.OrderHeaderRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblOrderConsignment:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderConsignment{}
-		json.Unmarshal(b, &record)
-		return &models.OrderConsignmentRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblOrderDetail:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.OrderDetail{}
-		json.Unmarshal(b, &record)
-		return &models.OrderDetailRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblCampaign:
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		record := models.Campaign{}
-		json.Unmarshal(b, &record)
-		return &models.CampaignRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      record,
-		}, nil
-	case tblDecode: // FCD table
-		record := &models.DecodeRecord{}
-		json.Unmarshal(b, record)
-		record.BaseRecord = output
-		record.IDField = "signature"
-		record.ColumnList = []string{"signature", "people_id"}
-		record.ColumnBlackList = []string{"passthrough", "attributes", "source",
-			"owner_id", "owner", "entity_type", "timestamp"}
-		record.DBopts = models.Options{
-			Filters:           input.Filters,
-			Type:              models.CSQL,
-			IsPartitioned:     false,
-			TableName:         tblDecode,
-			IsTableNameSuffix: true,
-		}
-		return record, nil
-	default:
-		dbyte, _ := json.Marshal(input.Data)
-		output.DBopts = models.Options{
-			Filters:       input.Filters,
-			Type:          models.BQ,
-			IsPartitioned: true, PartitionField: defPartitionField,
-		}
-		// the Shed - shabby werehouse where any dummy requests die in.
-		output.EntityType = tblShed
-		return &models.FallbackRecord{
-			SurrogateID: surrogateID,
-			BaseRecord:  output,
-			Record:      models.FallbackData{Data: string(dbyte)},
-		}, nil
-	}
-}
-
-func validateAndGetCustomer(ctx context.Context, pID string, ns string, aKey string) (DSCustomer, error) {
-	var c DSCustomer
+func validateAndGetCustomer(ctx context.Context, pID string, ns string, aKey string) (DatastoreCustomer, error) {
+	var c DatastoreCustomer
 	dsClient, err := datastore.GetClient(&ctx, pID)
 	if err != nil {
 		return c, logger.ErrFmt(ErrInternalErrorOcurred, err)
@@ -376,7 +59,7 @@ func validateAndGetCustomer(ctx context.Context, pID string, ns string, aKey str
 	query := datastore.QueryTableNamespace(dstblCustomers, ns).
 		Filter(dsfilterCustomers, aKey).Limit(1)
 
-	var entities []DSCustomer
+	var entities []DatastoreCustomer
 
 	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
 		return c, logger.ErrFmt(ErrInternalErrorOcurred, err)
@@ -391,4 +74,352 @@ func validateAndGetCustomer(ctx context.Context, pID string, ns string, aKey str
 		return c, logger.ErrStr(ErrAccountNotEnabled)
 	}
 	return c, nil
+}
+
+// BuildRecordFromInput serialize a json into a Request struct, checks the API key and
+func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser) (models.Record, error) {
+	var input APIInput
+	ctx := context.Background()
+	surrogateID := uuid.New().String()
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+	json.Unmarshal(data, &input)
+	if err != nil {
+		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+
+	cust, err := validateAndGetCustomer(ctx, projectID, namespace, input.AccessKey)
+	if err != nil {
+		return nil, err
+	}
+
+	output := models.BaseRecord{
+		EntityType:  input.EntityType,
+		OwnerID:     cust.Key.ID,
+		Owner:       input.Owner,
+		Source:      input.Source,
+		Passthrough: utils.FlattenMap(input.Passthrough),
+		Attributes:  utils.FlattenMap(input.Attributes),
+		Timestamp:   time.Now(),
+	}
+
+	entityType := strings.ToLower(input.EntityType)
+
+	switch entityType {
+	case typeHousehold:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblHousehold,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Household{}
+		json.Unmarshal(data, &record)
+		return &models.HouseholdRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeEvent:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblEvent,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Event{}
+		json.Unmarshal(data, &record)
+		return &models.EventRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
+	case typeProduct:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblProduct,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Product{}
+		json.Unmarshal(data, &record)
+		return &models.ProductRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typePeople:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblPeople,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.People{}
+		json.Unmarshal(data, &record)
+		return &models.PeopleRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
+	case typeOrderHeader:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderHeader,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderHeader{}
+		json.Unmarshal(data, &record)
+		return &models.OrderHeaderRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeOrderConsignment:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderConsignment,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderConsignment{}
+		json.Unmarshal(data, &record)
+		return &models.OrderConsignmentRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeOrderDetail:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderDetail,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderDetail{}
+		json.Unmarshal(data, &record)
+		return &models.OrderDetailRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeCampaign:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblCampaign,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Campaign{}
+		json.Unmarshal(data, &record)
+		return &models.CampaignRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeDecode: // FCD table
+		record := &models.DecodeRecord{}
+		json.Unmarshal(data, record)
+		record.BaseRecord = output
+		record.IDField = decodeIDField
+		record.ColumnList = decodeColumnList
+		record.ColumnBlackList = decodeBlackList
+		record.DBopts = models.Options{
+			Filters:           input.Filters,
+			Type:              models.CSQL,
+			IsPartitioned:     false,
+			TableName:         tblDecode,
+			IsTableNameSuffix: true,
+		}
+		return record, nil
+	default:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblShed,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		// the Shed - shabby werehouse where any dummy requests die in.
+		output.EntityType = tblShed
+		return &models.FallbackRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      models.FallbackData{Data: string(data)},
+		}, nil
+	}
+}
+
+// BuildFilterRecordFromInput serialize a json into a Request struct, checks the API key and returns record filter
+func BuildFilterRecordFromInput(projectID string, namespace string, body io.ReadCloser) (models.Record, error) {
+	var input APIInput
+	ctx := context.Background()
+	surrogateID := uuid.New().String()
+	data, err := ioutil.ReadAll(body)
+	if err != nil {
+		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+	json.Unmarshal(data, &input)
+	if err != nil {
+		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+
+	cust, err := validateAndGetCustomer(ctx, projectID, namespace, input.AccessKey)
+	if err != nil {
+		return nil, err
+	}
+
+	output := models.BaseRecord{
+		EntityType:  input.EntityType,
+		OwnerID:     cust.Key.ID,
+		Owner:       input.Owner,
+		Source:      input.Source,
+		Passthrough: utils.FlattenMap(input.Passthrough),
+		Attributes:  utils.FlattenMap(input.Attributes),
+		Timestamp:   time.Now(),
+	}
+
+	entityType := strings.ToLower(input.EntityType)
+
+	switch entityType {
+	case typeHousehold:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblHousehold,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Household{}
+		json.Unmarshal(data, &record)
+		return &models.HouseholdRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeEvent:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblEvent,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Event{}
+		json.Unmarshal(data, &record)
+		return &models.EventRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
+	case typeProduct:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblProduct,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Product{}
+		json.Unmarshal(data, &record)
+		return &models.ProductRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typePeople:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblPeople,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.People{}
+		json.Unmarshal(data, &record)
+		return &models.PeopleRecord{
+			BaseRecord: output,
+			Record:     record,
+		}, nil
+	case typeOrderHeader:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderHeader,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderHeader{}
+		json.Unmarshal(data, &record)
+		return &models.OrderHeaderRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeOrderConsignment:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderConsignment,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderConsignment{}
+		json.Unmarshal(data, &record)
+		return &models.OrderConsignmentRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeOrderDetail:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblOrderDetail,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.OrderDetail{}
+		json.Unmarshal(data, &record)
+		return &models.OrderDetailRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeCampaign:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblCampaign,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		record := models.Campaign{}
+		json.Unmarshal(data, &record)
+		return &models.CampaignRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      record,
+		}, nil
+	case typeDecode: // FCD table
+		record := &models.DecodeRecord{}
+		json.Unmarshal(data, record)
+		record.BaseRecord = output
+		record.IDField = decodeIDField
+		record.ColumnList = decodeColumnList
+		record.ColumnBlackList = decodeBlackList
+		record.DBopts = models.Options{
+			Filters:           input.Filters,
+			Type:              models.CSQL,
+			IsPartitioned:     false,
+			TableName:         tblDecode,
+			IsTableNameSuffix: true,
+		}
+		return record, nil
+	default:
+		output.DBopts = models.Options{
+			Filters:       input.Filters,
+			Type:          models.BQ,
+			TableName:     tblShed,
+			IsPartitioned: true, PartitionField: defPartitionField,
+		}
+		// the Shed - shabby werehouse where any dummy requests die in.
+		output.EntityType = tblShed
+		return &models.FallbackRecord{
+			SurrogateID: surrogateID,
+			BaseRecord:  output,
+			Record:      models.FallbackData{Data: string(data)},
+		}, nil
+	}
 }

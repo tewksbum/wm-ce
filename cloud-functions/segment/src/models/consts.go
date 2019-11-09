@@ -1,7 +1,8 @@
 package models
 
-// DB Types
 const (
-	CSQL string = "csql"
-	BQ   string = "bq"
+	// CSQL CloudSQL instance - MySQL|PostgreSQL
+	CSQL = "csql"
+	// BQ Bigquery instance
+	BQ = "bq"
 )

@@ -5,42 +5,46 @@ import (
 	"time"
 )
 
-// LinkOperation link operation type
-type LinkOperation string
+// OperationLink link operation
+type OperationLink string
 
-// Operation operation type
+// Operation operation to perform to the values
 type Operation string
+
+// OperationType operation type
+type OperationType string
 
 // Operation types
 const (
-	OperationEquals           Operation     = "Equals"
-	OperationNotEquals        Operation     = "NotEquals"
-	OperationLessThan         Operation     = "LessThan"
-	OperationLessThanEqual    Operation     = "LessThanEqual"
-	OperationGreaterThan      Operation     = "GreaterThan"
-	OperationGreaterThanEqual Operation     = "GreaterThanEqual"
-	OperationIs               Operation     = "Is"
-	OperationIsNull           Operation     = "IsNull"
-	OperationIsNotNull        Operation     = "IsNotNull"
-	OperationIn               Operation     = "In"
-	OperationNotIn            Operation     = "NotIn"
-	OperationLike             Operation     = "Like"
-	OperationILike            Operation     = "ILike"
-	OperationNotLike          Operation     = "NotLike"
-	OperationBetween          Operation     = "Between"
-	OperationMatch            Operation     = "Match"
-	LinkOperationAnd          LinkOperation = "AND"
-	LinkOperationOr           LinkOperation = "OR"
+	OperationEquals           Operation     = "eq"
+	OperationNotEquals        Operation     = "notEq"
+	OperationLessThan         Operation     = "lt"
+	OperationLessThanEqual    Operation     = "ltq"
+	OperationGreaterThan      Operation     = "gt"
+	OperationGreaterThanEqual Operation     = "gte"
+	OperationIs               Operation     = "is"
+	OperationIsNull           Operation     = "isnull"
+	OperationIsNotNull        Operation     = "isnotnull"
+	OperationIn               Operation     = "in"
+	OperationNotIn            Operation     = "notin"
+	OperationLike             Operation     = "like"
+	OperationILike            Operation     = "ilike"
+	OperationNotLike          Operation     = "notlike"
+	OperationBetween          Operation     = "between"
+	OperationLinkAnd          OperationLink = "and"
+	OperationLinkOr           OperationLink = "or"
+	OperationTypeFilter       OperationType = "filter"
+	OperationTypeSortBy       OperationType = "sort"
 )
 
 // QueryFilter filter for queries
 type QueryFilter struct {
-	Field         string         `json:"field"`
-	Type          string         `json:"type"`
-	LinkOperation *LinkOperation `json:"linkOperation"`
-	Op            Operation      `json:"op"`
-	Value         *interface{}   `json:"value"`
-	Values        []interface{}  `json:"values"`
+	Field  string         `json:"field"`
+	OpType OperationType  `json:"opType"`
+	OpLink *OperationLink `json:"opLink"`
+	Op     Operation      `json:"op"`
+	Value  *interface{}   `json:"value"`
+	Values []interface{}  `json:"values"`
 }
 
 // Options db options for entities
@@ -48,6 +52,7 @@ type Options struct {
 	Type              string // csql or bq
 	IsPartitioned     bool
 	PartitionField    string
+	SchemaName        string
 	TableName         string
 	IsTableNameSuffix bool
 	Filters           []QueryFilter
@@ -64,6 +69,8 @@ type Record interface {
 	GetColumnList() []string
 	GetColumnBlackList() []string
 	GetMap() map[string]interface{}
+	SetCSQLSchemaName(string)
+	SetCSQLConnStr(string)
 }
 
 // DecodeRecord decode table record
@@ -101,17 +108,17 @@ func (r *BaseRecord) GetStrOwnerID() string {
 	return utils.I64toa(r.OwnerID)
 }
 
-// GetEntityType gets the Customer id
+// GetEntityType gets the entity type
 func (r *BaseRecord) GetEntityType() string {
 	return r.EntityType
 }
 
-// GetDBOptions gets the Customer id
+// GetDBOptions gets the db options
 func (r *BaseRecord) GetDBOptions() Options {
 	return r.DBopts
 }
 
-// GetTableName gets table name as a suffix
+// GetTableName gets table name
 func (r *BaseRecord) GetTableName() string {
 	return r.DBopts.TableName
 }
@@ -126,7 +133,7 @@ func (r *BaseRecord) GetMap() map[string]interface{} {
 	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
-// GetIDField gets the column list
+// GetIDField gets the id field of the table record
 func (r *BaseRecord) GetIDField() string {
 	return r.IDField
 }
@@ -136,9 +143,19 @@ func (r *BaseRecord) GetColumnList() []string {
 	return r.ColumnList
 }
 
-// GetColumnBlackList gets the column list
+// GetColumnBlackList gets the blacklisted column list
 func (r *BaseRecord) GetColumnBlackList() []string {
 	return r.ColumnBlackList
+}
+
+// SetCSQLSchemaName Sets the schema name for CSQL
+func (r *BaseRecord) SetCSQLSchemaName(schemaname string) {
+	r.DBopts.SchemaName = schemaname
+}
+
+// SetCSQLConnStr Sets the connection string for CSQL
+func (r *BaseRecord) SetCSQLConnStr(cnnstr string) {
+	r.DBopts.SchemaName = cnnstr
 }
 
 // Record Structs

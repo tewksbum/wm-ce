@@ -14,68 +14,114 @@ var (
 	namespace      string = os.Getenv("NAMESPACE")
 	csqlRegion     string = os.Getenv("CSQL_REGION")
 	csqlInstanceID string = os.Getenv("CSQL_INSTANCEID")
-	csqlCnn        string = os.Getenv("CSQLCNN")
-	csqlDSN        string = fmt.Sprintf(csqlCnn, projectID, csqlRegion, csqlInstanceID)
+	csqlUser       string = os.Getenv("CSQL_USER")
+	csqlPass       string = os.Getenv("CSQL_PASS")
+	csqlSchema     string = os.Getenv("CSQL_SCHEMA")
+	csqlCnn        string = os.Getenv("CSQL_CNN")
+	csqlDSN        string = fmt.Sprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
 	successMsg     string = "Record successfully processed"
 )
 
-// Upsert the api entrypoint main func
+// Upsert api entry point for upserting (create|update) a resource
 func Upsert(w http.ResponseWriter, r *http.Request) {
-	// TODO: remove these assignments before merging to dev
-	// projectID = "wemade-core"
-	// namespace = "wemade.streamer-api.dev"
-	// csqlRegion = "us-central1"
-	// csqlInstanceID = "wemade"
-	// // csqlCnn = "segment:RLWOrYOntAINtRatioNtURaI@unix(/cloudsql/%s:%s:%s)/segment?charset=utf8mb4,utf8&parseTime=true"
-	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment?charset=utf8mb4,utf8&parseTime=true"
+	// Local test variables
+	projectID = "wemade-core"
+	namespace = "wemade.streamer-api.dev"
+	csqlRegion = "us-central1"
+	csqlInstanceID = "wemade"
+	csqlSchema = "segment_dev"
+	csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
-	// Set returning headers
-	if err := setHeaders(w, r); err != nil {
+	// check if the method of the request is a POST
+	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
 	// Get and parse the object
-	o, err := wemade.DecodeAPIInput(projectID, namespace, r.Body)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
-	// logger.InfoFmt("output: %+v", o)
+	// Set the CSQL env vars to the record's db options
+	rec.SetCSQLConnStr(csqlCnn)
+	rec.SetCSQLSchemaName(csqlSchema)
 	// Write to db
-	err = db.Write(projectID, csqlDSN, o)
+	updated, err := db.Write(projectID, csqlDSN, rec)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
 	// If all goes well...
-	w.WriteHeader(http.StatusCreated)
+	if !updated {
+		w.WriteHeader(http.StatusCreated)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 	fmt.Fprint(w, apiOutput(true, successMsg))
 }
 
-// Read the api entrypoint main func
+// Read api entry point for getting a (list of) resource(s)
 func Read(w http.ResponseWriter, r *http.Request) {
-	// TODO: remove these assignments before merging to dev
+	// // Local test variables
 	// projectID = "wemade-core"
 	// namespace = "wemade.streamer-api.dev"
 	// csqlRegion = "us-central1"
 	// csqlInstanceID = "wemade"
-	// // csqlCnn = "segment:RLWOrYOntAINtRatioNtURaI@unix(/cloudsql/%s:%s:%s)/segment?charset=utf8mb4,utf8&parseTime=true"
-	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment?charset=utf8mb4,utf8&parseTime=true"
+	// csqlSchema = "segment_dev"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
-	// Set returning headers
-	if err := setHeaders(w, r); err != nil {
+	// check if the method of the request is a POST
+	if err := CheckAllowedMethod(w, r, "GET"); err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
+
 	// Get and parse the object
-	o, err := wemade.DecodeAPIQuery(projectID, namespace, r.Body)
+	rec, err := wemade.BuildFilterRecordFromInput(projectID, namespace, r.Body)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
-	// logger.InfoFmt("output: %+v", o)
+	// logger.InfoFmt("record(s): %+v", rec)
+
 	// Write to db
-	err = db.Read(projectID, csqlDSN, o)
+	err = db.Read(projectID, csqlDSN, rec)
+	if err != nil {
+		errToHTTP(w, r, err)
+		return
+	}
+	// If all goes well...
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprint(w, apiOutput(true, successMsg))
+}
+
+// Delete api entry point for deleting a resource
+func Delete(w http.ResponseWriter, r *http.Request) {
+	// // Local test variables
+	// projectID = "wemade-core"
+	// namespace = "wemade.streamer-api.dev"
+	// csqlRegion = "us-central1"
+	// csqlInstanceID = "wemade"
+	// csqlSchema = "segment_dev"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
+
+	// check if the method of the request is a POST
+	if err := CheckAllowedMethod(w, r, "DELETE"); err != nil {
+		errToHTTP(w, r, err)
+		return
+	}
+
+	// Get and parse the object
+	rec, err := wemade.BuildFilterRecordFromInput(projectID, namespace, r.Body)
+	if err != nil {
+		errToHTTP(w, r, err)
+		return
+	}
+	// logger.InfoFmt("record(s): %+v", rec)
+
+	// Write to db
+	err = db.Delete(projectID, csqlDSN, rec)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
