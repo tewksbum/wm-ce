@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"segment/models"
-	"segment/utils/logger"
-	"segment/wemade"
 	"testing"
 )
 
@@ -40,18 +38,17 @@ func TestUpsert(t *testing.T) {
 		// URL:     "https://wemade.io",
 		// Browser: "faek browser 1.0.8",
 		// "":       "",,
-		Signature: "f462a513-6af2-4252-81be-51d1e5bc8bb6",
-		PeopleID:  "91de1279-46c2-4fdc-9566-2b2506415fdb",
 	}
 	data.OwnerID = 5648073946562560
-	input, _ := json.Marshal(wemade.APIInput{
-		AccessKey:  "05c8da151b6281c92ad9c6971a7786ab",
-		EntityType: "decode",
-		Source:     "test",
-		Owner:      "OCM",
-		Data:       data,
+	input, _ := json.Marshal(map[string]interface{}{
+		"accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
+		"entityType": "decode",
+		"source":     "test",
+		"owner":      "OCM",
+		"signature":  "f462a513-6af2-4252-81be-51d1e5bc8bb6",
+		"peopleID":   "91de1279-46c2-4fdc-9566-2b2506415fdb",
 	})
-	logger.InfoFmt("input: %s", input)
+	// logger.InfoFmt("input: %s", input)
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
 	tests := []struct {

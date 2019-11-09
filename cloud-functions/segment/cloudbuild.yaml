@@ -26,6 +26,19 @@ steps:
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
+  - id: segment_delete_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions',
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}-delete",
+    "--entry-point", "Delete",
+    "--runtime","go111",
+    "--trigger-http",
+    "--project", "${PROJECT_ID}",
+    "--timeout", "30",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']
 substitutions:
     _FUNCTION_NAME: segment

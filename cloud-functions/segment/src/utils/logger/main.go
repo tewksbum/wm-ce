@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -28,8 +29,8 @@ func ErrFmt(fmtstr string, err error) error {
 }
 
 // Info logs info level messages
-func Info(msg string) {
-	Log("Info", "%s", msg)
+func Info(msg ...string) {
+	Log("Info", "%s", strings.Join(msg, " "))
 }
 
 // InfoFmt logs info level formatted messages
