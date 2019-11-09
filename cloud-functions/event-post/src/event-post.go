@@ -134,8 +134,10 @@ func PostProcessEvent(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 		input.Columns[index] = column
+	
 	}
-
+	mkOutput.ID = input.Signature.EventID
+	mkOutput.TYPE = input.Signature.EventType
 
 	// pub the record
 	var output Output
