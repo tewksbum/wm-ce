@@ -53,5 +53,6 @@ func CheckAllowedMethod(w http.ResponseWriter, r *http.Request, method string) e
 	}
 	// Set CORS headers for the request.
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
 	return nil
 }
