@@ -69,10 +69,17 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		return nil, err
 	}
 
+	owner := cust.Owner
+	if owner == "" {
+		owner = input.Owner
+		if owner == "" {
+			owner = cust.Name
+		}
+	}
 	br := models.BaseRecord{
 		EntityType:  input.EntityType,
 		OwnerID:     cust.Key.ID,
-		Owner:       input.Owner,
+		Owner:       owner,
 		Source:      input.Source,
 		Passthrough: utils.FlattenMap(input.Passthrough),
 		Attributes:  utils.FlattenMap(input.Attributes),
