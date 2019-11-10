@@ -52,6 +52,54 @@ type MLInput struct {
 	Instances [][]float64 `json:"instances"`
 }
 
+type CampaignERR struct {
+	TrustedID  int `json:"TrustedID"`
+	CampaignID int `json:"CampaignId"`
+	Name       int `json:"Name"`
+	Type       int `json:"Type"`
+	Channel    int `json:"Channel"`
+	StartDate  int `json:"StartDate"`
+	EndDate    int `json:"EndDate"`
+	Budget     int `json:"Budget"`
+}
+
+type ConsignmentERR struct {
+	ID       int `json:"ID"`
+	ShipDate int `json:"ShipDate"`
+}
+
+type EventERR struct {
+	ID  	   int `json:"ID"`
+	Type       int `json:"Type"`
+	CampaignID int `json:"CampaignId"`
+	Browser    int `json:"Browser"`
+	Channel    int `json:"Channel"`
+	OS  	   int `json:"StartDate"`
+	Domain     int `json:"Domain"`
+	URL        int `json:"URL"`
+	Location   int `json:"Location"`
+	Referrer   int `json:"Referrer"`
+	SearchTerm int `json:"SearchTerm"`
+}
+
+type OrderERR struct {
+	ID         int `json:"ID"`
+	Number     int `json:"Number"`
+	CustomerID int `json:"CustomerID"`
+	Date       int `json:"Date"`
+	Total      int `json:"Total"`
+	BillTo     int `json:"BillTo"`
+}
+
+type OrderDetailERR struct {
+	ID           int `json:"ID"`
+	OrderID      int `json:"OrderID"`
+	ConsigmentID int `json:"ConsigmentID"`
+	ProductID    int `json:"ProductID"`
+	ProductSKU   int `json:"ProductSKU"`
+	ProductUPC   int `json:"ProductUPC"`
+}
+
 type PeopleERR struct {
 	Address1        int `json:"Address1"`
 	Address2        int `json:"Address2"`
@@ -78,40 +126,6 @@ type PeopleERR struct {
 	Title           int `json:"Title"`
 	Role            int `json:"Role"`
 	Dorm            int `json:"Dorm"`
-}
-
-type CampaignERR struct {
-	TrustedID  int `json:"TrustedID"`
-	CampaignID int `json:"CampaignId"`
-	Name       int `json:"Name"`
-	Type       int `json:"Type"`
-	Channel    int `json:"Channel"`
-	StartDate  int `json:"StartDate"`
-	EndDate    int `json:"EndDate"`
-	Budget     int `json:"Budget"`
-}
-
-type OrderERR struct {
-	ID         int `json:"ID"`
-	Number     int `json:"Number"`
-	CustomerID int `json:"CustomerID"`
-	Date       int `json:"Date"`
-	Total      int `json:"Total"`
-	BillTo     int `json:"BillTo"`
-}
-
-type ConsignmentERR struct {
-	ID       int `json:"ID"`
-	ShipDate int `json:"ShipDate"`
-}
-
-type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
 }
 
 type ProductERR struct {
@@ -266,6 +280,7 @@ var listFirstNames map[string]bool
 var listLastNames map[string]bool
 var listError error
 var listCityStateZip []CityStateZip
+var listChannels map[string]bool
 
 var reEmail = regexp.MustCompile("(?i)^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
@@ -276,6 +291,7 @@ var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reNewline = regexp.MustCompile(`\r?\n`)
+var reBrowser = regexp.MustCompile(`(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)`)
 
 var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -297,6 +313,7 @@ func init() {
 
 	// preload the lists
 	var err error
+	listChannels = ["tablet", "mobile", "desktop"]
 	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
@@ -351,7 +368,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	columns := GetColumnsFromInput(input)
 
 	// append attributes
-	// append attributes
 	for k, v := range input.Attributes {
 		attribute := InputColumn{
 			Name:  k,
@@ -362,15 +378,17 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 	var flags OutputFlag
 	var columnFlags ERRFlags
+
 	// run all ERRs
 	for i, column := range columns {
+		column.CampaignERR = GetCampaignERR(column.Name)
+		column.ConsignmentERR = GetConsignmentERR(column.Name)
+		column.EventERR = GetEventERR(column.Name)
+		column.OrderERR = GetOrderERR(column.Name)
+		column.OrderDetailERR = GetOrderDetailERR(column.Name)
 		column.PeopleERR = GetPeopleERR(column.Name)
 		column.ProductERR = GetProductERR(column.Name)
-		column.CampaignERR = GetCampaignERR(column.Name)
-		column.OrderERR = GetOrderERR(column.Name)
-		column.ConsignmentERR = GetConsignmentERR(column.Name)
-		column.OrderDetailERR = GetOrderDetailERR(column.Name)
-
+		
 		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 
 		if column.PeopleERR.FirstName == 1 {
@@ -403,14 +421,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	//log.Printf("column flags %v", columnFlags)
 
 	// update the flags
+	flags.Event = true // every record = event
 	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
 		flags.People = true
 	}
 	if columnFlags.ProductID {
 		flags.Product = true
-	}
-	if columnFlags.EventID {
-		flags.Event = true
 	}
 	if columnFlags.CampaignID {
 		flags.Campaign = true
@@ -478,15 +494,23 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		log.Printf("ML result is %v", string(r.Data))
 	}
 
-	// run VER
-	if flags.People {
-		for i, column := range columns {
-			column.PeopleVER = GetPeopleVER(&column)
+	// if flags.People {
+	// 	for i, column := range columns {
+	// 		column.PeopleVER = GetPeopleVER(&column)
+	// 		columns[i] = column
+	// 	}
+	// 	log.Printf("columns %v", columns)
+	// }
 
-			columns[i] = column
+	// run VER
+	for i, column := range columns {
+		column.EventVER = GetEventVER(&column)
+		if flags.People {
+			column.PeopleVER = GetPeopleVER(&column)			
 		}
-		log.Printf("columns %v", columns)
+		columns[i] = column
 	}
+	log.Printf("columns %v", columns)
 
 	// pub
 	var output Output
@@ -701,24 +725,6 @@ func GetCampaignERR(column string) CampaignERR {
 	return err
 }
 
-func GetOrderERR(column string) OrderERR {
-	var err OrderERR
-	key := strings.ToLower(column)
-	switch key {
-	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
-		err.ID = 1
-	case "order number", "ordernumber", "full order number", "full ordernumber",
-		"fullorder number", "fullordernumber", "ecometryordernumber":
-		err.Number = 1
-	case "order date", "orderdate", "invoice date", "invoicedate",
-		"placed date", "placeddate", "created at", "createdat":
-		err.Date = 1
-	case "order total", "ordertotal", "total":
-		err.Total = 1
-	}
-	return err
-}
-
 func GetConsignmentERR(column string) ConsignmentERR {
 	var err ConsignmentERR
 	key := strings.ToLower(column)
@@ -734,6 +740,54 @@ func GetConsignmentERR(column string) ConsignmentERR {
 		err.ID = 1
 	}
 
+	return err
+}
+
+func GetEventERR(column string) EventERR {
+	var err EventERR
+	key := strings.ToLower(column)
+	switch key {
+		case "event id", "eventid", "event.id":
+			err.EventID = 1
+		case "event type", "eventtype", "event.type":
+			err.Type = 1	
+		case "campaign id", "campaignid", "campaign.id":
+			err.CampaignID = 1
+		case "browser":
+			err.Browser = 1
+		case "channel":
+			err.Channel = 1
+		case "os":
+			err.OS = 1
+		case "domain":
+			err.Domain = 1
+		case "url":
+			err.URL = 1
+		case "geo", "lat", "long":
+			err.location = 1
+		case "referrer":
+			err.Referrer = 1
+		case "searchterm":
+			err.SearchTerm = 1
+	}
+	return err
+}
+
+func GetOrderERR(column string) OrderERR {
+	var err OrderERR
+	key := strings.ToLower(column)
+	switch key {
+	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
+		err.ID = 1
+	case "order number", "ordernumber", "full order number", "full ordernumber",
+		"fullorder number", "fullordernumber", "ecometryordernumber":
+		err.Number = 1
+	case "order date", "orderdate", "invoice date", "invoicedate",
+		"placed date", "placeddate", "created at", "createdat":
+		err.Date = 1
+	case "order total", "ordertotal", "total":
+		err.Total = 1
+	}
 	return err
 }
 
@@ -882,6 +936,19 @@ func GetPeopleVER(column *InputColumn) PeopleVER {
 		IS_COUNTRY:   ContainsBool(listCountries, val),
 		IS_EMAIL:     reEmail.MatchString(val),
 		IS_PHONE:     rePhone.MatchString(val) && len(val) >= 10,
+	}
+	columnJ, _ := json.Marshal(result)
+	log.Printf("current VER %v", string(columnJ))
+	return result
+}
+
+func GetEventVER(column *InputColumn) EventVER {
+	var val = strings.TrimSpace(column.Value)
+	log.Printf("features values is %v", val)
+	val = RemoveDiacritics(val)
+	result := EventVER{
+		IS_BROWSER:   reBrowser.MatchString(val),
+		IS_CHANNEL:   ContainsBool(listChannels, val)
 	}
 	columnJ, _ := json.Marshal(result)
 	log.Printf("current VER %v", string(columnJ))
