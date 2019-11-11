@@ -54,26 +54,26 @@ type MatchKeyField struct {
 }
 
 type EventOutput struct {
-	ID MatchKeyField `json:"id"`
-	TYPE MatchKeyField `json:"type"`
+	ID         MatchKeyField `json:"id"`
+	TYPE       MatchKeyField `json:"type"`
 	CAMPAIGNID MatchKeyField `json:"campaignid"`
-	BROWSER MatchKeyField `json:"browser"`
-	CHANNEL MatchKeyField `json:"channel"`
-	OS MatchKeyField `json:"os"`
-	DOMAIN MatchKeyField `json:"domain"`
-	URL MatchKeyField `json:"url"`
-	LOCATION MatchKeyField `json:"location"`
-	REFERRER MatchKeyField `json:"referrer"`
+	BROWSER    MatchKeyField `json:"browser"`
+	CHANNEL    MatchKeyField `json:"channel"`
+	OS         MatchKeyField `json:"os"`
+	DOMAIN     MatchKeyField `json:"domain"`
+	URL        MatchKeyField `json:"url"`
+	LOCATION   MatchKeyField `json:"location"`
+	REFERRER   MatchKeyField `json:"referrer"`
 	SEARCHTERM MatchKeyField `json:"searchterm"`
 }
 
 type EventERR struct {
-	ID  	   int `json:"ID"`
+	ID         int `json:"ID"`
 	Type       int `json:"Type"`
 	CampaignID int `json:"CampaignId"`
 	Browser    int `json:"Browser"`
 	Channel    int `json:"Channel"`
-	OS  	   int `json:"StartDate"`
+	OS         int `json:"StartDate"`
 	Domain     int `json:"Domain"`
 	URL        int `json:"URL"`
 	Location   int `json:"Location"`
@@ -134,10 +134,16 @@ func PostProcessEvent(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 		input.Columns[index] = column
-	
+
 	}
-	mkOutput.ID = input.Signature.EventID
-	mkOutput.TYPE = input.Signature.EventType
+	mkOutput.ID = MatchKeyField{
+		Value:  input.Signature.EventID,
+		Source: "Signature",
+	}
+	mkOutput.TYPE = MatchKeyField{
+		Value:  input.Signature.EventType,
+		Source: "Signature",
+	}
 
 	// pub the record
 	var output Output
