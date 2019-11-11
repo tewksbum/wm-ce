@@ -5,46 +5,21 @@ import (
 	"time"
 )
 
-// OperationLink link operation
-type OperationLink string
-
-// Operation operation to perform to the values
-type Operation string
-
-// OperationType operation type
-type OperationType string
-
-// Operation types
-const (
-	OperationEquals           Operation     = "eq"
-	OperationNotEquals        Operation     = "notEq"
-	OperationLessThan         Operation     = "lt"
-	OperationLessThanEqual    Operation     = "ltq"
-	OperationGreaterThan      Operation     = "gt"
-	OperationGreaterThanEqual Operation     = "gte"
-	OperationIs               Operation     = "is"
-	OperationIsNull           Operation     = "isnull"
-	OperationIsNotNull        Operation     = "isnotnull"
-	OperationIn               Operation     = "in"
-	OperationNotIn            Operation     = "notin"
-	OperationLike             Operation     = "like"
-	OperationILike            Operation     = "ilike"
-	OperationNotLike          Operation     = "notlike"
-	OperationBetween          Operation     = "between"
-	OperationLinkAnd          OperationLink = "and"
-	OperationLinkOr           OperationLink = "or"
-	OperationTypeFilter       OperationType = "filter"
-	OperationTypeSortBy       OperationType = "sort"
-)
-
 // QueryFilter filter for queries
 type QueryFilter struct {
-	Field  string         `json:"field"`
-	OpType OperationType  `json:"opType"`
-	OpLink *OperationLink `json:"opLink"`
-	Op     Operation      `json:"op"`
-	Value  *interface{}   `json:"value"`
-	Values []interface{}  `json:"values"`
+	Field  string        `json:"field"`
+	OpType string        `json:"opType"` // filter
+	OpLink *string       `json:"opLink"`
+	Op     string        `json:"op"`
+	Value  *interface{}  `json:"value"`
+	Values []interface{} `json:"values"`
+}
+
+// ParsedQueryFilter filter parsed to build queries
+type ParsedQueryFilter struct {
+	ParsedCondition string        `json:"parsedCondition"`
+	ParamNames      []string      `json:"paramNames"`
+	Values          []interface{} `json:"values"`
 }
 
 // Options db options for entities

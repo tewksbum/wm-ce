@@ -28,6 +28,11 @@ func ErrFmt(fmtstr string, err error) error {
 	return errors.New(Log("Error", "%s", fmt.Sprintf(fmtstr, err.Error())))
 }
 
+// ErrFmtStr logs error level messages, returns the error so it can be chained
+func ErrFmtStr(fmtstr string, args ...interface{}) error {
+	return errors.New(Log("Error", "%s", fmt.Sprintf(fmtstr, args...)))
+}
+
 // Info logs info level messages
 func Info(msg ...string) {
 	Log("Info", "%s", strings.Join(msg, " "))

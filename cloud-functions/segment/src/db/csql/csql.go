@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"segment/models"
 	"segment/utils/logger"
+	"segment/wemade"
 	"strings"
 
 	// Import the MySQL SQL driver.
@@ -96,17 +97,17 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 }
 
 // Read the interface from CSQL
-func Read(dsn string, q []models.QueryFilter) (err error) {
-	for _, filter := range q {
+func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
+	for _, filter := range r.GetDBOptions().Filters {
 		logger.InfoFmt("filter: %#v", filter)
 	}
-	return err
+	return or, err
 }
 
 // Delete the interface from CSQL
-func Delete(dsn string, q []models.QueryFilter) (err error) {
-	for _, filter := range q {
+func Delete(dsn string, r models.Record) error {
+	for _, filter := range r.GetDBOptions().Filters {
 		logger.InfoFmt("filter: %#v", filter)
 	}
-	return err
+	return nil
 }

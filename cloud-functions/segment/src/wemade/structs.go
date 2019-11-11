@@ -31,8 +31,15 @@ type APIInput struct {
 
 // APIOutput basic json to return API responses
 type APIOutput struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool          `json:"success"`
+	Message string        `json:"message"`
+	Records OutputRecords `json:"records"`
+}
+
+// OutputRecords the struct that will hold the records
+type OutputRecords struct {
+	List  []interface{} `json:"list"`
+	Count int           `json:"count"`
 }
 
 // DatastoreCustomer contains wemade Customer fields
