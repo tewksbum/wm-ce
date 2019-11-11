@@ -69,12 +69,12 @@ type ConsignmentERR struct {
 }
 
 type EventERR struct {
-	ID  	   int `json:"ID"`
+	ID         int `json:"ID"`
 	Type       int `json:"Type"`
 	CampaignID int `json:"CampaignId"`
 	Browser    int `json:"Browser"`
 	Channel    int `json:"Channel"`
-	OS  	   int `json:"StartDate"`
+	OS         int `json:"StartDate"`
 	Domain     int `json:"Domain"`
 	URL        int `json:"URL"`
 	Location   int `json:"Location"`
@@ -194,6 +194,11 @@ type PeopleVER struct {
 	IS_PHONE     bool  `json:"isPHONE"`
 }
 
+type EventVER struct {
+	IS_BROWSER bool `json:"isBROWSER"`
+	IS_CHANNEL bool `json:"isCHANNEL"`
+}
+
 type InputColumn struct {
 	NER            NER            `json:"NER"`
 	PeopleERR      PeopleERR      `json:"PeopleERR"`
@@ -203,6 +208,8 @@ type InputColumn struct {
 	ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
 	OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
 	PeopleVER      PeopleVER      `json:"VER"`
+	EventERR       EventERR       `json:"EventERR"`
+	EventVER       EventVER       `json:"EventVER"`
 	Name           string         `json:"Name"`
 	Value          string         `json:"Value"`
 	MatchKey       string         `json:"MK"`
@@ -313,7 +320,8 @@ func init() {
 
 	// preload the lists
 	var err error
-	listChannels = ["tablet", "mobile", "desktop"]
+
+	listChannels = map[string]bool{"tablet": true, "mobile": true, "desktop": true}
 	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
 		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
@@ -388,7 +396,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.OrderDetailERR = GetOrderDetailERR(column.Name)
 		column.PeopleERR = GetPeopleERR(column.Name)
 		column.ProductERR = GetProductERR(column.Name)
-		
+
 		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 
 		if column.PeopleERR.FirstName == 1 {
@@ -506,7 +514,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	for i, column := range columns {
 		column.EventVER = GetEventVER(&column)
 		if flags.People {
-			column.PeopleVER = GetPeopleVER(&column)			
+			column.PeopleVER = GetPeopleVER(&column)
 		}
 		columns[i] = column
 	}
@@ -747,28 +755,28 @@ func GetEventERR(column string) EventERR {
 	var err EventERR
 	key := strings.ToLower(column)
 	switch key {
-		case "event id", "eventid", "event.id":
-			err.EventID = 1
-		case "event type", "eventtype", "event.type":
-			err.Type = 1	
-		case "campaign id", "campaignid", "campaign.id":
-			err.CampaignID = 1
-		case "browser":
-			err.Browser = 1
-		case "channel":
-			err.Channel = 1
-		case "os":
-			err.OS = 1
-		case "domain":
-			err.Domain = 1
-		case "url":
-			err.URL = 1
-		case "geo", "lat", "long":
-			err.location = 1
-		case "referrer":
-			err.Referrer = 1
-		case "searchterm":
-			err.SearchTerm = 1
+	case "event id", "eventid", "event.id":
+		err.ID = 1
+	case "event type", "eventtype", "event.type":
+		err.Type = 1
+	case "campaign id", "campaignid", "campaign.id":
+		err.CampaignID = 1
+	case "browser":
+		err.Browser = 1
+	case "channel":
+		err.Channel = 1
+	case "os":
+		err.OS = 1
+	case "domain":
+		err.Domain = 1
+	case "url":
+		err.URL = 1
+	case "geo", "lat", "long":
+		err.Location = 1
+	case "referrer":
+		err.Referrer = 1
+	case "searchterm":
+		err.SearchTerm = 1
 	}
 	return err
 }
@@ -947,8 +955,8 @@ func GetEventVER(column *InputColumn) EventVER {
 	log.Printf("features values is %v", val)
 	val = RemoveDiacritics(val)
 	result := EventVER{
-		IS_BROWSER:   reBrowser.MatchString(val),
-		IS_CHANNEL:   ContainsBool(listChannels, val)
+		IS_BROWSER: reBrowser.MatchString(val),
+		IS_CHANNEL: ContainsBool(listChannels, val),
 	}
 	columnJ, _ := json.Marshal(result)
 	log.Printf("current VER %v", string(columnJ))
