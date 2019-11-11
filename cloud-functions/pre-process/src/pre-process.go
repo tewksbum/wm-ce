@@ -23,6 +23,8 @@ import (
 	"google.golang.org/api/ml/v1"
 
 	"github.com/gomodule/redigo/redis"
+
+	"github.com/xojoc/useragent"
 )
 
 type PubSubMessage struct {
@@ -298,7 +300,9 @@ var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reNewline = regexp.MustCompile(`\r?\n`)
-var reBrowser = regexp.MustCompile(`(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)`)
+
+// MRT's version doesnt compile, substituting with a package
+// var reBrowser = regexp.MustCompile(`(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)`)
 
 var reCleanupDigitsOnly = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -954,8 +958,13 @@ func GetEventVER(column *InputColumn) EventVER {
 	var val = strings.TrimSpace(column.Value)
 	log.Printf("features values is %v", val)
 	val = RemoveDiacritics(val)
+	browser := useragent.Parse(val)
+	isBrowser := true
+	if browser == nil {
+		isBrowser = false
+	}
 	result := EventVER{
-		IS_BROWSER: reBrowser.MatchString(val),
+		IS_BROWSER: isBrowser,
 		IS_CHANNEL: ContainsBool(listChannels, val),
 	}
 	columnJ, _ := json.Marshal(result)
