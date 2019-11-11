@@ -24,11 +24,7 @@ type Customer struct {
 	Owner       string
 	Key         *datastore.Key `datastore:"__key__"`
 	CreatedBy   *datastore.Key
-	Permissions []Permission
-}
-
-type Permission struct {
-	Value string `datastore:"stringValue"`
+	Permissions []string
 }
 
 type Event struct {
