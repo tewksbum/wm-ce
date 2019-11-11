@@ -246,6 +246,10 @@ func PostProcessProduct(ctx context.Context, m PubSubMessage) error {
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "product",
+			"source": "post",
+		},
 	})
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
@@ -257,6 +261,10 @@ func PostProcessProduct(ctx context.Context, m PubSubMessage) error {
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "product",
+			"source": "post",
+		},
 	})
 
 	return nil
