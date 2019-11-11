@@ -18,11 +18,17 @@ import (
 
 // Customer contains Customer fields
 type Customer struct {
-	Name      string
-	AccessKey string
-	Enabled   bool
-	Owner     string
-	Key       *datastore.Key `datastore:"__key__"`
+	Name        string
+	AccessKey   string
+	Enabled     bool
+	Owner       string
+	Key         *datastore.Key `datastore:"__key__"`
+	CreatedBy   *datastore.Key
+	Permissions []Permission
+}
+
+type Permission struct {
+	Value string `datastore:"stringValue"`
 }
 
 type Event struct {
