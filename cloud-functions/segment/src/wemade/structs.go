@@ -33,7 +33,7 @@ type APIInput struct {
 type APIOutput struct {
 	Success bool           `json:"success"`
 	Message string         `json:"message"`
-	Records *OutputRecords `json:"records;omitempty"`
+	Records *OutputRecords `json:"records,omitempty"`
 }
 
 // OutputRecords the struct that will hold the records
