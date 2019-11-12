@@ -52,7 +52,18 @@ type MatchKeyField struct {
 }
 
 type EventOutput struct {
-	ID MatchKeyField `json:"EventId"`
+	ID         MatchKeyField `json:"EventId"`
+	Type       MatchKeyField `json:"Type"`
+	CampaignID MatchKeyField `json:"CampaignId"`
+	Browser    MatchKeyField `json:"Browser"`
+	Channel    MatchKeyField `json:"Channel"`
+	OS         MatchKeyField `json:"StartDate"`
+	Domain     MatchKeyField `json:"Domain"`
+	URL        MatchKeyField `json:"URL"`
+	Location   MatchKeyField `json:"Location"`
+	Referrer   MatchKeyField `json:"Referrer"`
+	SearchTerm MatchKeyField `json:"SearchTerm"`
+
 }
 
 type Signature360 struct {
