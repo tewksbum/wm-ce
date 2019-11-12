@@ -1,0 +1,30 @@
+{
+  "id": "ae8fbaa1-cef5-4567-839a-8e3afa62bd3a",
+  "signature": {
+    "ownerId": 2,
+    "source": "Testing",
+    "eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf",
+    "eventType": "UPLOAD"
+  },
+  "signatures": [
+    {
+      "ownerId": 2,
+      "source": "Testing",
+      "eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf",
+      "eventType": "UPLOAD",
+      "recordId": "ca82e9c7-9975-4a23-a52e-de9c466e3f77"
+    }
+  ],
+  "createdAt": "2019-11-11T20:43:07.697112481Z",
+  "timestamp": "2019-11-11T20:43:07.697111353Z",
+  "fibers": ["ca82e9c7-9975-4a23-a52e-de9c466e3f77"],
+  "passthroughs": null,
+  "matchKeys": [
+    {
+      "key": "ID",
+      "type": "",
+      "value": "",
+      "values": null
+    }
+  ]
+}

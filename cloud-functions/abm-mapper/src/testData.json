@@ -1,0 +1,24 @@
+{
+  "signature": {
+    "ownerId": 5648073946562560,
+    "source": "fakeSource",
+    "eventId": "123456",
+    "eventType": "people",
+    "recordId": "123456"
+  },
+  "matchKeys": {
+    "fname": {
+      "source": "firstname",
+      "value": "Diego"
+    },
+    "lname": {
+      "source": "lastname",
+      "value": "Diaz"
+    },
+    "email": {
+      "source": "email",
+      "value": "me@me.com",
+      "type": "personal"
+    }
+  }
+}

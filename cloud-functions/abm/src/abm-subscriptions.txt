@@ -1,0 +1,7 @@
+gcloud pubsub subscriptions create abm-postcampaign-dev --topic wm-postcampaign-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postevent-dev --topic wm-postevent-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postproduct-dev --topic wm-postproduct-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postorder-dev --topic wm-postorder-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postconsignment-dev --topic wm-postconsignment-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postorderdetail-dev --topic wm-postorderdetail-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
+gcloud pubsub subscriptions create abm-postpeople-dev --topic wm-postpeople-dev --push-endpoint="https://us-central1-wemade-core.cloudfunctions.net/abm-http-mapper-dev/"
