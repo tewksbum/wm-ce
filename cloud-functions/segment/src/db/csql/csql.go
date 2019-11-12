@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"segment/models"
 	"segment/utils/logger"
+	"segment/wemade"
 	"strings"
 
 	// Import the MySQL SQL driver.
@@ -96,17 +97,67 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 }
 
 // Read the interface from CSQL
-func Read(dsn string, q []models.QueryFilter) (err error) {
-	for _, filter := range q {
-		logger.InfoFmt("filter: %#v", filter)
+func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
+	dbOpts := r.GetDBOptions()
+	querystr := "" //"SELECT record.* from `" + projectID + "." + datasetID + "`." + tableID
+	if len(dbOpts.Filters) > 0 {
+		querystr += " WHERE "
+		pfs, err := models.ParseFilters(dbOpts.Filters, true, "", "record")
+		if err != nil {
+			return or, logger.ErrFmt("[csql.Read.ParsingFilters]: %#v", err)
+		}
+		for _, pf := range pfs {
+			querystr += pf.ParsedCondition
+			for i := 0; i < len(pf.ParamNames); i++ {
+				v := pf.Values[i] // converInterfaceBQ(pf.Values[i])
+				switch t := v.(type) {
+				case []interface{}:
+					tmp := []string{}
+					for _, vv := range v.([]interface{}) {
+						tmp = append(tmp, fmt.Sprint(vv))
+					}
+					v = strings.Join(tmp, ",")
+					logger.InfoFmt("param: %q - type: %T", v, t)
+				default:
+					logger.InfoFmt("param: %q - type: %T", v, t)
+				}
+				// params = append(params, bigquery.QueryParameter{
+				// 	// Converting pfValues[i] which is interface{} to .(*interface{})
+				// 	// then assign Value the *value instead of the pointer.
+				// 	Name: pf.ParamNames[i], Value: v,
+				// })
+			}
+		}
+		querystr += models.ParseOrderBy(dbOpts.Filters)
 	}
-	return err
+	logger.InfoFmt("Query: %s", querystr)
+	// ctx := context.Background()
+	// bqClient, err := bigquery.NewClient(ctx, projectID)
+	// if err != nil {
+	// 	return or, logger.Err(err)
+	// }
+	// q := bqClient.Query(querystr)
+	// q.Parameters = params
+	// ri, err := q.Read(ctx)
+	// if err != nil {
+	// 	return or, logger.ErrFmt("[bq.Read.Query.Read]: %#v", err)
+	// }
+	// totalrows := int(ri.TotalRows)
+	// logger.InfoFmt("Total records: %d", totalrows)
+	// rec := models.GetRecordType(obj.GetEntityType())
+	// logger.InfoFmt("rec: %#v", rec)
+	// or.Count = totalrows
+	// for i := 1; i <= totalrows; i++ {
+	// 	ri.Next(rec)
+	// 	or.List = append(or.List, utils.StructToMap(rec, nil))
+	// }
+	return or, err
 }
 
 // Delete the interface from CSQL
-func Delete(dsn string, q []models.QueryFilter) (err error) {
-	for _, filter := range q {
+func Delete(dsn string, r models.Record) error {
+	for _, filter := range r.GetDBOptions().Filters {
 		logger.InfoFmt("filter: %#v", filter)
 	}
-	return err
+	return nil
 }

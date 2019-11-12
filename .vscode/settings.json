@@ -1,26 +1,26 @@
 {
-    "sqltools.connections": [
-        {
-            "connectionTimeout": 30,
-            "database": "segment",
-            "dialect": "MySQL",
-            "name": "wemade-core:segment",
-            "password": "RLWOrYOntAINtRatioNtURaI",
-            "port": 3306,
-            "server": "35.222.83.59",
-            "username": "segment"
-        },
-        {
-            "connectionTimeout": 30,
-            "database": "segment_dev",
-            "dialect": "MySQL",
-            "isActive": true,
-            "isConnected": true,
-            "name": "wemade-core:segment_dev",
-            "password": "RLWOrYOntAINtRatioNtURaI",
-            "port": 3306,
-            "server": "35.222.83.59",
-            "username": "segment"
-        }
-    ]
+  "sqltools.connections": [
+    {
+      "connectionTimeout": 30,
+      "database": "segment",
+      "dialect": "MySQL",
+      "name": "wemade-core:segment",
+      "password": "RLWOrYOntAINtRatioNtURaI",
+      "port": 3306,
+      "server": "35.222.83.59",
+      "username": "segment"
+    },
+    {
+      "connectionTimeout": 30,
+      "database": "segment_dev",
+      "dialect": "MySQL",
+      "isActive": true,
+      "isConnected": true,
+      "name": "wemade-core:segment_dev",
+      "password": "RLWOrYOntAINtRatioNtURaI",
+      "port": 3306,
+      "server": "35.222.83.59",
+      "username": "segment"
+    }
+  ]
 }

@@ -18,19 +18,19 @@ func errToHTTP(w http.ResponseWriter, r *http.Request, err error) error {
 		fmt.Fprint(w, apiOutput(false, wemade.ErrStatusNoContent))
 	case wemade.ErrAccountNotEnabled:
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -11", strErr)))
+		fmt.Fprint(w, apiOutput(false, "%s, -11", strErr))
 		return err
 	case wemade.ErrInvalidAccessKey:
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -10", strErr)))
+		fmt.Fprint(w, apiOutput(false, "%s, -10", strErr))
 		return err
 	default:
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -2", strErr)))
+		fmt.Fprint(w, apiOutput(false, "%s, -2", strErr))
 		return err
 	}
 	w.WriteHeader(http.StatusInternalServerError)
-	fmt.Fprint(w, apiOutput(false, fmt.Sprintf("%s, -3", err.Error())))
+	fmt.Fprint(w, apiOutput(false, "%s, -3", err.Error()))
 	return err
 }
 
@@ -38,6 +38,15 @@ func errToHTTP(w http.ResponseWriter, r *http.Request, err error) error {
 func apiOutput(success bool, msg string, args ...interface{}) string {
 	fmsg := fmt.Sprintf(msg, args...)
 	o, _ := json.Marshal(wemade.APIOutput{Success: success, Message: fmsg})
+	return string(o)
+}
+
+// ApiOutput builds a json with the response for the client
+func apiOutputWithRecords(success bool, msg string, records wemade.OutputRecords) string {
+	o, _ := json.Marshal(wemade.APIOutput{
+		Success: success, Message: msg,
+		Records: records,
+	})
 	return string(o)
 }
 
