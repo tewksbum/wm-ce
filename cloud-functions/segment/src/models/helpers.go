@@ -52,7 +52,7 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 		if i > 0 && f.OpLink == nil {
 			return pq, logger.ErrFmtStr("Need an link operator to concatenate more than one filter")
 		}
-		field := strings.ReplaceAll(f.Field, removeThisNesting+".", "") + utils.Itoa(i+1)
+		field := strings.Replace(f.Field, removeThisNesting+".", "", -1) + utils.Itoa(i+1)
 		op := ""
 		if useFieldName {
 			op = opToSQL(f.Op, prefix+field)
