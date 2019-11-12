@@ -698,21 +698,23 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "city") {
 		err.City = 1
-		err.Address1 = 0
 	}
 	if strings.Contains(key, "state") {
 		err.State = 1
-		err.Address1 = 0
 	}
 	if strings.Contains(key, "zip") {
 		err.ZipCode = 1
-		err.Address1 = 0
 	}
 	if strings.Contains(key, "phone") {
 		err.Phone = 1
 	}
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") {
 		err.Role = 1
+	}
+
+	// correct some assignments
+	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+		err.Address1 = 0
 	}
 
 	return err
