@@ -123,6 +123,15 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	if len(input.Fields) > 0 {
+		for k, v := range input.Fields {
+			input.Fields[k] = strings.TrimSpace(v)
+		}
+	} else {
+		// empty field list
+		return nil
+	}
+
 	// first construct the Immutable record
 	immutable := Immutable{
 		EventID:   input.Signature.EventID,
