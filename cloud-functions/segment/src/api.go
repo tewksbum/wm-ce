@@ -26,12 +26,12 @@ var (
 // Upsert api entry point for upserting (create|update) a resource
 func Upsert(w http.ResponseWriter, r *http.Request) {
 	// Local test variables
-	projectID = "wemade-core"
-	namespace = "wemade-dev"
-	csqlRegion = "us-central1"
-	csqlInstanceID = "wemade"
-	csqlSchema = "segment_dev"
-	csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
+	// projectID = "wemade-core"
+	// namespace = "wemade-dev"
+	// csqlRegion = "us-central1"
+	// csqlInstanceID = "wemade"
+	// csqlSchema = "segment_dev"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
@@ -65,12 +65,12 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 // Read api entry point for getting a (list of) resource(s)
 func Read(w http.ResponseWriter, r *http.Request) {
 	// // Local test variables
-	projectID = "wemade-core"
-	namespace = "wemade-dev"
-	csqlRegion = "us-central1"
-	csqlInstanceID = "wemade"
-	csqlSchema = "segment_dev"
-	csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
+	// projectID = "wemade-core"
+	// namespace = "wemade-dev"
+	// csqlRegion = "us-central1"
+	// csqlInstanceID = "wemade"
+	// csqlSchema = "segment_dev"
+	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "GET"); err != nil {
@@ -94,9 +94,9 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	foo := apiOutputWithRecords(true, successMsg, or)
+	foo := apiOutputWithRecords(true, successMsg, &or)
 	logger.InfoFmt("POO!: %#v", foo)
-	fmt.Fprint(w, apiOutputWithRecords(true, successMsg, or))
+	fmt.Fprint(w, apiOutputWithRecords(true, successMsg, &or))
 }
 
 // Delete api entry point for deleting a resource

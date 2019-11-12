@@ -37,12 +37,12 @@ func errToHTTP(w http.ResponseWriter, r *http.Request, err error) error {
 // ApiOutput builds a json with the response for the client
 func apiOutput(success bool, msg string, args ...interface{}) string {
 	fmsg := fmt.Sprintf(msg, args...)
-	o, _ := json.Marshal(wemade.APIOutput{Success: success, Message: fmsg})
+	o, _ := json.Marshal(wemade.APIOutput{Success: success, Message: fmsg, Records: nil})
 	return string(o)
 }
 
 // ApiOutput builds a json with the response for the client
-func apiOutputWithRecords(success bool, msg string, records wemade.OutputRecords) string {
+func apiOutputWithRecords(success bool, msg string, records *wemade.OutputRecords) string {
 	o, _ := json.Marshal(wemade.APIOutput{
 		Success: success, Message: msg,
 		Records: records,
