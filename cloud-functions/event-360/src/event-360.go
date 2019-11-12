@@ -52,7 +52,18 @@ type MatchKeyField struct {
 }
 
 type EventOutput struct {
-	ID MatchKeyField `json:"EventId"`
+	ID         MatchKeyField `json:"EventId"`
+	Type       MatchKeyField `json:"Type"`
+	CampaignID MatchKeyField `json:"CampaignId"`
+	Browser    MatchKeyField `json:"Browser"`
+	Channel    MatchKeyField `json:"Channel"`
+	OS         MatchKeyField `json:"StartDate"`
+	Domain     MatchKeyField `json:"Domain"`
+	URL        MatchKeyField `json:"URL"`
+	Location   MatchKeyField `json:"Location"`
+	Referrer   MatchKeyField `json:"Referrer"`
+	SearchTerm MatchKeyField `json:"SearchTerm"`
+
 }
 
 type Signature360 struct {
@@ -243,6 +254,10 @@ func Event360(ctx context.Context, m PubSubMessage) error {
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "event",
+			"source": "360",
+		},
 	})
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
@@ -254,6 +269,10 @@ func Event360(ctx context.Context, m PubSubMessage) error {
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "event",
+			"source": "360",
+		},
 	})
 
 	return nil

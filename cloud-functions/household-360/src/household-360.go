@@ -250,16 +250,17 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	// Collect all fiber IDs
 	var FiberCollection []string
 	for {
-		var fibers []string
+		var fibers []bigquery.Value
 		err = BQIterator.Next(&fibers)
 		if err == iterator.Done {
 			break
 		} else if err != nil {
-			log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+			log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
 		} else {
 			for _, f := range fibers {
-				if !Contains(FiberCollection, f) {
-					FiberCollection = append(FiberCollection, f)
+				fs := fmt.Sprintf("%s", f)
+				if !Contains(FiberCollection, fs) {
+					FiberCollection = append(FiberCollection, fs)
 				}
 			}
 		}
@@ -378,6 +379,10 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "household",
+			"source": "360",
+		},
 	})
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
@@ -389,6 +394,10 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "household",
+			"source": "360",
+		},
 	})
 
 	return nil

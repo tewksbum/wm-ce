@@ -250,6 +250,10 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "orderdetail",
+			"source": "360",
+		},
 	})
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
@@ -261,6 +265,10 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "orderdetail",
+			"source": "360",
+		},
 	})
 
 	return nil

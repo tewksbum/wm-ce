@@ -18,11 +18,13 @@ import (
 
 // Customer contains Customer fields
 type Customer struct {
-	Name      string
-	AccessKey string
-	Enabled   bool
-	Owner     string
-	Key       *datastore.Key `datastore:"__key__"`
+	Name        string
+	AccessKey   string
+	Enabled     bool
+	Owner       string
+	Key         *datastore.Key `datastore:"__key__"`
+	CreatedBy   *datastore.Key
+	Permissions []string
 }
 
 type Event struct {
@@ -58,7 +60,7 @@ var ProjectID = os.Getenv("PROJECTID")
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
 
-var PubSubTopic = os.Getenv("PSTOPIC")
+var PubSubTopic = os.Getenv("PSOUTPUT")
 
 // global vars
 var ctx context.Context
