@@ -188,7 +188,7 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			IsPartitioned: true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.
-		br.EntityType = models.TblShed
+		br.EntityType = input.EntityType
 		return &models.FallbackRecord{
 			SurrogateID: surrogateID,
 			BaseRecord:  br,
