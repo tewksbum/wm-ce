@@ -290,6 +290,9 @@ var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
+var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
+var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
+var reNewline = regexp.MustCompile(`\r?\n`)
 
 var listCityStateZip []CityStateZip
 
@@ -324,6 +327,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	for index, column := range input.Columns {
 		predictionValue := input.Prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
+
 		matchKey := MLLabels[predictionKey]
 		// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 		column.MatchKey = matchKey
@@ -405,6 +409,42 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mkOutput.PHONE.Source = column.Name
 				}
 			}
+		}
+	}
+
+	// parse address as needed
+	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value
+	cityInput := mkOutput.CITY.Value
+	if len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+		addressInputCleansed := reNewline.ReplaceAllString(addressInput, ", ")
+		log.Printf("cleansed record %v", addressInputCleansed)
+		match := reConcatenatedAddress.FindStringSubmatch(addressInputCleansed)
+		log.Printf("matches %v %v", len(match), match)
+		for i, m := range match {
+			log.Printf("matches %v %v", i, m)
+		}
+
+		if len(match) == 5 {
+			mkOutput.CITY.Value = strings.TrimSpace(match[2])
+			mkOutput.STATE.Value = strings.TrimSpace(match[3])
+			mkOutput.ZIP.Value = strings.TrimSpace(match[4])
+		}
+		var splits = strings.Split(addressInput, "\n")
+		if len(splits) > 1 {
+			mkOutput.AD1.Value = splits[0]
+		}
+	} else if len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+		cityInputClensed := reNewline.ReplaceAllString(cityInput, " ")
+		match := reConcatenatedCityStateZip.FindStringSubmatch(cityInputClensed)
+		log.Printf("matches %v %v", len(match), match)
+		for i, m := range match {
+			log.Printf("matches %v %v", i, m)
+		}
+
+		if len(match) == 4 {
+			mkOutput.CITY.Value = strings.TrimSpace(match[1])
+			mkOutput.STATE.Value = strings.TrimSpace(match[2])
+			mkOutput.ZIP.Value = strings.TrimSpace(match[3])
 		}
 	}
 
