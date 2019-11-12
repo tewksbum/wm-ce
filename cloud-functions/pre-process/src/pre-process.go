@@ -698,12 +698,15 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "city") {
 		err.City = 1
+		err.Address1 = 0
 	}
 	if strings.Contains(key, "state") {
 		err.State = 1
+		err.Address1 = 0
 	}
 	if strings.Contains(key, "zip") {
 		err.ZipCode = 1
+		err.Address1 = 0
 	}
 	if strings.Contains(key, "phone") {
 		err.Phone = 1
