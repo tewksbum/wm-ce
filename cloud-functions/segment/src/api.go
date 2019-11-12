@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"segment/utils/logger"
 
 	"segment/db"
 	"segment/wemade"
@@ -94,8 +93,8 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	foo := apiOutputWithRecords(true, successMsg, &or)
-	logger.InfoFmt("POO!: %#v", foo)
+	// foo := apiOutputWithRecords(true, successMsg, &or)
+	// logger.InfoFmt("POO!: %#v", foo)
 	fmt.Fprint(w, apiOutputWithRecords(true, successMsg, &or))
 }
 
