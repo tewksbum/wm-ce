@@ -434,6 +434,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	cityInput := mkOutput.CITY.Value
 	if len(mkOutput.AD1.Value) > 0 && len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
 		a := ParseAddress(addressInput)
+		log.Printf("address parser returned %v", a)
 		if len(a.City) > 0 {
 			mkOutput.CITY.Value = a.City
 			mkOutput.CITY.Source = "Address Parser"
@@ -451,6 +452,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 	} else if len(mkOutput.CITY.Value) > 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
 		a := ParseAddress("123 Main St, " + cityInput)
+		log.Printf("address parser returned %v", a)
 		if len(a.City) > 0 {
 			mkOutput.CITY.Value = a.City
 			mkOutput.CITY.Source = "Address Parser"
