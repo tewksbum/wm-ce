@@ -16,7 +16,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: household-360
-    _TRIGGER_TOPIC: people360
+    _TRIGGER_TOPIC: people-postpipe
     _ENTRY_POINT: HouseHold360
 options:
     substitution_option: 'ALLOW_LOOSE'
