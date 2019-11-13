@@ -19,6 +19,7 @@ var (
 	TypePeople           = "people"
 	TypeCampaign         = "campaigns"
 	TblDecode            = "decode"
+	TblnamePrefix        = "seg_"
 	TblEvent             = "events"
 	TblOrderHeader       = "orderheaders"
 	TblOrderDetail       = "orderdetails"

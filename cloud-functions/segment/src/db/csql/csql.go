@@ -43,12 +43,15 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		return updated, logger.Err(err)
 	}
 	defer tx.RollbackUnlessCommitted()
-	rdbOpts := r.GetDBOptions()
-	tblName := rdbOpts.TableName
-	if rdbOpts.IsTableNameSuffix {
-		tblName = r.GetStrOwnerID() + r.GetTableNameAsSuffix()
+	opts := r.GetDBOptions()
+	tblName := opts.TableName
+	if opts.HasTableNamePrefix {
+		tblName = r.GetTablenamePrefix() + tblName
 	}
-	_, err = tx.Exec(fmt.Sprintf(tblDecodeCreateStmt, rdbOpts.SchemaName, tblName))
+	if opts.HasTableNameSuffix {
+		tblName += r.GetTablenameAsSuffix()
+	}
+	_, err = tx.Exec(fmt.Sprintf(tblDecodeCreateStmt, opts.SchemaName, tblName))
 	if err != nil {
 		return updated, logger.Err(err)
 	}

@@ -13,14 +13,24 @@ import (
 )
 
 // Write writes the interface into BQ
-func Write(projectID string, datasetID string, tableID string,
-	isPartitioned bool, partitionField string, obj interface{}) (updated bool, err error) {
+func Write(projectID string, r models.Record) (updated bool, err error) {
+	opts := r.GetDBOptions()
+	datasetID := r.GetStrOwnerID()
+	tableID := r.GetTableName()
+	if opts.HasTableNamePrefix {
+		tableID = r.GetTablenamePrefix() + tableID
+	}
+	if opts.HasTableNameSuffix {
+		tableID += r.GetTablenameAsSuffix()
+	}
+
 	ctx := context.Background()
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
 		return updated, logger.Err(err)
 	}
-	recordSchema, err := bigquery.InferSchema(obj)
+	logger.Info("hey1 " + tableID)
+	recordSchema, err := bigquery.InferSchema(r)
 	if err != nil {
 		return updated, logger.Err(err)
 	}
@@ -30,9 +40,9 @@ func Write(projectID string, datasetID string, tableID string,
 	recordMetadata := &bigquery.TableMetadata{
 		Schema: recordSchema,
 	}
-	if isPartitioned {
+	if opts.IsPartitioned {
 		recordMetadata.TimePartitioning = &bigquery.TimePartitioning{
-			Field: partitionField,
+			Field: opts.PartitionField,
 		}
 	}
 	dset := bqClient.Dataset(datasetID)
@@ -49,7 +59,7 @@ func Write(projectID string, datasetID string, tableID string,
 		}
 	}
 	recordInserter := recordTableRef.Inserter()
-	if err := recordInserter.Put(ctx, obj); err != nil {
+	if err := recordInserter.Put(ctx, r); err != nil {
 		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %#v", err)
 	}
 	return updated, nil
@@ -67,13 +77,21 @@ func converInterfaceBQ(i interface{}) (o interface{}) {
 }
 
 // Read the interface from BQ
-func Read(projectID string, datasetID string, tableID string, obj models.Record) (or wemade.OutputRecords, err error) {
-	dbOpts := obj.GetDBOptions()
+func Read(projectID string, r models.Record) (or wemade.OutputRecords, err error) {
+	opts := r.GetDBOptions()
+	datasetID := r.GetStrOwnerID()
+	tableID := r.GetTableName()
+	if opts.HasTableNamePrefix {
+		tableID = r.GetTablenamePrefix() + tableID
+	}
+	if opts.HasTableNameSuffix {
+		tableID += r.GetTablenameAsSuffix()
+	}
 	params := []bigquery.QueryParameter{}
 	querystr := "SELECT record.* from `" + projectID + "." + datasetID + "`." + tableID
-	if len(dbOpts.Filters) > 0 {
+	if len(opts.Filters) > 0 {
 		querystr += " WHERE "
-		pfs, err := models.ParseFilters(dbOpts.Filters, true, "@", "record")
+		pfs, err := models.ParseFilters(opts.Filters, true, "@", "record")
 		if err != nil {
 			return or, logger.ErrFmt("[bq.Read.ParsingFilters]: %#v", err)
 		}
@@ -99,7 +117,7 @@ func Read(projectID string, datasetID string, tableID string, obj models.Record)
 				})
 			}
 		}
-		querystr += models.ParseOrderBy(dbOpts.Filters)
+		querystr += models.ParseOrderBy(opts.Filters)
 	}
 	logger.InfoFmt("Query: %s\n%#v", querystr, params)
 	ctx := context.Background()
@@ -115,7 +133,7 @@ func Read(projectID string, datasetID string, tableID string, obj models.Record)
 	}
 	totalrows := int(ri.TotalRows)
 	logger.InfoFmt("Total records: %d", totalrows)
-	rec := models.GetRecordType(obj.GetEntityType())
+	rec := models.GetRecordType(r.GetEntityType())
 	logger.InfoFmt("rec: %#v", rec)
 	or.Count = totalrows
 	for i := 1; i <= totalrows; i++ {
@@ -126,7 +144,7 @@ func Read(projectID string, datasetID string, tableID string, obj models.Record)
 }
 
 // Delete the interfae from BQ
-func Delete(projectID string, datasetID string, tableID string, r models.Record) error {
+func Delete(projectID string, r models.Record) error {
 	for _, filter := range r.GetDBOptions().Filters {
 		logger.InfoFmt("filter: %#v", filter)
 	}
