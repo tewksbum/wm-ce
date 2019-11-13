@@ -63,3 +63,8 @@ func FlattenMap(mstring map[string]string) string {
 func I64toa(n int64) string {
 	return strconv.FormatInt(n, 10)
 }
+
+// Itoa converts int64 to string
+func Itoa(n int) string {
+	return I64toa(int64(n))
+}

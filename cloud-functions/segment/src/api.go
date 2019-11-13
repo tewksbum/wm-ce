@@ -26,7 +26,7 @@ var (
 func Upsert(w http.ResponseWriter, r *http.Request) {
 	// Local test variables
 	// projectID = "wemade-core"
-	// namespace = "wemade.streamer-api.dev"
+	// namespace = "wemade-dev"
 	// csqlRegion = "us-central1"
 	// csqlInstanceID = "wemade"
 	// csqlSchema = "segment_dev"
@@ -65,7 +65,7 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 func Read(w http.ResponseWriter, r *http.Request) {
 	// // Local test variables
 	// projectID = "wemade-core"
-	// namespace = "wemade.streamer-api.dev"
+	// namespace = "wemade-dev"
 	// csqlRegion = "us-central1"
 	// csqlInstanceID = "wemade"
 	// csqlSchema = "segment_dev"
@@ -86,21 +86,23 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	// logger.InfoFmt("record(s): %+v", rec)
 
 	// Write to db
-	err = db.Read(projectID, csqlDSN, rec)
+	or, err := db.Read(projectID, csqlDSN, rec)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, apiOutput(true, successMsg))
+	// foo := apiOutputWithRecords(true, successMsg, &or)
+	// logger.InfoFmt("POO!: %#v", foo)
+	fmt.Fprint(w, apiOutputWithRecords(true, successMsg, &or))
 }
 
 // Delete api entry point for deleting a resource
 func Delete(w http.ResponseWriter, r *http.Request) {
 	// // Local test variables
 	// projectID = "wemade-core"
-	// namespace = "wemade.streamer-api.dev"
+	// namespace = "wemade-dev"
 	// csqlRegion = "us-central1"
 	// csqlInstanceID = "wemade"
 	// csqlSchema = "segment_dev"

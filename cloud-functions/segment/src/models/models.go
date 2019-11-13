@@ -5,66 +5,45 @@ import (
 	"time"
 )
 
-// OperationLink link operation
-type OperationLink string
-
-// Operation operation to perform to the values
-type Operation string
-
-// OperationType operation type
-type OperationType string
-
-// Operation types
-const (
-	OperationEquals           Operation     = "eq"
-	OperationNotEquals        Operation     = "notEq"
-	OperationLessThan         Operation     = "lt"
-	OperationLessThanEqual    Operation     = "ltq"
-	OperationGreaterThan      Operation     = "gt"
-	OperationGreaterThanEqual Operation     = "gte"
-	OperationIs               Operation     = "is"
-	OperationIsNull           Operation     = "isnull"
-	OperationIsNotNull        Operation     = "isnotnull"
-	OperationIn               Operation     = "in"
-	OperationNotIn            Operation     = "notin"
-	OperationLike             Operation     = "like"
-	OperationILike            Operation     = "ilike"
-	OperationNotLike          Operation     = "notlike"
-	OperationBetween          Operation     = "between"
-	OperationLinkAnd          OperationLink = "and"
-	OperationLinkOr           OperationLink = "or"
-	OperationTypeFilter       OperationType = "filter"
-	OperationTypeSortBy       OperationType = "sort"
-)
-
 // QueryFilter filter for queries
 type QueryFilter struct {
-	Field  string         `json:"field"`
-	OpType OperationType  `json:"opType"`
-	OpLink *OperationLink `json:"opLink"`
-	Op     Operation      `json:"op"`
-	Value  *interface{}   `json:"value"`
-	Values []interface{}  `json:"values"`
+	Field  string        `json:"field"`
+	OpType string        `json:"opType"` // filter
+	OpLink *string       `json:"opLink"`
+	Op     string        `json:"op"`
+	Value  *interface{}  `json:"value"`
+	Values []interface{} `json:"values"`
+}
+
+// ParsedQueryFilter filter parsed to build queries
+type ParsedQueryFilter struct {
+	ParsedCondition string        `json:"parsedCondition"`
+	ParamNames      []string      `json:"paramNames"`
+	Values          []interface{} `json:"values"`
 }
 
 // Options db options for entities
 type Options struct {
-	Type              string // csql or bq
-	IsPartitioned     bool
-	PartitionField    string
-	SchemaName        string
-	TableName         string
-	IsTableNameSuffix bool
-	Filters           []QueryFilter
+	Type               string // csql or bq
+	IsPartitioned      bool
+	PartitionField     string
+	SchemaName         string
+	TableName          string
+	TablenamePrefix    string
+	HasTableNamePrefix bool
+	HasTableNameSuffix bool
+	Filters            []QueryFilter
 }
 
 //Record interface
 type Record interface {
+	GetTablenamePrefix() string
 	GetTableName() string
-	GetTableNameAsSuffix() string
+	GetTablenameAsSuffix() string
 	GetStrOwnerID() string
 	GetEntityType() string
 	GetDBOptions() Options
+	GetDBType() string
 	GetIDField() string
 	GetColumnList() []string
 	GetColumnBlackList() []string
@@ -118,13 +97,23 @@ func (r *BaseRecord) GetDBOptions() Options {
 	return r.DBopts
 }
 
+// GetDBType gets the db Type
+func (r *BaseRecord) GetDBType() string {
+	return r.DBopts.Type
+}
+
 // GetTableName gets table name
 func (r *BaseRecord) GetTableName() string {
 	return r.DBopts.TableName
 }
 
-// GetTableNameAsSuffix gets table name as a suffix
-func (r *BaseRecord) GetTableNameAsSuffix() string {
+// GetTablenamePrefix gets table name as a suffix
+func (r *BaseRecord) GetTablenamePrefix() string {
+	return r.DBopts.TablenamePrefix
+}
+
+// GetTablenameAsSuffix gets table name as a suffix
+func (r *BaseRecord) GetTablenameAsSuffix() string {
 	return "_" + r.DBopts.TableName
 }
 
@@ -261,7 +250,7 @@ type OrderHeader struct {
 	Discount   string    `json:"discount" bigquery:"discount"`
 	Shipping   string    `json:"shipping" bigquery:"shipping"`
 	Tax        string    `json:"tax" bigquery:"tax"`
-	HashedSigs string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures string    `json:"signatures" bigquery:"signatures"`
 }
 
 // OrderConsignment data
@@ -270,7 +259,7 @@ type OrderConsignment struct {
 	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid"`
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
-	HashedSigs    string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // OrderDetail data
@@ -284,21 +273,21 @@ type OrderDetail struct {
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
 	UnitPrice     string    `json:"unitPrice" bigquery:"unitprice"`
-	HashedSigs    string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // People data
 type People struct {
-	PeopleID     string `json:"peopleId" bigquery:"peopleid"`
-	Salutation   string `json:"salutation" bigquery:"salutation"`
-	FirstName    string `json:"firstName" bigquery:"firstname"`
-	LastName     string `json:"lastName" bigquery:"lastname"`
-	Gender       string `json:"gender" bigquery:"gender"`
-	Age          string `json:"age" bigquery:"age"`
-	Organization string `json:"organization" bigquery:"organization"`
-	Title        string `json:"title" bigquery:"title"`
-	Role         string `json:"role" bigquery:"role"`
-	HashedSigs   string `json:"hashedSigs" bigquery:"hashedsigs"`
+	PeopleID     string   `json:"peopleId" bigquery:"peopleid"`
+	Salutation   string   `json:"salutation" bigquery:"salutation"`
+	FirstName    string   `json:"firstName" bigquery:"firstname"`
+	LastName     string   `json:"lastName" bigquery:"lastname"`
+	Gender       string   `json:"gender" bigquery:"gender"`
+	Age          string   `json:"age" bigquery:"age"`
+	Organization string   `json:"organization" bigquery:"organization"`
+	Title        string   `json:"title" bigquery:"title"`
+	Role         string   `json:"role" bigquery:"role"`
+	Signatures   []string `json:"signatures" bigquery:"signatures"`
 }
 
 // Household data
@@ -310,7 +299,7 @@ type Household struct {
 	State       string `json:"state" bigquery:"state"`
 	Zip         string `json:"zip" bigquery:"zip"`
 	Country     string `json:"country" bigquery:"country"`
-	HashedSigs  string `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures  string `json:"signatures" bigquery:"signatures"`
 }
 
 // FallbackData fallback data struct

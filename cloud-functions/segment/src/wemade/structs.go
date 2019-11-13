@@ -31,15 +31,24 @@ type APIInput struct {
 
 // APIOutput basic json to return API responses
 type APIOutput struct {
-	Success bool   `json:"success"`
-	Message string `json:"message"`
+	Success bool           `json:"success"`
+	Message string         `json:"message"`
+	Records *OutputRecords `json:"records,omitempty"`
+}
+
+// OutputRecords the struct that will hold the records
+type OutputRecords struct {
+	List  []interface{} `json:"list"`
+	Count int           `json:"count"`
 }
 
 // DatastoreCustomer contains wemade Customer fields
 type DatastoreCustomer struct {
-	Name      string
-	Owner     string
-	AccessKey string
-	Enabled   bool
-	Key       *datastore.Key `datastore:"__key__"`
+	Name        string
+	Owner       string
+	AccessKey   string
+	Permissions []string
+	CreatedBy   *datastore.Key
+	Enabled     bool
+	Key         *datastore.Key `datastore:"__key__"`
 }

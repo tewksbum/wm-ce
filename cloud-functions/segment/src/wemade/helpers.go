@@ -16,40 +16,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Table and type names
-var (
-	typeDecode           = "decode"
-	typeEvent            = "event"
-	typeOrderHeader      = "orderheader"
-	typeOrderDetail      = "orderdetail"
-	typeOrderConsignment = "orderconsignment"
-	typeHousehold        = "household"
-	typeProduct          = "product"
-	typePeople           = "people"
-	typeCampaign         = "campaigns"
-	tblDecode            = "decode"
-	tblEvent             = "events"
-	tblOrderHeader       = "orderheaders"
-	tblOrderDetail       = "orderdetails"
-	tblOrderConsignment  = "orderconsignments"
-	tblHousehold         = "households"
-	tblProduct           = "products"
-	tblPeople            = "people"
-	tblShed              = "shed"
-	tblCampaign          = "campaigns"
-	defPartitionField    = "timestamp"
-	dstblCustomers       = "Customer"
-	dsfilterCustomers    = "AccessKey = "
-)
-
-// "Decode" specific variables
-var (
-	decodeIDField    = "signature"
-	decodeColumnList = []string{"signature", "people_id"}
-	decodeBlackList  = []string{"passthrough", "attributes", "source",
-		"owner_id", "owner", "entity_type", "timestamp"}
-)
-
 // BuildRecordFromInput serialize a json into a Request struct, checks the API key and
 func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser) (models.Record, error) {
 	var input APIInput
@@ -63,6 +29,8 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 	if err != nil {
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
+
+	logger.InfoFmt("Input JSON: %s", string(data))
 
 	cust, err := validateCustomer(ctx, projectID, namespace, input.AccessKey)
 	if err != nil {
@@ -89,12 +57,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 	entityType := strings.ToLower(input.EntityType)
 
 	switch entityType {
-	case typeHousehold:
+	case models.TypeHousehold:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblHousehold,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblHousehold,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Household{}
 		json.Unmarshal(data, &record)
@@ -103,12 +73,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typeEvent:
+	case models.TypeEvent:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblEvent,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblEvent,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Event{}
 		json.Unmarshal(data, &record)
@@ -116,12 +88,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord: br,
 			Record:     record,
 		}, nil
-	case typeProduct:
+	case models.TypeProduct:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblProduct,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblProduct,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Product{}
 		json.Unmarshal(data, &record)
@@ -130,12 +104,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typePeople:
+	case models.TypePeople:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblPeople,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblPeople,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.People{}
 		json.Unmarshal(data, &record)
@@ -143,12 +119,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord: br,
 			Record:     record,
 		}, nil
-	case typeOrderHeader:
+	case models.TypeOrderHeader:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblOrderHeader,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderHeader,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderHeader{}
 		json.Unmarshal(data, &record)
@@ -157,12 +135,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typeOrderConsignment:
+	case models.TypeOrderConsignment:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblOrderConsignment,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderConsignment,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderConsignment{}
 		json.Unmarshal(data, &record)
@@ -171,12 +151,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typeOrderDetail:
+	case models.TypeOrderDetail:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblOrderDetail,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderDetail,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderDetail{}
 		json.Unmarshal(data, &record)
@@ -185,12 +167,14 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typeCampaign:
+	case models.TypeCampaign:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblCampaign,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblCampaign,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Campaign{}
 		json.Unmarshal(data, &record)
@@ -199,30 +183,34 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
-	case typeDecode: // FCD table
+	case models.TypeDecode: // FCD table
 		record := &models.DecodeRecord{}
 		json.Unmarshal(data, record)
 		record.BaseRecord = br
-		record.IDField = decodeIDField
-		record.ColumnList = decodeColumnList
-		record.ColumnBlackList = decodeBlackList
+		record.IDField = models.DecodeIDField
+		record.ColumnList = models.DecodeColumnList
+		record.ColumnBlackList = models.DecodeBlackList
 		record.DBopts = models.Options{
-			Type:              models.CSQL,
-			TableName:         tblDecode,
-			Filters:           input.Filters,
-			IsPartitioned:     false,
-			IsTableNameSuffix: true,
+			Type:               models.CSQL,
+			TableName:          models.TblDecode,
+			Filters:            input.Filters,
+			IsPartitioned:      false,
+			HasTableNameSuffix: true,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
 		}
 		return record, nil
 	default:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     tblShed,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: defPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblShed,
+			Filters:            input.Filters,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.
-		br.EntityType = tblShed
+		br.EntityType = input.EntityType
 		return &models.FallbackRecord{
 			SurrogateID: surrogateID,
 			BaseRecord:  br,
@@ -237,8 +225,8 @@ func validateCustomer(ctx context.Context, pID string, ns string, aKey string) (
 	if err != nil {
 		return c, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
-	query := datastore.QueryTableNamespace(dstblCustomers, ns).
-		Filter(dsfilterCustomers, aKey).Limit(1)
+	query := datastore.QueryTableNamespace(models.DsTblCustomers, ns).
+		Filter(models.DsFilterCustomers, aKey).Limit(1)
 
 	var entities []DatastoreCustomer
 

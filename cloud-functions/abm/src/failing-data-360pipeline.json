@@ -1,0 +1,39 @@
+{
+  "signature": {
+    "ownerId": 5648073946562560,
+    "source": "Test",
+    "eventId": "8df72318-941f-466a-92eb-811f3b2ba1b3",
+    "eventType": "UPLOAD",
+    "recordId": "3bfe7b57-d586-4ac9-a423-f2e56a5a4f4a"
+  },
+  "passthrough": { "A": "1", "B": "1/2/1029" },
+  "MatchKeys": {
+    "fname": { "value": "Emilia", "source": "Name First", "type": "" },
+    "lname": { "value": "Musial", "source": "Name Last", "type": "" },
+    "city": { "value": "Coden", "source": "City", "type": "" },
+    "state": { "value": "AL", "source": "State Province", "type": "" },
+    "zip": { "value": "36523-2903", "source": "Zip Postcode", "type": "" },
+    "country": { "value": "", "source": "", "type": "" },
+    "email": { "value": "", "source": "", "type": "" },
+    "phone": { "value": "", "source": "", "type": "" },
+    "ad1": {
+      "value": "13169 Dauphin Island Pkwy",
+      "source": "Street",
+      "type": ""
+    },
+    "ad2": { "value": "", "source": "", "type": "" },
+    "adType": { "value": "", "source": "", "type": "" },
+    "trustedId": { "value": "", "source": "", "type": "" },
+    "clientId": { "value": "", "source": "", "type": "" },
+    "salutation": { "value": "", "source": "", "type": "" },
+    "nickname": { "value": "", "source": "", "type": "" },
+    "gender": { "value": "", "source": "", "type": "" },
+    "age": { "value": "", "source": "", "type": "" },
+    "dob": { "value": "", "source": "", "type": "" },
+    "mailRoute": { "value": "", "source": "", "type": "" },
+    "organization": { "value": "", "source": "", "type": "" },
+    "title": { "value": "", "source": "", "type": "" },
+    "role": { "value": "", "source": "", "type": "" },
+    "status": { "value": "", "source": "", "type": "" }
+  }
+}
