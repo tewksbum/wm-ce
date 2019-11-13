@@ -24,22 +24,26 @@ type ParsedQueryFilter struct {
 
 // Options db options for entities
 type Options struct {
-	Type              string // csql or bq
-	IsPartitioned     bool
-	PartitionField    string
-	SchemaName        string
-	TableName         string
-	IsTableNameSuffix bool
-	Filters           []QueryFilter
+	Type               string // csql or bq
+	IsPartitioned      bool
+	PartitionField     string
+	SchemaName         string
+	TableName          string
+	TablenamePrefix    string
+	HasTableNamePrefix bool
+	HasTableNameSuffix bool
+	Filters            []QueryFilter
 }
 
 //Record interface
 type Record interface {
+	GetTablenamePrefix() string
 	GetTableName() string
-	GetTableNameAsSuffix() string
+	GetTablenameAsSuffix() string
 	GetStrOwnerID() string
 	GetEntityType() string
 	GetDBOptions() Options
+	GetDBType() string
 	GetIDField() string
 	GetColumnList() []string
 	GetColumnBlackList() []string
@@ -93,13 +97,23 @@ func (r *BaseRecord) GetDBOptions() Options {
 	return r.DBopts
 }
 
+// GetDBType gets the db Type
+func (r *BaseRecord) GetDBType() string {
+	return r.DBopts.Type
+}
+
 // GetTableName gets table name
 func (r *BaseRecord) GetTableName() string {
 	return r.DBopts.TableName
 }
 
-// GetTableNameAsSuffix gets table name as a suffix
-func (r *BaseRecord) GetTableNameAsSuffix() string {
+// GetTablenamePrefix gets table name as a suffix
+func (r *BaseRecord) GetTablenamePrefix() string {
+	return r.DBopts.TablenamePrefix
+}
+
+// GetTablenameAsSuffix gets table name as a suffix
+func (r *BaseRecord) GetTablenameAsSuffix() string {
 	return "_" + r.DBopts.TableName
 }
 

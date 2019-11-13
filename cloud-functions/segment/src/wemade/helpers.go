@@ -57,10 +57,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 	switch entityType {
 	case models.TypeHousehold:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblHousehold,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblHousehold,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Household{}
 		json.Unmarshal(data, &record)
@@ -71,10 +73,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeEvent:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblEvent,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblEvent,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Event{}
 		json.Unmarshal(data, &record)
@@ -84,10 +88,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeProduct:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblProduct,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblProduct,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Product{}
 		json.Unmarshal(data, &record)
@@ -98,10 +104,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypePeople:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblPeople,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblPeople,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.People{}
 		json.Unmarshal(data, &record)
@@ -111,10 +119,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblOrderHeader,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderHeader,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderHeader{}
 		json.Unmarshal(data, &record)
@@ -125,10 +135,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeOrderConsignment:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblOrderConsignment,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderConsignment,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderConsignment{}
 		json.Unmarshal(data, &record)
@@ -139,10 +151,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeOrderDetail:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblOrderDetail,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblOrderDetail,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderDetail{}
 		json.Unmarshal(data, &record)
@@ -153,10 +167,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		}, nil
 	case models.TypeCampaign:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblCampaign,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblCampaign,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			Filters:            input.Filters,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Campaign{}
 		json.Unmarshal(data, &record)
@@ -173,19 +189,23 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		record.ColumnList = models.DecodeColumnList
 		record.ColumnBlackList = models.DecodeBlackList
 		record.DBopts = models.Options{
-			Type:              models.CSQL,
-			TableName:         models.TblDecode,
-			Filters:           input.Filters,
-			IsPartitioned:     false,
-			IsTableNameSuffix: true,
+			Type:               models.CSQL,
+			TableName:          models.TblDecode,
+			Filters:            input.Filters,
+			IsPartitioned:      false,
+			HasTableNameSuffix: true,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
 		}
 		return record, nil
 	default:
 		br.DBopts = models.Options{
-			Type:          models.BQ,
-			TableName:     models.TblShed,
-			Filters:       input.Filters,
-			IsPartitioned: true, PartitionField: models.DefPartitionField,
+			Type:               models.BQ,
+			TableName:          models.TblShed,
+			Filters:            input.Filters,
+			HasTableNamePrefix: true,
+			TablenamePrefix:    models.TblnamePrefix,
+			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.
 		br.EntityType = input.EntityType

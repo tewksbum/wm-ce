@@ -44,13 +44,13 @@ func TestUpsert(t *testing.T) {
 		"accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
 		"entityType": "event",
 		"source":     "test",
-		"type":       "crazyloco",
+		"type":       "jajaja",
 		"browser":    "Duck OS 1.0.8.0",
 		"eventId":    "ec86f654-ebac-4f90-8cb2-1eb083feebfb",
 	})
 	// logger.InfoFmt("input: %s", input)
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
-	w1, r1 := createReqRes("POSTO", "https://wemade.io/foo", bytes.NewReader(input))
+	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	tests := []struct {
 		name string
 		args args
