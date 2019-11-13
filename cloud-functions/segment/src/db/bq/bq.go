@@ -29,7 +29,7 @@ func Write(projectID string, r models.Record) (updated bool, err error) {
 	if err != nil {
 		return updated, logger.Err(err)
 	}
-	logger.Info("hey1 " + tableID)
+
 	recordSchema, err := bigquery.InferSchema(r)
 	if err != nil {
 		return updated, logger.Err(err)
@@ -60,7 +60,7 @@ func Write(projectID string, r models.Record) (updated bool, err error) {
 	}
 	recordInserter := recordTableRef.Inserter()
 	if err := recordInserter.Put(ctx, r); err != nil {
-		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %#v", err)
+		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %q", err)
 	}
 	return updated, nil
 }

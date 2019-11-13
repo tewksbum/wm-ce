@@ -49,7 +49,7 @@ func FlattenMap(mstring map[string]string) string {
 		flat = flat + `"` + key + `":"` + value + `",`
 	}
 	//remove extra comma if there's one
-	if flat[:len(flat)-1] == "," {
+	if flat[len(flat)-1:] == "," {
 		flat = flat[:len(flat)-1]
 	}
 	flat += "}"
