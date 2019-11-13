@@ -30,6 +30,8 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
+	logger.InfoFmt("Input JSON: %s", string(data))
+
 	cust, err := validateCustomer(ctx, projectID, namespace, input.AccessKey)
 	if err != nil {
 		return nil, err

@@ -250,7 +250,7 @@ type OrderHeader struct {
 	Discount   string    `json:"discount" bigquery:"discount"`
 	Shipping   string    `json:"shipping" bigquery:"shipping"`
 	Tax        string    `json:"tax" bigquery:"tax"`
-	HashedSigs string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures string    `json:"signatures" bigquery:"signatures"`
 }
 
 // OrderConsignment data
@@ -259,7 +259,7 @@ type OrderConsignment struct {
 	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid"`
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
-	HashedSigs    string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // OrderDetail data
@@ -273,21 +273,21 @@ type OrderDetail struct {
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
 	UnitPrice     string    `json:"unitPrice" bigquery:"unitprice"`
-	HashedSigs    string    `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // People data
 type People struct {
-	PeopleID     string `json:"peopleId" bigquery:"peopleid"`
-	Salutation   string `json:"salutation" bigquery:"salutation"`
-	FirstName    string `json:"firstName" bigquery:"firstname"`
-	LastName     string `json:"lastName" bigquery:"lastname"`
-	Gender       string `json:"gender" bigquery:"gender"`
-	Age          string `json:"age" bigquery:"age"`
-	Organization string `json:"organization" bigquery:"organization"`
-	Title        string `json:"title" bigquery:"title"`
-	Role         string `json:"role" bigquery:"role"`
-	HashedSigs   string `json:"hashedSigs" bigquery:"hashedsigs"`
+	PeopleID     string   `json:"peopleId" bigquery:"peopleid"`
+	Salutation   string   `json:"salutation" bigquery:"salutation"`
+	FirstName    string   `json:"firstName" bigquery:"firstname"`
+	LastName     string   `json:"lastName" bigquery:"lastname"`
+	Gender       string   `json:"gender" bigquery:"gender"`
+	Age          string   `json:"age" bigquery:"age"`
+	Organization string   `json:"organization" bigquery:"organization"`
+	Title        string   `json:"title" bigquery:"title"`
+	Role         string   `json:"role" bigquery:"role"`
+	Signatures   []string `json:"signatures" bigquery:"signatures"`
 }
 
 // Household data
@@ -299,7 +299,7 @@ type Household struct {
 	State       string `json:"state" bigquery:"state"`
 	Zip         string `json:"zip" bigquery:"zip"`
 	Country     string `json:"country" bigquery:"country"`
-	HashedSigs  string `json:"hashedSigs" bigquery:"hashedsigs"`
+	Signatures  string `json:"signatures" bigquery:"signatures"`
 }
 
 // FallbackData fallback data struct
