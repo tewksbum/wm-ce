@@ -41,6 +41,12 @@ func TestUpsert(t *testing.T) {
 	}
 	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(map[string]interface{}{
+		"accessKey":  "3e92de26224fec73e70cc62c108864d1",
+		"entityType": "people",
+		"peopleId":   "3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"firstName":  "Tendai", "lastName": "Maswenya",
+		"attributes": map[string]string{"organization": "mracu"},
+		"signatures": []string{"1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
 		// "entityType": "event",
 		// "source":     "test",
@@ -97,7 +103,7 @@ func TestRead(t *testing.T) {
 	// }
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
-		"entityType": "event",
+		"entityType": "people",
 		"source":     "test",
 		"filters": []map[string]interface{}{
 			// {
