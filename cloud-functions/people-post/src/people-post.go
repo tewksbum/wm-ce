@@ -600,17 +600,22 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					parent.LNAME = lnames[index]
 					parent.LNAMEColumn = lnameColumns[index]
 				}
+
 				if len(emails) > index && emailParents[index] == 1 {
 					parent.EMAIL = emails[index]
 					parent.EMAILColumn = emailColumns[index]
+				} else {
+					parent.EMAIL = ""
+					parent.EMAILColumn = ""
 				}
 				parents = append(parents, parent)
 			}
 		}
 	}
+
 	log.Printf("MPR: %v", parents)
 	if len(parents) > 0 {
-		for _, parent := range parents {
+		for i, parent := range parents {
 			var parentOutput Output
 			deepcopier.Copy(&output).To(&parentOutput)
 			parentOutput.MatchKeys.FNAME = MatchKeyField{
@@ -631,6 +636,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				Value:  "Parent",
 				Source: "Post-Process",
 			}
+
+			parentOutput.Signature.RecordID += "-" + strconv.Itoa(i)
 			// okay let's publish these
 			parentJSON, _ := json.Marshal(parentOutput)
 
@@ -645,6 +652,37 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				log.Fatalf("%v Could not pub parent to pubsub: %v", input.Signature.EventID, err)
 			} else {
 				log.Printf("%v pubbed parent record as message id %v: %v", input.Signature.EventID, psid, string(parentJSON))
+			}
+		}
+	}
+
+	// detect non-MPR multi emails
+	if mkEmailCount > mkFirstNameCount {
+		for index, email := range emails {
+			if emailParents[index] == 0 { // not a parent email
+				var emailOutput Output
+				deepcopier.Copy(&output).To(&emailOutput)
+
+				emailOutput.MatchKeys.EMAIL = MatchKeyField{
+					Value:  email,
+					Source: emailColumns[index],
+				}
+
+				// okay let's publish these
+				emailJSON, _ := json.Marshal(emailOutput)
+
+				log.Printf("output message %v", string(emailJSON))
+
+				psresult := topic.Publish(ctx, &pubsub.Message{
+					Data: emailJSON,
+				})
+				psid, err := psresult.Get(ctx)
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub email to pubsub: %v", input.Signature.EventID, err)
+				} else {
+					log.Printf("%v pubbed email record as message id %v: %v", input.Signature.EventID, psid, string(emailJSON))
+				}
 			}
 		}
 	}
