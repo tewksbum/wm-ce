@@ -16,12 +16,12 @@ import (
 func Write(projectID string, r models.Record) (updated bool, err error) {
 	opts := r.GetDBOptions()
 	datasetID := r.GetStrOwnerID()
-	tableID := r.GetTableName()
-	if opts.HasTableNamePrefix {
+	tableID := r.GetTablename()
+	if opts.HasTablenamePrefix {
 		tableID = r.GetTablenamePrefix() + tableID
 	}
-	if opts.HasTableNameSuffix {
-		tableID += r.GetTablenameAsSuffix()
+	if opts.HasTablenameSuffix {
+		tableID += r.GetTablenameSuffix()
 	}
 
 	ctx := context.Background()
@@ -80,12 +80,12 @@ func converInterfaceBQ(i interface{}) (o interface{}) {
 func Read(projectID string, r models.Record) (or wemade.OutputRecords, err error) {
 	opts := r.GetDBOptions()
 	datasetID := r.GetStrOwnerID()
-	tableID := r.GetTableName()
-	if opts.HasTableNamePrefix {
+	tableID := r.GetTablename()
+	if opts.HasTablenamePrefix {
 		tableID = r.GetTablenamePrefix() + tableID
 	}
-	if opts.HasTableNameSuffix {
-		tableID += r.GetTablenameAsSuffix()
+	if opts.HasTablenameSuffix {
+		tableID += r.GetTablenameSuffix()
 	}
 	params := []bigquery.QueryParameter{}
 	querystr := "SELECT record.* from `" + projectID + "." + datasetID + "`." + tableID

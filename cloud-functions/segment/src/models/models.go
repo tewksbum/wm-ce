@@ -28,23 +28,31 @@ type Options struct {
 	IsPartitioned      bool
 	PartitionField     string
 	SchemaName         string
-	TableName          string
+	Tablename          string
 	TablenamePrefix    string
-	HasTableNamePrefix bool
-	HasTableNameSuffix bool
+	TablenameSuffix    string
+	HasTablenamePrefix bool
+	HasTablenameSuffix bool
 	Filters            []QueryFilter
 }
 
 //Record interface
 type Record interface {
+	GetTablename() string
 	GetTablenamePrefix() string
-	GetTableName() string
-	GetTablenameAsSuffix() string
+	GetTablenameSuffix() string
+	GetOwnerID() int64
 	GetStrOwnerID() string
 	GetEntityType() string
-	GetDBOptions() Options
+	GetSource() string
+	GetOwner() string
+	GetPassthrough() string
+	GetAttributes() string
 	GetDBType() string
 	GetIDField() string
+	GetTimestamp() time.Time
+	GetDBOptions() Options
+	GetSignatures() []string
 	GetColumnList() []string
 	GetColumnBlackList() []string
 	GetMap() map[string]interface{}
@@ -66,6 +74,11 @@ func (r *DecodeRecord) GetMap() map[string]interface{} {
 	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
+// GetAttributes gets the entity type
+func (r *DecodeRecord) GetAttributes() string {
+	return r.Attributes
+}
+
 // BaseRecord input for the API
 type BaseRecord struct {
 	OwnerID         int64     `json:"ownerId" bigquery:"ownerid"`
@@ -74,12 +87,18 @@ type BaseRecord struct {
 	Owner           string    `json:"owner" bigquery:"owner"`
 	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
 	Attributes      string    `json:"attributes" bigquery:"attributes"`
+	Signatures      []string  `json:"signatures" bigquery:"signatures"`
 	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
 	DBopts          Options   `json:"-" bigquery:"-"`
-	StorageType     string    `json:"-" bigquery:"-"` // csql or bq
+	StorageType     string    `json:"-" sql:"-" bigquery:"-"` // csql or bq
 	IDField         string    `json:"-" sql:"-" bigquery:"-"`
 	ColumnList      []string  `json:"-" sql:"-" bigquery:"-"`
 	ColumnBlackList []string  `json:"-" sql:"-" bigquery:"-"`
+}
+
+// GetOwnerID gets the Customer id
+func (r *BaseRecord) GetOwnerID() int64 {
+	return r.OwnerID
 }
 
 // GetStrOwnerID gets the Customer id
@@ -92,6 +111,31 @@ func (r *BaseRecord) GetEntityType() string {
 	return r.EntityType
 }
 
+// GetOwner gets the entity type
+func (r *BaseRecord) GetOwner() string {
+	return r.Owner
+}
+
+// GetSource gets the entity type
+func (r *BaseRecord) GetSource() string {
+	return r.Source
+}
+
+// GetPassthrough gets the entity type
+func (r *BaseRecord) GetPassthrough() string {
+	return r.Passthrough
+}
+
+// GetAttributes gets the entity type
+func (r *BaseRecord) GetAttributes() string {
+	return r.Attributes
+}
+
+// GetTimestamp gets the entity type
+func (r *BaseRecord) GetTimestamp() time.Time {
+	return r.Timestamp
+}
+
 // GetDBOptions gets the db options
 func (r *BaseRecord) GetDBOptions() Options {
 	return r.DBopts
@@ -102,9 +146,9 @@ func (r *BaseRecord) GetDBType() string {
 	return r.DBopts.Type
 }
 
-// GetTableName gets table name
-func (r *BaseRecord) GetTableName() string {
-	return r.DBopts.TableName
+// GetTablename gets table name
+func (r *BaseRecord) GetTablename() string {
+	return r.DBopts.Tablename
 }
 
 // GetTablenamePrefix gets table name as a suffix
@@ -114,7 +158,15 @@ func (r *BaseRecord) GetTablenamePrefix() string {
 
 // GetTablenameAsSuffix gets table name as a suffix
 func (r *BaseRecord) GetTablenameAsSuffix() string {
-	return "_" + r.DBopts.TableName
+	return "_" + r.DBopts.Tablename
+}
+
+// GetTablenameSuffix gets table name as a suffix
+func (r *BaseRecord) GetTablenameSuffix() string {
+	if r.DBopts.TablenameSuffix != "" {
+		return "_" + r.DBopts.TablenameSuffix
+	}
+	return "_" + r.GetTablenameAsSuffix()
 }
 
 // GetMap gets the column list
@@ -125,6 +177,11 @@ func (r *BaseRecord) GetMap() map[string]interface{} {
 // GetIDField gets the id field of the table record
 func (r *BaseRecord) GetIDField() string {
 	return r.IDField
+}
+
+// GetSignatures gets the column list
+func (r *BaseRecord) GetSignatures() []string {
+	return r.Signatures
 }
 
 // GetColumnList gets the column list
@@ -243,14 +300,13 @@ type Product struct {
 
 // OrderHeader data
 type OrderHeader struct {
-	OrderID    string    `json:"orderId" bigquery:"orderid"`
-	OrderDate  time.Time `json:"orderDate" bigquery:"orderdate"`
-	SubTotal   string    `json:"subTotal" bigquery:"subtotal"`
-	Total      string    `json:"total" bigquery:"total"`
-	Discount   string    `json:"discount" bigquery:"discount"`
-	Shipping   string    `json:"shipping" bigquery:"shipping"`
-	Tax        string    `json:"tax" bigquery:"tax"`
-	Signatures string    `json:"signatures" bigquery:"signatures"`
+	OrderID   string    `json:"orderId" bigquery:"orderid"`
+	OrderDate time.Time `json:"orderDate" bigquery:"orderdate"`
+	SubTotal  string    `json:"subTotal" bigquery:"subtotal"`
+	Total     string    `json:"total" bigquery:"total"`
+	Discount  string    `json:"discount" bigquery:"discount"`
+	Shipping  string    `json:"shipping" bigquery:"shipping"`
+	Tax       string    `json:"tax" bigquery:"tax"`
 }
 
 // OrderConsignment data
@@ -259,7 +315,6 @@ type OrderConsignment struct {
 	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid"`
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
-	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // OrderDetail data
@@ -273,21 +328,19 @@ type OrderDetail struct {
 	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
 	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
 	UnitPrice     string    `json:"unitPrice" bigquery:"unitprice"`
-	Signatures    string    `json:"signatures" bigquery:"signatures"`
 }
 
 // People data
 type People struct {
-	PeopleID     string   `json:"peopleId" bigquery:"peopleid"`
-	Salutation   string   `json:"salutation" bigquery:"salutation"`
-	FirstName    string   `json:"firstName" bigquery:"firstname"`
-	LastName     string   `json:"lastName" bigquery:"lastname"`
-	Gender       string   `json:"gender" bigquery:"gender"`
-	Age          string   `json:"age" bigquery:"age"`
-	Organization string   `json:"organization" bigquery:"organization"`
-	Title        string   `json:"title" bigquery:"title"`
-	Role         string   `json:"role" bigquery:"role"`
-	Signatures   []string `json:"signatures" bigquery:"signatures"`
+	PeopleID     string `json:"peopleId" bigquery:"peopleid"`
+	Salutation   string `json:"salutation" bigquery:"salutation"`
+	FirstName    string `json:"firstName" bigquery:"firstname"`
+	LastName     string `json:"lastName" bigquery:"lastname"`
+	Gender       string `json:"gender" bigquery:"gender"`
+	Age          string `json:"age" bigquery:"age"`
+	Organization string `json:"organization" bigquery:"organization"`
+	Title        string `json:"title" bigquery:"title"`
+	Role         string `json:"role" bigquery:"role"`
 }
 
 // Household data
@@ -299,7 +352,6 @@ type Household struct {
 	State       string `json:"state" bigquery:"state"`
 	Zip         string `json:"zip" bigquery:"zip"`
 	Country     string `json:"country" bigquery:"country"`
-	Signatures  string `json:"signatures" bigquery:"signatures"`
 }
 
 // FallbackData fallback data struct

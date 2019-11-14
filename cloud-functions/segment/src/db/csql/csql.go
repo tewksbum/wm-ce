@@ -23,7 +23,6 @@ const (
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY (signature))`
-	tblDecodeInsert = `INSERT INTO decode(signature,people_id) VALUES (?,?)`
 )
 
 func initDB(dsn string) *dbr.Session {
@@ -44,12 +43,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	defer tx.RollbackUnlessCommitted()
 	opts := r.GetDBOptions()
-	tblName := opts.TableName
-	if opts.HasTableNamePrefix {
+	tblName := opts.Tablename
+	if opts.HasTablenamePrefix {
 		tblName = r.GetTablenamePrefix() + tblName
 	}
-	if opts.HasTableNameSuffix {
-		tblName += r.GetTablenameAsSuffix()
+	if opts.HasTablenameSuffix {
+		tblName += r.GetTablenameSuffix()
 	}
 	_, err = tx.Exec(fmt.Sprintf(tblDecodeCreateStmt, opts.SchemaName, tblName))
 	if err != nil {
@@ -68,7 +67,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
 		}
 	}
-	logger.Info(exists)
+	logger.InfoFmt("%s = %s", rmap[rIDField], exists)
 	if len(exists) < 1 {
 		is := tx.InsertInto(tblName).Columns(r.GetColumnList()...).Record(r)
 		buf := dbr.NewBuffer()

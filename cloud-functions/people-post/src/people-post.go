@@ -265,6 +265,18 @@ type SmartyStreetResponse []struct {
 	} `json:"analysis"`
 }
 
+type AddressParsed struct {
+	Number      string `json:"number"`
+	Street      string `json:"street"`
+	Type        string `json:"type"`
+	SecUnitType string `json:"sec_unit_type"`
+	SecUnitNum  string `json:"sec_unit_num"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Zip         string `json:"zip"`
+	Plus4       string `json:"plus4"`
+}
+
 type MultiPersonRecord struct {
 	FNAME       string
 	FNAMEColumn string
@@ -285,6 +297,7 @@ var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
+var AddressParserEndpoint = os.Getenv("ADDRESSPARSE")
 
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
@@ -299,6 +312,7 @@ var listCityStateZip []CityStateZip
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var ap http.Client
 
 var MLLabels map[string]string
 
@@ -310,6 +324,9 @@ func init() {
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sClient, _ := storage.NewClient(ctx)
 	listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json")
+	ap = http.Client{
+		Timeout: time.Second * 2, // Maximum of 2 secs
+	}
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -415,36 +432,37 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// parse address as needed
 	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value
 	cityInput := mkOutput.CITY.Value
-	if len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
-		addressInputCleansed := reNewline.ReplaceAllString(addressInput, ", ")
-		log.Printf("cleansed record %v", addressInputCleansed)
-		match := reConcatenatedAddress.FindStringSubmatch(addressInputCleansed)
-		log.Printf("matches %v %v", len(match), match)
-		for i, m := range match {
-			log.Printf("matches %v %v", i, m)
+	if len(mkOutput.AD1.Value) > 0 && len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+		a := ParseAddress(addressInput)
+		log.Printf("address parser returned %v", a)
+		if len(a.City) > 0 {
+			mkOutput.CITY.Value = a.City
+			mkOutput.CITY.Source = "Address Parser"
+			mkOutput.STATE.Value = a.State
+			mkOutput.STATE.Source = "Address Parser"
+			mkOutput.ZIP.Value = a.Zip
+			if len(a.Plus4) > 0 {
+				mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+			}
+			mkOutput.ZIP.Source = "Address Parser"
+			mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
+			mkOutput.AD1.Source = "Address Parser"
+			mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+			mkOutput.AD2.Source = "Address Parser"
 		}
-
-		if len(match) == 5 {
-			mkOutput.CITY.Value = strings.TrimSpace(match[2])
-			mkOutput.STATE.Value = strings.TrimSpace(match[3])
-			mkOutput.ZIP.Value = strings.TrimSpace(match[4])
-		}
-		var splits = strings.Split(addressInput, "\n")
-		if len(splits) > 1 {
-			mkOutput.AD1.Value = splits[0]
-		}
-	} else if len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
-		cityInputClensed := reNewline.ReplaceAllString(cityInput, " ")
-		match := reConcatenatedCityStateZip.FindStringSubmatch(cityInputClensed)
-		log.Printf("matches %v %v", len(match), match)
-		for i, m := range match {
-			log.Printf("matches %v %v", i, m)
-		}
-
-		if len(match) == 4 {
-			mkOutput.CITY.Value = strings.TrimSpace(match[1])
-			mkOutput.STATE.Value = strings.TrimSpace(match[2])
-			mkOutput.ZIP.Value = strings.TrimSpace(match[3])
+	} else if len(mkOutput.CITY.Value) > 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+		a := ParseAddress("123 Main St, " + cityInput)
+		log.Printf("address parser returned %v", a)
+		if len(a.City) > 0 {
+			mkOutput.CITY.Value = a.City
+			mkOutput.CITY.Source = "Address Parser"
+			mkOutput.STATE.Value = a.State
+			mkOutput.STATE.Source = "Address Parser"
+			mkOutput.ZIP.Value = a.Zip
+			if len(a.Plus4) > 0 {
+				mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+			}
+			mkOutput.ZIP.Source = "Address Parser"
 		}
 	}
 
@@ -705,4 +723,29 @@ func IndexOf(element string, data []string) int {
 		}
 	}
 	return -1 //not found.
+}
+
+func ParseAddress(address string) AddressParsed {
+	req, err := http.NewRequest(http.MethodGet, AddressParserEndpoint, nil)
+	if err != nil {
+		log.Fatalf("error preparing address parser: %v", err)
+	}
+	req.URL.Query().Add("a", address)
+
+	res, getErr := ap.Do(req)
+	if getErr != nil {
+		log.Fatalf("error calling address parser: %v", getErr)
+	}
+
+	body, readErr := ioutil.ReadAll(res.Body)
+	if readErr != nil {
+		log.Fatalf("error reading address parser response: %v", readErr)
+	}
+
+	var parsed AddressParsed
+	jsonErr := json.Unmarshal(body, &parsed)
+	if jsonErr != nil {
+		log.Fatalf("error parsing address parser response: %v", jsonErr)
+	}
+	return parsed
 }

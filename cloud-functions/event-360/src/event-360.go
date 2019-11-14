@@ -52,17 +52,17 @@ type MatchKeyField struct {
 }
 
 type EventOutput struct {
-	ID         MatchKeyField `json:"EventId"`
-	Type       MatchKeyField `json:"Type"`
-	CampaignID MatchKeyField `json:"CampaignId"`
-	Browser    MatchKeyField `json:"Browser"`
-	Channel    MatchKeyField `json:"Channel"`
-	OS         MatchKeyField `json:"StartDate"`
-	Domain     MatchKeyField `json:"Domain"`
-	URL        MatchKeyField `json:"URL"`
-	Location   MatchKeyField `json:"Location"`
-	Referrer   MatchKeyField `json:"Referrer"`
-	SearchTerm MatchKeyField `json:"SearchTerm"`
+	ID         MatchKeyField `json:"Id" bigquery:"id"`
+	Type       MatchKeyField `json:"Type" bigquery:"type"`
+	CampaignID MatchKeyField `json:"CampaignId" bigquery:"campaignId"`
+	Browser    MatchKeyField `json:"Browser" bigquery:"browser"`
+	Channel    MatchKeyField `json:"Channel" bigquery:"channel"`
+	OS         MatchKeyField `json:"OS" bigquery:"os"`
+	Domain     MatchKeyField `json:"Domain" bigquery:"domain"`
+	URL        MatchKeyField `json:"URL" bigquery:"url"`
+	Location   MatchKeyField `json:"Location" bigquery:"location"`
+	Referrer   MatchKeyField `json:"Referrer" bigquery:"referrer"`
+	SearchTerm MatchKeyField `json:"SearchTerm" bigquery:"searchTerm"`
 
 }
 

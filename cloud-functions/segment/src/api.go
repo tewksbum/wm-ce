@@ -2,6 +2,7 @@ package segment
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -38,7 +39,11 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Get and parse the object
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errToHTTP(w, r, err)
+	}
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -78,7 +83,11 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get and parse the object
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errToHTTP(w, r, err)
+	}
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -115,7 +124,11 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get and parse the object
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, r.Body)
+	data, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		errToHTTP(w, r, err)
+	}
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
