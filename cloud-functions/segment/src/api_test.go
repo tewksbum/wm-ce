@@ -42,7 +42,7 @@ func TestUpsert(t *testing.T) {
 	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":  "0f26ca1527621312720ec57ca17be4d8",
-		"entityType": "people",
+		"entityType": "househopeopleld",
 		"peopleId":   "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"firstName":  "Tembolin", "lastName": "Maswenya",
 		"attributes": map[string]string{"organization": "mracu"},

@@ -59,7 +59,17 @@ func Write(projectID string, r models.Record) (updated bool, err error) {
 		}
 	}
 	recordInserter := recordTableRef.Inserter()
+	// if err := recordInserter.Put(ctx, r); err != nil {
+	// 	return updated, logger.ErrFmt("[BQ.Write.recordInserter] %q", err)
+	// }
 	if err := recordInserter.Put(ctx, r); err != nil {
+		if multiError, ok := err.(bigquery.PutMultiError); ok {
+			for _, err1 := range multiError {
+				for _, err2 := range err1.Errors {
+					logger.ErrFmt("[BQ.Write.recordInserter] %q", err2)
+				}
+			}
+		}
 		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %q", err)
 	}
 	return updated, nil

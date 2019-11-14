@@ -53,11 +53,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		Timestamp:   time.Now(),
 	}
 
-	idata, _ := json.Marshal(input)
-	brdata, _ := json.Marshal(br)
+	// idata, _ := json.Marshal(input)
+	// brdata, _ := json.Marshal(br)
 	logger.InfoFmt("RawInputJSON: %s", string(data))
-	logger.InfoFmt("APIInput: %s", string(idata))
-	logger.InfoFmt("BaseRecord: %s", string(brdata))
+	// logger.InfoFmt("APIInput: %s", string(idata))
+	// logger.InfoFmt("BaseRecord: %s", string(brdata))
 
 	entityType := strings.ToLower(input.EntityType)
 
@@ -69,7 +69,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Household{}
 		json.Unmarshal(data, &record)
@@ -100,7 +100,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Product{}
 		json.Unmarshal(data, &record)
@@ -116,7 +116,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.People{}
 		record.Organization = organization
@@ -134,7 +134,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderHeader{}
 		json.Unmarshal(data, &record)
@@ -150,7 +150,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderConsignment{}
 		json.Unmarshal(data, &record)
@@ -166,7 +166,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.OrderDetail{}
 		json.Unmarshal(data, &record)
@@ -182,7 +182,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.Campaign{}
 		json.Unmarshal(data, &record)
@@ -215,7 +215,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			Filters:            input.Filters,
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
-			IsPartitioned:      true, PartitionField: models.DefPartitionField,
+			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.
 		br.EntityType = input.EntityType

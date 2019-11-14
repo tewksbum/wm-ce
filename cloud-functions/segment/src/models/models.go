@@ -346,6 +346,7 @@ type People struct {
 // Household data
 type Household struct {
 	HouseholdID string `json:"householdId" bigquery:"householdid"`
+	LastName    string `json:"lastName" bigquery:"lastname"`
 	Address1    string `json:"address1" bigquery:"address1"`
 	Address2    string `json:"address2" bigquery:"address2"`
 	City        string `json:"city" bigquery:"city"`
