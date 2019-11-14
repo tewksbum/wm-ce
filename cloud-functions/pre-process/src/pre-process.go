@@ -819,7 +819,16 @@ func GetOrderERR(column string) OrderERR {
 		err.Date = 1
 	case "order total", "ordertotal", "total":
 		err.Total = 1
+	case "order.ecometryordernumber":
+		err.Number = 1
+	case "order.ektronuserid":
+		err.CustomerID = 1
+	case "order.placedat":
+		err.Date = 1
+	case "order.Total":
+		err.Total = 1
 	}
+
 	return err
 }
 
@@ -835,7 +844,15 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
 		err.ID = 1
 	}
-
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".orderid") {
+		err.OrderID = 1
+	}
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".productid") {
+		err.ProductID = 1
+	}
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
+		err.ProductSKU = 1
+	}
 	return err
 }
 
