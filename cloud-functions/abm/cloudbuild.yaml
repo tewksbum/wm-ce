@@ -3,7 +3,7 @@ steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    'deploy','abm-pubsub-$BRANCH_NAME', 
+    'deploy','wm-$BRANCH_NAME-abm', 
     '--entry-point', 'Main', 
     '--runtime','go111', 
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
