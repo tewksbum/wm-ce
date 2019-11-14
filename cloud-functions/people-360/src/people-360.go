@@ -221,6 +221,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
+	MatchByValue0 := input.Signature.RecordID
+
 	MatchByKey1 := "TRUSTEDID"
 	MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", "\\'", -1)
 
@@ -264,6 +266,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
 
 	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
+		"(signature.RecordID = '%s') OR "+
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
@@ -271,6 +274,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
 		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
+		MatchByValue0,
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,
 		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
