@@ -723,6 +723,8 @@ func GetPeopleERR(column string) PeopleERR {
 
 	// get some types
 	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+		// default to home address
+		err.AddressTypeHome = 1
 		if strings.Contains(key, "consignment") {
 			err.AddressTypeShipping = 1
 		} else if strings.Contains(key, "order") {
