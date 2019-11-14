@@ -11,16 +11,18 @@ import (
 )
 
 var (
-	projectID      string = os.Getenv("PROJECTID")
-	namespace      string = os.Getenv("NAMESPACE")
-	csqlRegion     string = os.Getenv("CSQL_REGION")
-	csqlInstanceID string = os.Getenv("CSQL_INSTANCEID")
-	csqlUser       string = os.Getenv("CSQL_USER")
-	csqlPass       string = os.Getenv("CSQL_PASS")
-	csqlSchema     string = os.Getenv("CSQL_SCHEMA")
-	csqlCnn        string = os.Getenv("CSQL_CNN")
-	csqlDSN        string = fmt.Sprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
-	successMsg     string = "Record successfully processed"
+	projectID        string = os.Getenv("PROJECTID")
+	namespace        string = os.Getenv("NAMESPACE")
+	csqlRegion       string = os.Getenv("CSQL_REGION")
+	csqlInstanceID   string = os.Getenv("CSQL_INSTANCEID")
+	csqlUser         string = os.Getenv("CSQL_USER")
+	csqlPass         string = os.Getenv("CSQL_PASS")
+	csqlSchema       string = os.Getenv("CSQL_SCHEMA")
+	csqlCnn          string = os.Getenv("CSQL_CNN")
+	csqlDSN          string = fmt.Sprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
+	successMsg       string = "Record successfully processed"
+	successReadMsg   string = "Query successfully processed"
+	successDeleteMsg string = "Record successfully deleted"
 )
 
 // Upsert api entry point for upserting (create|update) a resource
@@ -77,7 +79,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
 	// check if the method of the request is a POST
-	if err := CheckAllowedMethod(w, r, "GET"); err != nil {
+	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
@@ -86,6 +88,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errToHTTP(w, r, err)
+		return
 	}
 	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
 	if err != nil {
@@ -104,7 +107,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	// foo := apiOutputWithRecords(true, successMsg, &or)
 	// logger.InfoFmt("POO!: %#v", foo)
-	fmt.Fprint(w, apiOutputWithRecords(true, successMsg, &or))
+	fmt.Fprint(w, apiOutputWithRecords(true, successReadMsg, &or))
 }
 
 // Delete api entry point for deleting a resource
@@ -118,7 +121,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
 
 	// check if the method of the request is a POST
-	if err := CheckAllowedMethod(w, r, "DELETE"); err != nil {
+	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
@@ -143,5 +146,5 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, apiOutput(true, successMsg))
+	fmt.Fprint(w, apiOutput(true, successDeleteMsg))
 }
