@@ -42,15 +42,15 @@ var CustomerNamespace = os.Getenv("CUSTOMERNAMESPACE")
 var DefaultEndpoint = os.Getenv("DEFAULTENDPOINT")
 
 type Household struct {
-	HouseholdID string   `json:"householdId,omitempty"`
-	SurrogateID string   `json:"surrogateId,omitempty"`
-	Address1    string   `json:"address1,omitempty"`
-	Address2    string   `json:"address2,omitempty"`
-	City        string   `json:"city,omitempty"`
-	State       string   `json:"state,omitempty"`
-	Zip         string   `json:"zip,omitempty"`
-	Country     string   `json:"country,omitempty"`
-	HashedSigs  []string `json:"hashedSigs,omitempty"`
+	HouseholdID string `json:"householdId,omitempty"`
+	SurrogateID string `json:"surrogateId,omitempty"`
+	Address1    string `json:"address1,omitempty"`
+	Address2    string `json:"address2,omitempty"`
+	City        string `json:"city,omitempty"`
+	State       string `json:"state,omitempty"`
+	Zip         string `json:"zip,omitempty"`
+	Country     string `json:"country,omitempty"`
+	LastName    string `json:"lastName,omitempty"`
 }
 
 // Event data
@@ -68,10 +68,10 @@ type Event struct {
 
 // Campaign data
 type Campaign struct {
-	CampaignID  string     `json:"campaignId,omitempty"`
-	SurrogateID string     `json:"surrogateId,omitempty"`
-	Name        string     `json:"name,omitempty"`
-	StartDate   *time.Time `json:"startDate,omitempty"`
+	CampaignID  string `json:"campaignId,omitempty"`
+	SurrogateID string `json:"surrogateId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	StartDate   string `json:"startDate,omitempty"`
 }
 
 // Product data
@@ -86,62 +86,59 @@ type Product struct {
 
 // OrderHeader data
 type OrderHeader struct {
-	OrderID     string     `json:"orderId,omitempty"`
-	SurrogateID string     `json:"surrogateId,omitempty"`
-	OrderDate   *time.Time `json:"orderDate,omitempty"`
-	SubTotal    string     `json:"subTotal,omitempty"`
-	Total       string     `json:"total,omitempty"`
-	Discount    string     `json:"discount,omitempty"`
-	Shipping    string     `json:"shipping,omitempty"`
-	Tax         string     `json:"tax,omitempty"`
-	HashedSigs  []string   `json:"hashedSigs,omitempty"`
+	OrderID     string `json:"orderId,omitempty"`
+	SurrogateID string `json:"surrogateId,omitempty"`
+	OrderDate   string `json:"orderDate,omitempty"`
+	SubTotal    string `json:"subTotal,omitempty"`
+	Total       string `json:"total,omitempty"`
+	Discount    string `json:"discount,omitempty"`
+	Shipping    string `json:"shipping,omitempty"`
+	Tax         string `json:"tax,omitempty"`
 }
 
 // OrderConsignment data
 type OrderConsignment struct {
-	OrderID       string     `json:"orderId,omitempty"`
-	SurrogateID   string     `json:"surrogateId,omitempty"`
-	ConsignmentID string     `json:"consignmentId,omitempty"`
-	ShipDate      *time.Time `json:"shipDate,omitempty"`
-	SubTotal      string     `json:"subTotal,omitempty"`
-	HashedSigs    []string   `json:"hashedSigs,omitempty"`
+	OrderID       string `json:"orderId,omitempty"`
+	SurrogateID   string `json:"surrogateId,omitempty"`
+	ConsignmentID string `json:"consignmentId,omitempty"`
+	ShipDate      string `json:"shipDate,omitempty"`
+	SubTotal      string `json:"subTotal,omitempty"`
 }
 
 // OrderDetail data
 type OrderDetail struct {
-	OrderID       string     `json:"orderId,omitempty"`
-	SurrogateID   string     `json:"surrogateId,omitempty"`
-	ConsignmentID string     `json:"consignmentId,omitempty"`
-	OrderDetailID string     `json:"orderDetailId,omitempty"`
-	ProductID     string     `json:"productId,omitempty"`
-	SKU           string     `json:"sku,omitempty"`
-	Quantity      int        `json:"quantity,omitempty"`
-	ShipDate      *time.Time `json:"shipDate,omitempty"`
-	SubTotal      string     `json:"subTotal,omitempty"`
-	UnitPrice     string     `json:"unitPrice,omitempty"`
-	HashedSigs    []string   `json:"hashedSigs,omitempty"`
+	OrderID       string `json:"orderId,omitempty"`
+	SurrogateID   string `json:"surrogateId,omitempty"`
+	ConsignmentID string `json:"consignmentId,omitempty"`
+	OrderDetailID string `json:"orderDetailId,omitempty"`
+	ProductID     string `json:"productId,omitempty"`
+	SKU           string `json:"sku,omitempty"`
+	Quantity      string `json:"quantity,omitempty"`
+	ShipDate      string `json:"shipDate,omitempty"`
+	SubTotal      string `json:"subTotal,omitempty"`
+	UnitPrice     string `json:"unitPrice,omitempty"`
 }
 
 // People data
 type People struct {
-	PeopleID     string   `json:"peopleId,omitempty"`
-	Salutation   string   `json:"salutation,omitempty"`
-	FirstName    string   `json:"firstName,omitempty"`
-	LastName     string   `json:"lastName,omitempty"`
-	Gender       string   `json:"gender,omitempty"`
-	Age          string   `json:"age,omitempty"`
-	Organization string   `json:"organization,omitempty"`
-	Title        string   `json:"title,omitempty"`
-	Role         string   `json:"role,omitempty"`
-	HashedSigs   []string `json:"hashedSigs,omitempty"`
+	PeopleID     string `json:"peopleId,omitempty"`
+	Salutation   string `json:"salutation,omitempty"`
+	FirstName    string `json:"firstName,omitempty"`
+	LastName     string `json:"lastName,omitempty"`
+	Gender       string `json:"gender,omitempty"`
+	Age          string `json:"age,omitempty"`
+	Organization string `json:"organization,omitempty"`
+	Title        string `json:"title,omitempty"`
+	Role         string `json:"role,omitempty"`
 }
 
 // SegmentInput input for the API
 //Entity type events, order, product  old//event, product, campaign, orderHeader, orderConsignment, orderDetail, people
 type OutputHeader struct {
-	AccessKey  string `json:"accessKey"` //Access key presumes owner info on segment side
-	EntityType string `json:"entityType"`
-	OwnerID    int64  `json:"ownerId"`
+	AccessKey  string   `json:"accessKey"` //Access key presumes owner info on segment side
+	EntityType string   `json:"entityType"`
+	OwnerID    int64    `json:"ownerId"`
+	Signatures []string `json:"signatures,omitempty"`
 }
 type Output struct {
 	OutputHeader
@@ -168,10 +165,11 @@ type PubSubMessage struct {
 
 // ABM mapper structure
 type MatchKeyMap struct {
-	MatchKey string
-	Source   string
-	Type     string
-	Key      *datastore.Key `datastore:"__key__"`
+	MatchKey   string
+	Source     string
+	Type       string
+	EntityType string
+	Key        *datastore.Key `datastore:"__key__"`
 }
 
 type CustomerInfo struct {
@@ -326,12 +324,15 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	//If we don't have a list of matchkeys on the sorsetup we don't filter it
 	var r360filteredmk []MatchKey360
 	if len(sorSetup.MatchKeys) > 0 {
+		log.Printf("<%v>-<%v>  Only allowing matchkey from the sorSetup %v", rSignature.OwnerID, rSignature.Source, sorSetup.MatchKeys)
 		for _, mk := range request360.MatchKeys {
 			if inSlice(mk.Key, sorSetup.MatchKeys) {
 				r360filteredmk = append(r360filteredmk, mk)
 			}
 		}
 	} else {
+		log.Printf("<%v>-<%v> Passing every matchkey", rSignature.OwnerID, rSignature.Source)
+
 		r360filteredmk = request360.MatchKeys
 	}
 	var outputHeader OutputHeader
@@ -349,18 +350,25 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		&Event{},
 		&Household{},
 	}
-	var dynamicMap map[string]interface{}
+	// var dynamicMap map[string]interface{}
 	//Prepare the ABM output and segment input
 	//	Based on the signature event type we create and populate a struct
 	switch inputType {
 	case "event":
 		event := Event{
-			EventID: getSignatureHash(rSignature),
-			Type:    inputType,
+			EventID:  getSignatureHash(rSignature),
+			Type:     rSignature.EventType,
+			Browser:  getFrom360Slice("Browser", r360filteredmk).Value,
+			OS:       getFrom360Slice("OS", r360filteredmk).Value,
+			Channel:  getFrom360Slice("Channel", r360filteredmk).Value,
+			Location: getFrom360Slice("Location", r360filteredmk).Value,
+			Domain:   getFrom360Slice("Domain", r360filteredmk).Value,
+			URL:      getFrom360Slice("URL", r360filteredmk).Value,
+			Referrer: getFrom360Slice("Referrer", r360filteredmk).Value,
 		}
 		output.Event = &event
-
 	case "orderHeader":
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		var oid string
 		if in360Slice("TrustedId", r360filteredmk) {
 			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
@@ -370,13 +378,20 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			oid = getFrom360Slice("OrderNumber", r360filteredmk).Value
 		}
 		orderHeader := OrderHeader{
-			HashedSigs:  getSignaturesHash(rSignatures),
 			SurrogateID: request360.ID,
 			OrderID:     oid,
+			OrderDate:   getFrom360Slice("ORDERDATE", r360filteredmk).Value,
+			SubTotal:    getFrom360Slice("SUBTOTAL", r360filteredmk).Value,
+			Total:       getFrom360Slice("TOTAL", r360filteredmk).Value,
+			Discount:    getFrom360Slice("DISCOUNT", r360filteredmk).Value,
+			Shipping:    getFrom360Slice("SHIPPING", r360filteredmk).Value,
+			Tax:         getFrom360Slice("TAX", r360filteredmk).Value,
 		}
+		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 		output.OrderHeader = &orderHeader
 
 	case "orderConsignment":
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		var oid string
 		if in360Slice("TrustedId", r360filteredmk) {
 			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
@@ -386,13 +401,17 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			oid = getFrom360Slice("OrderNumber", r360filteredmk).Value
 		}
 		orderConsignment := OrderConsignment{
-			HashedSigs:  getSignaturesHash(rSignatures),
-			SurrogateID: request360.ID,
-			OrderID:     oid,
+			SurrogateID:   request360.ID,
+			OrderID:       oid,
+			ConsignmentID: getFrom360Slice("ConsignmentID", r360filteredmk).Value,
+			ShipDate:      getFrom360Slice("ShipDate", r360filteredmk).Value,
+			SubTotal:      getFrom360Slice("SubTotal", r360filteredmk).Value,
 		}
 		output.OrderConsignment = &orderConsignment
+		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 
 	case "orderDetail":
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		var oid string
 		if in360Slice("TrustedId", r360filteredmk) {
 			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
@@ -402,13 +421,22 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			oid = getFrom360Slice("OrderNumber", r360filteredmk).Value
 		}
 		orderDetail := OrderDetail{
-			HashedSigs:  getSignaturesHash(rSignatures),
-			SurrogateID: request360.ID,
-			OrderID:     oid,
+			SurrogateID:   request360.ID,
+			OrderID:       oid,
+			ConsignmentID: getFrom360Slice("ConsignmentID", r360filteredmk).Value,
+			OrderDetailID: getFrom360Slice("OrderDetailID", r360filteredmk).Value,
+			ProductID:     getFrom360Slice("ProductID", r360filteredmk).Value,
+			SKU:           getFrom360Slice("SKU", r360filteredmk).Value,
+			Quantity:      getFrom360Slice("Quantity", r360filteredmk).Value,
+			ShipDate:      getFrom360Slice("ShipDate", r360filteredmk).Value,
+			SubTotal:      getFrom360Slice("SubTotal", r360filteredmk).Value,
+			UnitPrice:     getFrom360Slice("UnitPrice", r360filteredmk).Value,
 		}
 		output.OrderDetail = &orderDetail
+		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 
 	case "household":
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		var oid string
 		if in360Slice("TrustedId", r360filteredmk) {
 			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
@@ -418,76 +446,91 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			oid = getFrom360Slice("OrderNumber", r360filteredmk).Value
 		}
 		household := Household{
-			HashedSigs:  getSignaturesHash(rSignatures),
 			SurrogateID: request360.ID,
 			HouseholdID: oid,
+			Address1:    getFrom360Slice("AD1", r360filteredmk).Value,
+			Address2:    getFrom360Slice("AD2", r360filteredmk).Value,
+			City:        getFrom360Slice("CITY", r360filteredmk).Value,
+			State:       getFrom360Slice("STATE", r360filteredmk).Value,
+			Zip:         getFrom360Slice("ZIP", r360filteredmk).Value,
+			Country:     getFrom360Slice("COUNTRY", r360filteredmk).Value,
+			LastName:    getFrom360Slice("LNAME", r360filteredmk).Value,
 		}
 		output.Household = &household
+		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 
 	case "product":
-		var oid string
-		if in360Slice("TrustedId", r360filteredmk) {
-			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
-		} else if in360Slice("ProductId", r360filteredmk) {
-			oid = getFrom360Slice("ProductId", r360filteredmk).Value
-		} else if in360Slice("SKU", r360filteredmk) {
-			oid = getFrom360Slice("SKU", r360filteredmk).Value
-		}
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		product := Product{
-			ProductID:   oid,
+			ProductID:   getFrom360Slice("PRODUCTID", r360filteredmk).Value,
 			SurrogateID: request360.ID,
+			Category:    getFrom360Slice("CATEGORY", r360filteredmk).Value,
+			SKU:         getFrom360Slice("SKU", r360filteredmk).Value,
+			Size:        getFrom360Slice("SIZE", r360filteredmk).Value,
+			Color:       getFrom360Slice("COLOR", r360filteredmk).Value,
 		}
 		output.Product = &product
 
 	case "campaign":
+		// I'm not sure about this OID code, inferred information from abm's pink boxes
 		var oid string
 		if in360Slice("TrustedId", r360filteredmk) {
 			oid = getFrom360Slice("TrustedId", r360filteredmk).Value
 		} else if in360Slice("ProductId", r360filteredmk) {
 			oid = getFrom360Slice("ProductId", r360filteredmk).Value
-		} else if in360Slice("SKU", r360filteredmk) {
-			oid = getFrom360Slice("SKU", r360filteredmk).Value
 		}
 		campaign := Campaign{
 			CampaignID:  oid,
 			SurrogateID: request360.ID,
+			Name:        getFrom360Slice("NAME", r360filteredmk).Value,
+			StartDate:   getFrom360Slice("STARTDATE", r360filteredmk).Value,
 		}
 
 		output.Campaign = &campaign
 
 	case "people":
 		people := People{
-			PeopleID:   request360.ID,
-			HashedSigs: getSignaturesHash(rSignatures),
+			PeopleID:     request360.ID,
+			Salutation:   getFrom360Slice("SALUTATION", r360filteredmk).Value,
+			FirstName:    getFrom360Slice("FNAME", r360filteredmk).Value,
+			LastName:     getFrom360Slice("LNAME", r360filteredmk).Value,
+			Gender:       getFrom360Slice("GENDER", r360filteredmk).Value,
+			Age:          getFrom360Slice("AGE", r360filteredmk).Value,
+			Organization: getFrom360Slice("ORGANIZATION", r360filteredmk).Value,
+			Title:        getFrom360Slice("TITLE", r360filteredmk).Value,
+			Role:         getFrom360Slice("ROLE", r360filteredmk).Value,
 		}
 		output.People = &people
-	}
-	dynamicMap = fillMap(r360filteredmk, matchKeysMap)
+		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 
-	var completeOutput map[string]interface{}
+	}
+	// If/when we go back to mapper we can re-enable this
+	// dynamicMap = fillMap(r360filteredmk, matchKeysMap)
+
+	// var completeOutput map[string]interface{}
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
 		log.Printf("<%v>-<%v> There was a problem preparing the output object %v ", rSignature.OwnerID, rSignature.Source, err)
 		return err
 	}
-	json.Unmarshal(jsonStrOutput, &completeOutput)
-	jsonStrDynamicMap, err := json.Marshal(dynamicMap)
-	if err != nil {
-		log.Printf("<%v>-<%v> There was a problem preparing the dynamic map %v ", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
-	json.Unmarshal(jsonStrDynamicMap, &completeOutput)
-	jsonStr, err := json.Marshal(completeOutput)
-	if err != nil {
-		log.Printf("<%v>-<%v> There was a problem preparing the complete output %v ", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
+	// json.Unmarshal(jsonStrOutput, &completeOutput)
+	// jsonStrDynamicMap, err := json.Marshal(dynamicMap)
+	// if err != nil {
+	// 	log.Printf("<%v>-<%v> There was a problem preparing the dynamic map %v ", rSignature.OwnerID, rSignature.Source, err)
+	// 	return err
+	// }
+	// json.Unmarshal(jsonStrDynamicMap, &completeOutput)
+	// jsonStr, err := json.Marshal(completeOutput)
+	// if err != nil {
+	// 	log.Printf("<%v>-<%v> There was a problem preparing the complete output %v ", rSignature.OwnerID, rSignature.Source, err)
+	// 	return err
+	// }
 
 	log.Printf("<%v>-<%v> ABM pushing to sorSetup Endpoint: %v", rSignature.OwnerID, rSignature.Source, sorSetup.Endpoint)
-	log.Printf("<%v>-<%v> Message: %v", rSignature.OwnerID, rSignature.Source, string(jsonStr))
+	log.Printf("<%v>-<%v> Message: %v", rSignature.OwnerID, rSignature.Source, string(jsonStrOutput))
 
 	req, err := http.NewRequest("POST", sorSetup.Endpoint,
-		bytes.NewBuffer(jsonStr))
+		bytes.NewBuffer(jsonStrOutput))
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -545,15 +588,16 @@ func in360Slice(a string, list []MatchKey360) bool {
 }
 func getFrom360Slice(a string, list []MatchKey360) MatchKey360 {
 	for _, b := range list {
-		if b.Key == a {
+		if strings.ToLower(b.Key) == strings.ToLower(a) {
 			return b
 		}
 	}
 	return MatchKey360{}
 }
 func getMKSource(a string, mkm []MatchKeyMap) string {
+	fmt.Printf(a)
 	for _, mk := range mkm {
-		if mk.MatchKey == a {
+		if strings.ToLower(mk.MatchKey) == strings.ToLower(a) {
 			return mk.Source
 		}
 	}
