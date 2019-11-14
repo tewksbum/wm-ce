@@ -103,31 +103,36 @@ type OrderDetailERR struct {
 }
 
 type PeopleERR struct {
-	Address1        int `json:"Address1"`
-	Address2        int `json:"Address2"`
-	Age             int `json:"Age"`
-	Birthday        int `json:"Birthday"`
-	City            int `json:"City"`
-	Country         int `json:"Country"`
-	County          int `json:"County"`
-	Email           int `json:"Email"`
-	FirstName       int `json:"FirstName"`
-	FullName        int `json:"FullName"`
-	Gender          int `json:"Gender"`
-	LastName        int `json:"LastName"`
-	MiddleName      int `json:"MiddleName"`
-	ParentEmail     int `json:"ParentEmail"`
-	ParentFirstName int `json:"ParentFirstName"`
-	ParentLastName  int `json:"ParentLastName"`
-	ParentName      int `json:"ParentName"`
-	Phone           int `json:"Phone"`
-	State           int `json:"State"`
-	Suffix          int `json:"Suffix"`
-	ZipCode         int `json:"ZipCode"`
-	TrustedID       int `json:"TrustedID"`
-	Title           int `json:"Title"`
-	Role            int `json:"Role"`
-	Dorm            int `json:"Dorm"`
+	Address1            int `json:"Address1"`
+	Address2            int `json:"Address2"`
+	Age                 int `json:"Age"`
+	Birthday            int `json:"Birthday"`
+	City                int `json:"City"`
+	Country             int `json:"Country"`
+	County              int `json:"County"`
+	Email               int `json:"Email"`
+	FirstName           int `json:"FirstName"`
+	FullName            int `json:"FullName"`
+	Gender              int `json:"Gender"`
+	LastName            int `json:"LastName"`
+	MiddleName          int `json:"MiddleName"`
+	ParentEmail         int `json:"ParentEmail"`
+	ParentFirstName     int `json:"ParentFirstName"`
+	ParentLastName      int `json:"ParentLastName"`
+	ParentName          int `json:"ParentName"`
+	Phone               int `json:"Phone"`
+	State               int `json:"State"`
+	Suffix              int `json:"Suffix"`
+	ZipCode             int `json:"ZipCode"`
+	TrustedID           int `json:"TrustedID"`
+	Title               int `json:"Title"`
+	Role                int `json:"Role"`
+	Dorm                int `json:"Dorm"`
+	Room                int `json:"Room"`
+	AddressTypeCampus   int `json:"ATCampus"`
+	AddressTypeHome     int `json:"ATHome"`
+	AddressTypeBilling  int `json:"ATBilling"`
+	AddressTypeShipping int `json:"ATShipping"`
 }
 
 type ProductERR struct {
@@ -296,7 +301,6 @@ var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?
 var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
 var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
-var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 
 // MRT's version doesnt compile, substituting with a package
@@ -674,6 +678,8 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 1
 	case "dorm", "hall", "building", "dormitory", "apartment", "fraternity", "residence":
 		err.Dorm = 1
+	case "room":
+		err.Room = 1
 	}
 
 	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
@@ -713,6 +719,17 @@ func GetPeopleERR(column string) PeopleERR {
 	// correct some assignments
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
 		err.Address1 = 0
+	}
+
+	// get some types
+	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+		if strings.Contains(key, "consignment") {
+			err.AddressTypeShipping = 1
+		} else if strings.Contains(key, "order") {
+			err.AddressTypeBilling = 1
+		} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
+			err.AddressTypeHome = 1
+		}
 	}
 
 	return err
