@@ -4,6 +4,7 @@ import (
 	"segment/db/bq"
 	"segment/db/csql"
 	"segment/models"
+	"segment/utils/logger"
 	"segment/wemade"
 )
 
@@ -14,6 +15,16 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		updated, err = csql.Write(csqlDSN, r)
 	case models.BQ:
 		updated, err = bq.Write(projectID, r)
+		if err == nil {
+			if r.GetEntityType() == models.TypePeople {
+				for _, sig := range r.GetSignatures() {
+					rs := buildDecode(r.(*models.PeopleRecord), sig)
+					if _, err := csql.Write(csqlDSN, rs); err != nil {
+						logger.ErrFmt("[db.Write.SignatureUpsert]: %q", err)
+					}
+				}
+			}
+		}
 	}
 	return updated, err
 }

@@ -17,16 +17,17 @@ var (
 
 // APIInput input for the Segment API
 type APIInput struct {
+	OwnerID      int64                `json:"ownerId"`
 	AccessKey    string               `json:"accessKey"`
 	EntityType   string               `json:"entityType"`
-	Organization string               `json:"organization"`
 	Source       string               `json:"source"`
-	OwnerID      int64                `json:"ownerId"`
 	Owner        string               `json:"owner"`
+	Organization string               `json:"organization,omitifempty"`
+	Signatures   []string             `json:"signatures,omitifempty"`
 	Passthrough  map[string]string    `json:"passthrough"`
 	Attributes   map[string]string    `json:"attributes"`
 	Filters      []models.QueryFilter `json:"filters"`
-	// InputData         interface{}          `json:"inputData"`
+	// InputData    interface{}          `json:"inputData"`
 }
 
 // APIOutput basic json to return API responses

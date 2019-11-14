@@ -15,7 +15,7 @@ func GetClient(ctx *context.Context, projectID string) (*ds.Client, error) {
 	return dsc, nil
 }
 
-// QueryTableNamespace builds a query for a table in a aspecific namespace
-func QueryTableNamespace(table string, namespace string) *ds.Query {
+// QueryTablenamespace builds a query for a table in a aspecific namespace
+func QueryTablenamespace(table string, namespace string) *ds.Query {
 	return ds.NewQuery(table).Namespace(namespace)
 }

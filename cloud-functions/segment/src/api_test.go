@@ -41,10 +41,10 @@ func TestUpsert(t *testing.T) {
 	}
 	data.OwnerID = 5648073946562560
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "3e92de26224fec73e70cc62c108864d1",
+		"accessKey":  "0f26ca1527621312720ec57ca17be4d8",
 		"entityType": "people",
-		"peopleId":   "3afb8d06-56e3-46c2-bc85-ec15708cf540",
-		"firstName":  "Tendai", "lastName": "Maswenya",
+		"peopleId":   "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"firstName":  "Tembolin", "lastName": "Maswenya",
 		"attributes": map[string]string{"organization": "mracu"},
 		"signatures": []string{"1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
@@ -88,80 +88,80 @@ func TestUpsert(t *testing.T) {
 	}
 }
 
-func TestRead(t *testing.T) {
-	type args struct {
-		w http.ResponseWriter
-		r *http.Request
-	}
-	// filters := models.QueryFilter{
-	// 	Field:  "",
-	// 	Op:     "",
-	// 	OpType: models.OperationTypeFilter,
-	// 	// OpLink: models.OperationLinkAnd,
-	// 	// Value: w,
-	// 	// Values: poop,
-	// }
-	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
-		"entityType": "people",
-		"source":     "test",
-		"filters": []map[string]interface{}{
-			// {
-			// 	"field": "record.eventid",
-			// 	"op":    models.OperationEquals,
-			// 	"value": "91de1279-46c2-4fdc-9566-2b2506415fdb",
-			// 	// "values": []int{108, 108, 110},
-			// },
-			{
-				"field":  "record.eventid",
-				"op":     models.OperationNotIn,
-				"opLink": "and",
-				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-				"values": []int{108, 108, 110},
-			},
-			{
-				"opType": "order",
-				"field":  "timestamp",
-				"op":     "asc",
-				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-				// "values": []int{108, 108, 110},
-			},
-		},
-	})
-	// logger.InfoFmt("input: %s", input)
-	w1, r1 := createReqRes("GET", "https://wemade.io/foo", bytes.NewReader(input))
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "API READ OK 200",
-			args: args{
-				w: w1, r: r1,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			Read(tt.args.w, tt.args.r)
-		})
-	}
-}
+// func TestRead(t *testing.T) {
+// 	type args struct {
+// 		w http.ResponseWriter
+// 		r *http.Request
+// 	}
+// 	// filters := models.QueryFilter{
+// 	// 	Field:  "",
+// 	// 	Op:     "",
+// 	// 	OpType: models.OperationTypeFilter,
+// 	// 	// OpLink: models.OperationLinkAnd,
+// 	// 	// Value: w,
+// 	// 	// Values: poop,
+// 	// }
+// 	input, _ := json.Marshal(map[string]interface{}{
+// 		"accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
+// 		"entityType": "people",
+// 		"source":     "test",
+// 		"filters": []map[string]interface{}{
+// 			// {
+// 			// 	"field": "record.eventid",
+// 			// 	"op":    models.OperationEquals,
+// 			// 	"value": "91de1279-46c2-4fdc-9566-2b2506415fdb",
+// 			// 	// "values": []int{108, 108, 110},
+// 			// },
+// 			{
+// 				"field":  "record.eventid",
+// 				"op":     models.OperationNotIn,
+// 				"opLink": "and",
+// 				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+// 				"values": []int{108, 108, 110},
+// 			},
+// 			{
+// 				"opType": "order",
+// 				"field":  "timestamp",
+// 				"op":     "asc",
+// 				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+// 				// "values": []int{108, 108, 110},
+// 			},
+// 		},
+// 	})
+// 	// logger.InfoFmt("input: %s", input)
+// 	w1, r1 := createReqRes("GET", "https://wemade.io/foo", bytes.NewReader(input))
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 	}{
+// 		{
+// 			name: "API READ OK 200",
+// 			args: args{
+// 				w: w1, r: r1,
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			Read(tt.args.w, tt.args.r)
+// 		})
+// 	}
+// }
 
-func TestDelete(t *testing.T) {
-	type args struct {
-		w http.ResponseWriter
-		r *http.Request
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			Delete(tt.args.w, tt.args.r)
-		})
-	}
-}
+// func TestDelete(t *testing.T) {
+// 	type args struct {
+// 		w http.ResponseWriter
+// 		r *http.Request
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 	}{
+// 		// TODO: Add test cases.
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			Delete(tt.args.w, tt.args.r)
+// 		})
+// 	}
+// }
