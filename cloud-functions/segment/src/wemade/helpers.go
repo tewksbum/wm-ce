@@ -30,8 +30,6 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	logger.InfoFmt("Input JSON: %s", string(data))
-
 	cust, err := validateCustomer(ctx, projectID, namespace, input.AccessKey)
 	if err != nil {
 		return nil, err
@@ -44,6 +42,11 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			owner = cust.Name
 		}
 	}
+	organization := input.Organization
+	if organization == "" {
+		organization = input.Attributes["organization"]
+	}
+
 	br := models.BaseRecord{
 		EntityType:  input.EntityType,
 		OwnerID:     cust.Key.ID,
@@ -53,6 +56,12 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 		Attributes:  utils.FlattenMap(input.Attributes),
 		Timestamp:   time.Now(),
 	}
+
+	idata, _ := json.Marshal(input)
+	brdata, _ := json.Marshal(br)
+	logger.InfoFmt("RawInputJSON: %s", string(data))
+	logger.InfoFmt("APIInput: %s", string(idata))
+	logger.InfoFmt("BaseRecord: %s", string(brdata))
 
 	entityType := strings.ToLower(input.EntityType)
 
@@ -114,7 +123,10 @@ func BuildRecordFromInput(projectID string, namespace string, body io.ReadCloser
 			IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		record := models.People{}
+		record.Organization = organization
 		json.Unmarshal(data, &record)
+		lol, _ := json.Marshal(record)
+		logger.InfoFmt("PeopleRecord: %s", string(lol))
 		return &models.PeopleRecord{
 			BaseRecord: br,
 			Record:     record,

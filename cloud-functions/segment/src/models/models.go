@@ -74,9 +74,9 @@ type BaseRecord struct {
 	Owner           string    `json:"owner" bigquery:"owner"`
 	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
 	Attributes      string    `json:"attributes" bigquery:"attributes"`
-	StorageType     string    `json:"-" bigquery:"-"` // csql or bq
-	DBopts          Options   `json:"-" bigquery:"-"`
 	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
+	DBopts          Options   `json:"-" bigquery:"-"`
+	StorageType     string    `json:"-" bigquery:"-"` // csql or bq
 	IDField         string    `json:"-" sql:"-" bigquery:"-"`
 	ColumnList      []string  `json:"-" sql:"-" bigquery:"-"`
 	ColumnBlackList []string  `json:"-" sql:"-" bigquery:"-"`
