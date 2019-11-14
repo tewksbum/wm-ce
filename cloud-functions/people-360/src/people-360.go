@@ -195,11 +195,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	SetTable := bq.Dataset(DatasetID).Table(SetTableName)
 	if err := SetTable.Create(ctx, setMeta); err != nil {
-		log.Printf("error creating set table %v", err)
+		if !strings.Contains(err.Error(), "Already Exists") {
+			log.Printf("error creating set table %v", err)
+		}
 	}
 	FiberTable := bq.Dataset(DatasetID).Table(FiberTableName)
 	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
-		log.Printf("error creating fiber table %v", err)
+		if !strings.Contains(err.Error(), "Already Exists") {
+			log.Printf("error creating fiber table %v", err)
+		}
 	}
 
 	// store the fiber
@@ -265,8 +269,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByKey6D := "TITLE"
 	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
 
-	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
-		"(signature.RecordID = '%s') OR "+
+	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u, UNNEST(signatures) s WHERE "+
+		"(s.RecordID = '%s') OR "+
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
