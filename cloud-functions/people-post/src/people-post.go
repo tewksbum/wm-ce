@@ -18,6 +18,8 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
+
+	"github.com/ulule/deepcopier"
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -102,31 +104,36 @@ type PeopleOutput struct {
 }
 
 type PeopleERR struct {
-	Address1        int `json:"Address1"`
-	Address2        int `json:"Address2"`
-	Age             int `json:"Age"`
-	Birthday        int `json:"Birthday"`
-	City            int `json:"City"`
-	Country         int `json:"Country"`
-	County          int `json:"County"`
-	Email           int `json:"Email"`
-	FirstName       int `json:"FirstName"`
-	FullName        int `json:"FullName"`
-	Gender          int `json:"Gender"`
-	LastName        int `json:"LastName"`
-	MiddleName      int `json:"MiddleName"`
-	ParentEmail     int `json:"ParentEmail"`
-	ParentFirstName int `json:"ParentFirstName"`
-	ParentLastName  int `json:"ParentLastName"`
-	ParentName      int `json:"ParentName"`
-	Phone           int `json:"Phone"`
-	State           int `json:"State"`
-	Suffix          int `json:"Suffix"`
-	ZipCode         int `json:"ZipCode"`
-	TrustedID       int `json:"TrustedID"`
-	Title           int `json:"Title"`
-	Role            int `json:"Role"`
-	Dorm            int `json:"Dorm"`
+	Address1            int `json:"Address1"`
+	Address2            int `json:"Address2"`
+	Age                 int `json:"Age"`
+	Birthday            int `json:"Birthday"`
+	City                int `json:"City"`
+	Country             int `json:"Country"`
+	County              int `json:"County"`
+	Email               int `json:"Email"`
+	FirstName           int `json:"FirstName"`
+	FullName            int `json:"FullName"`
+	Gender              int `json:"Gender"`
+	LastName            int `json:"LastName"`
+	MiddleName          int `json:"MiddleName"`
+	ParentEmail         int `json:"ParentEmail"`
+	ParentFirstName     int `json:"ParentFirstName"`
+	ParentLastName      int `json:"ParentLastName"`
+	ParentName          int `json:"ParentName"`
+	Phone               int `json:"Phone"`
+	State               int `json:"State"`
+	Suffix              int `json:"Suffix"`
+	ZipCode             int `json:"ZipCode"`
+	TrustedID           int `json:"TrustedID"`
+	Title               int `json:"Title"`
+	Role                int `json:"Role"`
+	Dorm                int `json:"Dorm"`
+	Room                int `json:"Room"`
+	AddressTypeCampus   int `json:"ATCampus"`
+	AddressTypeHome     int `json:"ATHome"`
+	AddressTypeBilling  int `json:"ATBilling"`
+	AddressTypeShipping int `json:"ATShipping"`
 }
 
 type CampaignERR struct {
@@ -306,6 +313,7 @@ var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reNewline = regexp.MustCompile(`\r?\n`)
+var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 
 var listCityStateZip []CityStateZip
 
@@ -341,6 +349,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var mkOutput PeopleOutput
 	var trustedID string
 	var ClassYear string
+	var dormERR bool
+	var dormVER bool
+	var dormAD1 string
+	var dormColumn string
+	var roomColumn string
 	for index, column := range input.Columns {
 		predictionValue := input.Prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
@@ -364,6 +377,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
+		}
+
+		// assign type if AD1
+		if matchKey == "AD1" {
+			mkOutput.AD1.Type = AssignAddressType(&column)
 		}
 
 		if column.PeopleERR.TrustedID == 1 {
@@ -392,7 +410,23 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetMkField(&mkOutput, "TITLE", ClassYear, column.Name)
 		}
 
+		// check for DORM address -- if we find Dorm ERR, Dorm VER, Room ERR then we have a dorm address
+		if column.PeopleERR.Dorm == 1 {
+			dormERR = true
+			dormVER = reResidenceHall.MatchString(column.Value)
+			if dormERR && dormVER {
+				dormColumn = column.Name
+				dormAD1 = column.Value
+			}
+		} else if column.PeopleERR.Room == 1 {
+			roomColumn = column.Name
+			if dormERR && dormVER && len(dormAD1) > 0 {
+				dormAD1 += " " + column.Value
+
+			}
+		}
 		input.Columns[index] = column
+
 	}
 
 	for _, column := range input.Columns {
@@ -416,6 +450,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_STREET1 && len(GetMkField(&mkOutput, "AD1").Value) == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
+				mkOutput.AD1.Type = AssignAddressType(&column)
 			} else if column.PeopleVER.IS_EMAIL && len(GetMkField(&mkOutput, "EMAIL").Value) == 0 && column.PeopleERR.Role == 0 {
 				mkOutput.EMAIL.Value = column.Value
 				mkOutput.EMAIL.Source = column.Name
@@ -521,10 +556,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var parents []MultiPersonRecord
 	var fnames []string
 	var fnameColumns []string
+	var fnameParents []int
 	var lnames []string
 	var lnameColumns []string
+	var lnameParents []int
 	var emails []string
 	var emailColumns []string
+	var emailParents []int
 	var mkFirstNameCount int
 	var mkLastNameCount int
 	var mkEmailCount int
@@ -533,16 +571,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			mkFirstNameCount++
 			fnames = append(fnames, column.Value)
 			fnameColumns = append(fnameColumns, column.Name)
+			fnameParents = append(fnameParents, column.PeopleERR.Role)
 		}
 		if column.MatchKey == "LNAME" {
 			mkLastNameCount++
 			lnames = append(lnames, column.Value)
 			lnameColumns = append(lnameColumns, column.Name)
+			lnameParents = append(lnameParents, column.PeopleERR.Role)
 		}
 		if column.MatchKey == "EMAIL" {
 			mkEmailCount++
 			emails = append(emails, column.Value)
 			emailColumns = append(emailColumns, column.Name)
+			emailParents = append(emailParents, column.PeopleERR.Role)
 		}
 	}
 	log.Printf("MPR fname count %v %v, lname count %v %v, email count %v %v", mkFirstNameCount, fnames, mkLastNameCount, lnames, mkEmailCount, emails)
@@ -550,42 +591,55 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if mkFirstNameCount > 1 {
 		// we have more than 1 person in the record, let's make some sets
 		for index, fname := range fnames {
-			if index > 0 {
+			if index > 0 && fnameParents[index] == 1 {
 				parent := MultiPersonRecord{
 					FNAME:       fname,
 					FNAMEColumn: fnameColumns[index],
 				}
-				if len(lnames) > index {
+				if len(lnames) > index && lnameParents[index] == 1 {
 					parent.LNAME = lnames[index]
 					parent.LNAMEColumn = lnameColumns[index]
 				}
-				if len(emails) > index {
+
+				if len(emails) > index && emailParents[index] == 1 {
 					parent.EMAIL = emails[index]
 					parent.EMAILColumn = emailColumns[index]
+				} else {
+					parent.EMAIL = ""
+					parent.EMAILColumn = ""
 				}
 				parents = append(parents, parent)
 			}
 		}
 	}
+
 	log.Printf("MPR: %v", parents)
 	if len(parents) > 0 {
-		for _, parent := range parents {
-			output.MatchKeys.FNAME = MatchKeyField{
+		for i, parent := range parents {
+			var parentOutput Output
+			deepcopier.Copy(&output).To(&parentOutput)
+			parentOutput.MatchKeys.FNAME = MatchKeyField{
 				Value:  parent.FNAME,
 				Source: parent.FNAMEColumn,
 			}
-			output.MatchKeys.LNAME = MatchKeyField{
+			parentOutput.MatchKeys.LNAME = MatchKeyField{
 				Value:  parent.LNAME,
 				Source: parent.LNAMEColumn,
 			}
 
-			output.MatchKeys.EMAIL = MatchKeyField{
+			parentOutput.MatchKeys.EMAIL = MatchKeyField{
 				Value:  parent.EMAIL,
 				Source: parent.EMAILColumn,
 			}
 
+			parentOutput.MatchKeys.ROLE = MatchKeyField{
+				Value:  "Parent",
+				Source: "Post-Process",
+			}
+
+			parentOutput.Signature.RecordID += "-" + strconv.Itoa(i)
 			// okay let's publish these
-			parentJSON, _ := json.Marshal(output)
+			parentJSON, _ := json.Marshal(parentOutput)
 
 			log.Printf("output message %v", string(parentJSON))
 
@@ -595,12 +649,74 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			psid, err := psresult.Get(ctx)
 			_, err = psresult.Get(ctx)
 			if err != nil {
-				log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				log.Fatalf("%v Could not pub parent to pubsub: %v", input.Signature.EventID, err)
 			} else {
-				log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(parentJSON))
+				log.Printf("%v pubbed parent record as message id %v: %v", input.Signature.EventID, psid, string(parentJSON))
 			}
 		}
 	}
+
+	// detect non-MPR multi emails
+	if mkEmailCount > mkFirstNameCount {
+		for index, email := range emails {
+			if emailParents[index] == 0 { // not a parent email
+				var emailOutput Output
+				deepcopier.Copy(&output).To(&emailOutput)
+
+				emailOutput.MatchKeys.EMAIL = MatchKeyField{
+					Value:  email,
+					Source: emailColumns[index],
+				}
+
+				// okay let's publish these
+				emailJSON, _ := json.Marshal(emailOutput)
+
+				log.Printf("output message %v", string(emailJSON))
+
+				psresult := topic.Publish(ctx, &pubsub.Message{
+					Data: emailJSON,
+				})
+				psid, err := psresult.Get(ctx)
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub email to pubsub: %v", input.Signature.EventID, err)
+				} else {
+					log.Printf("%v pubbed email record as message id %v: %v", input.Signature.EventID, psid, string(emailJSON))
+				}
+			}
+		}
+	}
+
+	// see if we should pub a record with dorm address
+	var dormOutput Output
+	if len(dormAD1) > 0 {
+		deepcopier.Copy(&output).To(&dormOutput)
+		sourceColumn := dormColumn
+		if len(roomColumn) > 0 {
+			sourceColumn += "," + roomColumn
+		}
+		dormOutput.MatchKeys.AD1 = MatchKeyField{
+			Value:  dormAD1,
+			Type:   "Campus",
+			Source: sourceColumn,
+		}
+
+		dormJSON, _ := json.Marshal(dormOutput)
+
+		log.Printf("output message %v", string(dormJSON))
+
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: dormJSON,
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub dorm to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed dorm record as message id %v: %v", input.Signature.EventID, psid, string(dormJSON))
+		}
+	}
+
 	return nil
 }
 
@@ -748,4 +864,17 @@ func ParseAddress(address string) AddressParsed {
 		log.Fatalf("error parsing address parser response: %v", jsonErr)
 	}
 	return parsed
+}
+
+func AssignAddressType(column *InputColumn) string {
+	if column.PeopleERR.AddressTypeBilling == 1 {
+		return "Billing"
+	} else if column.PeopleERR.AddressTypeShipping == 1 {
+		return "Shipping"
+	} else if column.PeopleERR.AddressTypeHome == 1 {
+		return "Home"
+	} else if column.PeopleERR.AddressTypeCampus == 1 {
+		return "Campus"
+	}
+	return ""
 }
