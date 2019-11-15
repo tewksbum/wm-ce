@@ -437,6 +437,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.OrderDetailERR.ProductSKU == 1 {
 			columnFlags.ProductSKU = true
 		}
+		if column.OrderDetailERR.ProductID == 1 {
+			columnFlags.ProductID = true
+		}
+		if column.OrderDetailERR.OrderID == 1 {
+			columnFlags.OrderID = true
+		}
 		columns[i] = column
 	}
 	log.Printf("columns %v", columns)
