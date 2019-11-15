@@ -38,16 +38,17 @@ type CampaignInput struct {
 }
 
 type CampaignFiber struct {
-	Signature   Signature         `json:"signature" bigquery:"signature"`
-	Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   CampaignOutput    `json:"matchkeys" bigquery:"matchkeys"`
-	FiberID     string            `json:"fiberId" bigquery:"id"`
-	CreatedAt   time.Time         `json:"createdAt" bigquery:"createdAt"`
+	Signature   Signature        `json:"signature" bigquery:"signature"`
+	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
+	MatchKeys   CampaignOutput   `json:"matchkeys" bigquery:"matchkeys"`
+	FiberID     string           `json:"fiberId" bigquery:"id"`
+	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
 
 type MatchKeyField struct {
-	Value  string `json:"value"`
-	Source string `json:"source"`
+	Value  string `json:"value" bigquery:"value"`
+	Source string `json:"source" bigquery:"source"`
+	Type   string `json:"type" bigquery:"type"`
 }
 
 type CampaignOutput struct {
@@ -148,11 +149,12 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store the fiber
+	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber CampaignFiber
 	fiber.CreatedAt = time.Now()
 	fiber.FiberID = uuid.New().String()
 	fiber.MatchKeys = input.MatchKeys
-	fiber.Passthrough = input.Passthrough
+	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
 	FiberInserter := FiberTable.Inserter()
@@ -303,4 +305,18 @@ func Contains(slice []string, item string) bool {
 
 	_, ok := set[item]
 	return ok
+}
+
+func ConvertPassthrough(v map[string]string) []Passthrough360 {
+	var result []Passthrough360
+	if len(v) > 0 {
+		for mapKey, mapValue := range v {
+			pt := Passthrough360{
+				Name:  mapKey,
+				Value: mapValue,
+			}
+			result = append(result, pt)
+		}
+	}
+	return result
 }

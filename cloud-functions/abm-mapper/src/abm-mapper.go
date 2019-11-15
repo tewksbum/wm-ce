@@ -30,10 +30,11 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	RecordID  string `json:"recordId"`
 }
+
 type MatchKeyField struct {
-	Value  string `json:"value"`
-	Source string `json:"source"`
-	Type   string `json:"type"`
+	Value  string `json:"value" bigquery:"value"`
+	Source string `json:"source" bigquery:"source"`
+	Type   string `json:"type" bigquery:"type"`
 }
 
 // Owner     When we receive messages for this owner, we will evaluate
