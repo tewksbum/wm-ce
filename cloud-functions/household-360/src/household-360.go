@@ -333,7 +333,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	var output HouseHold360Output
 	var FiberMatchKeys []MatchKey360
 
-	MatchKeyList := structs.Names(&PeopleOutput{})
+	MatchKeyList := structs.Names(&HouseHold360Output{})
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
