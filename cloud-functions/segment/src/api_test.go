@@ -94,34 +94,47 @@ func TestRead(t *testing.T) {
 		r *http.Request
 	}
 	// filters := models.QueryFilter{
-	// 	Field:  "",
-	// 	Op:     "",
-	// 	OpType: models.OperationTypeFilter,
-	// 	// OpLink: models.OperationLinkAnd,
+	// 	field:  "",
+	// 	op:     "",
+	// 	opType: models.OperationTypeFilter,
+	// 	// opLink: models.OperationLinkAnd,
 	// 	// Value: w,
 	// 	// Values: poop,
 	// }
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":  "3e92de26224fec73e70cc62c108864d1",
-		"entityType": "people",
+		"entityType": "decode",
 		"source":     "test",
 		"filters": []map[string]interface{}{
+			{
+				"field": "peopleId",
+				"op":    models.OperationEquals,
+				"value": "91de1279-46c2-4fdc-9566-2b2506415fdb",
+				// "values": []int{108, 108, 110},
+			},
+			{
+				"opLink": "AND",
+				"field":  "signature",
+				"op":     models.OperationIsNotNull,
+				// "values": []int{108, 108, 110},
+			},
 			// {
-			// 	"field": "record.eventid",
-			// 	"op":    models.OperationEquals,
-			// 	"value": "91de1279-46c2-4fdc-9566-2b2506415fdb",
-			// 	// "values": []int{108, 108, 110},
+			// 	"field":  "record.peopleid",
+			// 	"op":     models.OperationNotIn,
+			// 	"opLink": "and",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	"values": []int{108, 108, 110},
 			// },
 			{
-				"field":  "record.peopleid",
-				"op":     models.OperationNotIn,
-				"opLink": "and",
+				"opType": "order",
+				"field":  "created_at", //"timestamp",
+				"op":     "desc",
 				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-				"values": []int{108, 108, 110},
+				// "values": []int{108, 108, 110},
 			},
 			{
 				"opType": "order",
-				"field":  "timestamp",
+				"field":  "signature",
 				"op":     "asc",
 				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
 				// "values": []int{108, 108, 110},
@@ -129,7 +142,7 @@ func TestRead(t *testing.T) {
 		},
 	})
 	// logger.InfoFmt("input: %s", input)
-	w1, r1 := createReqRes("GET", "https://wemade.io/foo", bytes.NewReader(input))
+	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
 	tests := []struct {
 		name string
 		args args

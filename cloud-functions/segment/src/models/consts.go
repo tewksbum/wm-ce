@@ -45,7 +45,7 @@ var (
 // Operation types
 const (
 	OperationEquals           = "eq"
-	OperationNotEquals        = "notEq"
+	OperationNotEquals        = "noteq"
 	OperationLessThan         = "lt"
 	OperationLessThanEqual    = "ltq"
 	OperationGreaterThan      = "gt"

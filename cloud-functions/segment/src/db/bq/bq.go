@@ -99,12 +99,12 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecords, err error
 	}
 	params := []bigquery.QueryParameter{}
 	querystr := "SELECT record.* from `" + projectID + "." + datasetID + "`." + tableID
-	if len(opts.Filters) > 0 {
+	pfs, err := models.ParseFilters(opts.Filters, true, "@", "record")
+	if err != nil {
+		return or, logger.ErrFmt("[bq.Read.ParsingFilters]: %#v", err)
+	}
+	if len(pfs) > 0 {
 		querystr += " WHERE "
-		pfs, err := models.ParseFilters(opts.Filters, true, "@", "record")
-		if err != nil {
-			return or, logger.ErrFmt("[bq.Read.ParsingFilters]: %#v", err)
-		}
 		for _, pf := range pfs {
 			querystr += pf.ParsedCondition
 			for i := 0; i < len(pf.ParamNames); i++ {
@@ -127,7 +127,7 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecords, err error
 				})
 			}
 		}
-		querystr += models.ParseOrderBy(opts.Filters)
+		querystr += models.ParseOrderBy(opts.Filters, true)
 	}
 	logger.InfoFmt("Query: %s\n%#v", querystr, params)
 	ctx := context.Background()

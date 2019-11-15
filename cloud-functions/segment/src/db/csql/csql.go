@@ -16,7 +16,6 @@ import (
 
 const (
 	dialect             = "mysql"
-	tblDecodeSuffix     = "_decode"
 	tblDecodeCreateStmt = `CREATE TABLE IF NOT EXISTS %s.%s (
 		signature VARCHAR(255) NOT NULL,
 		people_id VARCHAR(255) NULL,
@@ -100,59 +99,78 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 
 // Read the interface from CSQL
 func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
-	dbOpts := r.GetDBOptions()
-	querystr := "" //"SELECT record.* from `" + projectID + "." + datasetID + "`." + tableID
-	if len(dbOpts.Filters) > 0 {
-		querystr += " WHERE "
-		pfs, err := models.ParseFilters(dbOpts.Filters, true, "", "record")
+	opts := r.GetDBOptions()
+	tblName := opts.Tablename
+	if opts.HasTablenamePrefix {
+		tblName = r.GetTablenamePrefix() + tblName
+	}
+	if opts.HasTablenameSuffix {
+		tblName += r.GetTablenameSuffix()
+	}
+	// querystr := "SELECT " + strings.Join(r.GetColumnList(), ",") + " FROM " + tblName
+	sess := initDB(dsn)
+	tx, err := sess.Begin()
+	if err != nil {
+		return or, logger.Err(err)
+	}
+	defer tx.RollbackUnlessCommitted()
+	stmt := tx.Select(r.GetColumnList()...).From(tblName)
+	if len(opts.Filters) > 0 {
+		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {
 			return or, logger.ErrFmt("[csql.Read.ParsingFilters]: %#v", err)
 		}
-		for _, pf := range pfs {
-			querystr += pf.ParsedCondition
-			for i := 0; i < len(pf.ParamNames); i++ {
-				v := pf.Values[i] // converInterfaceBQ(pf.Values[i])
-				switch t := v.(type) {
-				case []interface{}:
-					tmp := []string{}
-					for _, vv := range v.([]interface{}) {
-						tmp = append(tmp, fmt.Sprint(vv))
+		if len(pfs) > 0 {
+			for _, pf := range pfs {
+				for i := 0; i < len(pf.ParamNames); i++ {
+					var v interface{}
+					if pf.Values != nil {
+						v = pf.Values[i] // converInterfaceBQ(pf.Values[i])
+						switch t := v.(type) {
+						case []interface{}:
+							tmp := []string{}
+							for _, vv := range v.([]interface{}) {
+								tmp = append(tmp, fmt.Sprint(vv))
+							}
+							v = strings.Join(tmp, ",")
+							logger.InfoFmt("param: %q - type: %T", v, t)
+						default:
+							logger.InfoFmt("param: %q - type: %T", v, t)
+						}
+					} else {
+						v = nil
 					}
-					v = strings.Join(tmp, ",")
-					logger.InfoFmt("param: %q - type: %T", v, t)
-				default:
-					logger.InfoFmt("param: %q - type: %T", v, t)
+					if v == nil {
+						stmt = stmt.Where(pf.ParsedCondition)
+					} else {
+						stmt = stmt.Where(pf.ParsedCondition, v)
+					}
 				}
-				// params = append(params, bigquery.QueryParameter{
-				// 	// Converting pfValues[i] which is interface{} to .(*interface{})
-				// 	// then assign Value the *value instead of the pointer.
-				// 	Name: pf.ParamNames[i], Value: v,
-				// })
 			}
 		}
-		querystr += models.ParseOrderBy(dbOpts.Filters)
+		// .Where(rIDField+" = ?", rmap[rIDField])
+		// exists, err := stmt.ReturnString()
+		oBy := models.ParseOrderBy(opts.Filters, false)
+		if oBy != "" {
+			for _, o := range strings.Split(oBy, ",") {
+				stmt = stmt.OrderBy(o)
+			}
+		}
 	}
-	logger.InfoFmt("Query: %s", querystr)
-	// ctx := context.Background()
-	// bqClient, err := bigquery.NewClient(ctx, projectID)
-	// if err != nil {
-	// 	return or, logger.Err(err)
-	// }
-	// q := bqClient.Query(querystr)
-	// q.Parameters = params
-	// ri, err := q.Read(ctx)
-	// if err != nil {
-	// 	return or, logger.ErrFmt("[bq.Read.Query.Read]: %#v", err)
-	// }
-	// totalrows := int(ri.TotalRows)
-	// logger.InfoFmt("Total records: %d", totalrows)
-	// rec := models.GetRecordType(obj.GetEntityType())
-	// logger.InfoFmt("rec: %#v", rec)
-	// or.Count = totalrows
+	buf := dbr.NewBuffer()
+	_ = stmt.Build(stmt.Dialect, buf)
+	logger.InfoFmt("Query: %s", buf.String())
+	var rows []interface{} // models.GetRecordTypeSlice(r.GetEntityType())
+	totalrows, err := stmt.Load(rows)
+	if err != nil {
+		return or, logger.ErrFmt("[csql.Read.Select]: %q", err)
+	}
+	or.Count = totalrows
+	logger.InfoFmt("rows: %q", rows)
 	// for i := 1; i <= totalrows; i++ {
-	// 	ri.Next(rec)
-	// 	or.List = append(or.List, utils.StructToMap(rec, nil))
+	// 	or.List = append(or.List, utils.StructToMap(rows[i], nil))
 	// }
+	// ctx := context.Background()
 	return or, err
 }
 

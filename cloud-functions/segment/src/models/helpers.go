@@ -15,6 +15,9 @@ func opToSQL(op string, fields ...string) string {
 			}
 		}
 	case c == 1:
+		if fields[0] == "" {
+			fields[0] = "?"
+		}
 		fields = []string{fields[0], "?"}
 	default:
 		fields = []string{"?", "?"}
@@ -43,7 +46,9 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 	var pq []ParsedQueryFilter
 	for i, f := range filters {
 		if f.OpType != "" && f.OpType != OperationTypeFilter {
-			logger.ErrFmtStr("This query filter is not an OperationTypeFilter")
+			if f.OpType != OperationTypeOrderBy {
+				logger.ErrFmtStr("This query filter is not an OperationTypeFilter")
+			}
 			continue
 		}
 		if f.Op == "" {
@@ -57,7 +62,7 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 		if useFieldName {
 			op = opToSQL(f.Op, prefix+field)
 		} else {
-			opToSQL(f.Op, "")
+			op = opToSQL(f.Op, "")
 		}
 		pf := ParsedQueryFilter{
 			ParamNames:      []string{field},
@@ -100,7 +105,7 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 }
 
 // ParseOrderBy parses the filter and adds the where condition to the transaction
-func ParseOrderBy(filters []QueryFilter) string {
+func ParseOrderBy(filters []QueryFilter, prefixOrderBy bool) string {
 	var by string
 	for _, f := range filters {
 		if f.OpType != OperationTypeOrderBy {
@@ -115,11 +120,14 @@ func ParseOrderBy(filters []QueryFilter) string {
 			op != strings.ToUpper(OperationOrderByDesc) {
 			op = OperationOrderByAsc
 		}
-		by += by + f.Field + " " + op + ","
+		by += f.Field + " " + op + ","
 	}
 	if len(by) > 0 {
-		oby := " ORDER BY " + by
-		if oby[len(oby)-1] == ',' {
+		oby := by
+		if prefixOrderBy {
+			oby = " ORDER BY " + by
+		}
+		if oby[len(oby)-1:] == "," {
 			oby = oby[:len(oby)-1]
 		}
 		return oby
@@ -150,5 +158,31 @@ func GetRecordType(entityType string) interface{} {
 		return &DecodeRecord{}
 	default:
 		return &FallbackData{}
+	}
+}
+
+// GetRecordTypeSlice gets the proper []interface by entity type
+func GetRecordTypeSlice(entityType string) interface{} {
+	switch entityType {
+	case TypeCampaign:
+		return []Campaign{}
+	case TypeEvent:
+		return []Event{}
+	case TypeHousehold:
+		return []Household{}
+	case TypeOrderHeader:
+		return []OrderHeader{}
+	case TypeOrderConsignment:
+		return []OrderConsignment{}
+	case TypeOrderDetail:
+		return []OrderDetail{}
+	case TypePeople:
+		return []People{}
+	case TypeProduct:
+		return []Product{}
+	case TypeDecode:
+		return []DecodeRecord{}
+	default:
+		return []FallbackData{}
 	}
 }

@@ -166,7 +166,7 @@ func (r *BaseRecord) GetTablenameSuffix() string {
 	if r.DBopts.TablenameSuffix != "" {
 		return "_" + r.DBopts.TablenameSuffix
 	}
-	return "_" + r.GetTablenameAsSuffix()
+	return r.GetTablenameAsSuffix()
 }
 
 // GetMap gets the column list

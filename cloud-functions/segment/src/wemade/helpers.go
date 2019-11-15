@@ -25,7 +25,8 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	cust, err := validateCustomer(ctx, projectID, namespace, input.AccessKey)
+	accessKey := "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3" //input.AccessKey
+	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err
 	}
@@ -121,8 +122,6 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		record := models.People{}
 		record.Organization = organization
 		json.Unmarshal(data, &record)
-		lol, _ := json.Marshal(record)
-		logger.InfoFmt("PeopleRecord: %s", string(lol))
 		return &models.PeopleRecord{
 			BaseRecord: br,
 			Record:     record,
@@ -206,6 +205,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			HasTablenamePrefix: true,
 			Tablename:          record.GetStrOwnerID(),
 			TablenamePrefix:    models.TblnamePrefix,
+			TablenameSuffix:    models.TblDecode,
 		}
 		return record, nil
 	default:
