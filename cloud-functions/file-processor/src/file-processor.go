@@ -206,9 +206,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var maxColumns int
 			var maxColumnRowAt int
 			for index, row := range allrows {
-				if index == 0 {
-					log.Printf("first row: %v", row)
-				}
 				cellCount := CountSparseArray(row)
 				if cellCount > maxColumns {
 					maxColumnRowAt = index
@@ -282,7 +279,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 func CountSparseArray(inputArray []string) int {
 	var counter int
 	for _, c := range inputArray {
-		if len(c) > 0 {
+		// ignore files
+		if len(c) > 0 && !strings.HasPrefix(c, "__EMPTY") {
 			counter++
 		}
 	}
