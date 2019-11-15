@@ -245,8 +245,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
 	MatchByKey4C := "FINITIAL"
 	MatchByValue4C := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
-	MatchByKey4D := "ADTYPE"
-	MatchByValue4D := "HOME"
 	// MISSING STREET NUMBER
 
 	MatchByKey5A := "CITY"
@@ -257,8 +255,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
 	MatchByKey5D := "FINITIAL"
 	MatchByValue5D := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
-	MatchByKey5E := "ADTYPE"
-	MatchByValue5E := "HOME"
 	// MISSING STREET NUMBER
 
 	MatchByKey6A := "ORGANIZATION"
@@ -275,16 +271,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
 		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
 		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,
 		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
-		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C, MatchByKey4D, MatchByValue4D,
-		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E,
+		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C,
+		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D,
 		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B, MatchByKey6C, MatchByValue6C, MatchByKey6D, MatchByValue6D)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
@@ -322,6 +318,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 	}
+
+	log.Printf("Fiber Collection: %v", FiberCollection)
 
 	// get all the Fibers
 	var Fibers []PeopleFiber
