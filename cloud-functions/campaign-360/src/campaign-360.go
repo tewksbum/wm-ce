@@ -51,14 +51,14 @@ type MatchKeyField struct {
 }
 
 type CampaignOutput struct {
-	CAMPAIGNID MatchKeyField `json:"campaignId"`
+	CAMPAIGNID MatchKeyField `json:"campaignId" bigquery:"campaignId"`
 
-	NAME      MatchKeyField `json:"name"`
-	TYPE      MatchKeyField `json:"type"`
-	CHANNEL   MatchKeyField `json:"channel"`
-	STARTDATE MatchKeyField `json:"startDate"`
-	ENDDATE   MatchKeyField `json:"endDate"`
-	BUDGET    MatchKeyField `json:"budget"`
+	NAME      MatchKeyField `json:"name" bigquery:"name"`
+	TYPE      MatchKeyField `json:"type" bigquery:"type"`
+	CHANNEL   MatchKeyField `json:"channel" bigquery:"channel"`
+	STARTDATE MatchKeyField `json:"startDate" bigquery:"startDate"`
+	ENDDATE   MatchKeyField `json:"endDate" bigquery:"endDate"`
+	BUDGET    MatchKeyField `json:"budget" bigquery:"budget"`
 }
 
 type Signature360 struct {
@@ -94,6 +94,7 @@ type Campaign360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
+var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
@@ -132,7 +133,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.

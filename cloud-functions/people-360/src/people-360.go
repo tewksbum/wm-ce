@@ -58,36 +58,36 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	FNAME    MatchKeyField `json:"fname"`
-	FINITIAL MatchKeyField `json:"finitial"`
-	LNAME    MatchKeyField `json:"lname"`
-	CITY     MatchKeyField `json:"city"`
-	STATE    MatchKeyField `json:"state"`
-	ZIP      MatchKeyField `json:"zip"`
-	ZIP5     MatchKeyField `json:"zip5"`
-	COUNTRY  MatchKeyField `json:"country"`
-	EMAIL    MatchKeyField `json:"email"`
-	PHONE    MatchKeyField `json:"phone"`
-	AD1      MatchKeyField `json:"ad1"`
-	AD2      MatchKeyField `json:"ad2"`
-	ADTYPE   MatchKeyField `json:"adType"`
+	FNAME    MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL MatchKeyField `json:"finitial" bigquery:"finitial"`
+	LNAME    MatchKeyField `json:"lname" bigquery:"lname"`
+	CITY     MatchKeyField `json:"city" bigquery:"city"`
+	STATE    MatchKeyField `json:"state" bigquery:"state"`
+	ZIP      MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5     MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY  MatchKeyField `json:"country" bigquery:"country"`
+	EMAIL    MatchKeyField `json:"email" bigquery:"email"`
+	PHONE    MatchKeyField `json:"phone" bigquery:"phone"`
+	AD1      MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD2      MatchKeyField `json:"ad2" bigquery:"ad2"`
+	ADTYPE   MatchKeyField `json:"adType" bigquery:"adType"`
 
-	TRUSTEDID MatchKeyField `json:"trustedId"`
+	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedId"`
 
-	CLIENTID   MatchKeyField `json:"clientId"`
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
+	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientId"`
+	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
 
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
+	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
+	AGE    MatchKeyField `json:"age" bigquery:"age"`
+	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
 
-	MAILROUTE MatchKeyField `json:"mailRoute"`
+	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailRoute"`
 
-	ORGANIZATION MatchKeyField `json:"organization"`
-	TITLE        MatchKeyField `json:"title"`
-	ROLE         MatchKeyField `json:"role"`
-	STATUS       MatchKeyField `json:"status"`
+	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
+	TITLE        MatchKeyField `json:"title" bigquery:"title"`
+	ROLE         MatchKeyField `json:"role" bigquery:"role"`
+	STATUS       MatchKeyField `json:"status" bigquery:"status"`
 }
 
 type Signature360 struct {
@@ -123,6 +123,7 @@ type People360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
+var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
@@ -186,7 +187,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
