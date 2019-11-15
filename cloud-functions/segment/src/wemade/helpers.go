@@ -25,7 +25,8 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	accessKey := "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3" //input.AccessKey
+	accessKey := "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3"
+	// accessKey := input.AccessKey
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err
