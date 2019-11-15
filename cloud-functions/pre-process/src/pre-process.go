@@ -96,6 +96,7 @@ type OrderERR struct {
 type OrderDetailERR struct {
 	ID           int `json:"ID"`
 	OrderID      int `json:"OrderID"`
+	OrderNumber  int `json:"OrderNumber"`
 	ConsigmentID int `json:"ConsigmentID"`
 	ProductID    int `json:"ProductID"`
 	ProductSKU   int `json:"ProductSKU"`
@@ -881,6 +882,11 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
 		err.ProductSKU = 1
 	}
+
+	if strings.Contains(key, "ordernumber") {
+		err.OrderNumber = 1
+	}
+
 	return err
 }
 

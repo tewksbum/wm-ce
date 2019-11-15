@@ -56,6 +56,7 @@ type MatchKeyField struct {
 type OrderDetailOutput struct {
 	ID            MatchKeyField `json:"id"`
 	ORDERID       MatchKeyField `json:"orderId"`
+	ORDERNUMBER   MatchKeyField `json:"orderNumber"`
 	CONSIGNMENTID MatchKeyField `json:"consignmentId"`
 
 	PRODUCTID  MatchKeyField `json:"productId"`
@@ -66,6 +67,7 @@ type OrderDetailOutput struct {
 type OrderDetailERR struct {
 	ID           int `json:"ID"`
 	OrderID      int `json:"OrderID"`
+	OrderNumber  int `json:"OrderNumber"`
 	ConsigmentID int `json:"ConsigmentID"`
 	ProductID    int `json:"ProductID"`
 	ProductSKU   int `json:"ProductSKU"`
@@ -136,7 +138,12 @@ func PostProcessOrderDetail(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-
+		if column.OrderDetailERR.OrderNumber == 1 {
+			matchKey := "ORDERNUMBER"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
 		if column.OrderDetailERR.ProductID == 1 {
 			matchKey := "PRODUCTID"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {

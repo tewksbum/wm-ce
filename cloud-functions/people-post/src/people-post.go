@@ -165,6 +165,7 @@ type ConsignmentERR struct {
 type OrderDetailERR struct {
 	ID           int `json:"ID"`
 	OrderID      int `json:"OrderID"`
+	OrderNumber  int `json:"OrderNumber"`
 	ConsigmentID int `json:"ConsigmentID"`
 	ProductID    int `json:"ProductID"`
 	ProductSKU   int `json:"ProductSKU"`
