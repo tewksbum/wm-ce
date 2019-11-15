@@ -444,6 +444,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.OrderDetailERR.OrderID == 1 {
 			columnFlags.OrderID = true
 		}
+
+		column.Value = reNewline.ReplaceAllString(column.Value, " ")
 		columns[i] = column
 	}
 	log.Printf("columns %v", columns)
