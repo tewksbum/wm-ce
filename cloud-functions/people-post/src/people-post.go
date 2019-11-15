@@ -306,7 +306,8 @@ var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
-var AddressParserEndpoint = os.Getenv("ADDRESSPARSE")
+var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
+var AddressParserPath = os.Getenv("ADDRESSPATH")
 
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
@@ -475,41 +476,58 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// parse address as needed
-	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value
-	cityInput := mkOutput.CITY.Value
-	if len(mkOutput.AD1.Value) > 0 && len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
-		a := ParseAddress(addressInput)
-		log.Printf("address parser returned %v", a)
-		if len(a.City) > 0 {
-			mkOutput.CITY.Value = a.City
-			mkOutput.CITY.Source = "Address Parser"
-			mkOutput.STATE.Value = a.State
-			mkOutput.STATE.Source = "Address Parser"
-			mkOutput.ZIP.Value = a.Zip
-			if len(a.Plus4) > 0 {
-				mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
-			}
-			mkOutput.ZIP.Source = "Address Parser"
-			mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
-			mkOutput.AD1.Source = "Address Parser"
-			mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
-			mkOutput.AD2.Source = "Address Parser"
+	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
+	a := ParseAddress(addressInput)
+	log.Printf("address parser returned %v", a)
+	if len(a.City) > 0 {
+		mkOutput.CITY.Value = a.City
+		mkOutput.CITY.Source = "Address Parser"
+		mkOutput.STATE.Value = a.State
+		mkOutput.STATE.Source = "Address Parser"
+		mkOutput.ZIP.Value = a.Zip
+		if len(a.Plus4) > 0 {
+			mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
 		}
-	} else if len(mkOutput.CITY.Value) > 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
-		a := ParseAddress("123 Main St, " + cityInput)
-		log.Printf("address parser returned %v", a)
-		if len(a.City) > 0 {
-			mkOutput.CITY.Value = a.City
-			mkOutput.CITY.Source = "Address Parser"
-			mkOutput.STATE.Value = a.State
-			mkOutput.STATE.Source = "Address Parser"
-			mkOutput.ZIP.Value = a.Zip
-			if len(a.Plus4) > 0 {
-				mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
-			}
-			mkOutput.ZIP.Source = "Address Parser"
-		}
+		mkOutput.ZIP.Source = "Address Parser"
+		mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
+		mkOutput.AD1.Source = "Address Parser"
+		mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+		mkOutput.AD2.Source = "Address Parser"
 	}
+	// cityInput := mkOutput.CITY.Value
+	// if len(mkOutput.AD1.Value) > 0 && len(mkOutput.CITY.Value) == 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+	// 	a := ParseAddress(addressInput)
+	// 	log.Printf("address parser returned %v", a)
+	// 	if len(a.City) > 0 {
+	// 		mkOutput.CITY.Value = a.City
+	// 		mkOutput.CITY.Source = "Address Parser"
+	// 		mkOutput.STATE.Value = a.State
+	// 		mkOutput.STATE.Source = "Address Parser"
+	// 		mkOutput.ZIP.Value = a.Zip
+	// 		if len(a.Plus4) > 0 {
+	// 			mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+	// 		}
+	// 		mkOutput.ZIP.Source = "Address Parser"
+	// 		mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
+	// 		mkOutput.AD1.Source = "Address Parser"
+	// 		mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+	// 		mkOutput.AD2.Source = "Address Parser"
+	// 	}
+	// } else if len(mkOutput.CITY.Value) > 0 && len(mkOutput.STATE.Value) == 0 && len(mkOutput.ZIP.Value) == 0 {
+	// 	a := ParseAddress("123 Main St, " + cityInput)
+	// 	log.Printf("address parser returned %v", a)
+	// 	if len(a.City) > 0 {
+	// 		mkOutput.CITY.Value = a.City
+	// 		mkOutput.CITY.Source = "Address Parser"
+	// 		mkOutput.STATE.Value = a.State
+	// 		mkOutput.STATE.Source = "Address Parser"
+	// 		mkOutput.ZIP.Value = a.Zip
+	// 		if len(a.Plus4) > 0 {
+	// 			mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+	// 		}
+	// 		mkOutput.ZIP.Source = "Address Parser"
+	// 	}
+	// }
 
 	// check zip city state match
 	ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
@@ -861,7 +879,13 @@ func IndexOf(element string, data []string) int {
 }
 
 func ParseAddress(address string) AddressParsed {
-	req, err := http.NewRequest(http.MethodGet, AddressParserEndpoint, nil)
+	baseUrl, err := url.Parse(AddressParserBaseUrl)
+	baseUrl.Path += AddressParserPath
+	params := url.Values{}
+	params.Add("a", address)
+	baseUrl.RawQuery = params.Encode()
+
+	req, err := http.NewRequest(http.MethodGet, baseUrl.String(), nil)
 	if err != nil {
 		log.Fatalf("error preparing address parser: %v", err)
 	}
