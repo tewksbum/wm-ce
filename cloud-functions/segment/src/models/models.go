@@ -79,14 +79,14 @@ func (r *DecodeRecord) GetAttributes() string {
 	return r.Attributes
 }
 
-// BaseRecord input for the API
+// BaseRecord input for the API //ownerid, entitytype, source, owner, signature, attributes
 type BaseRecord struct {
-	OwnerID         int64     `json:"ownerId" bigquery:"ownerid"`
-	EntityType      string    `json:"entityType" bigquery:"entitytype"`
-	Source          string    `json:"source" bigquery:"source"`
-	Owner           string    `json:"owner" bigquery:"owner"`
+	OwnerID         int64     `json:"ownerId" bigquery:"-"`
+	EntityType      string    `json:"entityType" bigquery:"-"`
+	Source          string    `json:"source" bigquery:"-"`
+	Owner           string    `json:"owner" bigquery:"-"`
 	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
-	Attributes      string    `json:"attributes" bigquery:"attributes"`
+	Attributes      string    `json:"attributes" bigquery:"-"`
 	Signatures      []string  `json:"signatures" bigquery:"signatures"`
 	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
 	DBopts          Options   `json:"-" bigquery:"-"`
@@ -332,15 +332,29 @@ type OrderDetail struct {
 
 // People data
 type People struct {
-	PeopleID     string `json:"peopleId" bigquery:"peopleid"`
-	Salutation   string `json:"salutation" bigquery:"salutation"`
-	FirstName    string `json:"firstName" bigquery:"firstname"`
-	LastName     string `json:"lastName" bigquery:"lastname"`
-	Gender       string `json:"gender" bigquery:"gender"`
-	Age          string `json:"age" bigquery:"age"`
-	Organization string `json:"organization" bigquery:"organization"`
-	Title        string `json:"title" bigquery:"title"`
-	Role         string `json:"role" bigquery:"role"`
+	PeopleID     string  `json:"peopleId" bigquery:"peopleid"`
+	Salutation   string  `json:"salutation" bigquery:"salutation"`
+	FirstName    string  `json:"firstName" bigquery:"firstname"`
+	LastName     string  `json:"lastName" bigquery:"lastname"`
+	Gender       string  `json:"gender" bigquery:"gender"`
+	Age          string  `json:"age" bigquery:"age"`
+	Emails       []Email `json:"emails" bigquery:"emails"`
+	Phones       []Phone `json:"phones" bigquery:"phones"`
+	Organization string  `json:"organization" bigquery:"organization"`
+	Title        string  `json:"title" bigquery:"title"`
+	Role         string  `json:"role" bigquery:"role"`
+}
+
+// Email email+type struct
+type Email struct {
+	Email string `json:"email" bigquery:"email"`
+	Type  string `json:"type" bigquery:"type"`
+}
+
+// Phone phone+type struct
+type Phone struct {
+	Phone string `json:"phone" bigquery:"phone"`
+	Type  string `json:"type" bigquery:"type"`
 }
 
 // Household data

@@ -11,7 +11,7 @@ const (
 var (
 	TypeDecode           = "decode"
 	TypeEvent            = "event"
-	TypeOrderHeader      = "orderheader"
+	TypeOrderHeader      = "order"
 	TypeOrderDetail      = "orderdetail"
 	TypeOrderConsignment = "orderconsignment"
 	TypeHousehold        = "household"
