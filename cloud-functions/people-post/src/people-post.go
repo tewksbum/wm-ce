@@ -871,7 +871,10 @@ func ParseAddress(address string) AddressParsed {
 	jsonErr := json.Unmarshal(body, &parsed)
 	if jsonErr != nil {
 		log.Fatalf("error parsing address parser response: %v", jsonErr)
+	} else {
+		log.Printf("address parser reponse: %v", string(body))
 	}
+
 	return parsed
 }
 
