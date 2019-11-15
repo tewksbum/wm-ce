@@ -101,6 +101,7 @@ type Product360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
+var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
@@ -139,7 +140,7 @@ func Product360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.

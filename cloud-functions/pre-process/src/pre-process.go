@@ -159,6 +159,9 @@ type ERRFlags struct {
 	PeopleFirstName bool
 	PeopleLastName  bool
 	ProductID       bool
+	ProductSKU      bool
+	ProductName     bool
+	ProductVendor   bool
 	CampaignID      bool
 	EventID         bool
 	OrderID         bool
@@ -423,11 +426,15 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.OrderERR.ID == 1 {
 			columnFlags.OrderID = true
 		}
-		if column.ConsignmentERR.ID == 1 {
-			columnFlags.ConsignmentID = true
-		}
+		// do not flag this
+		// if column.ConsignmentERR.ID == 1 {
+		// 	columnFlags.ConsignmentID = true
+		// }
 		if column.OrderDetailERR.ID == 1 {
 			columnFlags.OrderDetailID = true
+		}
+		if column.OrderDetailERR.ProductSKU == 1 {
+			columnFlags.ProductSKU = true
 		}
 		columns[i] = column
 	}
@@ -439,7 +446,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
 		flags.People = true
 	}
-	if columnFlags.ProductID {
+	if columnFlags.ProductID && columnFlags.ProductName {
 		flags.Product = true
 	}
 	if columnFlags.CampaignID {
@@ -448,10 +455,11 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.OrderID {
 		flags.Order = true
 	}
-	if columnFlags.ConsignmentID && columnFlags.OrderID {
-		flags.Consignment = true
-	}
-	if (columnFlags.OrderDetailID && columnFlags.OrderID) || (columnFlags.ProductID && columnFlags.OrderID) {
+	// skip consignments
+	// if columnFlags.ConsignmentID && columnFlags.OrderID {
+	// 	flags.Consignment = true
+	// }
+	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
 
