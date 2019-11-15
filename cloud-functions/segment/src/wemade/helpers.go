@@ -51,7 +51,6 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		Source:      input.Source,
 		Passthrough: utils.FlattenMap(input.Passthrough),
 		Attributes:  utils.FlattenMap(input.Attributes),
-		Signatures:  input.Signatures,
 		Timestamp:   time.Now(),
 	}
 

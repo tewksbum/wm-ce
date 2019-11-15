@@ -63,10 +63,11 @@ type Record interface {
 // DecodeRecord decode table record
 type DecodeRecord struct {
 	BaseRecord
-	Signature string    `json:"signature" bigquery:"signature" sql:"signature"`
-	PeopleID  string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
-	CreatedAt time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
-	UpdatedAt time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
+	Signature  string    `json:"signature" bigquery:"signature" sql:"signature"`
+	Signatures []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	PeopleID   string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
+	CreatedAt  time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
+	UpdatedAt  time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
 }
 
 // GetMap gets the column list for DecodeRecord
@@ -74,12 +75,16 @@ func (r *DecodeRecord) GetMap() map[string]interface{} {
 	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
-// GetAttributes gets the entity type
-func (r *DecodeRecord) GetAttributes() string {
-	return r.Attributes
+// GetSignatures gets the decode signatures
+func (r *DecodeRecord) GetSignatures() []string {
+	sigs := r.Signatures
+	if r.Signature != "" {
+		sigs = append(sigs, r.Signature)
+	}
+	return sigs
 }
 
-// BaseRecord input for the API //ownerid, entitytype, source, owner, signature, attributes
+// BaseRecord input for the API
 type BaseRecord struct {
 	OwnerID         int64     `json:"ownerId" bigquery:"-"`
 	EntityType      string    `json:"entityType" bigquery:"-"`
@@ -87,7 +92,6 @@ type BaseRecord struct {
 	Owner           string    `json:"owner" bigquery:"-"`
 	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
 	Attributes      string    `json:"attributes" bigquery:"-"`
-	Signatures      []string  `json:"signatures" bigquery:"signatures"`
 	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
 	DBopts          Options   `json:"-" bigquery:"-"`
 	StorageType     string    `json:"-" sql:"-" bigquery:"-"` // csql or bq
@@ -179,9 +183,9 @@ func (r *BaseRecord) GetIDField() string {
 	return r.IDField
 }
 
-// GetSignatures gets the column list
+// GetSignatures gets the record signatures (always empty on base record)
 func (r *BaseRecord) GetSignatures() []string {
-	return r.Signatures
+	return []string{}
 }
 
 // GetColumnList gets the column list
@@ -229,28 +233,47 @@ type ProductRecord struct {
 // OrderHeaderRecord a event type record
 type OrderHeaderRecord struct {
 	BaseRecord
+	Signatures  []string    `json:"signatures" bigquery:"signatures"`
 	SurrogateID string      `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderHeader `json:"record" bigquery:"record"`
+}
+
+// GetSignatures gets the order header signatures
+func (r *OrderHeaderRecord) GetSignatures() []string {
+	return r.Signatures
 }
 
 // OrderConsignmentRecord a event type record
 type OrderConsignmentRecord struct {
 	BaseRecord
+	Signatures  []string         `json:"signatures" bigquery:"signatures"`
 	SurrogateID string           `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderConsignment `json:"record" bigquery:"record"`
+}
+
+// GetSignatures gets the order consignment signatures
+func (r *OrderConsignmentRecord) GetSignatures() []string {
+	return r.Signatures
 }
 
 // OrderDetailRecord a event type record
 type OrderDetailRecord struct {
 	BaseRecord
+	Signatures  []string    `json:"signatures" bigquery:"signatures"`
 	SurrogateID string      `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderDetail `json:"record" bigquery:"record"`
+}
+
+// GetSignatures gets the order detail signatures
+func (r *OrderDetailRecord) GetSignatures() []string {
+	return r.Signatures
 }
 
 // PeopleRecord a event type record
 type PeopleRecord struct {
 	BaseRecord
-	Record People `json:"record" bigquery:"record"`
+	Signatures []string `json:"signatures" bigquery:"signatures"`
+	Record     People   `json:"record" bigquery:"record"`
 }
 
 // HouseholdRecord a Household type record

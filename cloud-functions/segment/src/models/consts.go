@@ -21,7 +21,7 @@ var (
 	TblDecode            = "decode"
 	TblnamePrefix        = "seg_"
 	TblEvent             = "events"
-	TblOrderHeader       = "orderheaders"
+	TblOrderHeader       = "orders"
 	TblOrderDetail       = "orderdetails"
 	TblOrderConsignment  = "orderconsignments"
 	TblHousehold         = "households"
