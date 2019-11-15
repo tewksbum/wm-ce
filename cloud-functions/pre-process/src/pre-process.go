@@ -737,7 +737,7 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 
 	// correct some assignments
-	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.Country == 1 {
 		err.Address1 = 0
 	}
 
