@@ -130,6 +130,7 @@ type PeopleERR struct {
 	Role                int `json:"Role"`
 	Dorm                int `json:"Dorm"`
 	Room                int `json:"Room"`
+	Organization        int `json:"Organization"`
 	AddressTypeCampus   int `json:"ATCampus"`
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
@@ -387,6 +388,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.TrustedID == 1 {
 			trustedID = column.Value
 			SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
+		}
+
+		if column.PeopleERR.Organization == 1 {
+			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
+		}
+
+		if column.PeopleERR.Title == 1 {
+			SetMkField(&mkOutput, "TITLE", column.Value, column.Name)
 		}
 
 		if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {

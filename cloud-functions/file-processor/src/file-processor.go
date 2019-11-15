@@ -237,9 +237,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var output Output
 			output.Signature = input.Signature
 			output.Attributes = input.Attributes
-			if len(output.Signature.RecordID) == 0 {
-				output.Signature.RecordID = uuid.New().String()
-			}
+			//if len(output.Signature.RecordID) == 0 {
+			output.Signature.RecordID = uuid.New().String()
+			//}
 			output.Passthrough = input.Passthrough
 
 			for _, d := range records {

@@ -24,11 +24,11 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
-	Source    string `json:"source"`
-	EventID   string `json:"eventId"`
-	EventType string `json:"eventType"`
-	RecordID  string `json:"recordId"`
+	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	Source    string `json:"source" bigquery:"source"`
+	EventID   string `json:"eventId" bigquery:"eventid"`
+	EventType string `json:"eventType" bigquery:"eventtype"`
+	RecordID  string `json:"recordId" bigquery:"recordid"`
 }
 
 type PeopleInput struct {
@@ -65,11 +65,11 @@ type PeopleOutput struct {
 	PHONE    MatchKeyField `json:"phone" bigquery:"phone"`
 	AD1      MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD2      MatchKeyField `json:"ad2" bigquery:"ad2"`
-	ADTYPE   MatchKeyField `json:"adType" bigquery:"adType"`
+	ADTYPE   MatchKeyField `json:"adType" bigquery:"adtype"`
 
-	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedId"`
+	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
 
-	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientId"`
+	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientid"`
 	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
 	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
 
@@ -77,7 +77,7 @@ type PeopleOutput struct {
 	AGE    MatchKeyField `json:"age" bigquery:"age"`
 	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
 
-	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailRoute"`
+	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
 
 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
