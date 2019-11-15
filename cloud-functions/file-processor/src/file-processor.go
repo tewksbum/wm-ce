@@ -102,6 +102,7 @@ var RedisAddress = os.Getenv("MEMSTORE")
 var NERApi = os.Getenv("NERAPI")
 
 var reNewline = regexp.MustCompile(`\r?\n`)
+var reNewline2 = regexp.MustCompile(`_x000d_`)
 
 // global vars
 var ctx context.Context
@@ -247,7 +248,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				fields := make(map[string]string)
 				for j, y := range d {
-					fields[headers[j]] = strings.Replace(reNewline.ReplaceAllString(y, " "), "_x000d_", "")
+					fields[headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
 				}
 
 				// // do not append attributes until after record processor, otherwise interferes with NER lookup
