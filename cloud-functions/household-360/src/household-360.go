@@ -92,10 +92,9 @@ type HouseHoldOutput struct {
 	ZIP     MatchKeyField `json:"zip" bigquery:"zip"`
 	ZIP5    MatchKeyField `json:"zip5" bigquery:"zip5"`
 	COUNTRY MatchKeyField `json:"country" bigquery:"country"`
-	EMAIL   MatchKeyField `json:"email" bigquery:"email"`
 	AD1     MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD2     MatchKeyField `json:"ad2" bigquery:"ad2"`
-	ADTYPE  MatchKeyField `json:"adType" bigquery:"adType"`
+	ADTYPE  MatchKeyField `json:"adType" bigquery:"adtype"`
 }
 
 type Signature360 struct {
@@ -206,7 +205,6 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	HouseholdMatchKeys.ZIP = input.MatchKeys.ZIP
 	HouseholdMatchKeys.ZIP5 = input.MatchKeys.ZIP5
 	HouseholdMatchKeys.COUNTRY = input.MatchKeys.COUNTRY
-	HouseholdMatchKeys.EMAIL = input.MatchKeys.EMAIL
 	HouseholdMatchKeys.AD1 = input.MatchKeys.AD1
 	HouseholdMatchKeys.AD2 = input.MatchKeys.AD2
 	HouseholdMatchKeys.ADTYPE = input.MatchKeys.ADTYPE
@@ -337,6 +335,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
+		log.Printf("Getting %v value", name)
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Value = GetMkField(&HouseholdMatchKeys, name).Value
 		if !Contains(mk.Values, mk.Value) {
