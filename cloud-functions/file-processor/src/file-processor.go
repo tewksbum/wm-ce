@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -99,6 +100,8 @@ var BucketName = os.Getenv("GSBUCKET")
 
 var RedisAddress = os.Getenv("MEMSTORE")
 var NERApi = os.Getenv("NERAPI")
+
+var reNewline = regexp.MustCompile(`\r?\n`)
 
 // global vars
 var ctx context.Context
@@ -244,7 +247,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				fields := make(map[string]string)
 				for j, y := range d {
-					fields[headers[j]] = y
+					fields[headers[j]] = reNewline.ReplaceAllString(y, " ")
 				}
 
 				// // do not append attributes until after record processor, otherwise interferes with NER lookup
