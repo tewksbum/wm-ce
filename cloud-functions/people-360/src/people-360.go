@@ -52,9 +52,9 @@ type PeopleFiber struct {
 }
 
 type MatchKeyField struct {
-	Value  string `json:"value"`
-	Source string `json:"source"`
-	Type   string `json:"type"`
+	Value  string `json:"value" bigquery:"value"`
+	Source string `json:"source" bigquery:"source"`
+	Type   string `json:"type" bigquery:"type"`
 }
 
 type PeopleOutput struct {

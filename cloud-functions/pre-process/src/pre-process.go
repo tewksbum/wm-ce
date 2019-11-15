@@ -719,7 +719,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "state") {
 		err.State = 1
 	}
-	if strings.Contains(key, "zip") {
+	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
 		err.ZipCode = 1
 	}
 	if strings.Contains(key, "phone") {
@@ -731,6 +731,13 @@ func GetPeopleERR(column string) PeopleERR {
 
 	// correct some assignments
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+		err.Address1 = 0
+	}
+
+	if strings.Contains(key, "first") && strings.Contains(key, "name") {
+		err.Address1 = 0
+	}
+	if strings.Contains(key, "last") && strings.Contains(key, "name") {
 		err.Address1 = 0
 	}
 
@@ -840,7 +847,7 @@ func GetOrderERR(column string) OrderERR {
 		err.CustomerID = 1
 	case "order.placedat":
 		err.Date = 1
-	case "order.Total":
+	case "order.total":
 		err.Total = 1
 	}
 

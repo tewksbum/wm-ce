@@ -47,8 +47,9 @@ type OrderFiber struct {
 }
 
 type MatchKeyField struct {
-	Value  string `json:"value"`
-	Source string `json:"source"`
+	Value  string `json:"value" bigquery:"value"`
+	Source string `json:"source" bigquery:"source"`
+	Type   string `json:"type" bigquery:"type"`
 }
 
 type OrderOutput struct {
