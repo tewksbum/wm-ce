@@ -24,11 +24,11 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
-	Source    string `json:"source"`
-	EventID   string `json:"eventId"`
-	EventType string `json:"eventType"`
-	RecordID  string `json:"recordId"`
+	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	Source    string `json:"source" bigquery:"source"`
+	EventID   string `json:"eventId" bigquery:"eventid"`
+	EventType string `json:"eventType" bigquery:"eventtype"`
+	RecordID  string `json:"recordId" bigquery:"recordid"`
 }
 
 type OrderInput struct {

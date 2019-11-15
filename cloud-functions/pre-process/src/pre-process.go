@@ -129,6 +129,7 @@ type PeopleERR struct {
 	Role                int `json:"Role"`
 	Dorm                int `json:"Dorm"`
 	Room                int `json:"Room"`
+	Organization        int `json:"Organization"`
 	AddressTypeCampus   int `json:"ATCampus"`
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
@@ -688,6 +689,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Dorm = 1
 	case "room":
 		err.Room = 1
+	case "organization":
+		err.Organization = 1
+	case "title":
+		err.Title = 1
 	}
 
 	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
