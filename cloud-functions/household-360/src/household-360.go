@@ -47,9 +47,9 @@ type HouseHoldFiber struct {
 }
 
 type MatchKeyField struct {
-	Value  string `json:"value"`
-	Source string `json:"source"`
-	Type   string `json:"type"`
+	Value  string `json:"value" bigquery:"value"`
+	Source string `json:"source" bigquery:"source"`
+	Type   string `json:"type" bigquery:"type"`
 }
 
 type PeopleOutput struct {
@@ -162,13 +162,6 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	// assign first initial and zip5
-	if len(input.MatchKeys.FNAME.Value) > 0 {
-		input.MatchKeys.FINITIAL = MatchKeyField{
-			Value:  input.MatchKeys.FNAME.Value[0:1],
-			Source: input.MatchKeys.FNAME.Source,
-		}
-	}
 	if len(input.MatchKeys.ZIP.Value) > 0 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
 			Value:  input.MatchKeys.ZIP.Value[0:5],
@@ -331,7 +324,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	var output HouseHold360Output
 	var FiberMatchKeys []MatchKey360
 
-	MatchKeyList := structs.Names(&HouseHold360Output{})
+	MatchKeyList := structs.Names(&HouseHoldOutput{})
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
