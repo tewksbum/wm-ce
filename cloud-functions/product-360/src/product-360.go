@@ -52,20 +52,21 @@ type MatchKeyField struct {
 }
 
 type ProductOutput struct {
-	PID MatchKeyField `json:"pid"`
-	SKU MatchKeyField `json:"sku"`
-	UPC MatchKeyField `json:"upc"`
+	PID MatchKeyField `json:"pid" bigquery:"pid"`
+	SKU MatchKeyField `json:"sku" bigquery:"sku"`
+	UPC MatchKeyField `json:"upc" bigquery:"upc"`
 
-	NAME        MatchKeyField `json:"name"`
-	DESCRIPTION MatchKeyField `json:"description"`
-	SIZE        MatchKeyField `json:"size"`
-	COLOR       MatchKeyField `json:"color"`
-	UNITPRICE   MatchKeyField `json:"unitPrice"`
-	TYPE        MatchKeyField `json:"type"`
-	VENDORID    MatchKeyField `json:"vendorId"`
-	VENDOR      MatchKeyField `json:"vendor"`
-	STARS       MatchKeyField `json:"stars"`
-	CATEGORY    MatchKeyField `json:"category"`
+	NAME        MatchKeyField `json:"name" bigquery:"name"`
+	DESCRIPTION MatchKeyField `json:"description" bigquery:"description"`
+	SIZE        MatchKeyField `json:"size" bigquery:"size"`
+	COLOR       MatchKeyField `json:"color" bigquery:"color"`
+	UNITPRICE   MatchKeyField `json:"unitPrice" bigquery:"unitPrice"`
+	TYPE        MatchKeyField `json:"type" bigquery:"type"`
+	VENDORID    MatchKeyField `json:"vendorId" bigquery:"vendorId"`
+	VENDOR      MatchKeyField `json:"vendor" bigquery:"vendor"`
+	STARS       MatchKeyField `json:"stars" bigquery:"stars"`
+	CATEGORY    MatchKeyField `json:"category" bigquery:"category"`
+	TRUSTEDID   MatchKeyField `json:"trustedId" bigquery:"trustedId"`
 }
 
 type Signature360 struct {
@@ -101,6 +102,7 @@ type Product360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
+var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
@@ -139,7 +141,7 @@ func Product360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.

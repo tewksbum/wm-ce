@@ -521,6 +521,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	// type email if ends with gmail, yahoo, hotmail
+	if len(mkOutput.EMAIL.Value) > 0 {
+		email := strings.ToLower(mkOutput.EMAIL.Value)
+
+		if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
+			mkOutput.EMAIL.Type = "Private"
+		}
+	}
+
 	// pub the record
 	var output Output
 	output.Signature = input.Signature
@@ -862,7 +871,10 @@ func ParseAddress(address string) AddressParsed {
 	jsonErr := json.Unmarshal(body, &parsed)
 	if jsonErr != nil {
 		log.Fatalf("error parsing address parser response: %v", jsonErr)
+	} else {
+		log.Printf("address parser reponse: %v", string(body))
 	}
+
 	return parsed
 }
 

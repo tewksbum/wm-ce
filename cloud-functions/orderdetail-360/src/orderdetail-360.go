@@ -52,14 +52,14 @@ type MatchKeyField struct {
 }
 
 type OrderDetailOutput struct {
-	ID MatchKeyField `json:"id"`
+	ID MatchKeyField `json:"id" bigquery:"id"`
 
-	ORDERID       MatchKeyField `json:"orderId"`
-	CONSIGNMENTID MatchKeyField `json:"consignmentId"`
+	ORDERID       MatchKeyField `json:"orderId" bigquery:"orderId"`
+	CONSIGNMENTID MatchKeyField `json:"consignmentId" bigquery:"consignmentId"`
 
-	PRODUCTID  MatchKeyField `json:"productId"`
-	PRODUCTSKU MatchKeyField `json:"productSku"`
-	PRODUCTUPC MatchKeyField `json:"productUpc"`
+	PRODUCTID  MatchKeyField `json:"productId" bigquery:"productId"`
+	PRODUCTSKU MatchKeyField `json:"productSku" bigquery:"productSku"`
+	PRODUCTUPC MatchKeyField `json:"productUpc" bigquery:"productUpc"`
 }
 
 type Signature360 struct {
@@ -95,6 +95,7 @@ type OrderDetail360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
+var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
@@ -133,7 +134,7 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
