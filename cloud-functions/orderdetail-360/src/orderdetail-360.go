@@ -56,6 +56,7 @@ type OrderDetailOutput struct {
 	ID MatchKeyField `json:"id" bigquery:"id"`
 
 	ORDERID       MatchKeyField `json:"orderId" bigquery:"orderId"`
+	ORDERNUMBER   MatchKeyField `json:"orderNumber" bigquery:"ordernumber"`
 	CONSIGNMENTID MatchKeyField `json:"consignmentId" bigquery:"consignmentId"`
 
 	PRODUCTID  MatchKeyField `json:"productId" bigquery:"productId"`
