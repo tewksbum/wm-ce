@@ -41,7 +41,7 @@ type HouseHoldFiber struct {
 	Signature Signature `json:"signature" bigquery:"signature"`
 	//Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys" bigquery:"matchkeys"`
+	MatchKeys   HouseHoldOutput  `json:"matchkeys" bigquery:"matchkeys"`
 	FiberID     string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
@@ -53,36 +53,49 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	FNAME    MatchKeyField `json:"fname"`
-	FINITIAL MatchKeyField `json:"finitial"`
-	LNAME    MatchKeyField `json:"lname"`
-	CITY     MatchKeyField `json:"city"`
-	STATE    MatchKeyField `json:"state"`
-	ZIP      MatchKeyField `json:"zip"`
-	ZIP5     MatchKeyField `json:"zip5"`
-	COUNTRY  MatchKeyField `json:"country"`
-	EMAIL    MatchKeyField `json:"email"`
-	PHONE    MatchKeyField `json:"phone"`
-	AD1      MatchKeyField `json:"ad1"`
-	AD2      MatchKeyField `json:"ad2"`
-	ADTYPE   MatchKeyField `json:"adType"`
+	FNAME    MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL MatchKeyField `json:"finitial" bigquery:"finitial"`
+	LNAME    MatchKeyField `json:"lname" bigquery:"lname"`
+	CITY     MatchKeyField `json:"city" bigquery:"city"`
+	STATE    MatchKeyField `json:"state" bigquery:"state"`
+	ZIP      MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5     MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY  MatchKeyField `json:"country" bigquery:"country"`
+	EMAIL    MatchKeyField `json:"email" bigquery:"email"`
+	PHONE    MatchKeyField `json:"phone" bigquery:"phone"`
+	AD1      MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD2      MatchKeyField `json:"ad2" bigquery:"ad2"`
+	ADTYPE   MatchKeyField `json:"adType" bigquery:"adType"`
 
-	TRUSTEDID MatchKeyField `json:"trustedId"`
+	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedId"`
 
-	CLIENTID   MatchKeyField `json:"clientId"`
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
+	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientId"`
+	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
 
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
+	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
+	AGE    MatchKeyField `json:"age" bigquery:"age"`
+	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
 
-	MAILROUTE MatchKeyField `json:"mailRoute"`
+	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailRoute"`
 
-	ORGANIZATION MatchKeyField `json:"organization"`
-	TITLE        MatchKeyField `json:"title"`
-	ROLE         MatchKeyField `json:"role"`
-	STATUS       MatchKeyField `json:"status"`
+	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
+	TITLE        MatchKeyField `json:"title" bigquery:"title"`
+	ROLE         MatchKeyField `json:"role" bigquery:"role"`
+	STATUS       MatchKeyField `json:"status" bigquery:"status"`
+}
+
+type HouseHoldOutput struct {
+	LNAME   MatchKeyField `json:"lname" bigquery:"lname"`
+	CITY    MatchKeyField `json:"city" bigquery:"city"`
+	STATE   MatchKeyField `json:"state" bigquery:"state"`
+	ZIP     MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5    MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY MatchKeyField `json:"country" bigquery:"country"`
+	EMAIL   MatchKeyField `json:"email" bigquery:"email"`
+	AD1     MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD2     MatchKeyField `json:"ad2" bigquery:"ad2"`
+	ADTYPE  MatchKeyField `json:"adType" bigquery:"adType"`
 }
 
 type Signature360 struct {
@@ -185,12 +198,25 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
 	}
 
+	// map the matchkeys from people to household
+	var HouseholdMatchKeys HouseHoldOutput
+	HouseholdMatchKeys.LNAME = input.MatchKeys.LNAME
+	HouseholdMatchKeys.CITY = input.MatchKeys.CITY
+	HouseholdMatchKeys.STATE = input.MatchKeys.STATE
+	HouseholdMatchKeys.ZIP = input.MatchKeys.ZIP
+	HouseholdMatchKeys.ZIP5 = input.MatchKeys.ZIP5
+	HouseholdMatchKeys.COUNTRY = input.MatchKeys.COUNTRY
+	HouseholdMatchKeys.EMAIL = input.MatchKeys.EMAIL
+	HouseholdMatchKeys.AD1 = input.MatchKeys.AD1
+	HouseholdMatchKeys.AD2 = input.MatchKeys.AD2
+	HouseholdMatchKeys.ADTYPE = input.MatchKeys.ADTYPE
+
 	// store the fiber
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber HouseHoldFiber
 	fiber.CreatedAt = time.Now()
 	fiber.FiberID = uuid.New().String()
-	fiber.MatchKeys = input.MatchKeys
+	fiber.MatchKeys = HouseholdMatchKeys
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
@@ -202,23 +228,23 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 
 	// locate existing set
 	MatchByKey4A := "ZIP5"
-	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	MatchByValue4A := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", "\\'", -1)
 	MatchByKey4B := "LNAME"
-	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	MatchByValue4B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", "\\'", -1)
 	// MISSING STREET NUMBER
 
 	MatchByKey5A := "CITY"
-	MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", "\\'", -1)
+	MatchByValue5A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", "\\'", -1)
 	MatchByKey5B := "STATE"
-	MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", "\\'", -1)
+	MatchByValue5B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", "\\'", -1)
 	MatchByKey5C := "LNAME"
-	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	MatchByValue5C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", "\\'", -1)
 	// MISSING STREET NUMBER
 
 	MatchByKey6A := "AD2"
-	MatchByValue6A := strings.Replace(input.MatchKeys.AD2.Value, "'", "\\'", -1)
+	MatchByValue6A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", "\\'", -1)
 	MatchByKey6B := "ZIP5"
-	MatchByValue6B := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	MatchByValue6B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", "\\'", -1)
 	// MISSING STREET NUMBER
 
 	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
@@ -312,7 +338,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
-		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		mk.Value = GetMkField(&HouseholdMatchKeys, name).Value
 		if !Contains(mk.Values, mk.Value) {
 			HasNewValues = true
 			break
@@ -358,7 +384,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
-		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		mk.Value = GetMkField(&HouseholdMatchKeys, name).Value
 		if len(mk.Value) == 0 && len(mk.Values) > 0 {
 			mk.Value = mk.Values[0]
 		}
@@ -404,7 +430,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetMkField(v *PeopleOutput, field string) MatchKeyField {
+func GetMkField(v *HouseHoldOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)

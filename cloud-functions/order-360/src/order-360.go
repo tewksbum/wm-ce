@@ -52,13 +52,13 @@ type MatchKeyField struct {
 }
 
 type OrderOutput struct {
-	ID         MatchKeyField `json:"id"`
-	NUMBER     MatchKeyField `json:"number"`
-	CUSTOMERID MatchKeyField `json:"customerId"`
+	ID         MatchKeyField `json:"id" bigquery:"id"`
+	NUMBER     MatchKeyField `json:"number" bigquery:"number"`
+	CUSTOMERID MatchKeyField `json:"customerId" bigquery:"customerId"`
 
-	DATE   MatchKeyField `json:"date"`
-	TOTAL  MatchKeyField `json:"total"`
-	BILLTO MatchKeyField `json:"billTo"`
+	DATE   MatchKeyField `json:"date" bigquery:"date"`
+	TOTAL  MatchKeyField `json:"total" bigquery:"total"`
+	BILLTO MatchKeyField `json:"billTo" bigquery:"billTo"`
 }
 
 type Signature360 struct {

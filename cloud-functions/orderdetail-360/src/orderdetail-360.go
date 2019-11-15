@@ -52,14 +52,14 @@ type MatchKeyField struct {
 }
 
 type OrderDetailOutput struct {
-	ID MatchKeyField `json:"id"`
+	ID MatchKeyField `json:"id" bigquery:"id"`
 
-	ORDERID       MatchKeyField `json:"orderId"`
-	CONSIGNMENTID MatchKeyField `json:"consignmentId"`
+	ORDERID       MatchKeyField `json:"orderId" bigquery:"orderId"`
+	CONSIGNMENTID MatchKeyField `json:"consignmentId" bigquery:"consignmentId"`
 
-	PRODUCTID  MatchKeyField `json:"productId"`
-	PRODUCTSKU MatchKeyField `json:"productSku"`
-	PRODUCTUPC MatchKeyField `json:"productUpc"`
+	PRODUCTID  MatchKeyField `json:"productId" bigquery:"productId"`
+	PRODUCTSKU MatchKeyField `json:"productSku" bigquery:"productSku"`
+	PRODUCTUPC MatchKeyField `json:"productUpc" bigquery:"productUpc"`
 }
 
 type Signature360 struct {

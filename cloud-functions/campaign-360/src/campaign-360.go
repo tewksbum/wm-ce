@@ -51,14 +51,14 @@ type MatchKeyField struct {
 }
 
 type CampaignOutput struct {
-	CAMPAIGNID MatchKeyField `json:"campaignId"`
+	CAMPAIGNID MatchKeyField `json:"campaignId" bigquery:"campaignId"`
 
-	NAME      MatchKeyField `json:"name"`
-	TYPE      MatchKeyField `json:"type"`
-	CHANNEL   MatchKeyField `json:"channel"`
-	STARTDATE MatchKeyField `json:"startDate"`
-	ENDDATE   MatchKeyField `json:"endDate"`
-	BUDGET    MatchKeyField `json:"budget"`
+	NAME      MatchKeyField `json:"name" bigquery:"name"`
+	TYPE      MatchKeyField `json:"type" bigquery:"type"`
+	CHANNEL   MatchKeyField `json:"channel" bigquery:"channel"`
+	STARTDATE MatchKeyField `json:"startDate" bigquery:"startDate"`
+	ENDDATE   MatchKeyField `json:"endDate" bigquery:"endDate"`
+	BUDGET    MatchKeyField `json:"budget" bigquery:"budget"`
 }
 
 type Signature360 struct {

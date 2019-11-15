@@ -52,9 +52,9 @@ type MatchKeyField struct {
 }
 
 type ConsignmentOutput struct {
-	ID MatchKeyField `json:"id"`
+	ID MatchKeyField `json:"id" bigquery:"id"`
 
-	SHIPDATE MatchKeyField `json:"shipDate"`
+	SHIPDATE MatchKeyField `json:"shipDate" bigquery:"shipDate"`
 }
 
 type Signature360 struct {

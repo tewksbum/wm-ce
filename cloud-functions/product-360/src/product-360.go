@@ -52,20 +52,21 @@ type MatchKeyField struct {
 }
 
 type ProductOutput struct {
-	PID MatchKeyField `json:"pid"`
-	SKU MatchKeyField `json:"sku"`
-	UPC MatchKeyField `json:"upc"`
+	PID MatchKeyField `json:"pid" bigquery:"pid"`
+	SKU MatchKeyField `json:"sku" bigquery:"sku"`
+	UPC MatchKeyField `json:"upc" bigquery:"upc"`
 
-	NAME        MatchKeyField `json:"name"`
-	DESCRIPTION MatchKeyField `json:"description"`
-	SIZE        MatchKeyField `json:"size"`
-	COLOR       MatchKeyField `json:"color"`
-	UNITPRICE   MatchKeyField `json:"unitPrice"`
-	TYPE        MatchKeyField `json:"type"`
-	VENDORID    MatchKeyField `json:"vendorId"`
-	VENDOR      MatchKeyField `json:"vendor"`
-	STARS       MatchKeyField `json:"stars"`
-	CATEGORY    MatchKeyField `json:"category"`
+	NAME        MatchKeyField `json:"name" bigquery:"name"`
+	DESCRIPTION MatchKeyField `json:"description" bigquery:"description"`
+	SIZE        MatchKeyField `json:"size" bigquery:"size"`
+	COLOR       MatchKeyField `json:"color" bigquery:"color"`
+	UNITPRICE   MatchKeyField `json:"unitPrice" bigquery:"unitPrice"`
+	TYPE        MatchKeyField `json:"type" bigquery:"type"`
+	VENDORID    MatchKeyField `json:"vendorId" bigquery:"vendorId"`
+	VENDOR      MatchKeyField `json:"vendor" bigquery:"vendor"`
+	STARS       MatchKeyField `json:"stars" bigquery:"stars"`
+	CATEGORY    MatchKeyField `json:"category" bigquery:"category"`
+	TRUSTEDID   MatchKeyField `json:"trustedId" bigquery:"trustedId"`
 }
 
 type Signature360 struct {
