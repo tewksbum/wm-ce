@@ -314,7 +314,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
 		} else {
 			for _, f := range fibers {
-				fs := fmt.Sprintf("%s", f)
+				fs := fmt.Sprintf("%v", f)
 				if !Contains(FiberCollection, fs) {
 					FiberCollection = append(FiberCollection, fs)
 				}
@@ -328,6 +328,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var Fibers []PeopleFiber
 	if len(FiberCollection) > 0 {
 		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
+		log.Printf("Fiber list is %s", FiberList)
 		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
 		log.Printf("Fiber Query Text: %s", QueryText)
 		BQQuery := bq.Query(QueryText)
