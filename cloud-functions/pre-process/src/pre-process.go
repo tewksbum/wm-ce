@@ -97,13 +97,14 @@ type OrderERR struct {
 }
 
 type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	OrderNumber  int `json:"OrderNumber"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
+	ID              int `json:"ID"`
+	OrderID         int `json:"OrderID"`
+	OrderNumber     int `json:"OrderNumber"`
+	ConsigmentID    int `json:"ConsigmentID"`
+	ProductID       int `json:"ProductID"`
+	ProductSKU      int `json:"ProductSKU"`
+	ProductUPC      int `json:"ProductUPC"`
+	ProductQuantity int `json:"ProductQuantity"`
 }
 
 type PeopleERR struct {
@@ -900,6 +901,9 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
 		err.ID = 1
 	}
+	if strings.Contains(key, "ordernumber") {
+		err.OrderNumber = 1
+	}
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".orderid") {
 		err.OrderID = 1
 	}
@@ -909,9 +913,8 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
 		err.ProductSKU = 1
 	}
-
-	if strings.Contains(key, "ordernumber") {
-		err.OrderNumber = 1
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
+		err.ProductQuantity = 1
 	}
 
 	return err

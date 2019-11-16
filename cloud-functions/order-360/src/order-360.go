@@ -126,6 +126,12 @@ func init() {
 }
 
 func Order360(ctx context.Context, m PubSubMessage) error {
+
+	// if we don't have a matchable key... drop!!
+	if (input.MatchKeys.ID.Value == "" && input.MatchKeys.NUMBER.Value == "") {
+		return nil
+	}
+
 	var input OrderInput
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
@@ -185,6 +191,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 		"OR (m.key = '%s' and u = '%s') "+
 		"ORDER BY timestamp DESC",
 		ProjectID, DatasetID, SetTableName, 
+		MatchByKey0
 		MatchByKey1, MatchByValue1, 
 		MatchByKey2, MatchByValue2
 	)
