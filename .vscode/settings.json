@@ -22,5 +22,17 @@
       "server": "35.222.83.59",
       "username": "segment"
     }
-  ]
+  ],
+  "go.testEnvVars": {
+    "APP_ENV": "test",
+    "PROJECTID": "wemade-core",
+    "NAMESPACE": "wemade-dev",
+    "CSQL_REGION": "us-central1",
+    "CSQL_INSTANCEID": "wemade",
+    "CSQL_SCHEMA": "segment_dev",
+    "CSQL_USER": "segment",
+    "CSQL_PASS": "RLWOrYOntAINtRatioNtURaI",
+    "CSQL_CNN": "%s:%s@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true",
+    "TEMP_FIXED_ACCESS_KEY": "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3"
+  }
 }

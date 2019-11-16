@@ -3,6 +3,7 @@ package wemade
 import (
 	"context"
 	"encoding/json"
+	"os"
 	"strings"
 	"time"
 
@@ -12,6 +13,11 @@ import (
 	"segment/utils/logger"
 
 	"github.com/google/uuid"
+)
+
+var (
+	appEnv                = os.Getenv("APP_ENV")
+	tempfixFixedAccesskey = os.Getenv("TEMP_FIXED_ACCESS_KEY")
 )
 
 // BuildRecordFromInput serialize a json into a Request struct, checks the API key and
@@ -25,8 +31,13 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		return nil, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	accessKey := "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3"
-	// accessKey := input.AccessKey
+	accessKey := input.AccessKey
+
+	//TODO: Remove this dirty patch
+	if tempfixFixedAccesskey != "" && appEnv == "dev" {
+		accessKey = tempfixFixedAccesskey
+	}
+
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err

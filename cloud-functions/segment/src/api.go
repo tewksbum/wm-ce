@@ -1,40 +1,37 @@
 package segment
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
 
 	"segment/db"
+	"segment/utils"
 	"segment/wemade"
 )
 
+// Environment variables
 var (
-	projectID        string = os.Getenv("PROJECTID")
-	namespace        string = os.Getenv("NAMESPACE")
-	csqlRegion       string = os.Getenv("CSQL_REGION")
-	csqlInstanceID   string = os.Getenv("CSQL_INSTANCEID")
-	csqlUser         string = os.Getenv("CSQL_USER")
-	csqlPass         string = os.Getenv("CSQL_PASS")
-	csqlSchema       string = os.Getenv("CSQL_SCHEMA")
-	csqlCnn          string = os.Getenv("CSQL_CNN")
-	csqlDSN          string = fmt.Sprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
-	successMsg       string = "Record successfully processed"
-	successReadMsg   string = "Query successfully processed"
-	successDeleteMsg string = "Record successfully deleted"
+	projectID      = os.Getenv("PROJECTID")
+	namespace      = os.Getenv("NAMESPACE")
+	csqlRegion     = os.Getenv("CSQL_REGION")
+	csqlInstanceID = os.Getenv("CSQL_INSTANCEID")
+	csqlUser       = os.Getenv("CSQL_USER")
+	csqlPass       = os.Getenv("CSQL_PASS")
+	csqlSchema     = os.Getenv("CSQL_SCHEMA")
+	csqlCnn        = os.Getenv("CSQL_CNN")
+	csqlDSN        = utils.TruncatingSprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
+)
+
+// Return messages
+const (
+	successMsg       = "Record successfully processed"
+	successReadMsg   = "Query successfully processed"
+	successDeleteMsg = "Record successfully deleted"
 )
 
 // Upsert api entry point for upserting (create|update) a resource
 func Upsert(w http.ResponseWriter, r *http.Request) {
-	// Local test variables
-	// projectID = "wemade-core"
-	// namespace = "wemade-dev"
-	// csqlRegion = "us-central1"
-	// csqlInstanceID = "wemade"
-	// csqlSchema = "segment_dev"
-	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
-
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
@@ -65,19 +62,11 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-	fmt.Fprint(w, apiOutput(true, successMsg))
+	HTTPWriteOutput(w, apiOutput(true, successMsg))
 }
 
 // Read api entry point for getting a (list of) resource(s)
 func Read(w http.ResponseWriter, r *http.Request) {
-	// // Local test variables
-	// projectID = "wemade-core"
-	// namespace = "wemade-dev"
-	// csqlRegion = "us-central1"
-	// csqlInstanceID = "wemade"
-	// csqlSchema = "segment_dev"
-	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
-
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
@@ -107,19 +96,11 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	// foo := apiOutputWithRecords(true, successMsg, &or)
 	// logger.InfoFmt("POO!: %#v", foo)
-	fmt.Fprint(w, apiOutputWithRecords(true, successReadMsg, &or))
+	HTTPWriteOutput(w, apiOutputWithRecords(true, successReadMsg, &or))
 }
 
 // Delete api entry point for deleting a resource
 func Delete(w http.ResponseWriter, r *http.Request) {
-	// // Local test variables
-	// projectID = "wemade-core"
-	// namespace = "wemade-dev"
-	// csqlRegion = "us-central1"
-	// csqlInstanceID = "wemade"
-	// csqlSchema = "segment_dev"
-	// csqlDSN := "segment:RLWOrYOntAINtRatioNtURaI@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true"
-
 	// check if the method of the request is a POST
 	if err := CheckAllowedMethod(w, r, "POST"); err != nil {
 		errToHTTP(w, r, err)
@@ -146,5 +127,5 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, apiOutput(true, successDeleteMsg))
+	HTTPWriteOutput(w, apiOutput(true, successDeleteMsg))
 }

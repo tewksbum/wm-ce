@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -67,4 +68,13 @@ func I64toa(n int64) string {
 // Itoa converts int64 to string
 func Itoa(n int) string {
 	return I64toa(int64(n))
+}
+
+// TruncatingSprintf truncates extra fields from the formatting string
+func TruncatingSprintf(str string, args ...interface{}) string {
+	n := strings.Count(str, "%s")
+	if n > len(args) {
+		n = len(args)
+	}
+	return fmt.Sprintf(str, args[:n]...)
 }
