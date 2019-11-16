@@ -31,6 +31,7 @@ func TestAbmFlattening(t *testing.T) {
 	outputHeader.EntityType = "EntityType"
 	output := Output{
 		outputHeader,
+		Common{},
 		&People{},
 		&OrderDetail{},
 		&OrderConsignment{},
@@ -75,7 +76,7 @@ func Test360Unmarshalling(t *testing.T) {
 }
 
 func Test360PeopleOutput(t *testing.T) {
-	jsonstr := []byte(`{"fake":"fake","id":"b4b0cfbf-f3fe-43a2-b39a-5f891c66b498","signature":{"ownerId":2,"source":"Testing","eventId":"f1ae31f5-069c-439b-ae9e-8ed7ba5ebfeb","eventType":"UPLOAD"},"signatures":[{"ownerId":2,"source":"Testing","eventId":"f1ae31f5-069c-439b-ae9e-8ed7ba5ebfeb","eventType":"UPLOAD","recordId":"0814836b-10fa-40d1-bd1c-a4228425abc9"}],"createdAt":"2019-11-12T19:07:13.298200252Z","timestamp":"2019-11-12T19:07:13.298199282Z","fibers":["0814836b-10fa-40d1-bd1c-a4228425abc9"],"passthroughs":null,"matchKeys":[{"key":"FNAME","type":"","value":"Omar","values":["Omar"]},{"key":"FINITIAL","type":"","value":"O","values":["O"]},{"key":"LNAME","type":"","value":"Acevedo","values":["Acevedo"]},{"key":"CITY","type":"","value":"North Richland Hills","values":["North Richland Hills"]},{"key":"STATE","type":"","value":"TX","values":["TX"]},{"key":"ZIP","type":"","value":"76180","values":["76180"]},{"key":"ZIP5","type":"","value":"76180","values":["76180"]},{"key":"COUNTRY","type":"","value":"","values":null},{"key":"EMAIL","type":"","value":"","values":null},{"key":"PHONE","type":"","value":"","values":null},{"key":"AD1","type":"","value":"4926 Maryanna Way","values":["4926 Maryanna Way"]},{"key":"AD2","type":"","value":"","values":null},{"key":"ADTYPE","type":"","value":"","values":null},{"key":"TRUSTEDID","type":"","value":"","values":null},{"key":"CLIENTID","type":"","value":"","values":null},{"key":"SALUTATION","type":"","value":"","values":null},{"key":"NICKNAME","type":"","value":"","values":null},{"key":"GENDER","type":"","value":"","values":null},{"key":"AGE","type":"","value":"","values":null},{"key":"DOB","type":"","value":"","values":null},{"key":"MAILROUTE","type":"","value":"","values":null},{"key":"ORGANIZATION","type":"","value":"","values":null},{"key":"TITLE","type":"","value":"2023","values":["2023"]},{"key":"ROLE","type":"","value":"","values":null},{"key":"STATUS","type":"","value":"","values":null}]}`)
+	jsonstr := []byte(`{"id":"36a1d43b-0777-486e-b470-d8b19781e0e2","signature":{"ownerId":2,"source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD"},"signatures":[{"ownerId":2,"source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD","recordId":"5083a82f-0c01-465d-86ab-b1550518cd77"}],"createdAt":"2019-11-15T17:07:33.621655336Z","timestamp":"2019-11-15T17:07:33.621653425Z","fibers":["5083a82f-0c01-465d-86ab-b1550518cd77"],"passthroughs":[{"name":"BAAAAA","value":"1/2/1029"},{"name":"ABBB","value":"12323232"}],"matchKeys":[{"key":"FNAME","type":"","value":"Caitlin","values":["Caitlin"]},{"key":"FINITIAL","type":"","value":"C","values":["C"]},{"key":"LNAME","type":"","value":"Apacible","values":["Apacible"]},{"key":"CITY","type":"","value":"Cerritos","values":["Cerritos"]},{"key":"STATE","type":"","value":"CA","values":["CA"]},{"key":"ZIP","type":"","value":"90703","values":["90703"]},{"key":"ZIP5","type":"","value":"90703","values":["90703"]},{"key":"COUNTRY","type":"","value":"","values":null},{"key":"EMAIL","type":"work","value":"me@me.me","values":null},{"key":"PHONE","type":"personal","value":"123456","values":null},{"key":"AD1","type":"","value":"19131 Appletree Ct","values":["19131 Appletree Ct"]},{"key":"AD2","type":"","value":"","values":null},{"key":"ADTYPE","type":"","value":"","values":null},{"key":"TRUSTEDID","type":"","value":"","values":null},{"key":"CLIENTID","type":"","value":"","values":null},{"key":"SALUTATION","type":"","value":"","values":null},{"key":"NICKNAME","type":"","value":"","values":null},{"key":"GENDER","type":"","value":"","values":null},{"key":"AGE","type":"","value":"","values":null},{"key":"DOB","type":"","value":"","values":null},{"key":"MAILROUTE","type":"","value":"","values":null},{"key":"ORGANIZATION","type":"","value":"MARCUS","values":["MARCUS"]},{"key":"TITLE","type":"","value":"2023","values":["2023"]},{"key":"ROLE","type":"","value":"","values":null},{"key":"STATUS","type":"","value":"","values":null}]}`)
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
 		fmt.Printf("There was an issue decoding the message %v %v", string(jsonstr), err)
@@ -95,8 +96,10 @@ func Test360PeopleOutput(t *testing.T) {
 	outputHeader.AccessKey = "accessKey"
 	outputHeader.EntityType = "Inputtype"
 	outputHeader.OwnerID = 2
+	var common Common
 	output := Output{
 		outputHeader,
+		common,
 		&People{},
 		&OrderDetail{},
 		&OrderConsignment{},
@@ -110,7 +113,6 @@ func Test360PeopleOutput(t *testing.T) {
 		PeopleID:     request360.ID,
 		Salutation:   getFrom360Slice("SALUTATION", request360.MatchKeys).Value,
 		FirstName:    getFrom360Slice("FNAME", request360.MatchKeys).Value,
-		LastName:     getFrom360Slice("LNAME", request360.MatchKeys).Value,
 		Gender:       getFrom360Slice("GENDER", request360.MatchKeys).Value,
 		Age:          getFrom360Slice("AGE", request360.MatchKeys).Value,
 		Organization: getFrom360Slice("ORGANIZATION", request360.MatchKeys).Value,
@@ -118,7 +120,21 @@ func Test360PeopleOutput(t *testing.T) {
 		Role:         getFrom360Slice("ROLE", request360.MatchKeys).Value,
 	}
 	output.People = &people
-	output.OutputHeader.Signatures = getSignaturesHash(request360.Signatures)
+	output.People.Phones = []PhoneSt{
+		PhoneSt{
+			Phone: getFrom360Slice("PHONE", request360.MatchKeys).Value,
+			Type:  getFrom360Slice("PHONE", request360.MatchKeys).Type,
+		},
+	}
+	fmt.Printf("%v", getFrom360Slice("PHONE", request360.MatchKeys).Value)
+	output.People.Emails = []EmailSt{
+		EmailSt{
+			Email: getFrom360Slice("EMAIL", request360.MatchKeys).Value,
+			Type:  getFrom360Slice("EMAIL", request360.MatchKeys).Type,
+		},
+	}
+	output.Common.LastName = getFrom360Slice("LNAME", request360.MatchKeys).Value
+	output.Common.Signatures = getSignaturesHash(request360.Signatures)
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
 		fmt.Printf("Couldn't parse it")

@@ -87,20 +87,24 @@ type EventERR struct {
 type OrderERR struct {
 	ID         int `json:"ID"`
 	Number     int `json:"Number"`
-	CustomerID int `json:"CustomerID"`
 	Date       int `json:"Date"`
+	CustomerID int `json:"CustomerID"`
+	SubTotal   int `json:"SubTotal"`	
+	Shipping   int `json:"Shipping"`
+	Discount   int `json:"Tax"`
+	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
-	BillTo     int `json:"BillTo"`
 }
 
 type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	OrderNumber  int `json:"OrderNumber"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
+	ID              int `json:"ID"`
+	OrderID         int `json:"OrderID"`
+	OrderNumber     int `json:"OrderNumber"`
+	ConsigmentID    int `json:"ConsigmentID"`
+	ProductID       int `json:"ProductID"`
+	ProductSKU      int `json:"ProductSKU"`
+	ProductUPC      int `json:"ProductUPC"`
+	ProductQuantity int `json:"ProductQuantity"`
 }
 
 type PeopleERR struct {
@@ -750,6 +754,11 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address1 = 0
 	}
 
+	if err.Organization == 1 {
+		err.FirstName = 0
+		err.LastName = 0
+	}
+
 	// get some types
 	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
 		// default to home address
@@ -848,14 +857,31 @@ func GetOrderERR(column string) OrderERR {
 	case "order date", "orderdate", "invoice date", "invoicedate",
 		"placed date", "placeddate", "created at", "createdat":
 		err.Date = 1
+	case "order subtotal", "ordersubtotal", "subtotal":
+		err.SubTotal = 1
+	case "order discount", "orderdiscount", "discount":
+		err.Discount = 1
+	case "order shipping", "ordershipping", "shipping":
+		err.Shipping = 1
+	case "order tax", "ordertax", "tax":
+		err.Tax = 1
 	case "order total", "ordertotal", "total":
 		err.Total = 1
+	// for de-nested node case...	
 	case "order.ecometryordernumber":
 		err.Number = 1
 	case "order.ektronuserid":
 		err.CustomerID = 1
 	case "order.placedat":
 		err.Date = 1
+	case "order.ordersubtotal", "order.subtotal":
+		err.SubTotal = 1
+	case "order.orderdiscount", "order.discount":
+		err.Discount = 1
+	case "order.ordershipping", "order.shipping":
+		err.Shipping = 1
+	case "order.ordertax", "order.tax":
+		err.Tax = 1
 	case "order.total":
 		err.Total = 1
 	}
@@ -875,6 +901,9 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
 		err.ID = 1
 	}
+	if strings.Contains(key, "ordernumber") {
+		err.OrderNumber = 1
+	}
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".orderid") {
 		err.OrderID = 1
 	}
@@ -884,9 +913,8 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
 		err.ProductSKU = 1
 	}
-
-	if strings.Contains(key, "ordernumber") {
-		err.OrderNumber = 1
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
+		err.ProductQuantity = 1
 	}
 
 	return err

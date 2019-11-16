@@ -55,13 +55,14 @@ type MatchKeyField struct {
 type OrderDetailOutput struct {
 	ID MatchKeyField `json:"id" bigquery:"id"`
 
-	ORDERID       MatchKeyField `json:"orderId" bigquery:"orderId"`
-	ORDERNUMBER   MatchKeyField `json:"orderNumber" bigquery:"ordernumber"`
-	CONSIGNMENTID MatchKeyField `json:"consignmentId" bigquery:"consignmentId"`
+	ORDERID       MatchKeyField `json:"orderid" bigquery:"orderid"`
+	ORDERNUMBER   MatchKeyField `json:"ordernumber" bigquery:"ordernumber"`
+	CONSIGNMENTID MatchKeyField `json:"consignmentid" bigquery:"consignmentid"`
 
-	PRODUCTID  MatchKeyField `json:"productId" bigquery:"productId"`
-	PRODUCTSKU MatchKeyField `json:"productSku" bigquery:"productSku"`
-	PRODUCTUPC MatchKeyField `json:"productUpc" bigquery:"productUpc"`
+	PRODUCTID  MatchKeyField `json:"productid" bigquery:"productid"`
+	PRODUCTSKU MatchKeyField `json:"productsku" bigquery:"productsku"`
+	PRODUCTUPC MatchKeyField `json:"productupc" bigquery:"productupc"`
+	PRODUCTQUANTITY MatchKeyField `json:"productquantity" bigquery:"productquantity"`
 }
 
 type Signature360 struct {
@@ -129,6 +130,11 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	// if we don't have a matchable key... drop!!
+	if input.MatchKeys.ID.Value == "" {
+		return nil
+	}
+
 	// locate by key (trusted id)
 	setMeta := &bigquery.TableMetadata{
 		Schema: bs,
@@ -166,9 +172,22 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
-	MatchByKey := "ID"
-	MatchByValue := strings.Replace(input.MatchKeys.ID.Value, "'", "\\'", -1)
-	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE m.key = '%s' and u = '%s' ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName, MatchByKey, MatchByValue)
+	MatchByValue0 := input.Signature.RecordID
+
+	MatchByKey1 := "ID"
+	MatchByValue1 := strings.Replace(input.MatchKeys.ID.Value, "'", "\\'", -1)
+
+	QueryText := fmt.Sprintf(
+		"SELECT * "+
+		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
+		"WHERE "+
+			"((s.RecordID = '%s') OR "+
+			"(m.key = '%s' and u = '%s')) "+
+		"ORDER BY timestamp DESC", 
+		ProjectID, DatasetID, SetTableName, 
+		MatchByValue0,
+		MatchByKey1, MatchByValue1)
+
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)

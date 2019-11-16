@@ -54,24 +54,26 @@ type MatchKeyField struct {
 }
 
 type OrderDetailOutput struct {
-	ID            MatchKeyField `json:"id"`
-	ORDERID       MatchKeyField `json:"orderId"`
-	ORDERNUMBER   MatchKeyField `json:"orderNumber"`
-	CONSIGNMENTID MatchKeyField `json:"consignmentId"`
+	ID              MatchKeyField `json:"id"`
+	ORDERID         MatchKeyField `json:"orderid"`
+	ORDERNUMBER     MatchKeyField `json:"ordernumber"`
+	CONSIGNMENTID   MatchKeyField `json:"consignmentid"`
 
-	PRODUCTID  MatchKeyField `json:"productId"`
-	PRODUCTSKU MatchKeyField `json:"productSku"`
-	PRODUCTUPC MatchKeyField `json:"productUpc"`
+	PRODUCTID       MatchKeyField `json:"productid"`
+	PRODUCTSKU      MatchKeyField `json:"productsku"`
+	PRODUCTUPC      MatchKeyField `json:"productupc"`
+	PRODUCTQUANTITY MatchKeyField `json:"productquantity"`
 }
 
 type OrderDetailERR struct {
-	ID           int `json:"ID"`
-	OrderID      int `json:"OrderID"`
-	OrderNumber  int `json:"OrderNumber"`
-	ConsigmentID int `json:"ConsigmentID"`
-	ProductID    int `json:"ProductID"`
-	ProductSKU   int `json:"ProductSKU"`
-	ProductUPC   int `json:"ProductUPC"`
+	ID              int `json:"ID"`
+	OrderID         int `json:"OrderID"`
+	OrderNumber     int `json:"OrderNumber"`
+	ConsigmentID    int `json:"ConsigmentID"`
+	ProductID       int `json:"ProductID"`
+	ProductSKU      int `json:"ProductSKU"`
+	ProductUPC      int `json:"ProductUPC"`
+	ProductQuantity int `json:"ProductQuantity"`
 }
 
 type NER struct {
@@ -158,6 +160,12 @@ func PostProcessOrderDetail(ctx context.Context, m PubSubMessage) error {
 		}
 		if column.OrderDetailERR.ProductUPC == 1 {
 			matchKey := "PRODUCTUPC"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderDetailERR.ProductQuantity == 1 {
+			matchKey := "PRODUCTQUANTITY"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}

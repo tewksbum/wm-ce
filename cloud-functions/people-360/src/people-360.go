@@ -268,15 +268,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByKey6D := "TITLE"
 	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
 
-	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u, UNNEST(signatures) s WHERE "+
-		"(s.RecordID = '%s') OR "+
-		"(m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
-		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
+	QueryText := fmt.Sprintf(
+		"with fiberlist as ("+
+			"SELECT fibers "+
+			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
+			"WHERE "+
+				"(s.RecordID = '%s') OR "+
+				"(m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+		") select distinct f from fiberlist, unnest(fibers) f", 
+		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,
@@ -388,6 +393,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var FiberSignatures []Signature
 	// collect all fiber match key values
 	for _, fiber := range Fibers {
+		log.Printf("loaded fiber %v", fiber)
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(output.MatchKeys, name)
@@ -399,7 +405,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	}
 	output.MatchKeys = FiberMatchKeys
-
+	log.Printf("Fiber signatures: %v", FiberSignatures)
 	// append to the output value
 	output.ID = uuid.New().String()
 	output.TimeStamp = time.Now()
@@ -413,7 +419,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if output.CreatedAt.IsZero() {
 		output.CreatedAt = time.Now()
 	}
-	output.Fibers = append(FiberCollection, input.Signature.RecordID)
+	output.Fibers = append(FiberCollection, fiber.FiberID)
 	output.Passthroughs = OutputPassthrough
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
