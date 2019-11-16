@@ -125,15 +125,14 @@ func init() {
 }
 
 func OrderDetail360(ctx context.Context, m PubSubMessage) error {
+	var input OrderDetailInput
+	if err := json.Unmarshal(m.Data, &input); err != nil {
+		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+	}
 
 	// if we don't have a matchable key... drop!!
 	if input.MatchKeys.ID.Value == "" {
 		return nil
-	}
-
-	var input OrderDetailInput
-	if err := json.Unmarshal(m.Data, &input); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
 	// locate by key (trusted id)
@@ -186,7 +185,7 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 			"(m.key = '%s' and u = '%s')) "+
 		"ORDER BY timestamp DESC", 
 		ProjectID, DatasetID, SetTableName, 
-		MatchByKey0,
+		MatchByValue0,
 		MatchByKey1, MatchByValue1)
 
 	BQQuery := bq.Query(QueryText)
