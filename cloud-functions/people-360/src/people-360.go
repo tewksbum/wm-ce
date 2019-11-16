@@ -268,15 +268,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByKey6D := "TITLE"
 	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
 
-	QueryText := fmt.Sprintf("with fiberlist as (SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u, UNNEST(signatures) s WHERE "+
-		"(s.RecordID = '%s') OR "+
-		"(m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
-		") select distinct f from fiberlist, unnest(fibers) f", ProjectID, DatasetID, SetTableName,
+	QueryText := fmt.Sprintf(
+		"with fiberlist as ("+
+			"SELECT fibers "+
+			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
+			"WHERE "+
+				"(s.RecordID = '%s') OR "+
+				"(m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+		") select distinct f from fiberlist, unnest(fibers) f", 
+		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,

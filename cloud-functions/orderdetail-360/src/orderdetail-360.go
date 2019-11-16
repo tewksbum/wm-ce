@@ -180,11 +180,10 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 
 	QueryText := fmt.Sprintf(
 		"SELECT * "+
-		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u "+
+		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
 		"WHERE "+
-		"(s.RecordID = '%s') OR "+
-		"m.key = '%s' "+
-		"and u = '%s' "+
+			"((s.RecordID = '%s') OR "+
+			"(m.key = '%s' and u = '%s')) "+
 		"ORDER BY timestamp DESC", 
 		ProjectID, DatasetID, SetTableName, 
 		MatchByKey0
