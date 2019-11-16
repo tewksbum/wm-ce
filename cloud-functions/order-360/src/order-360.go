@@ -168,13 +168,26 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
+	MatchByValue0 := input.Signature.RecordID
+
 	MatchByKey1 := "ID"
-	MatchByKey2 := "NUMBER"
 	MatchByValue1 := strings.Replace(input.MatchKeys.ID.Value, "'", "\\'", -1)
+
+	MatchByKey2 := "NUMBER"
 	MatchByValue2 := strings.Replace(input.MatchKeys.NUMBER.Value, "'", "\\'", -1)
+
 	QueryText := fmt.Sprintf(
-		"SELECT * FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE (m.key = '%s' and u = '%s') OR (m.key = '%s' and u = '%s') ORDER BY timestamp DESC",
-		ProjectID, DatasetID, SetTableName, MatchByKey1, MatchByValue1, MatchByKey2, MatchByValue2)
+		"SELECT * "+
+		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u "+
+		"WHERE "+
+		"(s.RecordID = '%s') OR "+
+		"(m.key = '%s' and u = '%s') "+
+		"OR (m.key = '%s' and u = '%s') "+
+		"ORDER BY timestamp DESC",
+		ProjectID, DatasetID, SetTableName, 
+		MatchByKey1, MatchByValue1, 
+		MatchByKey2, MatchByValue2
+	)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
