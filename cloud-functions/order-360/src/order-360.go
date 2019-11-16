@@ -191,7 +191,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 			"OR (m.key = '%s' and u = '%s')) "+
 		"ORDER BY timestamp DESC",
 		ProjectID, DatasetID, SetTableName, 
-		MatchByKey0
+		MatchByKey0,
 		MatchByKey1, MatchByValue1, 
 		MatchByKey2, MatchByValue2
 	)

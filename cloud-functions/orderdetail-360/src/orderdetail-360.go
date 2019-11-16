@@ -186,7 +186,7 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 			"(m.key = '%s' and u = '%s')) "+
 		"ORDER BY timestamp DESC", 
 		ProjectID, DatasetID, SetTableName, 
-		MatchByKey0
+		MatchByKey0,
 		MatchByKey1, MatchByValue1)
 
 	BQQuery := bq.Query(QueryText)
