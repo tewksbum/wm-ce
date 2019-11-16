@@ -17,6 +17,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		updated, err = bq.Write(projectID, r)
 		if err == nil {
 			if r.GetEntityType() == models.TypePeople {
+				logger.InfoFmt("signatures: %q", r.GetSignatures())
 				for _, sig := range r.GetSignatures() {
 					rs := buildDecode(r.(*models.PeopleRecord), sig)
 					if _, err := csql.Write(csqlDSN, rs); err != nil {

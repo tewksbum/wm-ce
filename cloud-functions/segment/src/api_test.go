@@ -40,21 +40,33 @@ func TestUpsert(t *testing.T) {
 		// "":       "",,
 	}
 	data.OwnerID = 5648073946562560
+
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey": "0f26ca1527621312720ec57ca17be4d8",
-		// "entityType": "people",
-		"peopleId":  "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
-		"firstName": "Tembolin", "lastName": "Maswenya",
+		"accessKey":  "0f26ca1527621312720ec57ca17be4d8",
+		"entityType": "people",
+		"peopleId":   "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"firstName":  "Tembolin", "lastName": "Maswenya",
 		"attributes": map[string]string{"organization": "mracu"},
+		"emails": []map[string]string{
+			{"email": "email@ocm.com", "type": "work"},
+			{"email": "email@gmail.com", "type": "persona"},
+		},
+		"phones": []map[string]string{
+			{"phone": "+123456789", "type": "work"},
+			{"phone": "+1595981566234", "type": "persona4"},
+			{"phone": "+2595981566234", "type": "persona5"},
+			{"phone": "+3595981566234", "type": "personaSE"},
+		},
 		"signature":  "2be16825-5dc4-4c9d-aa0a-6b851ef16ff7",
 		"signatures": []string{"1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
-		"entityType": "event",
-		"source":     "test",
-		"type":       "jajaja",
-		"browser":    "Duck OS 1.0.8.0",
-		"eventId":    "ec86f654-ebac-4f90-8cb2-1eb083feebfb",
-		"id":         "ca1a173b-6cf9-4cff-a7c3-8241df12a487",
+		// "entityType": "event",
+		"source":  "test",
+		"type":    "jajaja",
+		"browser": "Duck OS 1.0.8.0",
+		"eventId": "ec86f654-ebac-4f90-8cb2-1eb083feebfb",
+		"id":      "ca1a173b-6cf9-4cff-a7c3-8241df12a487",
+
 		// "signature": map[string]interface{}{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD"},
 		// "signatures": []map[string]interface{}{{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD",
 		// 	"recordId": "a46d0e9d-fa20-49ab-bce0-e47cbbd531c9"}},
@@ -103,7 +115,7 @@ func TestRead(t *testing.T) {
 	// 	// Values: poop,
 	// }
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "3e92de26224fec73e70cc62c108864d1",
+		"accessKey":  "0f26ca1527621312720ec57ca17be4d8",
 		"entityType": "decode",
 		"source":     "test",
 		"filters": []map[string]interface{}{

@@ -66,3 +66,9 @@ func CheckAllowedMethod(w http.ResponseWriter, r *http.Request, method string) e
 	w.Header().Set("Content-Type", "application/json")
 	return nil
 }
+
+// HTTPWriteOutput writes into the response writer
+func HTTPWriteOutput(w http.ResponseWriter, args ...interface{}) bool {
+	fmt.Fprint(w, args...)
+	return true
+}
