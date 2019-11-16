@@ -399,7 +399,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	}
 	output.MatchKeys = FiberMatchKeys
-
+	log.Printf("Fiber signatures: %v", FiberSignatures)
 	// append to the output value
 	output.ID = uuid.New().String()
 	output.TimeStamp = time.Now()
