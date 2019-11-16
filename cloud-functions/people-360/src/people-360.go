@@ -388,6 +388,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var FiberSignatures []Signature
 	// collect all fiber match key values
 	for _, fiber := range Fibers {
+		log.Printf("loaded fiber %v", fiber)
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(output.MatchKeys, name)
