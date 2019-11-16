@@ -54,22 +54,29 @@ type MatchKeyField struct {
 }
 
 type OrderOutput struct {
-	ID         MatchKeyField `json:"id"`
-	NUMBER     MatchKeyField `json:"number"`
-	CUSTOMERID MatchKeyField `json:"customerId"`
+	ID         MatchKeyField `json:"id"         bigquery:"id"`
+	NUMBER     MatchKeyField `json:"number"     bigquery:"number"`
+	DATE   	   MatchKeyField `json:"date"       bigquery:"date"`
 
-	DATE   MatchKeyField `json:"date"`
-	TOTAL  MatchKeyField `json:"total"`
-	BILLTO MatchKeyField `json:"billTo"`
+	CUSTOMERID MatchKeyField `json:"customerId" bigquery:"customerId"`
+
+	SUBTOTAL   MatchKeyField `json:"subtotal"   bigquery:"subtotal"`
+	SHIPPING   MatchKeyField `json:"shipping"   bigquery:"shipping"`
+	DISCOUNT   MatchKeyField `json:"discount"   bigquery:"discount"`
+	TAX   	   MatchKeyField `json:"tax" 	    bigquery:"tax"`
+	TOTAL  	   MatchKeyField `json:"total"      bigquery:"total"`
 }
 
 type OrderERR struct {
 	ID         int `json:"ID"`
 	Number     int `json:"Number"`
-	CustomerID int `json:"CustomerID"`
 	Date       int `json:"Date"`
+	CustomerID int `json:"CustomerID"`
+	SubTotal   int `json:"SubTotal"`	
+	Shipping   int `json:"Shipping"`
+	Discount   int `json:"Tax"`
+	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
-	BillTo     int `json:"BillTo"`
 }
 
 type NER struct {
@@ -143,14 +150,32 @@ func PostProcessOrder(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-		if column.OrderERR.Total == 1 {
-			matchKey := "TOTAL"
+		if column.OrderERR.SubTotal == 1 {
+			matchKey := "SUBTOTAL"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-		if column.OrderERR.BillTo == 1 {
-			matchKey := "BILLTO"
+		if column.OrderERR.Discount == 1 {
+			matchKey := "DISCOUNT"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.Shipping == 1 {
+			matchKey := "SHIPPING"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.Tax == 1 {
+			matchKey := "TAX"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.Total == 1 {
+			matchKey := "TOTAL"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}

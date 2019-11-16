@@ -87,10 +87,13 @@ type EventERR struct {
 type OrderERR struct {
 	ID         int `json:"ID"`
 	Number     int `json:"Number"`
-	CustomerID int `json:"CustomerID"`
 	Date       int `json:"Date"`
+	CustomerID int `json:"CustomerID"`
+	SubTotal   int `json:"SubTotal"`	
+	Shipping   int `json:"Shipping"`
+	Discount   int `json:"Tax"`
+	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
-	BillTo     int `json:"BillTo"`
 }
 
 type OrderDetailERR struct {
@@ -853,14 +856,31 @@ func GetOrderERR(column string) OrderERR {
 	case "order date", "orderdate", "invoice date", "invoicedate",
 		"placed date", "placeddate", "created at", "createdat":
 		err.Date = 1
+	case "order subtotal", "ordersubtotal", "subtotal":
+		err.SubTotal = 1
+	case "order discount", "orderdiscount", "discount":
+		err.Discount = 1
+	case "order shipping", "ordershipping", "shipping":
+		err.Shipping = 1
+	case "order tax", "ordertax", "tax":
+		err.Tax = 1
 	case "order total", "ordertotal", "total":
 		err.Total = 1
+	// for de-nested node case...	
 	case "order.ecometryordernumber":
 		err.Number = 1
 	case "order.ektronuserid":
 		err.CustomerID = 1
 	case "order.placedat":
 		err.Date = 1
+	case "order.ordersubtotal", "order.subtotal":
+		err.SubTotal = 1
+	case "order.orderdiscount", "order.discount":
+		err.Discount = 1
+	case "order.ordershipping", "order.shipping":
+		err.Shipping = 1
+	case "order.ordertax", "order.tax":
+		err.Tax = 1
 	case "order.total":
 		err.Total = 1
 	}
