@@ -284,7 +284,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C,
 		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D,
 		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B, MatchByKey6C, MatchByValue6C, MatchByKey6D, MatchByValue6D)
-	log.Printf("Query Text: %s", QueryText)
+	log.Printf("Match Query Text: %s", QueryText)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
 	BQJob, err := BQQuery.Run(ctx)
@@ -329,6 +329,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if len(FiberCollection) > 0 {
 		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
 		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
+		log.Printf("Fiber Query Text: %s", QueryText)
 		BQQuery := bq.Query(QueryText)
 		BQQuery.Location = "US"
 		BQJob, err := BQQuery.Run(ctx)
@@ -360,6 +361,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 	}
+
+	log.Printf("Fibers: %v", Fibers)
 
 	var output People360Output
 	var FiberMatchKeys []MatchKey360
