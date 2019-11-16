@@ -384,8 +384,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
+	var FiberSignatures []Signature
 	// collect all fiber match key values
 	for _, fiber := range Fibers {
+		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(output.MatchKeys, name)
 			value := GetMkField(&fiber.MatchKeys, name).Value
@@ -400,7 +402,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// append to the output value
 	output.ID = uuid.New().String()
 	output.TimeStamp = time.Now()
-	output.Signatures = append(output.Signatures, input.Signature)
+	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
 		Source:    input.Signature.Source,
@@ -410,7 +412,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if output.CreatedAt.IsZero() {
 		output.CreatedAt = time.Now()
 	}
-	output.Fibers = append(output.Fibers, input.Signature.RecordID)
+	output.Fibers = append(FiberCollection, input.Signature.RecordID)
 	output.Passthroughs = OutputPassthrough
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
