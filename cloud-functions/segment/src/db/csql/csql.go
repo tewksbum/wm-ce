@@ -98,7 +98,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 }
 
 // Read the interface from CSQL
-func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
+func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	opts := r.GetDBOptions()
 	tblName := opts.Tablename
 	if opts.HasTablenamePrefix {
@@ -148,8 +148,6 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
 				}
 			}
 		}
-		// .Where(rIDField+" = ?", rmap[rIDField])
-		// exists, err := stmt.ReturnString()
 		oBy := models.ParseOrderBy(opts.Filters, false)
 		if oBy != "" {
 			for _, o := range strings.Split(oBy, ",") {
@@ -160,18 +158,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecords, err error) {
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	logger.InfoFmt("Query: %s", buf.String())
-	var rows []interface{} // models.GetRecordTypeSlice(r.GetEntityType())
-	totalrows, err := stmt.Load(rows)
-	if err != nil {
-		return or, logger.ErrFmt("[csql.Read.Select]: %q", err)
-	}
-	or.Count = totalrows
-	logger.InfoFmt("rows: %q", rows)
-	// for i := 1; i <= totalrows; i++ {
-	// 	or.List = append(or.List, utils.StructToMap(rows[i], nil))
-	// }
-	// ctx := context.Background()
-	return or, err
+	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList())
 }
 
 // Delete the interface from CSQL
