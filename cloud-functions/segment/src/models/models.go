@@ -276,6 +276,11 @@ type PeopleRecord struct {
 	Record     People   `json:"record" bigquery:"record"`
 }
 
+// GetSignatures gets the person signatures
+func (r *PeopleRecord) GetSignatures() []string {
+	return r.Signatures
+}
+
 // HouseholdRecord a Household type record
 type HouseholdRecord struct {
 	BaseRecord

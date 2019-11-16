@@ -34,7 +34,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	accessKey := input.AccessKey
 
 	//TODO: Remove this dirty patch
-	if tempfixFixedAccesskey != "" && appEnv == "dev" {
+	if tempfixFixedAccesskey != "" {
 		accessKey = tempfixFixedAccesskey
 	}
 
@@ -135,6 +135,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		json.Unmarshal(data, &record)
 		return &models.PeopleRecord{
 			BaseRecord: br,
+			Signatures: input.Signatures,
 			Record:     record,
 		}, nil
 	case models.TypeOrderHeader:
@@ -150,6 +151,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		json.Unmarshal(data, &record)
 		return &models.OrderHeaderRecord{
 			SurrogateID: surrogateID,
+			Signatures:  input.Signatures,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
@@ -166,6 +168,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		json.Unmarshal(data, &record)
 		return &models.OrderConsignmentRecord{
 			SurrogateID: surrogateID,
+			Signatures:  input.Signatures,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
@@ -182,6 +185,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		json.Unmarshal(data, &record)
 		return &models.OrderDetailRecord{
 			SurrogateID: surrogateID,
+			Signatures:  input.Signatures,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil

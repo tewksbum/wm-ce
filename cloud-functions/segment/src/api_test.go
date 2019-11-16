@@ -115,7 +115,7 @@ func TestRead(t *testing.T) {
 	// 	// Values: poop,
 	// }
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "3e92de26224fec73e70cc62c108864d1",
+		"accessKey":  "0f26ca1527621312720ec57ca17be4d8",
 		"entityType": "decode",
 		"source":     "test",
 		"filters": []map[string]interface{}{
