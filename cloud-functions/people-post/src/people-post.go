@@ -19,7 +19,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 
-	"github.com/ulule/deepcopier"
+	// "github.com/ulule/deepcopier"
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -166,6 +166,20 @@ type PeopleERR struct {
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
+}
+
+type PeopleVER struct {
+	HASHCODE     int64 `json:"HASH"`
+	IS_FIRSTNAME bool  `json:"isFIRSTNAME"`
+	IS_LASTNAME  bool  `json:"isLASTNAME"`
+	IS_STREET1   bool  `json:"isSTREET1"`
+	IS_STREET2   bool  `json:"isSTREET2"`
+	IS_CITY      bool  `json:"isCITY"`
+	IS_STATE     bool  `json:"isSTATE"`
+	IS_ZIPCODE   bool  `json:"isZIPCODE"`
+	IS_COUNTRY   bool  `json:"isCOUNTRY"`
+	IS_EMAIL     bool  `json:"isEMAIL"`
+	IS_PHONE     bool  `json:"isPHONE"`
 }
 
 type NER struct {
@@ -526,8 +540,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// ***** construct MPR
 		memNumb = extractMemberNumb(column.Value)
 		if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			mpr[memNumb].FNAME.Value := column.Value
-			mpr[memNumb].FNAME.Source := column.Name
+			mpr[memNumb].FNAME.Value = column.Value
+			mpr[memNumb].FNAME.Source = column.Name
 		} else if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name

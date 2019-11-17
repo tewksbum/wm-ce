@@ -161,21 +161,22 @@ type ProductERR struct {
 }
 
 type ERRFlags struct {
-	PeopleFirstName bool
-	PeopleLastName  bool
-	PeopleZip  		bool
-	PeoplePhone  	bool
-	PeopleEmail  	bool
-	PeopleClientID  bool
-	ProductID       bool
-	ProductSKU      bool
-	ProductName     bool
-	ProductVendor   bool
-	CampaignID      bool
-	EventID         bool
-	OrderID         bool
-	ConsignmentID   bool
-	OrderDetailID   bool
+	PeopleFirstName      bool
+	PeopleLastName       bool
+	PeoplePeopleAddress1 bool
+	PeopleZip  		     bool
+	PeoplePhone  	     bool
+	PeopleEmail  	     bool
+	PeopleClientID       bool
+	ProductID            bool
+	ProductSKU           bool
+	ProductName          bool
+	ProductVendor        bool
+	CampaignID           bool
+	EventID              bool
+	OrderID              bool
+	ConsignmentID        bool
+	OrderDetailID        bool
 }
 
 type NER struct {
@@ -474,7 +475,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.People = true
 	}
 	// if we don't have ANY columns... throw it to people to try out ver...
-	if (!columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !PeopleClientID && !PeopleEmail && !PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip ) {
+	if (!columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.eopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip ) {
 		flags.People = true
 	}
 
@@ -782,7 +783,7 @@ func GetPeopleERR(column string) PeopleERR {
 			err.AddressTypeBilling = 1
 		} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
 			err.AddressTypeHome = 1
-		} else if err.Dorm {
+		} else if err.Dorm = 1 {
 			err.AddressTypeCampus = 1
 		}
 	}
