@@ -473,7 +473,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		columns[i] = column
 	}
 	log.Printf("columns %v", columns)
-	//log.Printf("column flags %v", columnFlags)
+	log.Printf("column flags %v", columnFlags)
 
 	// update entity flags
 	flags.Event = true // every record = event

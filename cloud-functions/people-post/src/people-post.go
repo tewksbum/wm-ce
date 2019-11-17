@@ -514,7 +514,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} 
 
 			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				if column.PeopleERR.FirstName {
+				if column.PeopleERR.FirstName == 1 {
 					mkOutput.FNAME.Value = column.Value
 					mkOutput.FNAME.Source = column.Name
 				} else {
@@ -594,7 +594,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} 
 
 		if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			if column.PeopleERR.FirstName {
+			if column.PeopleERR.FirstName == 1 {
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else {
