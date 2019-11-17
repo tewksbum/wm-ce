@@ -976,7 +976,7 @@ func extractMemberNumb(colVal string) int {
 	if strings.Contains(colVal, "third") || strings.Contains(colVal, "3") {
 		return 2
 	}
-	return 0
+	return 1
 }
 
 func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput) {
