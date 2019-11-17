@@ -349,6 +349,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
+				column.PeopleVER.IS_COUNTRY = false
 			}
 			nameParts := strings.Split(column.Value, " ") 
 			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
@@ -408,7 +409,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// this is handled below w/ address parser
 			
 			// class year
-			log.Printf("evaluating classyear")
+			log.Printf("evaluating classyear %v %v %v", matchKey, column.PeopleERR.Title, column.Value )
 			if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
 				log.Printf("have classyear: %v", column.Value)
 				if reGraduationYear.MatchString(column.Value) {
@@ -458,7 +459,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
-			} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 0 {
+			} else if column.PeopleERR.Country == 1 && column.PeopleERR.Role == 0 {
+				log.Printf("Setting Country: %v %v", column.PeopleERR.Country, column.Value)
 				mkOutput.COUNTRY.Value = column.Value
 				mkOutput.COUNTRY.Source = column.Name
 			}
@@ -486,6 +488,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Role == 0 {
+				log.Printf("Setting VER Country: %v %v", PeopleVER.IS_COUNTRY, column.Value)
 				mkOutput.COUNTRY.Value = column.Value
 				mkOutput.COUNTRY.Source = column.Name
 			}
