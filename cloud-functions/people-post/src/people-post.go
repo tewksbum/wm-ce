@@ -342,7 +342,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var concatAddCol int
 	var concatCityState bool
 	var fullName bool
-	// var fullNameCol int
+	var fullNameCol int
 	var emailCount int
 	var phoneCount int
 	var emailList []int
@@ -363,7 +363,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	haveDorm = false
 	dormCol = 0
 	roomCol = 0
-	// fullNameCol = 0
+	fullNameCol = 0
 
 	for index, column := range input.Columns {
 		
@@ -383,10 +383,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
-			// TODO: Need to add a condition here to check more than 1 word
-			if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			nameParts := Split(column.Value, " ") 
+			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
-				// fullNameCol = index
+				fullNameCol = index
 			}
 			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatAdd = true
@@ -432,12 +432,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 
 			// full name
-			// TODO:
-			if fullName {
-				// parse the field
-				// check each side for FName & LName VER
-				// prob move to AFTER the for... like address
-			}
+			// below...
 
 			// concat address
 			// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
@@ -605,6 +600,21 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		input.Columns[index] = column
+	}
+
+	if fullName {
+		log.Printf("fullname w/ name parts: %v", fullNameCol)
+
+		nameParts := Split(input.Columns[fullNameCol].Value, " ") 
+		for i := 1; i < len(nameParts); i++ {
+			// run them against VER for first & last name
+			// store the values to output
+			// mkOutput.FNAME.Value = column.Value
+			// mkOutput.LNAME.Value = column.Value
+		}
+
+		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
+		mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
 	}
 
 	// parse address as needed

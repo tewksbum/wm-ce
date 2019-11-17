@@ -427,15 +427,31 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.Address1 == 1 {
 			columnFlags.PeopleAddress1 = true
 		}
+		if column.PeopleERR.Email == 1 {
+			columnFlags.PeopleEmail = true
+		}
+		if column.PeopleERR.Phone == 1 {
+			columnFlags.PeoplePhone = true
+		}
+		if column.PeopleERR.TrustedID == 1 {
+			columnFlags.PeopleClientID = true
+		}
+		if column.PeopleERR.ZipCode == 1 {
+			columnFlags.PeopleZip = true
+		}
+
 		if column.ProductERR.PID == 1 {
 			columnFlags.ProductID = true
 		}
+
 		if column.CampaignERR.CampaignID == 1 {
 			columnFlags.CampaignID = true
 		}
+
 		if column.OrderERR.ID == 1 {
 			columnFlags.OrderID = true
 		}
+
 		// do not flag this
 		// if column.ConsignmentERR.ID == 1 {
 		// 	columnFlags.ConsignmentID = true
