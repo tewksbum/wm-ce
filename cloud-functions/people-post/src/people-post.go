@@ -640,7 +640,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// pub the record
-	pubRecord(&input, mkOutput)
+	pubRecord(ctx, &input, mkOutput)
 
 	// handle MAR values
 	if emailCount > 1 {
@@ -655,7 +655,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mkOutput.EMAIL.Type = "Private"
 				}
 			}
-			pubRecord(&input, mkOutput)
+			pubRecord(ctx, &input, mkOutput)
 		}
 	}
 	if phoneCount > 1 {
@@ -664,7 +664,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// update phone value... and resend...
 			mkOutput.PHONE.Value = input.Columns[phoneList[i]].Value
 			mkOutput.PHONE.Source = input.Columns[phoneList[i]].Name
-			pubRecord(&input, mkOutput)
+			pubRecord(ctx, &input, mkOutput)
 		}
 	}
 	if haveDorm {
@@ -680,7 +680,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.STATE.Value = ""
 		mkOutput.ZIP.Value = ""
 		mkOutput.ADTYPE.Value = "Campus"
-		pubRecord(&input, mkOutput)
+		pubRecord(ctx, &input, mkOutput)
 	}
 
 	// handle mpr
@@ -745,8 +745,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		mkOutput.Role.Value = "parent"
-		pubRecord(&input, mkOutput)
+		mkOutput.ROLE.Value = "parent"
+		pubRecord(ctx, &input, mkOutput)
 	}
 
 	return nil
@@ -935,7 +935,7 @@ func extractMemberNumb(colVal string) int {
 	return 0
 }
 
-func pubRecord(input *Input, mkOutput PeopleOutput) {
+func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput) {
 	var output Output
 	output.Signature = input.Signature
 	output.Passthrough = input.Passthrough
