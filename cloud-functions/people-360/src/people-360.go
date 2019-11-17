@@ -67,6 +67,7 @@ type PeopleOutput struct {
 
 	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
+	AD3          MatchKeyField `json:"ad3" bigquery:"ad3"`
 	CITY         MatchKeyField `json:"city" bigquery:"city"`
 	STATE        MatchKeyField `json:"state" bigquery:"state"`
 	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
