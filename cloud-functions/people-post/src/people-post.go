@@ -383,7 +383,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
-			nameParts := Split(column.Value, " ") 
+			nameParts := split(column.Value, " ") 
 			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
 				fullNameCol = index
@@ -471,7 +471,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
-			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
+			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
 			} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
@@ -605,12 +605,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if fullName {
 		log.Printf("fullname w/ name parts: %v", fullNameCol)
 
-		nameParts := Split(input.Columns[fullNameCol].Value, " ") 
+		nameParts := split(input.Columns[fullNameCol].Value, " ") 
 		for i := 1; i < len(nameParts); i++ {
 			// run them against VER for first & last name
 			// store the values to output
 			// mkOutput.FNAME.Value = column.Value
 			// mkOutput.LNAME.Value = column.Value
+			// IS_FIRSTNAME: ContainsBool(listFirstNames, val),
+			// IS_LASTNAME:  ContainsBool(listLastNames, val),
 		}
 
 		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
@@ -652,6 +654,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// pub the record
+	log.Printf("pubbing student...")
 	pubRecord(ctx, &input, mkOutput)
 
 	// handle MAR values
@@ -667,6 +670,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mkOutput.EMAIL.Type = "Private"
 				}
 			}
+			log.Printf("pubbing MAR email %v ", mkOutput.EMAIL.Value)
 			pubRecord(ctx, &input, mkOutput)
 		}
 	}
@@ -676,6 +680,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// update phone value... and resend...
 			mkOutput.PHONE.Value = input.Columns[phoneList[i]].Value
 			mkOutput.PHONE.Source = input.Columns[phoneList[i]].Name
+			log.Printf("pubbing MAR phone %v ", mkOutput.PHONE.Value)
 			pubRecord(ctx, &input, mkOutput)
 		}
 	}
@@ -692,6 +697,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.STATE.Value = ""
 		mkOutput.ZIP.Value = ""
 		mkOutput.ADTYPE.Value = "Campus"
+		log.Printf("pubbing Dorm %v ", input.Columns[dormCol].Name)
 		pubRecord(ctx, &input, mkOutput)
 	}
 
