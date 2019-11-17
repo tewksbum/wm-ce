@@ -31,7 +31,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 }
 
 // Read gets where the data is stored, reads and returns it acording to filters
-func Read(projectID string, csqlDSN string, r models.Record) (or wemade.OutputRecords, err error) {
+func Read(projectID string, csqlDSN string, r models.Record) (or wemade.OutputRecord, err error) {
 	switch r.GetDBType() {
 	case models.CSQL:
 		or, err = csql.Read(csqlDSN, r)

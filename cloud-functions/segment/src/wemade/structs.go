@@ -34,11 +34,11 @@ type APIInput struct {
 type APIOutput struct {
 	Success bool           `json:"success"`
 	Message string         `json:"message"`
-	Records *OutputRecords `json:"records,omitempty"`
+	Records *OutputRecord `json:"records,omitempty"`
 }
 
-// OutputRecords the struct that will hold the records
-type OutputRecords struct {
+// OutputRecord the struct that will hold the records
+type OutputRecord struct {
 	List  []interface{} `json:"list"`
 	Count int           `json:"count"`
 }

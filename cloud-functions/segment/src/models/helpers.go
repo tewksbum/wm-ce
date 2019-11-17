@@ -186,3 +186,29 @@ func GetRecordTypeSlice(entityType string) interface{} {
 		return []FallbackData{}
 	}
 }
+
+// GetRecordFromSlice gets the proper []interface by entity type
+func GetRecordFromSlice(entityType string, slice interface{}, index int) interface{} {
+	switch entityType {
+	case TypeCampaign:
+		return slice.([]Campaign)[index]
+	case TypeEvent:
+		return slice.([]Event)[index]
+	case TypeHousehold:
+		return slice.([]Household)[index]
+	case TypeOrderHeader:
+		return slice.([]OrderHeader)[index]
+	case TypeOrderConsignment:
+		return slice.([]OrderConsignment)[index]
+	case TypeOrderDetail:
+		return slice.([]OrderDetail)[index]
+	case TypePeople:
+		return slice.([]People)[index]
+	case TypeProduct:
+		return slice.([]Product)[index]
+	case TypeDecode:
+		return slice.([]DecodeRecord)[index]
+	default:
+		return slice.([]FallbackData)[index]
+	}
+}

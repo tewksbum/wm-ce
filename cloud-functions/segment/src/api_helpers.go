@@ -42,7 +42,7 @@ func apiOutput(success bool, msg string, args ...interface{}) string {
 }
 
 // ApiOutput builds a json with the response for the client
-func apiOutputWithRecords(success bool, msg string, records *wemade.OutputRecords) string {
+func apiOutputWithRecords(success bool, msg string, records *wemade.OutputRecord) string {
 	o, _ := json.Marshal(wemade.APIOutput{
 		Success: success, Message: msg,
 		Records: records,

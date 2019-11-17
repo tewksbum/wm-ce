@@ -87,7 +87,7 @@ func converInterfaceBQ(i interface{}) (o interface{}) {
 }
 
 // Read the interface from BQ
-func Read(projectID string, r models.Record) (or wemade.OutputRecords, err error) {
+func Read(projectID string, r models.Record) (or wemade.OutputRecord, err error) {
 	opts := r.GetDBOptions()
 	datasetID := r.GetStrOwnerID()
 	tableID := r.GetTablename()

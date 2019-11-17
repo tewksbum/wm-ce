@@ -3,6 +3,8 @@ package models
 import (
 	"segment/utils"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 // QueryFilter filter for queries
@@ -44,6 +46,7 @@ type Record interface {
 	GetOwnerID() int64
 	GetStrOwnerID() string
 	GetEntityType() string
+	GetSurrogateID() string
 	GetSource() string
 	GetOwner() string
 	GetPassthrough() string
@@ -73,6 +76,11 @@ type DecodeRecord struct {
 // GetMap gets the column list for DecodeRecord
 func (r *DecodeRecord) GetMap() map[string]interface{} {
 	return utils.StructToMap(r, r.ColumnBlackList)
+}
+
+// GetSurrogateID gets an invalid surrogate ID (DecodeRecord)
+func (r *DecodeRecord) GetSurrogateID() string {
+	return uuid.Invalid.String()
 }
 
 // GetSignatures gets the decode signatures
@@ -188,6 +196,11 @@ func (r *BaseRecord) GetSignatures() []string {
 	return []string{}
 }
 
+// GetSurrogateID gets an invalid surrogate ID (BaseRecord)
+func (r *BaseRecord) GetSurrogateID() string {
+	return uuid.Invalid.String()
+}
+
 // GetColumnList gets the column list
 func (r *BaseRecord) GetColumnList() []string {
 	return r.ColumnList
@@ -243,6 +256,11 @@ func (r *OrderHeaderRecord) GetSignatures() []string {
 	return r.Signatures
 }
 
+// GetSurrogateID gets the order header surrogate ID
+func (r *OrderHeaderRecord) GetSurrogateID() string {
+	return r.SurrogateID
+}
+
 // OrderConsignmentRecord a event type record
 type OrderConsignmentRecord struct {
 	BaseRecord
@@ -254,6 +272,11 @@ type OrderConsignmentRecord struct {
 // GetSignatures gets the order consignment signatures
 func (r *OrderConsignmentRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetSurrogateID gets the order consignment surrogate ID
+func (r *OrderConsignmentRecord) GetSurrogateID() string {
+	return r.SurrogateID
 }
 
 // OrderDetailRecord a event type record
@@ -269,17 +292,28 @@ func (r *OrderDetailRecord) GetSignatures() []string {
 	return r.Signatures
 }
 
+// GetSurrogateID gets the order detail surrogate ID
+func (r *OrderDetailRecord) GetSurrogateID() string {
+	return r.SurrogateID
+}
+
 // PeopleRecord a event type record
 type PeopleRecord struct {
 	BaseRecord
 	Signatures []string `json:"signatures" bigquery:"signatures"`
-	Record     People   `json:"record" bigquery:"record"`
+	// SurrogateID string   `json:"surrogateId" bigquery:"surrogateid"`
+	Record People `json:"record" bigquery:"record"`
 }
 
 // GetSignatures gets the person signatures
 func (r *PeopleRecord) GetSignatures() []string {
 	return r.Signatures
 }
+
+// // GetSurrogateID gets the person surrogateID
+// func (r *PeopleRecord) GetSurrogateID() string {
+// 	return r.SurrogateID
+// }
 
 // HouseholdRecord a Household type record
 type HouseholdRecord struct {
