@@ -347,6 +347,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			concatCityState = false
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
+				matchKey = ""
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
