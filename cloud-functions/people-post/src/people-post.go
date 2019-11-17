@@ -383,6 +383,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
+//>>>>> TODO: nameParts needs help
 			nameParts := strings.Split(column.Value, " ") 
 			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 			// if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
@@ -633,7 +634,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if fullName {
 		log.Printf("fullname w/ name parts: %v", fullNameCol)
 		
-		nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
+		// nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
 		// for i := 1; i < len(nameParts); i++ {
 			// run them against VER for first & last name
 			// store the values to output
