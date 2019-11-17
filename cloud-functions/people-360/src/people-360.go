@@ -40,6 +40,7 @@ type PeopleInput struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
 	MatchKeys   PeopleOutput      `json:"matchkeys`
+	// MatchKeys   map[PeopleOutput]PeopleOutput      `json:"matchkeys`
 }
 
 type PeopleFiber struct {
@@ -58,31 +59,31 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	FNAME    MatchKeyField `json:"fname" bigquery:"fname"`
-	FINITIAL MatchKeyField `json:"finitial" bigquery:"finitial"`
-	LNAME    MatchKeyField `json:"lname" bigquery:"lname"`
-	CITY     MatchKeyField `json:"city" bigquery:"city"`
-	STATE    MatchKeyField `json:"state" bigquery:"state"`
-	ZIP      MatchKeyField `json:"zip" bigquery:"zip"`
-	ZIP5     MatchKeyField `json:"zip5" bigquery:"zip5"`
-	COUNTRY  MatchKeyField `json:"country" bigquery:"country"`
-	EMAIL    MatchKeyField `json:"email" bigquery:"email"`
-	PHONE    MatchKeyField `json:"phone" bigquery:"phone"`
-	AD1      MatchKeyField `json:"ad1" bigquery:"ad1"`
-	AD2      MatchKeyField `json:"ad2" bigquery:"ad2"`
-	ADTYPE   MatchKeyField `json:"adType" bigquery:"adtype"`
+	SALUTATION   MatchKeyField `json:"salutation" bigquery:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname" bigquery:"nickname"`
+	FNAME        MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial" bigquery:"finitial"`
+	LNAME        MatchKeyField `json:"lname" bigquery:"lname"`
 
-	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
+	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
+	CITY         MatchKeyField `json:"city" bigquery:"city"`
+	STATE        MatchKeyField `json:"state" bigquery:"state"`
+	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5         MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
+	MAILROUTE    MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adType" bigquery:"adtype"`
 
-	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientid"`
-	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
+	EMAIL        MatchKeyField `json:"email" bigquery:"email"`
+	PHONE        MatchKeyField `json:"phone" bigquery:"phone"`
+	
+	TRUSTEDID    MatchKeyField `json:"trustedId" bigquery:"trustedid"`
+	CLIENTID     MatchKeyField `json:"clientId" bigquery:"clientid"`
 
-	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
-	AGE    MatchKeyField `json:"age" bigquery:"age"`
-	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
-
-	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
+	GENDER       MatchKeyField `json:"gender" bigquery:"gender"`
+	AGE          MatchKeyField `json:"age" bigquery:"age"`
+	DOB          MatchKeyField `json:"dob" bigquery:"dob"`
 
 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
