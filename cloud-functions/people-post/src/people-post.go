@@ -467,12 +467,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// start by taking column values at their name...
 			// make a point to avoid mpr values
 			// special cases = full name, concatenated address, mpr
-			if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				mkOutput.FNAME.Value = column.Value
-				mkOutput.FNAME.Source = column.Name
-			} else if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+ 			if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
+			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				mkOutput.FNAME.Value = column.Value
+				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
@@ -492,12 +492,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			
 			// override ERR w/ VER...
 			// make a point to avoid mpr values
-			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				mkOutput.FNAME.Value = column.Value
-				mkOutput.FNAME.Source = column.Name
-			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
+			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				mkOutput.FNAME.Value = column.Value
+				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
