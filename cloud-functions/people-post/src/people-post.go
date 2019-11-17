@@ -100,40 +100,6 @@ type PeopleOutput struct {
 	STATUS       MatchKeyField `json:"status" bigquery:"status"`
 }
 
-// type MPRPeople struct {
-// 	INDEX   	 int `json:"index"`
-// 	SALUTATION   MatchKeyField `json:"salutation" bigquery:"salutation"`
-// 	NICKNAME     MatchKeyField `json:"nickname" bigquery:"nickname"`
-// 	FNAME        MatchKeyField `json:"fname" bigquery:"fname"`
-// 	FINITIAL     MatchKeyField `json:"finitial" bigquery:"finitial"`
-// 	LNAME        MatchKeyField `json:"lname" bigquery:"lname"`
-
-// 	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
-// 	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
-// 	CITY         MatchKeyField `json:"city" bigquery:"city"`
-// 	STATE        MatchKeyField `json:"state" bigquery:"state"`
-// 	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
-// 	ZIP5         MatchKeyField `json:"zip5" bigquery:"zip5"`
-// 	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
-// 	MAILROUTE    MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
-// 	ADTYPE       MatchKeyField `json:"adType" bigquery:"adtype"`
-
-// 	EMAIL        MatchKeyField `json:"email" bigquery:"email"`
-// 	PHONE        MatchKeyField `json:"phone" bigquery:"phone"`
-	
-// 	TRUSTEDID    MatchKeyField `json:"trustedId" bigquery:"trustedid"`
-// 	CLIENTID     MatchKeyField `json:"clientId" bigquery:"clientid"`
-
-// 	GENDER       MatchKeyField `json:"gender" bigquery:"gender"`
-// 	AGE          MatchKeyField `json:"age" bigquery:"age"`
-// 	DOB          MatchKeyField `json:"dob" bigquery:"dob"`
-
-// 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
-// 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
-// 	ROLE         MatchKeyField `json:"role" bigquery:"role"`
-// 	STATUS       MatchKeyField `json:"status" bigquery:"status"`
-// }
-
 type PeopleERR struct {
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
@@ -364,6 +330,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	roomCol = 0
 	fullNameCol = 0
 
+	log.Printf("people-post for record: %v", input.Signature.RecordID)
+
 	for index, column := range input.Columns {
 		
 		// assign ML prediction to column
@@ -419,12 +387,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&mkOutput, "TITLE", ClassYear, column.Name)
 			}	
 			//wtf does this do????  
-			if matchKey != "" {
-				// if it does not already have a value
-				if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-					SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-				}
-			}
+			// if matchKey != "" {
+			// 	// if it does not already have a value
+			// 	if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+			// 		SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			// 	}
+			// }
 
 		// ***** correct values
 			// fix zip code that has leading 0 stripped out
@@ -440,7 +408,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// this is handled below w/ address parser
 			
 			// class year
+			log.Printf("evaluating classyear")
 			if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
+				log.Printf("have classyear: %v", column.Value)
 				if reGraduationYear.MatchString(column.Value) {
 					ClassYear = column.Value
 				} else {
@@ -467,6 +437,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// make a point to avoid mpr values
 			// special cases = full name, concatenated address, mpr
  			if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("have LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
@@ -487,11 +458,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
-			} 
+			} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 0 {
+				mkOutput.COUNTRY.Value = column.Value
+				mkOutput.COUNTRY.Source = column.Name
+			}
 			
 			// override ERR w/ VER...
 			// make a point to avoid mpr values
 			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("have LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
@@ -510,13 +485,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
-			} 
+			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Role == 0 {
+				mkOutput.COUNTRY.Value = column.Value
+				mkOutput.COUNTRY.Source = column.Name
+			}
 
 			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				if column.PeopleERR.FirstName == 1 {
 					mkOutput.FNAME.Value = column.Value
 					mkOutput.FNAME.Source = column.Name
-				} else {
+				} else if column.PeopleERR.LastName == 1 {
 					mkOutput.LNAME.Value = column.Value
 					mkOutput.LNAME.Source = column.Name
 				}
@@ -550,15 +528,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		memNumb = extractMemberNumb(column.Value)
 		log.Printf("memNumb: %v", memNumb)
 		if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assing mpr lastname: %v", column.Value)
+			log.Printf("trying to assign mpr lastname: %v", column.Value)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assing mpr firstname: %v", column.Value)
+			log.Printf("trying to assign mpr firstname: %v", column.Value)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		}  else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("trying to assing mpr ad1: %v", column.Value)
+			log.Printf("trying to assign mpr ad1: %v", column.Value)
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
@@ -573,7 +551,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
 			mpr[memNumb].ZIP.Value = column.Value
 			mpr[memNumb].ZIP.Source = column.Name
-		} 
+		} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 1 {
+			mpr[memNumb].COUNTRY.Value = column.Value
+			mpr[memNumb].COUNTRY.Source = column.Name
+		}
 		
 		if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			mpr[memNumb].LNAME.Value = column.Value
@@ -594,13 +575,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
 			mpr[memNumb].ZIP.Value = column.Value
 			mpr[memNumb].ZIP.Source = column.Name
-		} 
+		} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Role == 1 {
+			mpr[memNumb].COUNTRY.Value = column.Value
+			mpr[memNumb].COUNTRY.Source = column.Name
+		}
 
 		if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			if column.PeopleERR.FirstName == 1 {
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
-			} else {
+			} else if column.PeopleERR.LastName == 1 {
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			}

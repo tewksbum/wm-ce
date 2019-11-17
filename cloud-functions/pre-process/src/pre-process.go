@@ -770,7 +770,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
 		err.Title = 1
 	}
-	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") {
+	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") {
 		err.Role = 1
 	}
 
