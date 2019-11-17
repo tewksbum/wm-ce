@@ -501,9 +501,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} 
 			// if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {	
 			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 && !fullName {
-				mkOutput.FNAME.Value = column.Value
-				mkOutput.FNAME.Source = column.Name
+				mkOutput.LNAME.Value = column.Value
+				mkOutput.LNAME.Source = column.Name
 			} 
+
+			// if matchKey == "FNAME" {
+			// 	mkOutput.FNAME.Value = column.Value
+			// 	mkOutput.FNAME.Source = column.Name
+			// }
+			// if matchKey == "LNAME" {
+			// 	mkOutput.LNAME.Value = column.Value
+			// 	mkOutput.LNAME.Source = column.Name
+			// }
 
 			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				if column.PeopleERR.FirstName == 1 {
@@ -646,8 +655,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// IS_LASTNAME:  ContainsBool(listLastNames, val),
 		// }
 
-		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
-		mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
+		// mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
+		// mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
 	}
 
 	// parse address as needed
