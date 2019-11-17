@@ -332,11 +332,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var mkOutput PeopleOutput
 	var trustedID string
 	var ClassYear string
-	var dormERR bool
-	var dormVER bool
-	var dormAD1 string
-	var dormColumn string
-	var roomColumn string
+	// var dormERR bool
+	// var dormVER bool
+	// var dormAD1 string
+	// var dormColumn string
+	// var roomColumn string
 	var concatAdd bool
 	var concatAddCol int
 	var concatCityState bool
@@ -362,6 +362,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	haveDorm = false
 	dormCol = 0
 	roomCol = 0
+	fullNameCol = 0
 
 	for index, column := range input.Columns {
 		
