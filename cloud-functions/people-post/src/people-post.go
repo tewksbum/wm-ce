@@ -428,6 +428,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						ClassYear = strconv.Itoa(time.Now().Year() + 4)
 					}
 				}
+				mkOutput.TITLE.Value = column.Value
+				mkOutput.TITLE.Source = column.Name
 			}
 		
 			// AdType
@@ -962,15 +964,15 @@ func AssignAddressType(column *InputColumn) string {
 
 func extractMemberNumb(colVal string) int {
 	if strings.Contains(colVal, "first") || strings.Contains(colVal, "1") || strings.Contains(colVal, "father") {
-		return 1
+		return 0
 	}
 	if strings.Contains(colVal, "second") || strings.Contains(colVal, "2") || strings.Contains(colVal, "mother") {
-		return 2
+		return 1
 	}
 	if strings.Contains(colVal, "third") || strings.Contains(colVal, "3") {
 		return 2
 	}
-	return 1
+	return 0
 }
 
 func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput) {
