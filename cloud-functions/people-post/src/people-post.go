@@ -383,8 +383,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
-			nameParts := split(column.Value, " ") 
-			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			// nameParts := strings.Split(column.Value, " ") 
+			// if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
 				fullNameCol = index
 			}
@@ -605,15 +606,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if fullName {
 		log.Printf("fullname w/ name parts: %v", fullNameCol)
 
-		nameParts := split(input.Columns[fullNameCol].Value, " ") 
-		for i := 1; i < len(nameParts); i++ {
+		// nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
+		// for i := 1; i < len(nameParts); i++ {
 			// run them against VER for first & last name
 			// store the values to output
 			// mkOutput.FNAME.Value = column.Value
 			// mkOutput.LNAME.Value = column.Value
 			// IS_FIRSTNAME: ContainsBool(listFirstNames, val),
 			// IS_LASTNAME:  ContainsBool(listLastNames, val),
-		}
+		// }
 
 		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
 		mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
