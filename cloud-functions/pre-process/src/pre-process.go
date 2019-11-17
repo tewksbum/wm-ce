@@ -110,6 +110,7 @@ type OrderDetailERR struct {
 type PeopleERR struct {
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
+	Address3            int `json:"Address3"`
 	Age                 int `json:"Age"`
 	Birthday            int `json:"Birthday"`
 	City                int `json:"City"`
@@ -206,6 +207,7 @@ type PeopleVER struct {
 	IS_LASTNAME  bool  `json:"isLASTNAME"`
 	IS_STREET1   bool  `json:"isSTREET1"`
 	IS_STREET2   bool  `json:"isSTREET2"`
+	IS_STREET3   bool  `json:"isSTREET3"`
 	IS_CITY      bool  `json:"isCITY"`
 	IS_STATE     bool  `json:"isSTATE"`
 	IS_ZIPCODE   bool  `json:"isZIPCODE"`
@@ -314,6 +316,7 @@ var rePhone = regexp.MustCompile(`(?i)^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?
 var reZipcode = regexp.MustCompile(`(?i)^\d{5}(?:[-\s]\d{4})?$`)
 var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|ave|road|rd|highway|hwy|square|sq|trail|trl|drive|dr|court|ct|park|parkway|pkwy|circle|cir|boulevard|blvd)\W?`)
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
+var reStreet3 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 
 // MRT's version doesnt compile, substituting with a package
@@ -689,6 +692,8 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Address1 = 1
 		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
 			err.Address2 = 1
+		case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3":
+			err.Address3 = 1	
 		case "city", "city ", "street city":
 			err.City = 1
 		case "state", "st", "state ", "state_province", "st ", "state province", "street state":
@@ -1075,6 +1080,7 @@ func GetPeopleVER(column *InputColumn) PeopleVER {
 		IS_LASTNAME:  ContainsBool(listLastNames, val),
 		IS_STREET1:   reStreet1.MatchString(val),
 		IS_STREET2:   reStreet2.MatchString(val),
+		IS_STREET3:   reStreet3.MatchString(val),
 		IS_CITY:      ContainsBool(listCities, val),
 		IS_STATE:     ContainsBool(listStates, val),
 		IS_ZIPCODE:   reZipcode.MatchString(val),

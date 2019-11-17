@@ -76,6 +76,7 @@ type PeopleOutput struct {
 
 	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
+	AD3          MatchKeyField `json:"ad3" bigquery:"ad3"`
 	CITY         MatchKeyField `json:"city" bigquery:"city"`
 	STATE        MatchKeyField `json:"state" bigquery:"state"`
 	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
@@ -103,6 +104,7 @@ type PeopleOutput struct {
 type PeopleERR struct {
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
+	Address3            int `json:"Address3"`
 	Age                 int `json:"Age"`
 	Birthday            int `json:"Birthday"`
 	City                int `json:"City"`
@@ -140,6 +142,7 @@ type PeopleVER struct {
 	IS_LASTNAME  bool  `json:"isLASTNAME"`
 	IS_STREET1   bool  `json:"isSTREET1"`
 	IS_STREET2   bool  `json:"isSTREET2"`
+	IS_STREET3   bool  `json:"isSTREET3"`
 	IS_CITY      bool  `json:"isCITY"`
 	IS_STATE     bool  `json:"isSTATE"`
 	IS_ZIPCODE   bool  `json:"isZIPCODE"`
@@ -228,15 +231,6 @@ type AddressParsed struct {
 	Zip         string `json:"zip"`
 	Plus4       string `json:"plus4"`
 }
-
-// type MultiPersonRecord struct {
-// 	FNAME       string
-// 	FNAMEColumn string
-// 	LNAME       string
-// 	LNAMEColumn string
-// 	EMAIL       string
-// 	EMAILColumn string
-// }
 
 type CityStateZip struct {
 	Cities []string `json:"cities"`
@@ -451,7 +445,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.AD1.Source = column.Name
 			} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
 				mkOutput.AD2.Value = column.Value
-				mkOutput.AD2.Source = column.Name
+				mkOutput.AD2.Source = column.Name	
+			} else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
+				mkOutput.AD3.Value = column.Value
+				mkOutput.AD3.Source = column.Name	
 			} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
 				mkOutput.CITY.Value = column.Value
 				mkOutput.CITY.Source = column.Name
@@ -547,6 +544,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
 			mpr[memNumb].AD2.Value = column.Value
 			mpr[memNumb].AD2.Source = column.Name
+		} else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
+			mpr[memNumb].AD3.Value = column.Value
+			mpr[memNumb].AD3.Source = column.Name	
 		} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
 			mpr[memNumb].CITY.Value = column.Value
 			mpr[memNumb].CITY.Source = column.Name
@@ -648,6 +648,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if len(a.City) > 0 {
 		mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
 		mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+		mkOutput.AD3.Value = ""
 		mkOutput.CITY.Value = a.City
 		mkOutput.STATE.Value = a.State
 		mkOutput.ZIP.Value = a.Zip
@@ -744,6 +745,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.AD2.Value = mpr[i].AD2.Value
 				mkOutput.AD2.Source = mpr[i].AD2.Source	
 			}
+			if mpr[i].AD3.Value != "" {
+				mkOutput.AD3.Value = mpr[i].AD3.Value
+				mkOutput.AD3.Source = mpr[i].AD3.Source	
+			}
 			if mpr[i].CITY.Value != "" {
 				mkOutput.CITY.Value = mpr[i].CITY.Value
 				mkOutput.CITY.Source = mpr[i].CITY.Source	
@@ -777,6 +782,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if len(a.City) > 0 {
 				mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
 				mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+				mkOutput.AD3.Value = ""
 				mkOutput.CITY.Value = a.City
 				mkOutput.STATE.Value = a.State
 				mkOutput.ZIP.Value = a.Zip
