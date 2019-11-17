@@ -396,7 +396,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatCityState = true
 			}
-			if column.PeopleERR.Dorm == 1 || reResidenceHall.MatchString(column.Value) {
+			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
 				haveDorm = true
 				dormCol = index
 				log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
