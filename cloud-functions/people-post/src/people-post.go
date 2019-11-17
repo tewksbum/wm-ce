@@ -308,7 +308,7 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	topic2 = ps.Topic(PubSubTopic2)
+	// topic2 = ps.Topic(PubSubTopic2)
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sClient, _ := storage.NewClient(ctx)
 	listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json")
@@ -351,6 +351,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var roomCol int // this should be abstracted...
 	var mpr []PeopleOutput
 	var memNumb int
+	var addressInput string
 
 	// MPR checks
 	memNumb = 0
@@ -358,7 +359,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// MAR checks
 	emailCount = 0 
 	phoneCount = 0
-	haveDorm = 0
+	haveDorm = false
 	dormCol = 0
 	roomCol = 0
 
@@ -372,9 +373,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 		
 		// ***** correct known wrong flags
-			fullName = 0
-			concatAdd = 0
-			concatCityState = 0
+			fullName = false
+			concatAdd = false
+			concatCityState = false
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
 				column.MatchKey = ""
@@ -382,18 +383,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 			// TODO: Need to add a condition here to check more than 1 word
 			if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
-				fullName = 1
+				fullName = true
 				fullNameCol = index
 			}
 			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-				concatAdd = 1
+				concatAdd = true
 				concatAddCol = index
 			}
 			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-				concatCityState = 1
+				concatCityState = true
 			}
 			if column.PeopleERR.Dorm == 1 || reResidenceHall.MatchString(column.Value) {
-				haveDorm = 1
+				haveDorm = true
 				dormCol = index
 			}
 			if column.PeopleERR.Room == 1 {				
@@ -606,9 +607,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// parse address as needed
 	if(!concatAdd) {
-		addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
+		addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 	} else {
-		addressInput := input.Columns[concatAddCol]
+		addressInput = input.Columns[concatAddCol]
 	}
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)

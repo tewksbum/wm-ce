@@ -783,7 +783,7 @@ func GetPeopleERR(column string) PeopleERR {
 			err.AddressTypeBilling = 1
 		} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
 			err.AddressTypeHome = 1
-		} else if err.Dorm = 1 {
+		} else if err.Dorm == 1 {
 			err.AddressTypeCampus = 1
 		}
 	}
