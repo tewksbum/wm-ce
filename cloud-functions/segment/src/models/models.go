@@ -425,6 +425,7 @@ type Household struct {
 	LastName    string `json:"lastName" bigquery:"lastname"`
 	Address1    string `json:"address1" bigquery:"address1"`
 	Address2    string `json:"address2" bigquery:"address2"`
+	Address3    string `json:"address3" bigquery:"address3"`
 	City        string `json:"city" bigquery:"city"`
 	State       string `json:"state" bigquery:"state"`
 	Zip         string `json:"zip" bigquery:"zip"`
