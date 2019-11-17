@@ -161,9 +161,12 @@ type ProductERR struct {
 }
 
 type ERRFlags struct {
-	PeopleAddress1  bool
 	PeopleFirstName bool
 	PeopleLastName  bool
+	PeopleZip  		bool
+	PeoplePhone  	bool
+	PeopleEmail  	bool
+	PeopleClientID  bool
 	ProductID       bool
 	ProductSKU      bool
 	ProductName     bool
@@ -402,7 +405,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var flags OutputFlag
 	var columnFlags ERRFlags
 
-	// run all ERRs
+	// cycle through ALL columns running all ERRs
 	for i, column := range columns {
 		column.CampaignERR = GetCampaignERR(column.Name)
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
@@ -455,11 +458,26 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	log.Printf("columns %v", columns)
 	//log.Printf("column flags %v", columnFlags)
 
-	// update the flags
+	// update entity flags
 	flags.Event = true // every record = event
-	if (columnFlags.PeopleFirstName || columnFlags.PeopleLastName) && columnFlags.PeopleAddress1 {
+
+	if (columnFlags.PeopleFirstName && columnFlags.PeopleLastName) && columnFlags.PeopleZip {
 		flags.People = true
 	}
+	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
+		flags.People = true
+	}
+	if columnFlags.PeopleEmail {
+		flags.People = true
+	}
+	if columnFlags.PeopleClientID {
+		flags.People = true
+	}
+	// if we don't have ANY columns... throw it to people to try out ver...
+	if (!columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !PeopleClientID && !PeopleEmail && !PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip ) {
+		flags.People = true
+	}
+
 	if columnFlags.ProductID && columnFlags.ProductName {
 		flags.Product = true
 	}
@@ -478,6 +496,15 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("flags %v", flags)
+
+	// run VER
+	for i, column := range columns {
+		column.EventVER = GetEventVER(&column)
+		if flags.People {
+			column.PeopleVER = GetPeopleVER(&column)
+		}
+		columns[i] = column
+	}
 
 	// look up NER and call ML if People
 	var prediction Prediction
@@ -530,22 +557,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		log.Printf("ML result is %v", string(r.Data))
 	}
 
-	// if flags.People {
-	// 	for i, column := range columns {
-	// 		column.PeopleVER = GetPeopleVER(&column)
-	// 		columns[i] = column
-	// 	}
-	// 	log.Printf("columns %v", columns)
-	// }
-
-	// run VER
-	for i, column := range columns {
-		column.EventVER = GetEventVER(&column)
-		if flags.People {
-			column.PeopleVER = GetPeopleVER(&column)
-		}
-		columns[i] = column
-	}
 	log.Printf("columns %v", columns)
 
 	// pub
@@ -643,69 +654,71 @@ func MapNER(column InputColumn, ner map[string]float64) {
 	}
 }
 
+// this runs per column passed to it...
 func GetPeopleERR(column string) PeopleERR {
 	var err PeopleERR
+
 	key := strings.ToLower(column)
 	switch key {
-	case "fname", "f name", "first name", "name first", "first_name", "first":
-		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
-		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name":
-		err.MiddleName = 1
-	case "suffix", "jr., iii, etc.":
-		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1":
-		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
-		err.Address2 = 1
-	case "city", "city ", "street city":
-		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
-		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
-		err.ZipCode = 1
-	case "citystzip", "city/st/zip ":
-		err.City = 1
-		err.State = 1
-		err.ZipCode = 1
-	case "county":
-		err.County = 1
-	case "country", "country (blank for us)":
-		err.Country = 1
-	case "email", "student email", "email ", "email1", "emali address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
-		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
-		err.Email = 1
-		err.ParentEmail = 1
-	case "gender", "m/f":
-		err.Gender = 1
-	case "pfname", "pfname1", "pfname2":
-		err.ParentFirstName = 1
-	case "plname", "plname1", "plname2":
-		err.ParentLastName = 1
-	case "phone", "phone1", "hphone", "cphone", "mphone":
-		err.Phone = 1
-	case "bday", "birthday":
-		err.Birthday = 1
-	case "age":
-		err.Age = 1
-	case "pname", "pname1", "pname2", "pname 1", "pname 2":
-		err.ParentFirstName = 1
-		err.ParentLastName = 1
-		err.ParentName = 1
-	case "fullname", "full name":
-		err.FullName = 1
-		err.FirstName = 1
-		err.LastName = 1
-	case "dorm", "hall", "building", "dormitory", "apartment", "fraternity", "residence":
-		err.Dorm = 1
-	case "room":
-		err.Room = 1
-	case "organization":
-		err.Organization = 1
-	case "title", "course year":
-		err.Title = 1
+		case "fname", "f name", "first name", "name first", "first_name", "first":
+			err.FirstName = 1
+		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
+			err.LastName = 1
+		case "mi", "mi ", "mname", "m", "middle name":
+			err.MiddleName = 1
+		case "suffix", "jr., iii, etc.":
+			err.Suffix = 1
+		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1":
+			err.Address1 = 1
+		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
+			err.Address2 = 1
+		case "city", "city ", "street city":
+			err.City = 1
+		case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+			err.State = 1
+		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
+			err.ZipCode = 1
+		case "citystzip", "city/st/zip ":
+			err.City = 1
+			err.State = 1
+			err.ZipCode = 1
+		case "county":
+			err.County = 1
+		case "country", "country (blank for us)":
+			err.Country = 1
+		case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
+			err.Email = 1
+		case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+			err.Email = 1
+			err.ParentEmail = 1
+		case "gender", "m/f":
+			err.Gender = 1
+		case "pfname", "pfname1", "pfname2":
+			err.ParentFirstName = 1
+		case "plname", "plname1", "plname2":
+			err.ParentLastName = 1
+		case "phone", "phone1", "hphone", "cphone", "mphone":
+			err.Phone = 1
+		case "bday", "birthday":
+			err.Birthday = 1
+		case "age":
+			err.Age = 1
+		case "pname", "pname1", "pname2", "pname 1", "pname 2":
+			err.ParentFirstName = 1
+			err.ParentLastName = 1
+			err.ParentName = 1
+		case "fullname", "full name":
+			err.FullName = 1
+			err.FirstName = 1
+			err.LastName = 1
+		case "dorm", "hall", "building", "dormitory", "apartment", "fraternity", "residence":
+			err.Dorm = 1
+		case "room":
+			err.Room = 1
+		case "organization":
+			err.Organization = 1
+		case "title", "course year":
+			err.Title = 1
 	}
 
 	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
@@ -719,9 +732,6 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "email") {
 		err.Email = 1
-	}
-	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
-		err.Title = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
 		err.Address1 = 1
@@ -738,7 +748,12 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.Phone = 1
 	}
-	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") {
+
+	// these should be looked up on a per owner basis
+	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
+		err.Title = 1
+	}
+	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") {
 		err.Role = 1
 	}
 
@@ -746,14 +761,12 @@ func GetPeopleERR(column string) PeopleERR {
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.Country == 1 {
 		err.Address1 = 0
 	}
-
 	if strings.Contains(key, "first") && strings.Contains(key, "name") {
 		err.Address1 = 0
 	}
 	if strings.Contains(key, "last") && strings.Contains(key, "name") {
 		err.Address1 = 0
 	}
-
 	if err.Organization == 1 {
 		err.FirstName = 0
 		err.LastName = 0
@@ -769,6 +782,8 @@ func GetPeopleERR(column string) PeopleERR {
 			err.AddressTypeBilling = 1
 		} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
 			err.AddressTypeHome = 1
+		} else if err.Dorm {
+			err.AddressTypeCampus = 1
 		}
 	}
 
