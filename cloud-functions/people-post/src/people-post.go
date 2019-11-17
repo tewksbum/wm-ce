@@ -670,7 +670,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if haveDorm {
 		mkOutput.AD1.Value = input.Columns[dormCol].Value
 		mkOutput.AD1.Source = input.Columns[dormCol].Name
-		if roomCol {
+		if roomCol > 0 {
 			mkOutput.AD2.Value = input.Columns[roomCol].Value
 			mkOutput.AD2.Source = input.Columns[roomCol].Name
 		} else {
@@ -679,51 +679,51 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.CITY.Value = ""
 		mkOutput.STATE.Value = ""
 		mkOutput.ZIP.Value = ""
-		mkOutput.AdType.Value = "Campus"
+		mkOutput.ADTYPE.Value = "Campus"
 		pubRecord(&input, mkOutput)
 	}
 
 	// handle mpr
-	for i := 0; len(mpr) - 1; i++ {
-		if mpr[i].FNAME.Value {
+	for i := 0; i < len(mpr); i++ {
+		if mpr[i].FNAME.Value != "" {
 			mkOutput.FNAME.Value = mpr[i].FNAME.Value
 			mkOutput.FNAME.Source = mpr[i].FNAME.Source	
 		} else {
 			mkOutput.FNAME.Value = ""
 			mkOutput.FNAME.Source = ""
 		}
-		if mpr[i].LNAME.Value {
+		if mpr[i].LNAME.Value != "" {
 			mkOutput.LNAME.Value = mpr[i].LNAME.Value
 			mkOutput.LNAME.Source = mpr[i].LNAME.Source	
 		}
-		if mpr[i].AD1.Value {
+		if mpr[i].AD1.Value != "" {
 			mkOutput.AD1.Value = mpr[i].AD1.Value
 			mkOutput.AD1.Source = mpr[i].AD1.Source	
 		}
-		if mpr[i].AD2.Value {
+		if mpr[i].AD2.Value != "" {
 			mkOutput.AD2.Value = mpr[i].AD2.Value
 			mkOutput.AD2.Source = mpr[i].AD2.Source	
 		}
-		if mpr[i].CITY.Value {
+		if mpr[i].CITY.Value != "" {
 			mkOutput.CITY.Value = mpr[i].CITY.Value
 			mkOutput.CITY.Source = mpr[i].CITY.Source	
 		}
-		if mpr[i].STATE.Value {
+		if mpr[i].STATE.Value != "" {
 			mkOutput.STATE.Value = mpr[i].STATE.Value
 			mkOutput.STATE.Source = mpr[i].STATE.Source	
 		}
-		if mpr[i].ZIP.Value {
+		if mpr[i].ZIP.Value != "" {
 			mkOutput.ZIP.Value = mpr[i].ZIP.Value
 			mkOutput.ZIP.Source = mpr[i].ZIP.Source	
 		}
-		if mpr[i].EMAIL.Value {
+		if mpr[i].EMAIL.Value != "" {
 			mkOutput.EMAIL.Value = mpr[i].EMAIL.Value
 			mkOutput.EMAIL.Source = mpr[i].EMAIL.Source	
 		} else {
 			mkOutput.EMAIL.Value = ""
 			mkOutput.EMAIL.Source = ""
 		}
-		if mpr[i].PHONE.Value {
+		if mpr[i].PHONE.Value != "" {
 			mkOutput.PHONE.Value = mpr[i].PHONE.Value
 			mkOutput.PHONE.Source = mpr[i].PHONE.Source	
 		} else {
