@@ -428,7 +428,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						ClassYear = strconv.Itoa(time.Now().Year() + 4)
 					}
 				}
-				mkOutput.TITLE.Value = column.Value
+				mkOutput.TITLE.Value = ClassYear
 				mkOutput.TITLE.Source = column.Name
 			}
 		
@@ -785,7 +785,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			mkOutput.ROLE.Value = "parent"
+			mkOutput.ROLE.Value = "parent"  // this should be generalized
 			pubRecord(ctx, &input, mkOutput)
 		}
 	}
