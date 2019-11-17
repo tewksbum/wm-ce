@@ -108,6 +108,7 @@ type OrderDetailERR struct {
 }
 
 type PeopleERR struct {
+	Address             int `json:"Address"`
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
 	Address3            int `json:"Address3"`
@@ -764,7 +765,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Email = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
-		err.Address1 = 1
+		err.Address = 1
 	}
 	if strings.Contains(key, "city") {
 		err.City = 1

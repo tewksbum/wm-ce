@@ -103,6 +103,7 @@ type PeopleOutput struct {
 }
 
 type PeopleERR struct {
+	Address             int `json:"Address"`
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
 	Address3            int `json:"Address3"`
@@ -434,14 +435,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// start by taking column values at their name...
 			// make a point to avoid mpr values
 			// special cases = full name, concatenated address, mpr
- 			if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+ 			if column.PeopleERR.LastName == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				log.Printf("have LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
-			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
+			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
 			} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
@@ -492,6 +493,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.COUNTRY.Value = column.Value
 				mkOutput.COUNTRY.Source = column.Name
 			}
+
+			// if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {	
+			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Role == 0 && !fullName {	
+				mkOutput.FNAME.Value = column.Value
+				mkOutput.FNAME.Source = column.Name
+			} 
+			// if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {	
+			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 && !fullName {
+				mkOutput.FNAME.Value = column.Value
+				mkOutput.FNAME.Source = column.Name
+			} 
 
 			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				if column.PeopleERR.FirstName == 1 {
