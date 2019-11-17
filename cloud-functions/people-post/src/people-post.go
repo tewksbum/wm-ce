@@ -342,7 +342,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var concatAddCol int
 	var concatCityState bool
 	var fullName bool
-	var fullNameCol int
+	// var fullNameCol int
 	var emailCount int
 	var phoneCount int
 	var emailList []int
@@ -363,7 +363,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	haveDorm = false
 	dormCol = 0
 	roomCol = 0
-	fullNameCol = 0
+	// fullNameCol = 0
 
 	for index, column := range input.Columns {
 		
@@ -386,7 +386,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: Need to add a condition here to check more than 1 word
 			if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
-				fullNameCol = index
+				// fullNameCol = index
 			}
 			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatAdd = true
