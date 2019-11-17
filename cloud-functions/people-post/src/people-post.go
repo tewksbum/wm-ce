@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/storage"
 
 	// "github.com/ulule/deepcopier"
+	//trigger
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -437,7 +438,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				log.Printf("have LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
-			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
@@ -533,7 +534,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			log.Printf("trying to assign mpr lastname: %v %v", column.Value, memNumb)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
-		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
+		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			log.Printf("trying to assign mpr firstname: %v %v", column.Value, memNumb)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name

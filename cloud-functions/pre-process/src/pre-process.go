@@ -165,6 +165,7 @@ type ERRFlags struct {
 	PeopleFirstName      bool
 	PeopleLastName       bool
 	PeopleAddress1       bool
+	PeopleCity  		 bool
 	PeopleZip  		     bool
 	PeoplePhone  	     bool
 	PeopleEmail  	     bool
@@ -429,6 +430,13 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 		if column.PeopleERR.Address1 == 1 {
 			columnFlags.PeopleAddress1 = true
+		
+		}
+		if column.PeopleERR.ZipCode == 1 {
+			columnFlags.PeopleZip = true
+		}
+		if column.PeopleERR.City == 1 {
+			columnFlags.City = true
 		}
 		if column.PeopleERR.Email == 1 {
 			columnFlags.PeopleEmail = true
@@ -438,9 +446,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 		if column.PeopleERR.TrustedID == 1 {
 			columnFlags.PeopleClientID = true
-		}
-		if column.PeopleERR.ZipCode == 1 {
-			columnFlags.PeopleZip = true
 		}
 
 		if column.ProductERR.PID == 1 {
@@ -481,6 +486,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	flags.Event = true // every record = event
 
 	if (columnFlags.PeopleFirstName && columnFlags.PeopleLastName) && columnFlags.PeopleZip {
+		flags.People = true
+	}
+	if (columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
@@ -688,11 +696,11 @@ func GetPeopleERR(column string) PeopleERR {
 			err.MiddleName = 1
 		case "suffix", "jr., iii, etc.":
 			err.Suffix = 1
-		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1":
+		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
 			err.Address1 = 1
-		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2":
+		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
 			err.Address2 = 1
-		case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3":
+		case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 			err.Address3 = 1	
 		case "city", "city ", "street city":
 			err.City = 1
