@@ -549,13 +549,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// ***** construct MPR
 		memNumb = extractMemberNumb(column.Value)
+		log.Printf("memNumb: %v", memNumb)
 		if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
+			log.Printf("trying to assing mpr lastname: %v", column.Value)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
+			log.Printf("trying to assing mpr firstname: %v", column.Value)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		}  else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
+			log.Printf("trying to assing mpr ad1: %v", column.Value)
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
