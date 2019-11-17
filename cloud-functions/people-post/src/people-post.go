@@ -350,7 +350,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var haveDorm bool // this should be abstracted...
 	var dormCol int // this should be abstracted...
 	var roomCol int // this should be abstracted...
-	var mpr []PeopleOutput
+	var mpr [3]PeopleOutput
 	var memNumb int
 	var addressInput string
 
@@ -383,9 +383,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
-			// nameParts := strings.Split(column.Value, " ") 
-			// if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
-			if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			nameParts := strings.Split(column.Value, " ") 
+			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			// if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
 				fullNameCol = index
 			}
@@ -396,7 +396,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatCityState = true
 			}
-			//TODO: Dorm detection needs help
+//>>>>> TODO: Dorm detection needs help
 			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
 				haveDorm = true
 				dormCol = index
@@ -629,11 +629,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		input.Columns[index] = column
 	}
 
-	//TODO: fullname needs help
+//>>>>> TODO: fullname needs help
 	if fullName {
 		log.Printf("fullname w/ name parts: %v", fullNameCol)
 		
-		// nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
+		nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
 		// for i := 1; i < len(nameParts); i++ {
 			// run them against VER for first & last name
 			// store the values to output
@@ -668,7 +668,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// check zip city state match
 	ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
-	// disable during development...
+// >>>>>disable during development...
 	if ZipCheck == false && len(mkOutput.AD1.Value) > 0 && false {
 		address := strings.Join([]string{mkOutput.AD1.Value, mkOutput.AD2.Value, mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value}, ",")
 		correctedOutputAddress := CorrectAddress(address)
