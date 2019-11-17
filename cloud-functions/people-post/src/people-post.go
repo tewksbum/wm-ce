@@ -530,18 +530,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 
 		// ***** construct MPR
-		memNumb = extractMemberNumb(column.Value)
+		memNumb = extractMemberNumb(column.Name)
 		log.Printf("memNumb: %v", memNumb)
 		if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign mpr lastname: %v", column.Value)
+			log.Printf("trying to assign mpr lastname: %v %v", column.Value, memNumb)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign mpr firstname: %v", column.Value)
+			log.Printf("trying to assign mpr firstname: %v %v", column.Value, memNumb)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		}  else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("trying to assign mpr ad1: %v", column.Value)
+			log.Printf("trying to assign mpr ad1: %v %v", column.Value, memNumb)
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
@@ -596,6 +596,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} 
 		
 		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
+			log.Printf("trying to assign mpr ad1: %v %v", column.Value, memNumb)
 			mpr[memNumb].EMAIL.Value = column.Value
 			mpr[memNumb].EMAIL.Source = column.Name
 			// type email if ends with gmail, yahoo, hotmail
