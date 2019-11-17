@@ -609,7 +609,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	if(!concatAdd) {
 		addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 	} else {
-		addressInput = input.Columns[concatAddCol]
+		addressInput = input.Columns[concatAddCol].Value
 	}
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)
@@ -640,12 +640,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// pub the record
-	pubRecord(input, mkOutput)
+	pubRecord(&input, mkOutput)
 
 	// handle MAR values
 	if emailCount > 1 {
 		log.Printf("Have multiple emails: %v", emailCount)
-		for i := 0; len(emailList) - 1; i++ {
+		for i := 1; i < len(emailList); i++ {
 			// update email value... and resend...
 			mkOutput.EMAIL.Value = input.Columns[emailList[i]].Value
 			mkOutput.EMAIL.Source = input.Columns[emailList[i]].Name
@@ -655,24 +655,24 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mkOutput.EMAIL.Type = "Private"
 				}
 			}
-			pubRecord(input, mkOutput)
+			pubRecord(&input, mkOutput)
 		}
 	}
 	if phoneCount > 1 {
 		log.Printf("Have multiple phones: %v", phoneCount)
-		for i := 0; len(phoneList) - 1; i++ {
+		for i := 1; i < len(phoneList); i++ {
 			// update phone value... and resend...
 			mkOutput.PHONE.Value = input.Columns[phoneList[i]].Value
 			mkOutput.PHONE.Source = input.Columns[phoneList[i]].Name
-			pubRecord(input, mkOutput)
+			pubRecord(&input, mkOutput)
 		}
 	}
 	if haveDorm {
-		mkOutput.AD1.Value = input.Columns[input.Columns[dormCol]].Value
-		mkOutput.AD1.Source = input.Columns[input.Columns[dormCol]].Name
+		mkOutput.AD1.Value = input.Columns[dormCol].Value
+		mkOutput.AD1.Source = input.Columns[dormCol].Name
 		if roomCol {
-			mkOutput.AD2.Value = input.Columns[input.Columns[roomCol]].Value
-			mkOutput.AD2.Source = input.Columns[input.Columns[roomCol]].Name
+			mkOutput.AD2.Value = input.Columns[roomCol].Value
+			mkOutput.AD2.Source = input.Columns[roomCol].Name
 		} else {
 			mkOutput.AD2.Value = ""
 		}
@@ -680,7 +680,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.STATE.Value = ""
 		mkOutput.ZIP.Value = ""
 		mkOutput.AdType.Value = "Campus"
-		pubRecord(input, mkOutput)
+		pubRecord(&input, mkOutput)
 	}
 
 	// handle mpr
@@ -746,7 +746,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		mkOutput.Role.Value = "parent"
-		pubRecord(input, mkOutput)
+		pubRecord(&input, mkOutput)
 	}
 
 	return nil
@@ -935,7 +935,7 @@ func extractMemberNumb(colVal string) int {
 	return 0
 }
 
-func pubRecord(input *Input, mkOutput *PeopleOutput) {
+func pubRecord(input *Input, mkOutput PeopleOutput) {
 	var output Output
 	output.Signature = input.Signature
 	output.Passthrough = input.Passthrough

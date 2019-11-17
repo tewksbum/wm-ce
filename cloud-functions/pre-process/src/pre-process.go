@@ -163,7 +163,7 @@ type ProductERR struct {
 type ERRFlags struct {
 	PeopleFirstName      bool
 	PeopleLastName       bool
-	PeoplePeopleAddress1 bool
+	PeopleAddress1       bool
 	PeopleZip  		     bool
 	PeoplePhone  	     bool
 	PeopleEmail  	     bool
@@ -475,7 +475,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.People = true
 	}
 	// if we don't have ANY columns... throw it to people to try out ver...
-	if (!columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.eopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip ) {
+	if (!columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip ) {
 		flags.People = true
 	}
 
