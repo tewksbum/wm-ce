@@ -436,7 +436,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			columnFlags.PeopleZip = true
 		}
 		if column.PeopleERR.City == 1 {
-			columnFlags.City = true
+			columnFlags.PeopleCity = true
 		}
 		if column.PeopleERR.Email == 1 {
 			columnFlags.PeopleEmail = true
