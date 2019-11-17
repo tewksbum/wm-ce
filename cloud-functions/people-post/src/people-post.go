@@ -20,7 +20,6 @@ import (
 	"cloud.google.com/go/storage"
 
 	// "github.com/ulule/deepcopier"
-	// trigger build
 )
 
 // PubSubMessage is the payload of a pubsub event
