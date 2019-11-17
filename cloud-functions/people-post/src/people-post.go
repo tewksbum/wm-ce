@@ -487,7 +487,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Title == 0 && column.PeopleERR.Role == 0 {
-				log.Printf("Setting VER Country: %v %v", PeopleVER.IS_COUNTRY, column.Value)
+				log.Printf("Setting VER Country: %v %v", column.PeopleVER.IS_COUNTRY, column.Value)
 				mkOutput.COUNTRY.Value = column.Value
 				mkOutput.COUNTRY.Source = column.Name
 			}
@@ -717,68 +717,73 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// handle mpr
 	for i := 0; i < len(mpr); i++ {
-		if mpr[i].FNAME.Value != "" {
-			mkOutput.FNAME.Value = mpr[i].FNAME.Value
-			mkOutput.FNAME.Source = mpr[i].FNAME.Source	
-		} else {
-			mkOutput.FNAME.Value = ""
-			mkOutput.FNAME.Source = ""
-		}
-		if mpr[i].LNAME.Value != "" {
-			mkOutput.LNAME.Value = mpr[i].LNAME.Value
-			mkOutput.LNAME.Source = mpr[i].LNAME.Source	
-		}
-		if mpr[i].AD1.Value != "" {
-			mkOutput.AD1.Value = mpr[i].AD1.Value
-			mkOutput.AD1.Source = mpr[i].AD1.Source	
-		}
-		if mpr[i].AD2.Value != "" {
-			mkOutput.AD2.Value = mpr[i].AD2.Value
-			mkOutput.AD2.Source = mpr[i].AD2.Source	
-		}
-		if mpr[i].CITY.Value != "" {
-			mkOutput.CITY.Value = mpr[i].CITY.Value
-			mkOutput.CITY.Source = mpr[i].CITY.Source	
-		}
-		if mpr[i].STATE.Value != "" {
-			mkOutput.STATE.Value = mpr[i].STATE.Value
-			mkOutput.STATE.Source = mpr[i].STATE.Source	
-		}
-		if mpr[i].ZIP.Value != "" {
-			mkOutput.ZIP.Value = mpr[i].ZIP.Value
-			mkOutput.ZIP.Source = mpr[i].ZIP.Source	
-		}
-		if mpr[i].EMAIL.Value != "" {
-			mkOutput.EMAIL.Value = mpr[i].EMAIL.Value
-			mkOutput.EMAIL.Source = mpr[i].EMAIL.Source	
-		} else {
-			mkOutput.EMAIL.Value = ""
-			mkOutput.EMAIL.Source = ""
-		}
-		if mpr[i].PHONE.Value != "" {
-			mkOutput.PHONE.Value = mpr[i].PHONE.Value
-			mkOutput.PHONE.Source = mpr[i].PHONE.Source	
-		} else {
-			mkOutput.PHONE.Value = ""
-			mkOutput.PHONE.Source = ""
-		}
-
-		addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
-		a := ParseAddress(addressInput)
-		log.Printf("address parser returned %v", a)
-		if len(a.City) > 0 {
-			mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
-			mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
-			mkOutput.CITY.Value = a.City
-			mkOutput.STATE.Value = a.State
-			mkOutput.ZIP.Value = a.Zip
-			if len(a.Plus4) > 0 {
-				mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+		log.Printf("mpr loop %v", i)
+		log.Printf("checking if have mpr value %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value)
+		if (mpr[i].FNAME.Value != "") || (mpr[i].EMAIL.Value != "") {
+			log.Printf("have mpr value %v", i)
+			if mpr[i].FNAME.Value != "" {
+				mkOutput.FNAME.Value = mpr[i].FNAME.Value
+				mkOutput.FNAME.Source = mpr[i].FNAME.Source	
+			} else {
+				mkOutput.FNAME.Value = ""
+				mkOutput.FNAME.Source = ""
 			}
-		}
+			if mpr[i].LNAME.Value != "" {
+				mkOutput.LNAME.Value = mpr[i].LNAME.Value
+				mkOutput.LNAME.Source = mpr[i].LNAME.Source	
+			}
+			if mpr[i].AD1.Value != "" {
+				mkOutput.AD1.Value = mpr[i].AD1.Value
+				mkOutput.AD1.Source = mpr[i].AD1.Source	
+			}
+			if mpr[i].AD2.Value != "" {
+				mkOutput.AD2.Value = mpr[i].AD2.Value
+				mkOutput.AD2.Source = mpr[i].AD2.Source	
+			}
+			if mpr[i].CITY.Value != "" {
+				mkOutput.CITY.Value = mpr[i].CITY.Value
+				mkOutput.CITY.Source = mpr[i].CITY.Source	
+			}
+			if mpr[i].STATE.Value != "" {
+				mkOutput.STATE.Value = mpr[i].STATE.Value
+				mkOutput.STATE.Source = mpr[i].STATE.Source	
+			}
+			if mpr[i].ZIP.Value != "" {
+				mkOutput.ZIP.Value = mpr[i].ZIP.Value
+				mkOutput.ZIP.Source = mpr[i].ZIP.Source	
+			}
+			if mpr[i].EMAIL.Value != "" {
+				mkOutput.EMAIL.Value = mpr[i].EMAIL.Value
+				mkOutput.EMAIL.Source = mpr[i].EMAIL.Source	
+			} else {
+				mkOutput.EMAIL.Value = ""
+				mkOutput.EMAIL.Source = ""
+			}
+			if mpr[i].PHONE.Value != "" {
+				mkOutput.PHONE.Value = mpr[i].PHONE.Value
+				mkOutput.PHONE.Source = mpr[i].PHONE.Source	
+			} else {
+				mkOutput.PHONE.Value = ""
+				mkOutput.PHONE.Source = ""
+			}
 
-		mkOutput.ROLE.Value = "parent"
-		pubRecord(ctx, &input, mkOutput)
+			addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
+			a := ParseAddress(addressInput)
+			log.Printf("address parser returned %v", a)
+			if len(a.City) > 0 {
+				mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
+				mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+				mkOutput.CITY.Value = a.City
+				mkOutput.STATE.Value = a.State
+				mkOutput.ZIP.Value = a.Zip
+				if len(a.Plus4) > 0 {
+					mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
+				}
+			}
+
+			mkOutput.ROLE.Value = "parent"
+			pubRecord(ctx, &input, mkOutput)
+		}
 	}
 
 	return nil
