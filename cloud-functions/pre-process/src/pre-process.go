@@ -456,6 +456,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		// if column.ConsignmentERR.ID == 1 {
 		// 	columnFlags.ConsignmentID = true
 		// }
+
 		if column.OrderDetailERR.ID == 1 {
 			columnFlags.OrderDetailID = true
 		}
@@ -472,8 +473,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.Value = reNewline.ReplaceAllString(column.Value, " ")
 		columns[i] = column
 	}
-	log.Printf("columns %v", columns)
-	log.Printf("column flags %v", columnFlags)
 
 	// update entity flags
 	flags.Event = true // every record = event
@@ -511,8 +510,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
-
-	log.Printf("flags %v", flags)
+	log.Printf("columns %v", columns)
+	log.Printf("column flags %v", columnFlags)
+	log.Printf("entity flags %v", flags)
 
 	// run VER
 	for i, column := range columns {
