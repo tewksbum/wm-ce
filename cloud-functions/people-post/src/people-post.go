@@ -512,6 +512,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
 			} 
+
+			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				if column.PeopleERR.FirstName {
+					mkOutput.FNAME.Value = column.Value
+					mkOutput.FNAME.Source = column.Name
+				} else {
+					mkOutput.LNAME.Value = column.Value
+					mkOutput.LNAME.Source = column.Name
+				}
+			} 
 			
 			// phone & email ONLY check VER
 			// make a point to avoid mpr values
@@ -581,6 +591,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
 			mpr[memNumb].ZIP.Value = column.Value
 			mpr[memNumb].ZIP.Source = column.Name
+		} 
+
+		if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
+			if column.PeopleERR.FirstName {
+				mpr[memNumb].FNAME.Value = column.Value
+				mpr[memNumb].FNAME.Source = column.Name
+			} else {
+				mpr[memNumb].LNAME.Value = column.Value
+				mpr[memNumb].LNAME.Source = column.Name
+			}
 		} 
 		
 		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
