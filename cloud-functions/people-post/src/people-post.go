@@ -551,7 +551,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
 			mpr[memNumb].AD2.Value = column.Value
 			mpr[memNumb].AD2.Source = column.Name
-		} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
+		} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
 			mpr[memNumb].CITY.Value = column.Value
 			mpr[memNumb].CITY.Source = column.Name
 		} else if column.PeopleERR.State == 1 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
@@ -571,7 +571,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
-		}  else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !concatAdd && !concatCityState {
+		}  else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
 			// Beverly... ERR City = 1, Fname = 0, Lname = 0 / VER Fname = 1, Lname = 1, City = 1
 			mpr[memNumb].CITY.Value = column.Value
 			mpr[memNumb].CITY.Source = column.Name
