@@ -396,6 +396,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatCityState = true
 			}
+			//TODO: Dorm detection needs help
 			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
 				haveDorm = true
 				dormCol = index
@@ -628,9 +629,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		input.Columns[index] = column
 	}
 
+	//TODO: fullname needs help
 	if fullName {
 		log.Printf("fullname w/ name parts: %v", fullNameCol)
-
+		
 		// nameParts := strings.Split(input.Columns[fullNameCol].Value, " ") 
 		// for i := 1; i < len(nameParts); i++ {
 			// run them against VER for first & last name
