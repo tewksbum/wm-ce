@@ -302,7 +302,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var concatAddCol int
 	var concatCityState bool
 	var fullName bool
-	var fullNameCol int
 	var emailCount int
 	var phoneCount int
 	var emailList []int
@@ -323,7 +322,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	haveDorm = false
 	dormCol = 0
 	roomCol = 0
-	fullNameCol = 0
 
 	log.Printf("people-post for record: %v", input.Signature.RecordID)
 
@@ -366,10 +364,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey = ""
 				column.PeopleERR.Country = 0
 			}
+	//>>>>> TODO: come back and upgrade when warranted...
 			nameParts := strings.Split(column.Value, " ") 
 			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
-				fullNameCol = index
+				mkOutput.FNAME.Value = nameParts[0]
+				mkOutput.FNAME.Source = column.Name
+				mkOutput.LNAME.Source = column.Name
 			}
 			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatAdd = true
@@ -427,18 +428,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// AdType
 			mkOutput.ADTYPE.Value = AssignAddressType(&column)
 
-		// ***** construct student
+		// ***** construct Student ***********************************
 			// start by taking column values at their name...
-			// make a point to avoid mpr values
-			// special cases = full name, concatenated address, mpr
+			// make a point to avoid mpr values, full name, & concatenated address
  			if column.PeopleERR.LastName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				log.Printf("have LNAME: %v", column.Value)
+				log.Printf("have ERR LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("have ERR FNAME: %v", column.Value)
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
+				log.Printf("have ERR AD1: %v", column.Value)
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
 			} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
@@ -448,6 +450,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.AD3.Value = column.Value
 				mkOutput.AD3.Source = column.Name	
 			} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
+				log.Printf("have ERR CITY: %v", column.Value)
 				mkOutput.CITY.Value = column.Value
 				mkOutput.CITY.Source = column.Name
 			} else if column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
@@ -457,21 +460,23 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.ZIP.Value = column.Value
 				mkOutput.ZIP.Source = column.Name
 			} else if column.PeopleERR.Country == 1 && column.PeopleERR.Role == 0 {
-				log.Printf("Setting Country: %v %v", column.PeopleERR.Country, column.Value)
+				log.Printf("Setting ERR Country: %v %v", column.PeopleERR.Country, column.Value)
 				mkOutput.COUNTRY.Value = column.Value
 				mkOutput.COUNTRY.Source = column.Name
 			}
 			
 			// override ERR w/ VER...
-			// make a point to avoid mpr values
+			// make a point to avoid mpr values, full name, & concatenated address
 			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				log.Printf("have LNAME: %v", column.Value)
+				log.Printf("have VER LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("have VER FNAME: %v", column.Value)
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
+				log.Printf("have VER AD1: %v", column.Value)
 				mkOutput.AD1.Value = column.Value
 				mkOutput.AD1.Source = column.Name
 			}  else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
@@ -490,35 +495,42 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.COUNTRY.Source = column.Name
 			}
 
-			// if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {	
-			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Role == 0 && !fullName {	
+			// have BOTH VER + ERR for each name
+			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("Setting ERR + VER FNAME: %v", column.Value)	
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			} 
-			// if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {	
 			if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("Setting ERR + VER LNAME: %v", column.Value)	
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			} 
 
-			if matchKey == "FNAME" && column.PeopleERR.Role == 0 {
+		// >>>> These should be redundant... to the matchkey code at the start?
+		// only thought would be... if things had been overwritten above... to reset them...
+			if matchKey == "FNAME" && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("Setting MatchKey FNAME: %v", column.Value)	
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			}
-			if matchKey == "LNAME" && column.PeopleERR.Role == 0 {
+			if matchKey == "LNAME" && column.PeopleERR.Role == 0 && !fullName {
+				log.Printf("Setting MatchKey LNAME: %v", column.Value)	
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			}
 
-			if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-				if column.PeopleERR.FirstName == 1 {
-					mkOutput.FNAME.Value = column.Value
-					mkOutput.FNAME.Source = column.Name
-				} else if column.PeopleERR.LastName == 1 {
-					mkOutput.LNAME.Value = column.Value
-					mkOutput.LNAME.Source = column.Name
-				}
-			} 
+			// if VER says a column could be either a first or last... 
+			// use err to break the tie
+			// if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+			// 	if column.PeopleERR.FirstName == 1 {
+			// 		mkOutput.FNAME.Value = column.Value
+			// 		mkOutput.FNAME.Source = column.Name
+			// 	} else if column.PeopleERR.LastName == 1 {
+			// 		mkOutput.LNAME.Value = column.Value
+			// 		mkOutput.LNAME.Source = column.Name
+			// 	}
+			// } 
 			
 			// phone & email ONLY check VER
 			// make a point to avoid mpr values
@@ -544,19 +556,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				phoneList = append(phoneList, index) 
 			}
 
-		// ***** construct MPR
+	// ***** construct MPR ***********************************
 		memNumb = extractMemberNumb(column.Name)
 		log.Printf("memNumb: %v", memNumb)
 		if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign mpr lastname: %v %v", column.Value, memNumb)
+			log.Printf("trying to assign ERR mpr lastname: %v %v", column.Value, memNumb)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign mpr firstname: %v %v", column.Value, memNumb)
+			log.Printf("trying to assign ERR mpr firstname: %v %v", column.Value, memNumb)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		}  else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("trying to assign mpr ad1: %v %v", column.Value, memNumb)
+			log.Printf("trying to assign ERR mpr ad1: %v %v", column.Value, memNumb)
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
 		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
@@ -580,12 +592,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		
 		if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
+			log.Printf("trying to assign VER mpr lastname: %v %v", column.Value, memNumb)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
+			log.Printf("trying to assign VER mpr ad1: %v %v", column.Value, memNumb)
 			mpr[memNumb].AD1.Value = column.Value
 			mpr[memNumb].AD1.Source = column.Name
 		}  else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
@@ -603,27 +617,35 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			mpr[memNumb].COUNTRY.Source = column.Name
 		}
 
+		// if VER says a column could be either a first or last... 
+		// use err to break the tie
 		if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
 			if column.PeopleERR.FirstName == 1 {
+				log.Printf("trying to assign ERR + VER mpr fname: %v %v", column.Value, memNumb)
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.LastName == 1 {
+				log.Printf("trying to assign ERR + VER mpr lname: %v %v", column.Value, memNumb)
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			}
 		} 
 
+		// >>>> These should be redundant... to the matchkey code at the start?
+		// only thought would be... if things had been overwritten above... to reset them...
 		if matchKey == "FNAME" && column.PeopleERR.Role == 1 {
+			log.Printf("trying to assign matchkey fname: %v %v", column.Value, memNumb)
 			mpr[memNumb].FNAME.Value = column.Value
 			mpr[memNumb].FNAME.Source = column.Name
 		}
 		if matchKey == "LNAME" && column.PeopleERR.Role == 1 {
+			log.Printf("trying to assign matchkey lname: %v %v", column.Value, memNumb)
 			mpr[memNumb].LNAME.Value = column.Value
 			mpr[memNumb].LNAME.Source = column.Name
 		}
 		
 		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
-			log.Printf("trying to assign mpr ad1: %v %v", column.Value, memNumb)
+			log.Printf("trying to assign mpr email: %v %v", column.Value, memNumb)
 			mpr[memNumb].EMAIL.Value = column.Value
 			mpr[memNumb].EMAIL.Source = column.Name
 			// type email if ends with gmail, yahoo, hotmail
@@ -640,17 +662,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mpr[memNumb].PHONE.Source = column.Name
 			}
 		}
-
 		input.Columns[index] = column
-	}
-
-//>>>>> TODO: come back and upgrade when warranted...
-	if fullName {
-		log.Printf("fullname w/ name parts: %v", fullNameCol)		
-		namePartz := strings.Split(input.Columns[fullNameCol].Value, " ") 
-		mkOutput.FNAME.Value = namePartz[0]
-		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
-		mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
 	}
 
 	// parse address as needed
@@ -739,7 +751,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// handle mpr
 	for i := 0; i < len(mpr); i++ {
 		log.Printf("mpr loop %v", i)
-		log.Printf("checking if have mpr value %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value)
+		log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value)
 		if (mpr[i].FNAME.Value != "") || (mpr[i].EMAIL.Value != "") {
 			log.Printf("have mpr value %v", i)
 			if mpr[i].FNAME.Value != "" {
