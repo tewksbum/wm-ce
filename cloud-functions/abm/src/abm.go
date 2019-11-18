@@ -45,6 +45,7 @@ type Household struct {
 	HouseholdID string `json:"householdId,omitempty"`
 	Address1    string `json:"address1,omitempty"`
 	Address2    string `json:"address2,omitempty"`
+	Address3    string `json:"address3,omitempty"`
 	City        string `json:"city,omitempty"`
 	State       string `json:"state,omitempty"`
 	Zip         string `json:"zip,omitempty"`
@@ -416,6 +417,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			HouseholdID: getFrom360Slice("TrustedId", r360filteredmk).Value,
 			Address1:    getFrom360Slice("AD1", r360filteredmk).Value,
 			Address2:    getFrom360Slice("AD2", r360filteredmk).Value,
+			Address3:    getFrom360Slice("AD3", r360filteredmk).Value,
 			City:        getFrom360Slice("CITY", r360filteredmk).Value,
 			State:       getFrom360Slice("STATE", r360filteredmk).Value,
 			Zip:         getFrom360Slice("ZIP", r360filteredmk).Value,
