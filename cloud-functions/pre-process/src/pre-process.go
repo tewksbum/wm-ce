@@ -496,9 +496,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.People = true
 		log.Printf("have a people entity >>> LastName, Add1, City")
 	}
-	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleZip {
+	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
-		log.Printf("have a people entity >>> LastName, Add1, Zip")
+		log.Printf("have a people entity >>> LastName, Add, Zip")
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
