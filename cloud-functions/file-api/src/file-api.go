@@ -112,8 +112,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var entities []Customer
-	query := datastore.NewQuery("Customer").Namespace(NameSpace)
-	query.Filter("AccessKey =", input.AccessKey).Limit(1)
+	query := datastore.NewQuery("Customer").Namespace(NameSpace).Filter("AccessKey =", input.AccessKey).Limit(1)
 
 	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
