@@ -491,6 +491,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
+		log.Printf("have a people entity >>> LastName, Add1, City")
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
