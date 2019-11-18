@@ -371,7 +371,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				//check fo comma case... if comma reverse name...
 				//or run a parser here...
 				mkOutput.FNAME.Value = nameParts[0]
-				mkOutput.LNAME.Value = nameParts[1:]
+				mkOutput.LNAME.Value = strings.Join(nameParts[1:], " ")
 				mkOutput.FNAME.Source = column.Name
 				mkOutput.LNAME.Source = column.Name
 			}
