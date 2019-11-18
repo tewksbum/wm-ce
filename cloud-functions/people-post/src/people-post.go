@@ -615,12 +615,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} 
 
 		if matchKey == "FNAME" && column.PeopleERR.Role == 1 {
-			mkOutput.FNAME.Value = column.Value
-			mkOutput.FNAME.Source = column.Name
+			mpr[memNumb].FNAME.Value = column.Value
+			mpr[memNumb].FNAME.Source = column.Name
 		}
 		if matchKey == "LNAME" && column.PeopleERR.Role == 1 {
-			mkOutput.LNAME.Value = column.Value
-			mkOutput.LNAME.Source = column.Name
+			mpr[memNumb].LNAME.Value = column.Value
+			mpr[memNumb].LNAME.Source = column.Name
 		}
 		
 		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
