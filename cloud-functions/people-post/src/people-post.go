@@ -335,6 +335,26 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			matchKey := MLLabels[predictionKey]
 			column.MatchKey = matchKey
 			// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
+
+		// ***** source to matchkey mappings
+			if column.PeopleERR.Title == 1 {
+				SetMkField(&mkOutput, "TITLE", column.Value, column.Name)
+			}
+			if column.PeopleERR.TrustedID == 1 {
+				trustedID = column.Value
+				SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
+			}
+			if column.PeopleERR.Organization == 1 {
+				SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
+			}
+			if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
+				SetMkField(&mkOutput, "TITLE", ClassYear, column.Name)
+			}	
+			if matchKey != "" {
+				if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+					SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+				}
+			}			
 		
 		// ***** correct known wrong flags
 			fullName = false
@@ -367,28 +387,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.Room == 1 {				
 				roomCol = index
 			}
-
-		// ***** source to matchkey mappings
-			if column.PeopleERR.Title == 1 {
-				SetMkField(&mkOutput, "TITLE", column.Value, column.Name)
-			}
-			if column.PeopleERR.TrustedID == 1 {
-				trustedID = column.Value
-				SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
-			}
-			if column.PeopleERR.Organization == 1 {
-				SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
-			}
-			if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
-				SetMkField(&mkOutput, "TITLE", ClassYear, column.Name)
-			}	
-			//wtf does this do????  
-			// if matchKey != "" {
-			// 	// if it does not already have a value
-			// 	if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-			// 		SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			// 	}
-			// }
 
 		// ***** correct values
 			// fix zip code that has leading 0 stripped out
