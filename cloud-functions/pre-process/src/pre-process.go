@@ -165,6 +165,7 @@ type ProductERR struct {
 type ERRFlags struct {
 	PeopleFirstName      bool
 	PeopleLastName       bool
+	PeopleAddress        bool
 	PeopleAddress1       bool
 	PeopleCity  		 bool
 	PeopleZip  		     bool
@@ -432,6 +433,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.Address1 == 1 {
 			columnFlags.PeopleAddress1 = true
 		}
+		if column.PeopleERR.Address == 1 {
+			columnFlags.PeopleAddress = true
+		}
 		if column.PeopleERR.ZipCode == 1 {
 			columnFlags.PeopleZip = true
 		}
@@ -485,7 +489,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// update entity flags
 	flags.Event = true // every record = event
 
-	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && columnFlags.PeopleZip {
+	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && (columnFlags.PeopleZip || columnFlags.Address) {
 		flags.People = true
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
@@ -750,6 +754,8 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Organization = 1
 		case "title", "course year":
 			err.Title = 1
+		case "studentid", "student id":
+			err.TrustedID = 1
 	}
 
 	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
