@@ -434,11 +434,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// start by taking column values at their name...
 			// make a point to avoid mpr values
 			// special cases = full name, concatenated address, mpr
- 			if column.PeopleERR.LastName == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+ 			if column.PeopleERR.LastName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				log.Printf("have LNAME: %v", column.Value)
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
-			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
+			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
@@ -504,11 +504,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.LNAME.Source = column.Name
 			} 
 
-			if matchKey == "FNAME" {
+			if matchKey == "FNAME" && column.PeopleERR.Role == 0 {
 				mkOutput.FNAME.Value = column.Value
 				mkOutput.FNAME.Source = column.Name
 			}
-			if matchKey == "LNAME" {
+			if matchKey == "LNAME" && column.PeopleERR.Role == 0 {
 				mkOutput.LNAME.Value = column.Value
 				mkOutput.LNAME.Source = column.Name
 			}
@@ -615,6 +615,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mpr[memNumb].LNAME.Source = column.Name
 			}
 		} 
+
+		if matchKey == "FNAME" && column.PeopleERR.Role == 1 {
+			mkOutput.FNAME.Value = column.Value
+			mkOutput.FNAME.Source = column.Name
+		}
+		if matchKey == "LNAME" && column.PeopleERR.Role == 1 {
+			mkOutput.LNAME.Value = column.Value
+			mkOutput.LNAME.Source = column.Name
+		}
 		
 		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
 			log.Printf("trying to assign mpr ad1: %v %v", column.Value, memNumb)
