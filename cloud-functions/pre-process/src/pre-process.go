@@ -759,7 +759,7 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Organization = 1
 		case "title", "course year":
 			err.Title = 1
-		case "studentid", "student id":
+		case "studentid", "student id", "id":
 			err.TrustedID = 1
 	}
 
@@ -772,7 +772,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "country") {
 		err.Country = 1
 	}
-	if strings.Contains(key, "email") {
+	if strings.Contains(key, "email", "e-mail") {
 		err.Email = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
@@ -1119,7 +1119,7 @@ func GetPeopleVER(column *InputColumn) PeopleVER {
 
 func GetEventVER(column *InputColumn) EventVER {
 	var val = strings.TrimSpace(column.Value)
-	log.Printf("features Event values is %v", val)
+	// log.Printf("features Event values is %v", val)
 	val = RemoveDiacritics(val)
 	browser := useragent.Parse(val)
 	isBrowser := true
@@ -1131,7 +1131,7 @@ func GetEventVER(column *InputColumn) EventVER {
 		IS_CHANNEL: ContainsBool(listChannels, val),
 	}
 	columnJ, _ := json.Marshal(result)
-	log.Printf("current Event VER %v", string(columnJ))
+	// log.Printf("current Event VER %v", string(columnJ))
 	return result
 }
 
