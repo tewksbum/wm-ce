@@ -808,6 +808,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FirstName = 0
 		err.LastName = 0
 	}
+	if err.MiddleName == 1  {
+		err.FirstName = 0
+		err.LastName = 0
+	}
 
 	// get some types
 	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
