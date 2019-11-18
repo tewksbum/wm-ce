@@ -59,32 +59,32 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION   MatchKeyField `json:"salutation" bigquery:"salutation"`
-	NICKNAME     MatchKeyField `json:"nickname" bigquery:"nickname"`
-	FNAME        MatchKeyField `json:"fname" bigquery:"fname"`
-	FINITIAL     MatchKeyField `json:"finitial" bigquery:"finitial"`
-	LNAME        MatchKeyField `json:"lname" bigquery:"lname"`
+	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
+	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
+	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
 
-	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
-	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
-	AD3          MatchKeyField `json:"ad3" bigquery:"ad3"`
-	CITY         MatchKeyField `json:"city" bigquery:"city"`
-	STATE        MatchKeyField `json:"state" bigquery:"state"`
-	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
-	ZIP5         MatchKeyField `json:"zip5" bigquery:"zip5"`
-	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
-	MAILROUTE    MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
-	ADTYPE       MatchKeyField `json:"adType" bigquery:"adtype"`
+	AD1       MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD2       MatchKeyField `json:"ad2" bigquery:"ad2"`
+	AD3       MatchKeyField `json:"ad3" bigquery:"ad3"`
+	CITY      MatchKeyField `json:"city" bigquery:"city"`
+	STATE     MatchKeyField `json:"state" bigquery:"state"`
+	ZIP       MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5      MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
+	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
+	ADTYPE    MatchKeyField `json:"adType" bigquery:"adtype"`
 
-	EMAIL        MatchKeyField `json:"email" bigquery:"email"`
-	PHONE        MatchKeyField `json:"phone" bigquery:"phone"`
-	
-	TRUSTEDID    MatchKeyField `json:"trustedId" bigquery:"trustedid"`
-	CLIENTID     MatchKeyField `json:"clientId" bigquery:"clientid"`
+	EMAIL MatchKeyField `json:"email" bigquery:"email"`
+	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
 
-	GENDER       MatchKeyField `json:"gender" bigquery:"gender"`
-	AGE          MatchKeyField `json:"age" bigquery:"age"`
-	DOB          MatchKeyField `json:"dob" bigquery:"dob"`
+	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
+	CLIENTID  MatchKeyField `json:"clientId" bigquery:"clientid"`
+
+	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
+	AGE    MatchKeyField `json:"age" bigquery:"age"`
+	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
 
 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
@@ -275,14 +275,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			"SELECT fibers "+
 			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
 			"WHERE "+
-				"(s.RecordID = '%s') OR "+
-				"(m.key = '%s' and u = '%s') OR "+
-				"(m.key = '%s' and u = '%s') OR "+
-				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-				"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
-		") select distinct f from fiberlist, unnest(fibers) f", 
+			"(s.RecordID = '%s') OR "+
+			"(m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+			") select distinct f from fiberlist, unnest(fibers) f",
 		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1,
@@ -373,9 +373,29 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Fibers: %v", Fibers)
 
 	var output People360Output
+	MatchKeyList := structs.Names(&PeopleOutput{})
+
 	var FiberMatchKeys []MatchKey360
 
-	MatchKeyList := structs.Names(&PeopleOutput{})
+	var FiberSignatures []Signature
+	// collect all fiber match key values
+	for _, fiber := range Fibers {
+		log.Printf("loaded fiber %v", fiber)
+		FiberSignatures = append(FiberSignatures, fiber.Signature)
+		for _, name := range MatchKeyList {
+			mk := GetMatchKeyFields(output.MatchKeys, name)
+			value := GetMkField(&fiber.MatchKeys, name).Value
+			if !Contains(mk.Values, value) && len(value) > 0 {
+				mk.Values = append(mk.Values, value)
+			}
+		}
+
+	}
+
+	output.MatchKeys = FiberMatchKeys
+	log.Printf("Fiber signatures: %v", FiberSignatures)
+
+	
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
@@ -392,22 +412,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
-	var FiberSignatures []Signature
-	// collect all fiber match key values
-	for _, fiber := range Fibers {
-		log.Printf("loaded fiber %v", fiber)
-		FiberSignatures = append(FiberSignatures, fiber.Signature)
-		for _, name := range MatchKeyList {
-			mk := GetMatchKeyFields(output.MatchKeys, name)
-			value := GetMkField(&fiber.MatchKeys, name).Value
-			if !Contains(mk.Values, value) && len(value) > 0 {
-				mk.Values = append(mk.Values, value)
-			}
-		}
-
-	}
-	output.MatchKeys = FiberMatchKeys
-	log.Printf("Fiber signatures: %v", FiberSignatures)
 	// append to the output value
 	output.ID = uuid.New().String()
 	output.TimeStamp = time.Now()
