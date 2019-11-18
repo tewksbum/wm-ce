@@ -126,6 +126,9 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 	if len(input.Fields) > 0 {
 		for k, v := range input.Fields {
 			input.Fields[k] = strings.TrimSpace(v)
+			if strings.EqualFold(input.Fields[k], "NULL") {
+				input.Fields[k] = ""
+			}
 		}
 	} else {
 		// empty field list
