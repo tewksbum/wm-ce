@@ -368,7 +368,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			nameParts := strings.Split(column.Value, " ") 
 			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
 				fullName = true
+				//check fo comma case... if comma reverse name...
+				//or run a parser here...
 				mkOutput.FNAME.Value = nameParts[0]
+				mkOutput.LNAME.Value = nameParts[1:]
 				mkOutput.FNAME.Source = column.Name
 				mkOutput.LNAME.Source = column.Name
 			}
