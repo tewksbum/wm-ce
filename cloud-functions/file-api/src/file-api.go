@@ -125,6 +125,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "{success: false, message: \"Invalid access key, -10\"}")
 		return
+	} else {
+		log.Printf("found %v matches: %v", len(entities), entities)
 	}
 
 	customer := entities[0]
