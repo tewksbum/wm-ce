@@ -378,7 +378,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
 				concatCityState = true
 			}
-//>>>>> TODO: Dorm detection needs help
 			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
 				haveDorm = true
 				dormCol = index
@@ -645,24 +644,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		input.Columns[index] = column
 	}
 
-//>>>>> TODO: fullname needs help
+//>>>>> TODO: come back and upgrade when warranted...
 	if fullName {
-		log.Printf("fullname w/ name parts: %v", fullNameCol)
-
-		// know the column w/ a full name... fullNameCol
-		
-		// namePartz := strings.Split(input.Columns[fullNameCol].Value, " ") 
-		// for i := 1; i < len(namePartz); i++ {
-			// run them against VER for first & last name
-			// store the values to output
-			// mkOutput.FNAME.Value = column.Value
-			// mkOutput.LNAME.Value = column.Value
-			// IS_FIRSTNAME: ContainsBool(listFirstNames, val),
-			// IS_LASTNAME:  ContainsBool(listLastNames, val),
-		// }
-
-		// mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
-		// mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
+		log.Printf("fullname w/ name parts: %v", fullNameCol)		
+		namePartz := strings.Split(input.Columns[fullNameCol].Value, " ") 
+		mkOutput.FNAME.Value = namePartz[0]
+		mkOutput.FNAME.Source = input.Columns[fullNameCol].Name
+		mkOutput.LNAME.Source = input.Columns[fullNameCol].Name
 	}
 
 	// parse address as needed

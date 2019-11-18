@@ -742,7 +742,7 @@ func GetPeopleERR(column string) PeopleERR {
 			err.ParentFirstName = 1
 			err.ParentLastName = 1
 			err.ParentName = 1
-		case "fullname", "full name":
+		case "fullname", "full name", "student name", "students name":
 			err.FullName = 1
 			err.FirstName = 1
 			err.LastName = 1
