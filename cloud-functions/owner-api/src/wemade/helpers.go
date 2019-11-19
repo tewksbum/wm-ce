@@ -18,6 +18,8 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 	var input APIInput
 	ctx := context.Background()
 
+	logger.InfoFmt("RawInputJSON: %s", string(data))
+
 	err = json.Unmarshal(data, &input)
 	if err != nil {
 		return customer, logger.ErrFmt(ErrDecodingRequest, err)
