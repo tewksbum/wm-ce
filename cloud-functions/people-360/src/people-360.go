@@ -395,6 +395,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				mk.Key = name
 				mk.Value = value
 				mk.Values = append(mk.Values, value)
+				FiberMatchKeys = append(FiberMatchKeys, *mk)
 			}
 		}
 	}
