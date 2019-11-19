@@ -117,7 +117,6 @@ type People360Output struct {
 	Signature    Signature360     `json:"signature" bigquery:"signature"`
 	Signatures   []Signature      `json:"signatures" bigquery:"signatures"`
 	CreatedAt    time.Time        `json:"createdAt" bigquery:"createdAt"`
-	TimeStamp    time.Time        `json:"timestamp" bigquery:"timestamp"`
 	Fibers       []string         `json:"fibers" bigquery:"fibers"`
 	Passthroughs []Passthrough360 `json:"passthroughs" bigquery:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
@@ -242,14 +241,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByKey3B := "FINITIAL"
 	MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
 
-	MatchByKey4A := "ZIP5"
-	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
-	MatchByKey4B := "LNAME"
-	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
-	MatchByKey4C := "FINITIAL"
-	MatchByValue4C := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
-	MatchByKey4D := "AD1NO"
-	MatchByValue4D := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
+	// MatchByKey4A := "ZIP5"
+	// MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", "\\'", -1)
+	// MatchByKey4B := "LNAME"
+	// MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
+	// MatchByKey4C := "FINITIAL"
+	// MatchByValue4C := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
+	// MatchByKey4D := "AD1NO"
+	// MatchByValue4D := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// MISSING address type
 
 	MatchByKey5A := "CITY"
@@ -264,15 +263,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// missing address type
 
-	MatchByKey6A := "ORGANIZATION"
-	MatchByValue6A := strings.Replace(input.MatchKeys.ORGANIZATION.Value, "'", "\\'", -1)
-	MatchByKey6B := "LNAME"
-	MatchByValue6B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
-	MatchByKey6C := "FNAME"
-	MatchByValue6C := strings.Replace(input.MatchKeys.FNAME.Value, "'", "\\'", -1)
-	MatchByKey6D := "TITLE"
-	MatchByValue6D := strings.Replace(input.MatchKeys.TITLE.Value, "'", "\\'", -1)
-
 	QueryText := fmt.Sprintf(
 		"with fiberlist as ("+
 			"SELECT fibers "+
@@ -282,18 +272,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			"(m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') "+
 			") select distinct f from fiberlist, unnest(fibers) f",
 		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,
 		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
-		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C, MatchByKey4D, MatchByValue4D,
-		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E,
-		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B, MatchByKey6C, MatchByValue6C, MatchByKey6D, MatchByValue6D)
+		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E)
 	log.Printf("Match Query Text: %s", QueryText)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
@@ -429,7 +415,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// append to the output value
 	output.ID = uuid.New().String()
-	output.TimeStamp = time.Now()
 	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,

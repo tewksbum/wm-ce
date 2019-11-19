@@ -233,10 +233,38 @@ type AddressParsed struct {
 	Plus4       string `json:"plus4"`
 }
 
+type LibPostal struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
 type CityStateZip struct {
 	Cities []string `json:"cities"`
 	State  string   `json:"state"`
 	Zip    string   `json:"zip"`
+}
+
+type LibPostalParsed struct {
+	HOUSE          string
+	CATEGORY       string
+	NEAR           string
+	HOUSE_NUMBER   string
+	ROAD           string
+	UNIT           string
+	LEVEL          string
+	STAIRCASE      string
+	ENTRANCE       string
+	PO_BOX         string
+	POSTCODE       string
+	SUBURB         string
+	CITY_DISTRICT  string
+	CITY           string
+	ISLAND         string
+	STATE_DISTRICT string
+	STATE          string
+	COUNTRY_REGION string
+	COUNTRY        string
+	WORLD_REGION   string
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -356,41 +384,41 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// ***** correct known wrong flags
-			fullName = false
-			concatAdd = false
-			concatCityState = false
-			// corrects the situation where FR, SO, JR, SR is identified as a country
-			if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
-				matchKey = ""
-				column.MatchKey = ""
-				column.PeopleERR.Country = 0
-			}
-	//>>>>> TODO: come back and upgrade when warranted...
-			nameParts := strings.Split(column.Value, " ") 
-			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
-				fullName = true
-				//check fo comma case... if comma reverse name...
-				//or run a parser here...
-				mkOutput.FNAME.Value = nameParts[0]
-				mkOutput.LNAME.Value = strings.Join(nameParts[1:], " ")
-				mkOutput.FNAME.Source = column.Name
-				mkOutput.LNAME.Source = column.Name
-			}
-			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-				concatAdd = true
-				concatAddCol = index
-			}
-			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-				concatCityState = true
-			}
-			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-				haveDorm = true
-				dormCol = index
-				log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
-			}
-			if column.PeopleERR.Room == 1 {				
-				roomCol = index
-			}
+		fullName = false
+		concatAdd = false
+		concatCityState = false
+		// corrects the situation where FR, SO, JR, SR is identified as a country
+		if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
+			matchKey = ""
+			column.MatchKey = ""
+			column.PeopleERR.Country = 0
+		}
+		//>>>>> TODO: come back and upgrade when warranted...
+		nameParts := strings.Split(column.Value, " ")
+		if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+			fullName = true
+			//check fo comma case... if comma reverse name...
+			//or run a parser here...
+			mkOutput.FNAME.Value = nameParts[0]
+			mkOutput.LNAME.Value = strings.Join(nameParts[1:], " ")
+			mkOutput.FNAME.Source = column.Name
+			mkOutput.LNAME.Source = column.Name
+		}
+		if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
+			concatAdd = true
+			concatAddCol = index
+		}
+		if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
+			concatCityState = true
+		}
+		if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
+			haveDorm = true
+			dormCol = index
+			log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
+		}
+		if column.PeopleERR.Room == 1 {
+			roomCol = index
+		}
 
 		// ***** correct values
 		// fix zip code that has leading 0 stripped out
@@ -677,17 +705,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)
-	if len(a.City) > 0 {
-		mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
-		mkOutput.AD1NO.Value = a.Number
-		mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+	if len(a.CITY) > 0 {
+		mkOutput.AD1.Value = a.HOUSE_NUMBER + " " + a.ROAD
+		mkOutput.AD1NO.Value = a.HOUSE_NUMBER
+		mkOutput.AD2.Value = a.UNIT
 		mkOutput.AD3.Value = ""
-		mkOutput.CITY.Value = a.City
-		mkOutput.STATE.Value = a.State
-		mkOutput.ZIP.Value = a.Zip
-		if len(a.Plus4) > 0 {
-			mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
-		}
+		mkOutput.CITY.Value = a.CITY
+		mkOutput.STATE.Value = a.STATE
+		mkOutput.ZIP.Value = a.POSTCODE
 	}
 
 	// check zip city state match
@@ -812,16 +837,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 			a := ParseAddress(addressInput)
 			log.Printf("address parser returned %v", a)
-			if len(a.City) > 0 {
-				mkOutput.AD1.Value = a.Number + " " + a.Street + " " + a.Type
-				mkOutput.AD2.Value = a.SecUnitType + " " + a.SecUnitNum
+			if len(a.CITY) > 0 {
+				mkOutput.AD1.Value = a.HOUSE_NUMBER + " " + a.ROAD
+				mkOutput.AD1NO.Value = a.HOUSE_NUMBER
+				mkOutput.AD2.Value = a.UNIT
 				mkOutput.AD3.Value = ""
-				mkOutput.CITY.Value = a.City
-				mkOutput.STATE.Value = a.State
-				mkOutput.ZIP.Value = a.Zip
-				if len(a.Plus4) > 0 {
-					mkOutput.ZIP.Value = a.Zip + "-" + a.Plus4
-				}
+				mkOutput.CITY.Value = a.CITY
+				mkOutput.STATE.Value = a.STATE
+				mkOutput.ZIP.Value = a.POSTCODE
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
@@ -955,18 +978,18 @@ func IndexOf(element string, data []string) int {
 	return -1 //not found.
 }
 
-func ParseAddress(address string) AddressParsed {
+func ParseAddress(address string) LibPostalParsed {
 	baseUrl, err := url.Parse(AddressParserBaseUrl)
 	baseUrl.Path += AddressParserPath
 	params := url.Values{}
-	params.Add("a", address)
+	params.Add("address", address)
 	baseUrl.RawQuery = params.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, baseUrl.String(), nil)
 	if err != nil {
 		log.Fatalf("error preparing address parser: %v", err)
 	}
-	req.URL.Query().Add("a", address)
+	// req.URL.Query().Add("a", address)
 
 	res, getErr := ap.Do(req)
 	if getErr != nil {
@@ -978,7 +1001,7 @@ func ParseAddress(address string) AddressParsed {
 		log.Fatalf("error reading address parser response: %v", readErr)
 	}
 
-	var parsed AddressParsed
+	var parsed []LibPostal
 	jsonErr := json.Unmarshal(body, &parsed)
 	if jsonErr != nil {
 		log.Fatalf("error parsing address parser response: %v", jsonErr)
@@ -986,7 +1009,12 @@ func ParseAddress(address string) AddressParsed {
 		log.Printf("address parser reponse: %v", string(body))
 	}
 
-	return parsed
+	var result LibPostalParsed
+	for _, lp := range parsed {
+		SetLibPostalField(&result, strings.ToUpper(lp.Label), lp.Value)
+	}
+
+	return result
 }
 
 func AssignAddressType(column *InputColumn) string {
@@ -1037,4 +1065,11 @@ func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput) {
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
+}
+
+func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.SetString(value)
+	return value
 }
