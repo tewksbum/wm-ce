@@ -443,7 +443,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
-		OutputMatchKeys = append(OutputMatchKeys, mk)
+		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
 
