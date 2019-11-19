@@ -78,3 +78,18 @@ func TruncatingSprintf(str string, args ...interface{}) string {
 	}
 	return fmt.Sprintf(str, args[:n]...)
 }
+
+// SliceUniqMapStr removes duplicates from string slice
+func SliceUniqMapStr(s []string) []string {
+	seen := make(map[string]struct{}, len(s))
+	j := 0
+	for _, v := range s {
+		if _, ok := seen[v]; ok {
+			continue
+		}
+		seen[v] = struct{}{}
+		s[j] = v
+		j++
+	}
+	return s[:j]
+}

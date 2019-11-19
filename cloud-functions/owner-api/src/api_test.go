@@ -40,10 +40,11 @@ func TestUpsert(t *testing.T) {
 		"customer": map[string]interface{}{
 			"id":         108108108,
 			"externalId": "108108108",
-			"owner":      "cmel x externalid",
-			"name":       "cmel12",
+			"owner":      "poo x externalid",
+			"name":       "poo123",
 
-			"enabled": true,
+			"enabled":     true,
+			"permissions": []string{"Customer:create"},
 		},
 	})
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))

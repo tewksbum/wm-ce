@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
+	"segment/utils"
 
 	"cloud.google.com/go/datastore"
 	"github.com/google/uuid"
@@ -47,6 +48,9 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 	c, err := getCustomer(ctx, projID, namespace, FilterCustomersByKey, key, false)
 	if err != nil && err == logger.ErrFmtStr(ErrRecordNotFound, EntityCustomer) {
 		input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
+		if input.Customer.Name == "" {
+			return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "Customer NAME is empty")
+		}
 	}
 	if c.AccessKey == "" {
 		input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
@@ -60,6 +64,19 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 		if input.Customer.Owner == "" {
 			input.Customer.Owner = c.Owner
 		}
+		if len(c.Permissions) > 0 {
+			input.Customer.Permissions = append(input.Customer.Permissions, c.Permissions...)
+		}
+		input.Customer.Permissions = utils.SliceUniqMapStr(input.Customer.Permissions)
+		var ps []string
+		for _, p := range input.Customer.Permissions {
+			for _, op := range owner.Permissions {
+				if p == op {
+					ps = append(ps, p)
+				}
+			}
+		}
+		input.Customer.Permissions = ps
 	}
 	if c.CreatedBy == nil {
 		input.Customer.CreatedBy = owner.Key
