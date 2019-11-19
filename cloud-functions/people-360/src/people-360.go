@@ -389,13 +389,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				mk.Values = append(mk.Values, value)
 			}
 		}
+	}
 
+	for _, name := range MatchKeyList {
+		mk := GetMatchKeyFields(output.MatchKeys, name)
+		log.Printf("mk.Values %v", mk.Values)
 	}
 
 	output.MatchKeys = FiberMatchKeys
 	log.Printf("Fiber signatures: %v", FiberSignatures)
 
-	
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
@@ -433,6 +436,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
 		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		// if blank, assign it a value
 		if len(mk.Value) == 0 && len(mk.Values) > 0 {
 			mk.Value = mk.Values[0]
 		}
@@ -484,13 +488,13 @@ func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 	return f.Interface().(MatchKeyField)
 }
 
-func GetMatchKeyFields(v []MatchKey360, key string) MatchKey360 {
+func GetMatchKeyFields(v []MatchKey360, key string) *MatchKey360 {
 	for _, m := range v {
 		if m.Key == key {
-			return m
+			return &m
 		}
 	}
-	return MatchKey360{}
+	return &MatchKey360{}
 }
 
 func Contains(slice []string, item string) bool {
