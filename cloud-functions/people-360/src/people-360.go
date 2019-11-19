@@ -66,6 +66,7 @@ type PeopleOutput struct {
 	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
 
 	AD1       MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD1NO     MatchKeyField `json:"ad1no" bigquery:"ad1no"`
 	AD2       MatchKeyField `json:"ad2" bigquery:"ad2"`
 	AD3       MatchKeyField `json:"ad3" bigquery:"ad3"`
 	CITY      MatchKeyField `json:"city" bigquery:"city"`
@@ -247,7 +248,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue4B := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
 	MatchByKey4C := "FINITIAL"
 	MatchByValue4C := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
-	// MISSING STREET NUMBER
+	MatchByKey4D := "AD1NO"
+	MatchByValue4D := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// MISSING address type
 
 	MatchByKey5A := "CITY"
@@ -258,7 +260,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", "\\'", -1)
 	MatchByKey5D := "FINITIAL"
 	MatchByValue5D := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", "\\'", -1)
-	// MISSING STREET NUMBER
+	MatchByKey5E := "AD1NO"
+	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// missing address type
 
 	MatchByKey6A := "ORGANIZATION"
@@ -279,8 +282,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			"(m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
+			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
 			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
 			") select distinct f from fiberlist, unnest(fibers) f",
 		ProjectID, DatasetID, SetTableName,
@@ -288,8 +291,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2,
 		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
-		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C,
-		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D,
+		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B, MatchByKey4C, MatchByValue4C, MatchByKey4D, MatchByValue4D,
+		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E,
 		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B, MatchByKey6C, MatchByValue6C, MatchByKey6D, MatchByValue6D)
 	log.Printf("Match Query Text: %s", QueryText)
 	BQQuery := bq.Query(QueryText)
