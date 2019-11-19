@@ -356,38 +356,41 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// ***** correct known wrong flags
-		fullName = false
-		concatAdd = false
-		concatCityState = false
-		// corrects the situation where FR, SO, JR, SR is identified as a country
-		if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
-			matchKey = ""
-			column.MatchKey = ""
-			column.PeopleERR.Country = 0
-		}
-		//>>>>> TODO: come back and upgrade when warranted...
-		nameParts := strings.Split(column.Value, " ")
-		if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
-			fullName = true
-			mkOutput.FNAME.Value = nameParts[0]
-			mkOutput.FNAME.Source = column.Name
-			mkOutput.LNAME.Source = column.Name
-		}
-		if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-			concatAdd = true
-			concatAddCol = index
-		}
-		if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-			concatCityState = true
-		}
-		if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			haveDorm = true
-			dormCol = index
-			log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
-		}
-		if column.PeopleERR.Room == 1 {
-			roomCol = index
-		}
+			fullName = false
+			concatAdd = false
+			concatCityState = false
+			// corrects the situation where FR, SO, JR, SR is identified as a country
+			if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
+				matchKey = ""
+				column.MatchKey = ""
+				column.PeopleERR.Country = 0
+			}
+	//>>>>> TODO: come back and upgrade when warranted...
+			nameParts := strings.Split(column.Value, " ") 
+			if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
+				fullName = true
+				//check fo comma case... if comma reverse name...
+				//or run a parser here...
+				mkOutput.FNAME.Value = nameParts[0]
+				mkOutput.LNAME.Value = strings.Join(nameParts[1:], " ")
+				mkOutput.FNAME.Source = column.Name
+				mkOutput.LNAME.Source = column.Name
+			}
+			if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
+				concatAdd = true
+				concatAddCol = index
+			}
+			if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
+				concatCityState = true
+			}
+			if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
+				haveDorm = true
+				dormCol = index
+				log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
+			}
+			if column.PeopleERR.Room == 1 {				
+				roomCol = index
+			}
 
 		// ***** correct values
 		// fix zip code that has leading 0 stripped out

@@ -496,6 +496,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		flags.People = true
 		log.Printf("have a people entity >>> LastName, Add1, City")
 	}
+	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
+		flags.People = true
+		log.Printf("have a people entity >>> LastName, Add, Zip")
+	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
@@ -543,6 +547,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var prediction Prediction
 
 	if flags.People {
+		log.Printf("Think we have People...")
 		PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
 		PeopleNER := FindNER(PeopleNERKey)
 
@@ -693,7 +698,7 @@ func GetPeopleERR(column string) PeopleERR {
 
 	key := strings.ToLower(column)
 	switch key {
-		case "fname", "f name", "first name", "name first", "first_name", "first":
+		case "fname", "f name", "first name", "name first", "first_name", "first", "nickname":
 			err.FirstName = 1
 		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
 			err.LastName = 1
@@ -752,9 +757,9 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Room = 1
 		case "organization":
 			err.Organization = 1
-		case "title", "course year":
+		case "title", "course year", "grad date":
 			err.Title = 1
-		case "studentid", "student id":
+		case "studentid", "student id", "id":
 			err.TrustedID = 1
 	}
 
@@ -767,7 +772,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "country") {
 		err.Country = 1
 	}
-	if strings.Contains(key, "email") {
+	if strings.Contains(key, "email") || strings.Contains("e-mail") {
 		err.Email = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
@@ -1114,7 +1119,7 @@ func GetPeopleVER(column *InputColumn) PeopleVER {
 
 func GetEventVER(column *InputColumn) EventVER {
 	var val = strings.TrimSpace(column.Value)
-	log.Printf("features values is %v", val)
+	// log.Printf("features Event values is %v", val)
 	val = RemoveDiacritics(val)
 	browser := useragent.Parse(val)
 	isBrowser := true
@@ -1126,7 +1131,7 @@ func GetEventVER(column *InputColumn) EventVER {
 		IS_CHANNEL: ContainsBool(listChannels, val),
 	}
 	columnJ, _ := json.Marshal(result)
-	log.Printf("current VER %v", string(columnJ))
+	// log.Printf("current Event VER %v", string(columnJ))
 	return result
 }
 
