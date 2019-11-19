@@ -706,13 +706,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)
 	if len(a.CITY) > 0 {
-		mkOutput.AD1.Value = a.HOUSE_NUMBER + " " + a.ROAD
-		mkOutput.AD1NO.Value = a.HOUSE_NUMBER
-		mkOutput.AD2.Value = a.UNIT
+		mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+		mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+		mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
 		mkOutput.AD3.Value = ""
-		mkOutput.CITY.Value = a.CITY
-		mkOutput.STATE.Value = a.STATE
-		mkOutput.ZIP.Value = a.POSTCODE
+		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
+		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
+		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
 	}
 
 	// check zip city state match
@@ -838,13 +838,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			a := ParseAddress(addressInput)
 			log.Printf("address parser returned %v", a)
 			if len(a.CITY) > 0 {
-				mkOutput.AD1.Value = a.HOUSE_NUMBER + " " + a.ROAD
-				mkOutput.AD1NO.Value = a.HOUSE_NUMBER
-				mkOutput.AD2.Value = a.UNIT
+				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+				mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
 				mkOutput.AD3.Value = ""
-				mkOutput.CITY.Value = a.CITY
-				mkOutput.STATE.Value = a.STATE
-				mkOutput.ZIP.Value = a.POSTCODE
+				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
+				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
+				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
