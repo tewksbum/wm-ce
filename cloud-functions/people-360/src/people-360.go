@@ -386,9 +386,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(FiberMatchKeys, name)
 			value := GetMkField(&fiber.MatchKeys, name).Value
-			if !Contains(mk.Values, value) && len(value) > 0 {
+			if len(mk.Key) > 0 {
+				if !Contains(mk.Values, value) && len(value) > 0 {
+					mk.Values = append(mk.Values, value)
+				}
+			} else {
+				// didn't find it in the existing collection, add it
+				mk.Key = name
+				mk.Value = value
 				mk.Values = append(mk.Values, value)
-
 			}
 		}
 	}
