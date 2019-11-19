@@ -38,13 +38,12 @@ func TestUpsert(t *testing.T) {
 		"accessKey": "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3",
 		// "accessKey": "3bb44f5242738d99820cd6a6b9588ae426749b88",
 		"customer": map[string]interface{}{
-			"id":         108108108,
+			"id":         109109109,
 			"externalId": "108108108",
-			"owner":      "poo x externalid",
+			"owner":      "popo x externalid",
 			"name":       "poo123",
-
-			"enabled":     true,
-			"permissions": []string{"Customer:create"},
+			"enabled":    true,
+			// "permissions": []string{"Customer:create"},
 		},
 	})
 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))

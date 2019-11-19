@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"segment/utils"
+	"strings"
 
 	"cloud.google.com/go/datastore"
 	"github.com/google/uuid"
@@ -46,8 +47,9 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 
 	key := ds.BuildKey(EntityCustomer, namespace, input.Customer.ID, input.Customer.ExternalID)
 	c, err := getCustomer(ctx, projID, namespace, FilterCustomersByKey, key, false)
-	if err != nil && err == logger.ErrFmtStr(ErrRecordNotFound, EntityCustomer) {
+	if err != nil && strings.Contains(err.Error(), fmt.Sprintf(ErrRecordNotFound, EntityCustomer)) {
 		input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
+		logger.InfoFmt("input.Customer: %+v", input.Customer)
 		if input.Customer.Name == "" {
 			return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "Customer NAME is empty")
 		}
@@ -64,20 +66,22 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 		if input.Customer.Owner == "" {
 			input.Customer.Owner = c.Owner
 		}
-		if len(c.Permissions) > 0 {
-			input.Customer.Permissions = append(input.Customer.Permissions, c.Permissions...)
-		}
-		input.Customer.Permissions = utils.SliceUniqMapStr(input.Customer.Permissions)
-		var ps []string
-		for _, p := range input.Customer.Permissions {
-			for _, op := range owner.Permissions {
-				if p == op {
-					ps = append(ps, p)
-				}
+	}
+	// Permissions storage
+	if len(c.Permissions) > 0 {
+		input.Customer.Permissions = append(input.Customer.Permissions, c.Permissions...)
+	}
+	input.Customer.Permissions = utils.SliceUniqMapStr(input.Customer.Permissions)
+	var ps []string
+	for _, p := range input.Customer.Permissions {
+		for _, op := range owner.Permissions {
+			if p == op {
+				ps = append(ps, p)
 			}
 		}
-		input.Customer.Permissions = ps
 	}
+	logger.InfoFmt("ps: %q", ps)
+	input.Customer.Permissions = ps
 	if c.CreatedBy == nil {
 		input.Customer.CreatedBy = owner.Key
 	}
