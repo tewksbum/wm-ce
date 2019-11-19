@@ -757,7 +757,7 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Room = 1
 		case "organization":
 			err.Organization = 1
-		case "title", "course year":
+		case "title", "course year", "grad date":
 			err.Title = 1
 		case "studentid", "student id", "id":
 			err.TrustedID = 1
@@ -772,7 +772,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "country") {
 		err.Country = 1
 	}
-	if strings.Contains(key, "email", "e-mail") {
+	if strings.Contains(key, "email") || strings.Contains("e-mail") {
 		err.Email = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
