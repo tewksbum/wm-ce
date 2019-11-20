@@ -378,7 +378,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// AdType
 		mkOutput.ADTYPE.Value = AssignAddressType(&column)
 
-		if dev { log.Printf("Title flagging true with: %v %v %v %v", column.Name, column.Value, matchKey, input.Signature.EventID) }
+		if dev { log.Printf("Posting column, value, prediction: %v %v %v %v", column.Name, column.Value, matchKey, input.Signature.EventID) }
 
 		// ***** set high confidence items
 		if column.PeopleERR.TrustedID == 1 {
@@ -403,7 +403,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} 
 		
 		if column.PeopleERR.ContainsRole == 0 {
-			if dev { log.Printf("Non people column %v", input.Signature.EventID) }
+			if dev { log.Printf("People role: %v", input.Signature.EventID) }
 			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
 			fullName = checkSetFullName(mkOutput, column)
@@ -415,21 +415,23 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
 				if dev { log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
-				// column.MatchKey = "FNAME"
 			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
 				if dev { log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
-				// column.MatchKey = "LNAME"
 			} else if column.PeopleERR.FullAddress == 1 || ( column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1 && column.PeopleERR.ContainsAddress == 1 ) {
+				if dev { log.Printf("Full Address: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				concatAdd = true
 				concatAddCol = index
 				// else if column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1  {
 				// concatCityState = true
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+				if dev { log.Printf("Address 1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
+				if dev { log.Printf("Address 2: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
+				if dev { log.Printf("Address 3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
 			} else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
 				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
@@ -468,27 +470,53 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.LastName == 1 && column.PeopleERR.FirstName == 0 {
 				if dev { log.Printf("LName with ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
+			} else if column.PeopleERR.Address1 == 1 {
+				if dev { log.Printf("ERR Address 1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
+			} else if column.PeopleERR.Address2 == 1 {
+				if dev { log.Printf("ERR Address 2: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
+			} else if column.PeopleERR.Address3 == 1 {
+				if dev { log.Printf("ERR Address 3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
+			} else if column.PeopleERR.City == 1 {
+				if dev { log.Printf("ERR CITY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
+			} else if column.PeopleERR.State == 1 {
+				if dev { log.Printf("ERR STATE: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
+			} else if column.PeopleERR.ZipCode == 1 {
+				if dev { log.Printf("ERR ZIP: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+				// fix zip code that has leading 0 stripped out
+				if matchKey == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
+					column.Value = LeftPad2Len(column.Value, "0", 5)
+				}
+			} else if column.PeopleVER.IS_STREET1 {
+				if dev { log.Printf("ERR ADDRESS1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STREET2 {
+				if dev { log.Printf("ERR ADDRESS2: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STREET3 {
+				if dev { log.Printf("ERR ADDRESS3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
+			} else if column.PeopleVER.IS_CITY {
+				if dev { log.Printf("ERR CITY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STATE {
+				if dev { log.Printf("ERR STATE: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
+			} else if column.PeopleVER.IS_ZIPCODE {
+				if dev { log.Printf("ERR ZIP: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+			} else if column.PeopleVER.IS_COUNTRY {
+				if dev { log.Printf("ERR COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
 			}
 
-		// else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
-		// 	SetMkField(&mkOutput, "CITY", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
-		// 	SetMkField(&mkOutput, "STATE", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
-		// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
-		// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
-
-
-		}  
-		
-		if column.PeopleERR.ContainsRole == 1 {
+		} else if column.PeopleERR.ContainsRole == 1 {
+			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
 			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
 				if dev { log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
@@ -549,6 +577,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	} else {
 		addressInput = input.Columns[concatAddCol].Value
 	}
+
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)
 	if len(a.CITY) > 0 {
@@ -584,7 +613,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// pub the record
-	log.Printf("pubbing student...")
+	log.Printf("pubbing student...: %v", mkOutput)
 	pubRecord(ctx, &input, mkOutput)
 
 	// handle MAR values

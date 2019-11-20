@@ -716,11 +716,11 @@ func GetPeopleERR(column string) PeopleERR {
 
 	key := strings.ToLower(column)
 	switch key {
-		case "fname", "f name", "first name", "name first", "first_name", "first", "nickname":
+		case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname":
 			err.FirstName = 1
-		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
+		case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last":
 			err.LastName = 1
-		case "mi", "mi ", "mname", "m", "middle name":
+		case "mi", "mi ", "mname", "m", "middle name", "middle_name":
 			err.MiddleName = 1
 		case "suffix", "jr., iii, etc.":
 			err.Suffix = 1
