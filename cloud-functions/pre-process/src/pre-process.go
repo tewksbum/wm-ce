@@ -478,7 +478,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		// do not flag this
 		// if column.ConsignmentERR.ID == 1 {
 		// 	columnFlags.ConsignmentID = true
-		// }
+		// } stuff
 
 		if column.OrderDetailERR.ID == 1 {
 			columnFlags.OrderDetailID = true
