@@ -511,7 +511,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 {
 				if dev { log.Printf("VER ADDRESS3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 {
 				if dev { log.Printf("VER CITY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
