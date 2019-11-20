@@ -135,6 +135,17 @@ type PeopleERR struct {
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
+	ContainsFirstName 	int `json:"ContainsFirstName"`
+	ContainsLastName 	int `json:"ContainsLastName"`
+	ContainsCountry 	int `json:"ContainsCountry"`
+	ContainsEmail 		int `json:"ContainsEmail"`
+	ContainsAddress 	int `json:"ContainsAddress"`
+	ContainsCity 		int `json:"ContainsCity"`
+	ContainsState 		int `json:"ContainsState"`
+	ContainsZipCode 	int `json:"ContainsZipCode"`
+	ContainsPhone 		int `json:"ContainsPhone"`
+	ContainsTitle 		int `json:"ContainsTitle"`
+	ContainsRole 		int `json:"ContainsRole"`
 }
 
 type PeopleVER struct {
@@ -322,11 +333,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var mkOutput PeopleOutput
 	var trustedID string
 	var ClassYear string
-	// var dormERR bool
-	// var dormVER bool
-	// var dormAD1 string
-	// var dormColumn string
-	// var roomColumn string
 	var concatAdd bool
 	var concatAddCol int
 	var concatCityState bool
@@ -354,346 +360,193 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	log.Printf("people-post for record: %v", input.Signature.RecordID)
 
+	// iterate through every column on the input record to decide what the column is...
 	for index, column := range input.Columns {
+		
+		fullName = false
+		concatAdd = false
+		concatCityState = false
+		memNumb = extractMemberNumb(column.Name) // used for mpr 
 
 		// assign ML prediction to column
 		predictionValue := input.Prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
 		matchKey := MLLabels[predictionKey]
 		column.MatchKey = matchKey
-		// log.Printf("column %v index %v prediction value %v formatted %v label %v", column, index, predictionValue, predictionKey, matchKey)
 
-		// ***** source to matchkey mappings
-		if column.PeopleERR.Title == 1 {
-			SetMkField(&mkOutput, "TITLE", column.Value, column.Name)
-		}
+		// AdType
+		mkOutput.ADTYPE.Value = AssignAddressType(&column)
+		
+		// ***** set high confidence items
 		if column.PeopleERR.TrustedID == 1 {
 			trustedID = column.Value
 			SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
-		}
-		if column.PeopleERR.Organization == 1 {
+		} else if column.PeopleERR.Organization == 1 {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
 		}
-		if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
-			SetMkField(&mkOutput, "TITLE", ClassYear, column.Name)
+		// corrects the situation where FR, SO, JR, SR is identified as a country
+		// else if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
+		else if column.PeopleERR.Title == 1 {
+			log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.signature.eventId)
+			SetMkField(&mkOutput, "TITLE", calcClassYear(column.Value), column.Name)
+			matchKey = ""
+			column.MatchKey = ""
+			column.PeopleERR.Country = 0 // override this is NOT a country
+			column.PeopleERR.State = 0 // override this is NOT a state value
+		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
+			log.Printf("dorm flagging true with: %v %v %v", column.Name, column.Value, input.signature.eventId)
+			haveDorm = true
+			dormCol = index			
+		} else if column.PeopleERR.Room == 1 {
+			roomCol = index
 		}
-		if matchKey != "" {
+
+		// ***** check primary first
+		else if column.PeopleERR.ContainsRole == 0 {
+			// if we detect a fullname, stop checking everything else
+			fullName = checkSetFullName(&mkOutput, column)
+			if fullName {
+				column.MatchKey = ""
+				column.PeopleERR.FirstName = 0 
+				column.PeopleERR.LastName = 0 
+			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
+				log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
+				column.MatchKey = "FNAME"
+			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
+				log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
+				column.MatchKey = "LNAME"
+			
+			// concat address
+			// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
+			// this is handled below w/ address parser
+			else if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 {
+				concatAdd = true
+				concatAddCol = index
+			} else if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 {
+				concatCityState = true
+			}
+
+			// && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL {
+			// else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
+			// } else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
+			else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+				SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
+				SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
+				SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
+				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
+			} else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
+				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
+			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
+				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+				// fix zip code that has leading 0 stripped out
+				if matchKey == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
+					column.Value = LeftPad2Len(column.Value, "0", 5)
+				}
+			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
+				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
+			}
+			
+			// phone & email ONLY check VER
+			else if column.PeopleVER.IS_EMAIL {
+				SetMkField(&mkOutput, "EMAIL", column.Value, column.Name)
+				// type email if ends with gmail, yahoo, hotmail
+				if len(mkOutput.EMAIL.Value) > 0 {
+					email := strings.ToLower(mkOutput.EMAIL.Value)
+					if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
+						mkOutput.EMAIL.Type = "Private"
+					}
+				}
+				emailCount = emailCount + 1
+				emailList = append(emailList, index)
+			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
+				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
+				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
+					SetMkField(&mkOutput, "PHONE", column.Value, column.Name)
+				}
+				phoneCount = phoneCount + 1
+				phoneList = append(phoneList, index)
+			}
+			
+		}
+
+		// ***** check mpr second
+		else if column.PeopleERR.ContainsRole == 1 {
+			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
+				log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				mpr[memNumb].FNAME.Value = column.Value
+				mpr[memNumb].FNAME.Source = column.Name
+			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
+				log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				mpr[memNumb].LNAME.Value = column.Value
+				mpr[memNumb].LNAME.Source = column.Name
+
+			// look for a specifically called out MPR address
+			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
+				mpr[memNumb].AD1.Value = column.Value
+				mpr[memNumb].AD1.Source = column.Name
+			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.ContainsAddress == 1 {
+				mpr[memNumb].AD2.Value = column.Value
+				mpr[memNumb].AD2.Source = column.Name
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.ContainsCity == 1 {
+				mpr[memNumb].CITY.Value = column.Value
+				mpr[memNumb].CITY.Source = column.Name
+			} else if column.PeopleVER.IS_STATE && column.PeopleERR.ContainsState == 1 {
+				mpr[memNumb].STATE.Value = column.Value
+				mpr[memNumb].STATE.Source = column.Name
+			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 {
+				mpr[memNumb].ZIP.Value = column.Value
+				mpr[memNumb].ZIP.Source = column.Name
+			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.ContainsCountry == 1 {
+				mpr[memNumb].COUNTRY.Value = column.Value
+				mpr[memNumb].COUNTRY.Source = column.Name
+			}
+
+			else if column.PeopleVER.IS_EMAIL {
+				mpr[memNumb].EMAIL.Value = column.Value
+				mpr[memNumb].EMAIL.Source = column.Name
+				if len(mkOutput.EMAIL.Value) > 0 {
+					email := strings.ToLower(mkOutput.EMAIL.Value)
+					if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
+						mpr[memNumb].EMAIL.Type = "Private"
+					}
+				}
+			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
+				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
+				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
+					mpr[memNumb].PHONE.Value = column.Value
+					mpr[memNumb].PHONE.Source = column.Name
+				}
+			}
+		}
+
+		// else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
+		// 	SetMkField(&mkOutput, "CITY", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
+		// 	SetMkField(&mkOutput, "STATE", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
+		// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
+		// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
+
+
+		// if NOTHING else has been set... give the model a try...
+		else if matchKey != "" {
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
 
-		// ***** correct known wrong flags
-		fullName = false
-		concatAdd = false
-		concatCityState = false
-		// corrects the situation where FR, SO, JR, SR is identified as a country
-		if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
-			matchKey = ""
-			column.MatchKey = ""
-			column.PeopleERR.Country = 0
-		}
-		//>>>>> TODO: come back and upgrade when warranted...
-		nameParts := strings.Split(column.Value, " ")
-		if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 {
-			fullName = true
-			//check fo comma case... if comma reverse name...
-			//or run a parser here...
-			mkOutput.FNAME.Value = nameParts[0]
-			mkOutput.LNAME.Value = strings.Join(nameParts[1:], " ")
-			mkOutput.FNAME.Source = column.Name
-			mkOutput.LNAME.Source = column.Name
-		}
-		if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-			concatAdd = true
-			concatAddCol = index
-		}
-		if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 {
-			concatCityState = true
-		}
-		if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			haveDorm = true
-			dormCol = index
-			log.Printf("dorm flagging true with: %v %v", column.Name, column.Value)
-		}
-		if column.PeopleERR.Room == 1 {
-			roomCol = index
-		}
-
-		// ***** correct values
-		// fix zip code that has leading 0 stripped out
-		if matchKey == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
-			column.Value = LeftPad2Len(column.Value, "0", 5)
-		}
-
-		// full name
-		// below...
-
-		// concat address
-		// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
-		// this is handled below w/ address parser
-
-		// class year
-		log.Printf("evaluating classyear %v %v %v", matchKey, column.PeopleERR.Title, column.Value)
-		if matchKey == "" && column.PeopleERR.Title == 1 && len(column.Value) > 0 {
-			log.Printf("have classyear: %v", column.Value)
-			if reGraduationYear.MatchString(column.Value) {
-				ClassYear = column.Value
-			} else {
-				switch strings.ToLower(column.Value) {
-				case "freshman", "frosh", "fresh", "fr":
-					ClassYear = strconv.Itoa(time.Now().Year() + 4)
-				case "sophomore", "soph", "so":
-					ClassYear = strconv.Itoa(time.Now().Year() + 3)
-				case "junior", "jr":
-					ClassYear = strconv.Itoa(time.Now().Year() + 2)
-				case "senior", "sr":
-					ClassYear = strconv.Itoa(time.Now().Year() + 1)
-				default:
-					ClassYear = strconv.Itoa(time.Now().Year() + 4)
-				}
-			}
-			mkOutput.TITLE.Value = ClassYear
-			mkOutput.TITLE.Source = column.Name
-		}
-
-		// AdType
-		mkOutput.ADTYPE.Value = AssignAddressType(&column)
-
-		// ***** construct Student ***********************************
-		// start by taking column values at their name...
-		// make a point to avoid mpr values, full name, & concatenated address
-		if column.PeopleERR.LastName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("have ERR LNAME: %v", column.Value)
-			mkOutput.LNAME.Value = column.Value
-			mkOutput.LNAME.Source = column.Name
-		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("have ERR FNAME: %v", column.Value)
-			mkOutput.FNAME.Value = column.Value
-			mkOutput.FNAME.Source = column.Name
-		} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("have ERR AD1: %v", column.Value)
-			mkOutput.AD1.Value = column.Value
-			mkOutput.AD1.Source = column.Name
-		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.AD2.Value = column.Value
-			mkOutput.AD2.Source = column.Name
-		} else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.AD3.Value = column.Value
-			mkOutput.AD3.Source = column.Name
-		} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			log.Printf("have ERR CITY: %v", column.Value)
-			mkOutput.CITY.Value = column.Value
-			mkOutput.CITY.Source = column.Name
-		} else if column.PeopleERR.State == 1 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.STATE.Value = column.Value
-			mkOutput.STATE.Source = column.Name
-		} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.ZIP.Value = column.Value
-			mkOutput.ZIP.Source = column.Name
-		} else if column.PeopleERR.Country == 1 && column.PeopleERR.Role == 0 {
-			log.Printf("Setting ERR Country: %v %v", column.PeopleERR.Country, column.Value)
-			mkOutput.COUNTRY.Value = column.Value
-			mkOutput.COUNTRY.Source = column.Name
-		}
-
-		// override ERR w/ VER...
-		// make a point to avoid mpr values, full name, & concatenated address
-		if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("have VER LNAME: %v", column.Value)
-			mkOutput.LNAME.Value = column.Value
-			mkOutput.LNAME.Source = column.Name
-		} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("have VER FNAME: %v", column.Value)
-			mkOutput.FNAME.Value = column.Value
-			mkOutput.FNAME.Source = column.Name
-		} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("have VER AD1: %v", column.Value)
-			mkOutput.AD1.Value = column.Value
-			mkOutput.AD1.Source = column.Name
-		} else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			// Beverly... ERR City = 1, Fname = 0, Lname = 0 / VER Fname = 1, Lname = 1, City = 1
-			mkOutput.CITY.Value = column.Value
-			mkOutput.CITY.Source = column.Name
-		} else if column.PeopleVER.IS_STATE && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.STATE.Value = column.Value
-			mkOutput.STATE.Source = column.Name
-		} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Role == 0 && !concatAdd && !concatCityState {
-			mkOutput.ZIP.Value = column.Value
-			mkOutput.ZIP.Source = column.Name
-		} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Title == 0 && column.PeopleERR.Role == 0 {
-			log.Printf("Setting VER Country: %v %v", column.PeopleVER.IS_COUNTRY, column.Value)
-			mkOutput.COUNTRY.Value = column.Value
-			mkOutput.COUNTRY.Source = column.Name
-		}
-
-		// have BOTH VER + ERR for each name
-		if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("Setting ERR + VER FNAME: %v", column.Value)
-			mkOutput.FNAME.Value = column.Value
-			mkOutput.FNAME.Source = column.Name
-		}
-		if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("Setting ERR + VER LNAME: %v", column.Value)
-			mkOutput.LNAME.Value = column.Value
-			mkOutput.LNAME.Source = column.Name
-		}
-
-		// >>>> These should be redundant... to the matchkey code at the start?
-		// only thought would be... if things had been overwritten above... to reset them...
-		if matchKey == "FNAME" && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("Setting MatchKey FNAME: %v", column.Value)
-			mkOutput.FNAME.Value = column.Value
-			mkOutput.FNAME.Source = column.Name
-		}
-		if matchKey == "LNAME" && column.PeopleERR.Role == 0 && !fullName {
-			log.Printf("Setting MatchKey LNAME: %v", column.Value)
-			mkOutput.LNAME.Value = column.Value
-			mkOutput.LNAME.Source = column.Name
-		}
-
-		// if VER says a column could be either a first or last...
-		// use err to break the tie
-		// if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 0 && !fullName {
-		// 	if column.PeopleERR.FirstName == 1 {
-		// 		mkOutput.FNAME.Value = column.Value
-		// 		mkOutput.FNAME.Source = column.Name
-		// 	} else if column.PeopleERR.LastName == 1 {
-		// 		mkOutput.LNAME.Value = column.Value
-		// 		mkOutput.LNAME.Source = column.Name
-		// 	}
-		// }
-
-		// phone & email ONLY check VER
-		// make a point to avoid mpr values
-		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 0 {
-			mkOutput.EMAIL.Value = column.Value
-			mkOutput.EMAIL.Source = column.Name
-			// type email if ends with gmail, yahoo, hotmail
-			if len(mkOutput.EMAIL.Value) > 0 {
-				email := strings.ToLower(mkOutput.EMAIL.Value)
-				if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
-					mkOutput.EMAIL.Type = "Private"
-				}
-			}
-			emailCount = emailCount + 1
-			emailList = append(emailList, index)
-		} else if column.PeopleVER.IS_PHONE && column.PeopleERR.Role == 0 && len(column.Value) >= 10 {
-			numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
-			if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
-				mkOutput.PHONE.Value = column.Value
-				mkOutput.PHONE.Source = column.Name
-			}
-			phoneCount = phoneCount + 1
-			phoneList = append(phoneList, index)
-		}
-
-		// ***** construct MPR ***********************************
-		memNumb = extractMemberNumb(column.Name)
-		log.Printf("memNumb: %v", memNumb)
-		if column.PeopleERR.LastName == 1 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign ERR mpr lastname: %v %v", column.Value, memNumb)
-			mpr[memNumb].LNAME.Value = column.Value
-			mpr[memNumb].LNAME.Source = column.Name
-		} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign ERR mpr firstname: %v %v", column.Value, memNumb)
-			mpr[memNumb].FNAME.Value = column.Value
-			mpr[memNumb].FNAME.Source = column.Name
-		} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("trying to assign ERR mpr ad1: %v %v", column.Value, memNumb)
-			mpr[memNumb].AD1.Value = column.Value
-			mpr[memNumb].AD1.Source = column.Name
-		} else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].AD2.Value = column.Value
-			mpr[memNumb].AD2.Source = column.Name
-		} else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].AD3.Value = column.Value
-			mpr[memNumb].AD3.Source = column.Name
-		} else if column.PeopleERR.City == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && column.PeopleERR.Role == 1 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
-			mpr[memNumb].CITY.Value = column.Value
-			mpr[memNumb].CITY.Source = column.Name
-		} else if column.PeopleERR.State == 1 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].STATE.Value = column.Value
-			mpr[memNumb].STATE.Source = column.Name
-		} else if column.PeopleERR.ZipCode == 1 && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].ZIP.Value = column.Value
-			mpr[memNumb].ZIP.Source = column.Name
-		} else if column.PeopleERR.Country == 1 && column.PeopleERR.Title == 0 && column.PeopleERR.Role == 1 {
-			mpr[memNumb].COUNTRY.Value = column.Value
-			mpr[memNumb].COUNTRY.Source = column.Name
-		}
-
-		if column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			log.Printf("trying to assign VER mpr lastname: %v %v", column.Value, memNumb)
-			mpr[memNumb].LNAME.Value = column.Value
-			mpr[memNumb].LNAME.Source = column.Name
-		} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			mpr[memNumb].FNAME.Value = column.Value
-			mpr[memNumb].FNAME.Source = column.Name
-		} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL && !concatAdd && !concatCityState {
-			log.Printf("trying to assign VER mpr ad1: %v %v", column.Value, memNumb)
-			mpr[memNumb].AD1.Value = column.Value
-			mpr[memNumb].AD1.Source = column.Name
-		} else if column.PeopleVER.IS_CITY && column.PeopleERR.FirstName == 0 && column.PeopleERR.Role == 1 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_STATE && !concatAdd && !concatCityState {
-			// Beverly... ERR City = 1, Fname = 0, Lname = 0 / VER Fname = 1, Lname = 1, City = 1
-			mpr[memNumb].CITY.Value = column.Value
-			mpr[memNumb].CITY.Source = column.Name
-		} else if column.PeopleVER.IS_STATE && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].STATE.Value = column.Value
-			mpr[memNumb].STATE.Source = column.Name
-		} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Role == 1 && !concatAdd && !concatCityState {
-			mpr[memNumb].ZIP.Value = column.Value
-			mpr[memNumb].ZIP.Source = column.Name
-		} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Title == 0 && column.PeopleERR.Role == 1 {
-			mpr[memNumb].COUNTRY.Value = column.Value
-			mpr[memNumb].COUNTRY.Source = column.Name
-		}
-
-		// if VER says a column could be either a first or last...
-		// use err to break the tie
-		if column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Address1 == 0 && column.PeopleERR.City == 0 && column.PeopleERR.Role == 1 && !fullName {
-			if column.PeopleERR.FirstName == 1 {
-				log.Printf("trying to assign ERR + VER mpr fname: %v %v", column.Value, memNumb)
-				mpr[memNumb].FNAME.Value = column.Value
-				mpr[memNumb].FNAME.Source = column.Name
-			} else if column.PeopleERR.LastName == 1 {
-				log.Printf("trying to assign ERR + VER mpr lname: %v %v", column.Value, memNumb)
-				mpr[memNumb].LNAME.Value = column.Value
-				mpr[memNumb].LNAME.Source = column.Name
-			}
-		}
-
-		// >>>> These should be redundant... to the matchkey code at the start?
-		// only thought would be... if things had been overwritten above... to reset them...
-		if matchKey == "FNAME" && column.PeopleERR.Role == 1 {
-			log.Printf("trying to assign matchkey fname: %v %v", column.Value, memNumb)
-			mpr[memNumb].FNAME.Value = column.Value
-			mpr[memNumb].FNAME.Source = column.Name
-		}
-		if matchKey == "LNAME" && column.PeopleERR.Role == 1 {
-			log.Printf("trying to assign matchkey lname: %v %v", column.Value, memNumb)
-			mpr[memNumb].LNAME.Value = column.Value
-			mpr[memNumb].LNAME.Source = column.Name
-		}
-
-		if column.PeopleVER.IS_EMAIL && column.PeopleERR.Role == 1 {
-			log.Printf("trying to assign mpr email: %v %v", column.Value, memNumb)
-			mpr[memNumb].EMAIL.Value = column.Value
-			mpr[memNumb].EMAIL.Source = column.Name
-			// type email if ends with gmail, yahoo, hotmail
-			if len(mkOutput.EMAIL.Value) > 0 {
-				email := strings.ToLower(mkOutput.EMAIL.Value)
-				if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
-					mpr[memNumb].EMAIL.Type = "Private"
-				}
-			}
-		} else if column.PeopleVER.IS_PHONE && column.PeopleERR.Role == 1 && len(column.Value) >= 10 {
-			numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
-			if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
-				mpr[memNumb].PHONE.Value = column.Value
-				mpr[memNumb].PHONE.Source = column.Name
-			}
-		}
 		input.Columns[index] = column
 	}
 
@@ -849,6 +702,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
 			pubRecord(ctx, &input, mkOutput)
+
 		}
 	}
 
@@ -1072,4 +926,42 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	f := reflect.Indirect(r).FieldByName(field)
 	f.SetString(value)
 	return value
+}
+
+func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
+	nameParts := strings.Split(column.Value, " ")
+	if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 {
+		if strings.Contains(nameParts[0], ",") {
+			commaLess := strings.Replace(nameParts[0], ",", "", 1)
+			SetMkField(&mkOutput, "FNAME", strings.Join(nameParts[1:], col.Name)
+			SetMkField(&mkOutput, "LNAME", commaLess, " "), col.Name)
+		} else {
+			SetMkField(&mkOutput, "FNAME", nameParts[0], col.Name)
+			SetMkField(&mkOutput, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
+		}
+		return true
+	} else {
+		return false
+	}
+}
+
+func calcClassYear(cy string) string {
+		log.Printf("have classyear: %v", cy)
+		if reGraduationYear.MatchString(cy) {
+			return cy
+		} else {
+			switch strings.ToLower(cy) {
+			case "freshman", "frosh", "fresh", "fr":
+				return strconv.Itoa(time.Now().Year() + 4)
+			case "sophomore", "soph", "so":
+				return strconv.Itoa(time.Now().Year() + 3)
+			case "junior", "jr":
+				return strconv.Itoa(time.Now().Year() + 2)
+			case "senior", "sr":
+				return strconv.Itoa(time.Now().Year() + 1)
+			default:
+				return strconv.Itoa(time.Now().Year() + 4)
+			}
+		}
+	}
 }
