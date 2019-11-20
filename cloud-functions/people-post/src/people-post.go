@@ -420,7 +420,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if dev { log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 				// column.MatchKey = "LNAME"
-			} else if column.PeopleERR.FullName == 1 || ( column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1 && column.PeopleERR.ContainsAddress ) {
+			} else if column.PeopleERR.FullAddress == 1 || ( column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1 && column.PeopleERR.ContainsAddress == 1 ) {
 				concatAdd = true
 				concatAddCol = index
 				// else if column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1  {
