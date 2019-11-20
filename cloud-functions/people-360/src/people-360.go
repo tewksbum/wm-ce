@@ -336,42 +336,54 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// get all the Fibers
 	var Fibers []PeopleFiber
-	if len(FiberCollection) > 0 {
-		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
-		log.Printf("Fiber list is %s", FiberList)
-		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
-		log.Printf("Fiber Query Text: %s", QueryText)
-		BQQuery := bq.Query(QueryText)
-		BQQuery.Location = "US"
-		BQJob, err := BQQuery.Run(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not query bq fibers: %v", input.Signature.EventID, err)
-			return err
-		}
-		BQStatus, err := BQJob.Wait(ctx)
-		if err != nil {
-			log.Fatalf("%v Error while waiting for bq fibers job: %v", input.Signature.EventID, err)
-			return err
-		}
-		if err := BQStatus.Err(); err != nil {
-			log.Fatalf("%v bq fibers execution error: %v", input.Signature.EventID, err)
-			return err
-		}
-		BQIterator, err := BQJob.Read(ctx)
 
-		// Collect all fiber IDs
-		for {
-			var fiber PeopleFiber
-			err = BQIterator.Next(&fiber)
-			if err == iterator.Done {
-				break
-			} else if err != nil {
-				log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
-			} else {
-				Fibers = append(Fibers, fiber)
-			}
+	for _, fiber := range FiberCollection {
+		var FoundFibers []PeopleFiber
+		query := datastore.NewQuery(dsKind).Namespace(dsKey.Namespace).Filter("FiberID =", fiber).Limit(1)
+		if _, err := ds.GetAll(ctx, query, &FoundFibers); err != nil {
+			log.Fatalf("Error querying fiber: %v", err)
+		}
+		if len(FoundFibers) > 0 {
+			Fibers = append(Fibers, FoundFibers[0])
 		}
 	}
+
+	// if len(FiberCollection) > 0 {
+	// 	FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
+	// 	log.Printf("Fiber list is %s", FiberList)
+	// 	QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
+	// 	log.Printf("Fiber Query Text: %s", QueryText)
+	// 	BQQuery := bq.Query(QueryText)
+	// 	BQQuery.Location = "US"
+	// 	BQJob, err := BQQuery.Run(ctx)
+	// 	if err != nil {
+	// 		log.Fatalf("%v Could not query bq fibers: %v", input.Signature.EventID, err)
+	// 		return err
+	// 	}
+	// 	BQStatus, err := BQJob.Wait(ctx)
+	// 	if err != nil {
+	// 		log.Fatalf("%v Error while waiting for bq fibers job: %v", input.Signature.EventID, err)
+	// 		return err
+	// 	}
+	// 	if err := BQStatus.Err(); err != nil {
+	// 		log.Fatalf("%v bq fibers execution error: %v", input.Signature.EventID, err)
+	// 		return err
+	// 	}
+	// 	BQIterator, err := BQJob.Read(ctx)
+
+	// 	// Collect all fiber IDs
+	// 	for {
+	// 		var fiber PeopleFiber
+	// 		err = BQIterator.Next(&fiber)
+	// 		if err == iterator.Done {
+	// 			break
+	// 		} else if err != nil {
+	// 			log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
+	// 		} else {
+	// 			Fibers = append(Fibers, fiber)
+	// 		}
+	// 	}
+	// }
 
 	log.Printf("Fibers: %v", Fibers)
 
