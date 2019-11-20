@@ -783,10 +783,10 @@ func GetPeopleERR(column string) PeopleERR {
 			err.TrustedID = 1
 	}
 
-	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
+	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
 		err.ContainsFirstName = 1
 	}
-	if strings.Contains(key, "last") || strings.Contains(key, "lname") {
+	if (strings.Contains(key, "last") && strings.Contains(key, "name"))  || strings.Contains(key, "lname") {
 		err.ContainsLastName = 1
 	}
 	if strings.Contains(key, "country") {

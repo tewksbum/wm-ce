@@ -466,11 +466,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				phoneCount = phoneCount + 1
 				phoneList = append(phoneList, index)
-			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 {
-				if dev { log.Printf("FName with ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.isFIRSTNAME {
+				if dev { log.Printf("FName with loose ERR +VER: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
-			} else if column.PeopleERR.LastName == 1 && column.PeopleERR.FirstName == 0 {
-				if dev { log.Printf("LName with ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			} else if column.PeopleERR.FirstName == 1 {
+				if dev { log.Printf("FName with ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
+			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.isLASTNAME {
+				if dev { log.Printf("LName with ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
+			} else if column.PeopleERR.LastName == 1 {
+				if dev { log.Printf("LName with ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 			} else if column.PeopleERR.Address1 == 1 {
 				if dev { log.Printf("ERR Address 1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
