@@ -503,25 +503,25 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					column.Value = LeftPad2Len(column.Value, "0", 5)
 				}
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR ADDRESS1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev { log.Printf("VER ADDRESS1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR ADDRESS2: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev { log.Printf("VER ADDRESS2: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR ADDRESS3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev { log.Printf("VER ADDRESS3: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR CITY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
+				if dev { log.Printf("VER CITY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
-			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR STATE: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
+				if dev { log.Printf("VER STATE: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Junk == 0 {
-				if dev { log.Printf("ERR ZIP: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev { log.Printf("VER ZIP: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
 			} else if column.PeopleVER.IS_COUNTRY {
-				if dev { log.Printf("ERR COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev { log.Printf("VER COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
 			} else if column.PeopleERR.ContainsFirstName == 1 {
 				if dev { log.Printf("FName with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
@@ -530,10 +530,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if dev { log.Printf("LName with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 			}
-			if column.PeopleVER.IS_COUNTRY {
-				if dev { log.Printf("ERR COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
-				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
-			}
+			// if column.PeopleVER.IS_COUNTRY {
+			// 	if dev { log.Printf("VER COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
+			// }
 		} else if column.PeopleERR.ContainsRole == 1 {
 			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
 			// ***** check mpr second
@@ -603,7 +603,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-		mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+		if len(a.COUNTRY) > 0 {
+			mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+		}
 		mkOutput.ADPARSER.Value = "libpostal"
 		if len(a.PO_BOX) > 0 {
 			if len(a.HOUSE_NUMBER) > 0 {
@@ -734,7 +736,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-				mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+				if len(a.COUNTRY) > 0 {
+					mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+				}
 				mkOutput.ADPARSER.Value = "libpostal"
 				if len(a.PO_BOX) > 0 {
 					if len(a.HOUSE_NUMBER) > 0 {
