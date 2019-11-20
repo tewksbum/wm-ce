@@ -503,6 +503,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && (columnFlags.PeopleZip || columnFlags.PeopleAddress) {
 		flags.People = true
 	}
+	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
+		flags.People = true
+		log.Printf("have a people entity >>> FName, Add1, City")
+	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
 		log.Printf("have a people entity >>> LastName, Add1, City")
