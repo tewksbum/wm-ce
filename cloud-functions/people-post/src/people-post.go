@@ -414,7 +414,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 				column.MatchKey = "LNAME"
-			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 {
+			} else if column.PeopleERR.Address1 == 1 {
 				// concat address
 				// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
 				// this is handled below w/ address parser
@@ -426,11 +426,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL {
 				// else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
 				// } else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
-				SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
+				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
-				SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
+				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
-				SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
+				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
 			} else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
 				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
@@ -550,6 +550,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+		mkOutput.AD1.Source += ", AddressParser"
+		mkOutput.AD1NO.Source += ", AddressParser"
+		mkOutput.AD2.Source += ", AddressParser"
+		mkOutput.AD3.Source += ", AddressParser"
+		mkOutput.CITY.Source += ", AddressParser"
+		mkOutput.STATE.Source += ", AddressParser"
+		mkOutput.ZIP.Source += ", AddressParser"
 	}
 
 	// check zip city state match
@@ -682,6 +689,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+				mkOutput.AD1.Source += ", AddressParser"
+				mkOutput.AD1NO.Source += ", AddressParser"
+				mkOutput.AD2.Source += ", AddressParser"
+				mkOutput.AD3.Source += ", AddressParser"
+				mkOutput.CITY.Source += ", AddressParser"
+				mkOutput.STATE.Source += ", AddressParser"
+				mkOutput.ZIP.Source += ", AddressParser"
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
