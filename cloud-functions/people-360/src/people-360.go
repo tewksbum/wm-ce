@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
 	"github.com/fatih/structs"
@@ -141,12 +142,14 @@ var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
 var es *elasticsearch.Client
+var ds *datastore.Client
 
 // var setSchema bigquery.Schema
 
 func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
+	ds, _ = datastore.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	topic2 = ps.Topic(PubSubTopic2)
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
@@ -221,10 +224,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// let's log this into ES
 	_ = PersistInES(ctx, fiber)
 
+	// store in BQ
 	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
 		log.Fatalf("error insertinng into fiber table %v", err)
 		return nil
+	}
+
+	// store in DS
+	dsKind := "Fiber"
+	dsKey := datastore.IncompleteKey(dsKind, nil)
+	dsKey.Namespace = fmt.Sprintf("%v-%v", BQPrefix, input.Signature.OwnerID)
+	if _, err := ds.Put(ctx, dsKey, &fiber); err != nil {
+		log.Fatalf("Exception storing %v sig %v, error %v", dsKind, input.Signature, err)
 	}
 
 	// locate existing set
