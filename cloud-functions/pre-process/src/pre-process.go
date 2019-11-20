@@ -153,6 +153,7 @@ type PeopleERR struct {
 	ContainsPhone 		int `json:"ContainsPhone"`
 	ContainsTitle 		int `json:"ContainsTitle"`
 	ContainsRole 		int `json:"ContainsRole"`
+	Junk 				int `json:"Junk"`
 }
 
 type ProductERR struct {
@@ -809,6 +810,9 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
+	}
+	if strings.Contains(key, "description") {
+		err.Junk = 1
 	}
 
 	// these should be looked up on a per owner basis
