@@ -466,13 +466,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				phoneCount = phoneCount + 1
 				phoneList = append(phoneList, index)
-			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.isFIRSTNAME {
+			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME {
 				if dev { log.Printf("FName with loose ERR +VER: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
 			} else if column.PeopleERR.FirstName == 1 {
 				if dev { log.Printf("FName with ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
-			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.isLASTNAME {
+			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME {
 				if dev { log.Printf("LName with ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 			} else if column.PeopleERR.LastName == 1 {
