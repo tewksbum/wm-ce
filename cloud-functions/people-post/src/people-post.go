@@ -281,6 +281,7 @@ type LibPostalParsed struct {
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 // var PubSubTopic2 = os.Getenv("PSOUTPUT2")  // why would we pub SAME thing twice?
 
@@ -303,7 +304,6 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var ap http.Client
-var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 var MLLabels map[string]string
 

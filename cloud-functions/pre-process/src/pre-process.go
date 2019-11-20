@@ -296,6 +296,7 @@ var PSCampaign = os.Getenv("PSOUTPUTCAMPAIGN")
 var PSOrder = os.Getenv("PSOUTPUTORDER")
 var PSConsignment = os.Getenv("PSOUTPUTCONSIGNMENT")
 var PSOrderDetail = os.Getenv("PSOUTPUTORDERDETAIL")
+var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 var MLUrl = os.Getenv("PREDICTION")
 
@@ -505,31 +506,31 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID) }
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID) }
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
-		log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID) }
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
 	if columnFlags.PeopleEmail {
 		flags.People = true
-		log.Printf("have a people entity >>> Email %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> Email %v", input.Signature.EventID) }
 	}
 	if columnFlags.PeopleClientID {
 		flags.People = true
-		log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID) }
 	}
 	// if we don't have ANY columns... throw it to people to try out ver...
 	if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
 		flags.People = true
-		log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
+		if dev { log.Printf("have a people entity >>> Headless %v", input.Signature.EventID) }
 	}
 
 	if columnFlags.ProductID && columnFlags.ProductName {
@@ -548,9 +549,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
-	log.Printf("entity flags %v %v", flags, input.Signature.EventID)
-	log.Printf("column flags %v %v", columnFlags, input.Signature.EventID)
-	log.Printf("columns %v %v", columns, input.Signature.EventID)
+	if dev { log.Printf("entity flags %v %v", flags, input.Signature.EventID) }
+	if dev { log.Printf("column flags %v %v", columnFlags, input.Signature.EventID) }
+	if dev { log.Printf("columns %v %v", columns, input.Signature.EventID) }
 	
 	// run VER
 	for i, column := range columns {
@@ -579,12 +580,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				}
 				columns[i] = column
 			}
-			log.Printf("columns %v", columns)
+			if dev { log.Printf("columns %v", columns) }
 		}
 
 		mlInput := BuildMLData(columns)
-		log.Printf("mlinput: %v", mlInput)
-		log.Printf("columns: %v", columns)
+		if dev { log.Printf("mlinput: %v", mlInput) }
+		if dev { log.Printf("columns: %v", columns) }
 		mlJSON, _ := json.Marshal(mlInput)
 		log.Printf("ML request %v", string(mlJSON))
 		reqBody := &ml.GoogleApi__HttpBody{
@@ -612,8 +613,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 		log.Printf("ML result is %v", string(r.Data))
 	}
-
-	log.Printf("columns %v", columns)
 
 	// pub
 	var output Output
