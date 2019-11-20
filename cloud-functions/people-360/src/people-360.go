@@ -225,11 +225,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	_ = PersistInES(ctx, fiber)
 
 	// store in BQ
-	// FiberInserter := FiberTable.Inserter()
-	// if err := FiberInserter.Put(ctx, fiber); err != nil {
-	// 	log.Fatalf("error insertinng into fiber table %v", err)
-	// 	return nil
-	// }
+	FiberInserter := FiberTable.Inserter()
+	if err := FiberInserter.Put(ctx, fiber); err != nil {
+		log.Fatalf("error insertinng into fiber table %v", err)
+	}
 
 	// store in DS
 	dsKind := "Fiber"
