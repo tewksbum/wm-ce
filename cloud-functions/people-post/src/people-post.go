@@ -136,17 +136,17 @@ type PeopleERR struct {
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
-	ContainsFirstName 	int `json:"ContainsFirstName"`
-	ContainsLastName 	int `json:"ContainsLastName"`
-	ContainsCountry 	int `json:"ContainsCountry"`
-	ContainsEmail 		int `json:"ContainsEmail"`
-	ContainsAddress 	int `json:"ContainsAddress"`
-	ContainsCity 		int `json:"ContainsCity"`
-	ContainsState 		int `json:"ContainsState"`
-	ContainsZipCode 	int `json:"ContainsZipCode"`
-	ContainsPhone 		int `json:"ContainsPhone"`
-	ContainsTitle 		int `json:"ContainsTitle"`
-	ContainsRole 		int `json:"ContainsRole"`
+	ContainsFirstName   int `json:"ContainsFirstName"`
+	ContainsLastName    int `json:"ContainsLastName"`
+	ContainsCountry     int `json:"ContainsCountry"`
+	ContainsEmail       int `json:"ContainsEmail"`
+	ContainsAddress     int `json:"ContainsAddress"`
+	ContainsCity        int `json:"ContainsCity"`
+	ContainsState       int `json:"ContainsState"`
+	ContainsZipCode     int `json:"ContainsZipCode"`
+	ContainsPhone       int `json:"ContainsPhone"`
+	ContainsTitle       int `json:"ContainsTitle"`
+	ContainsRole        int `json:"ContainsRole"`
 }
 
 type PeopleVER struct {
@@ -333,10 +333,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// assign match keys
 	var mkOutput PeopleOutput
 	var trustedID string
-	var ClassYear string
+	// var ClassYear string
 	var concatAdd bool
 	var concatAddCol int
-	var concatCityState bool
+	// var concatCityState bool
 	var fullName bool
 	var emailCount int
 	var phoneCount int
@@ -363,11 +363,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// iterate through every column on the input record to decide what the column is...
 	for index, column := range input.Columns {
-		
+
 		fullName = false
 		concatAdd = false
-		concatCityState = false
-		memNumb = extractMemberNumb(column.Name) // used for mpr 
+		// concatCityState = false
+		memNumb = extractMemberNumb(column.Name) // used for mpr
 
 		// assign ML prediction to column
 		predictionValue := input.Prediction.Predictions[index]
@@ -377,62 +377,55 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// AdType
 		mkOutput.ADTYPE.Value = AssignAddressType(&column)
-		
+
 		// ***** set high confidence items
 		if column.PeopleERR.TrustedID == 1 {
 			trustedID = column.Value
 			SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
 		} else if column.PeopleERR.Organization == 1 {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
-		}
-		// corrects the situation where FR, SO, JR, SR is identified as a country
-		// else if column.PeopleERR.Title == 1 && matchKey == "COUNTRY" {
-		else if column.PeopleERR.Title == 1 {
-			log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.signature.eventId)
+		} else if column.PeopleERR.Title == 1 {
+			// corrects the situation where FR, SO, JR, SR is identified as a country
+			log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 			SetMkField(&mkOutput, "TITLE", calcClassYear(column.Value), column.Name)
 			matchKey = ""
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
-			column.PeopleERR.State = 0 // override this is NOT a state value
+			column.PeopleERR.State = 0   // override this is NOT a state value
 		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			log.Printf("dorm flagging true with: %v %v %v", column.Name, column.Value, input.signature.eventId)
+			log.Printf("dorm flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 			haveDorm = true
-			dormCol = index			
+			dormCol = index
 		} else if column.PeopleERR.Room == 1 {
 			roomCol = index
-		}
-
-		// ***** check primary first
-		else if column.PeopleERR.ContainsRole == 0 {
+		} else if column.PeopleERR.ContainsRole == 0 {
+			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
-			fullName = checkSetFullName(&mkOutput, column)
+			fullName = checkSetFullName(mkOutput, column)
 			if fullName {
 				column.MatchKey = ""
-				column.PeopleERR.FirstName = 0 
-				column.PeopleERR.LastName = 0 
+				column.PeopleERR.FirstName = 0
+				column.PeopleERR.LastName = 0
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
-				log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
 				column.MatchKey = "FNAME"
 			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
-				log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 				column.MatchKey = "LNAME"
-			
-			// concat address
-			// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
-			// this is handled below w/ address parser
-			else if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 {
+			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 {
+				// concat address
+				// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
+				// this is handled below w/ address parser
 				concatAdd = true
 				concatAddCol = index
 			} else if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 {
-				concatCityState = true
-			}
-
-			// && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL {
-			// else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
-			// } else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
-			else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+				// concatCityState = true
+			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+				// && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL {
+				// else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
+				// } else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
 				SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
 				SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
@@ -450,10 +443,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
 				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
-			}
-			
-			// phone & email ONLY check VER
-			else if column.PeopleVER.IS_EMAIL {
+			} else if column.PeopleVER.IS_EMAIL {
+				// phone & email ONLY check VER
 				SetMkField(&mkOutput, "EMAIL", column.Value, column.Name)
 				// type email if ends with gmail, yahoo, hotmail
 				if len(mkOutput.EMAIL.Value) > 0 {
@@ -472,22 +463,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				phoneCount = phoneCount + 1
 				phoneList = append(phoneList, index)
 			}
-			
-		}
 
-		// ***** check mpr second
-		else if column.PeopleERR.ContainsRole == 1 {
+		} else if column.PeopleERR.ContainsRole == 1 {
+			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
-				log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
-				log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.signature.eventId)
+				log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
-
-			// look for a specifically called out MPR address
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
+				// look for a specifically called out MPR address
 				mpr[memNumb].AD1.Value = column.Value
 				mpr[memNumb].AD1.Source = column.Name
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.ContainsAddress == 1 {
@@ -505,9 +493,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.ContainsCountry == 1 {
 				mpr[memNumb].COUNTRY.Value = column.Value
 				mpr[memNumb].COUNTRY.Source = column.Name
-			}
-
-			else if column.PeopleVER.IS_EMAIL {
+			} else if column.PeopleVER.IS_EMAIL {
 				mpr[memNumb].EMAIL.Value = column.Value
 				mpr[memNumb].EMAIL.Source = column.Name
 				if len(mkOutput.EMAIL.Value) > 0 {
@@ -522,6 +508,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mpr[memNumb].PHONE.Value = column.Value
 					mpr[memNumb].PHONE.Source = column.Name
 				}
+			}
+		} else if matchKey != "" {
+			// if NOTHING else has been set... give the model a try...
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
 
@@ -539,14 +530,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
 		// } else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
 		// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
-
-
-		// if NOTHING else has been set... give the model a try...
-		else if matchKey != "" {
-			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
-				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
-			}
-		}
 
 		input.Columns[index] = column
 	}
@@ -930,15 +913,15 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 }
 
 func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
-	nameParts := strings.Split(column.Value, " ")
-	if len(nameParts) > 1 && column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 1 {
+	nameParts := strings.Split(col.Value, " ")
+	if len(nameParts) > 1 && col.PeopleERR.FirstName == 1 && col.PeopleERR.LastName == 1 {
 		if strings.Contains(nameParts[0], ",") {
 			commaLess := strings.Replace(nameParts[0], ",", "", 1)
-			SetMkField(&mkOutput, "FNAME", strings.Join(nameParts[1:], col.Name)
-			SetMkField(&mkOutput, "LNAME", commaLess, " "), col.Name)
+			SetMkField(&mko, "FNAME", strings.Join(nameParts[1:]), col.Name)
+			SetMkField(&mko, "LNAME", commaLess, col.Name)
 		} else {
-			SetMkField(&mkOutput, "FNAME", nameParts[0], col.Name)
-			SetMkField(&mkOutput, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
+			SetMkField(&mko, "FNAME", nameParts[0], col.Name)
+			SetMkField(&mko, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
 		}
 		return true
 	} else {
@@ -947,22 +930,21 @@ func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
 }
 
 func calcClassYear(cy string) string {
-		log.Printf("have classyear: %v", cy)
-		if reGraduationYear.MatchString(cy) {
-			return cy
-		} else {
-			switch strings.ToLower(cy) {
-			case "freshman", "frosh", "fresh", "fr":
-				return strconv.Itoa(time.Now().Year() + 4)
-			case "sophomore", "soph", "so":
-				return strconv.Itoa(time.Now().Year() + 3)
-			case "junior", "jr":
-				return strconv.Itoa(time.Now().Year() + 2)
-			case "senior", "sr":
-				return strconv.Itoa(time.Now().Year() + 1)
-			default:
-				return strconv.Itoa(time.Now().Year() + 4)
-			}
+	log.Printf("have classyear: %v", cy)
+	if reGraduationYear.MatchString(cy) {
+		return cy
+	} else {
+		switch strings.ToLower(cy) {
+		case "freshman", "frosh", "fresh", "fr":
+			return strconv.Itoa(time.Now().Year() + 4)
+		case "sophomore", "soph", "so":
+			return strconv.Itoa(time.Now().Year() + 3)
+		case "junior", "jr":
+			return strconv.Itoa(time.Now().Year() + 2)
+		case "senior", "sr":
+			return strconv.Itoa(time.Now().Year() + 1)
+		default:
+			return strconv.Itoa(time.Now().Year() + 4)
 		}
 	}
 }
