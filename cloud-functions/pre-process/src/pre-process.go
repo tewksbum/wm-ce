@@ -433,8 +433,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.PeopleERR = GetPeopleERR(column.Name)
 		column.ProductERR = GetProductERR(column.Name)
 
-		log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
-
+		// log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
+		// this is going to be tight around name address... for entity detection could relax this...
 		if column.PeopleERR.FirstName == 1 {
 			columnFlags.PeopleFirstName = true
 		}
@@ -453,10 +453,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.City == 1 {
 			columnFlags.PeopleCity = true
 		}
-		if column.PeopleERR.Email == 1 {
+		if column.PeopleERR.ContainsEmail == 1 {
 			columnFlags.PeopleEmail = true
 		}
-		if column.PeopleERR.Phone == 1 {
+		if column.PeopleERR.ContainsPhone == 1 {
 			columnFlags.PeoplePhone = true
 		}
 		if column.PeopleERR.TrustedID == 1 {
@@ -505,28 +505,31 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		log.Printf("have a people entity >>> FName, Add1, City")
+		log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID)
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		log.Printf("have a people entity >>> LastName, Add1, City")
+		log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
-		log.Printf("have a people entity >>> LastName, Add, Zip")
+		log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
 	if columnFlags.PeopleEmail {
 		flags.People = true
+		log.Printf("have a people entity >>> Email %v", input.Signature.EventID)
 	}
 	if columnFlags.PeopleClientID {
 		flags.People = true
+		log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
 	}
 	// if we don't have ANY columns... throw it to people to try out ver...
 	if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
 		flags.People = true
+		log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
 	}
 
 	if columnFlags.ProductID && columnFlags.ProductName {
@@ -545,10 +548,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
-	log.Printf("columns %v", columns)
-	log.Printf("column flags %v", columnFlags)
-	log.Printf("entity flags %v", flags)
-
+	log.Printf("entity flags %v %v", flags, input.Signature.EventID)
+	log.Printf("column flags %v %v", columnFlags, input.Signature.EventID)
+	log.Printf("columns %v %v", columns, input.Signature.EventID)
+	
 	// run VER
 	for i, column := range columns {
 		column.EventVER = GetEventVER(&column)
@@ -562,7 +565,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var prediction Prediction
 
 	if flags.People {
-		log.Printf("Think we have People...")
+		log.Printf("Have people flag %v", input.Signature.EventID)
 		PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
 		PeopleNER := FindNER(PeopleNERKey)
 
@@ -580,8 +583,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 
 		mlInput := BuildMLData(columns)
-		log.Printf("columns: %v", columns)
 		log.Printf("mlinput: %v", mlInput)
+		log.Printf("columns: %v", columns)
 		mlJSON, _ := json.Marshal(mlInput)
 		log.Printf("ML request %v", string(mlJSON))
 		reqBody := &ml.GoogleApi__HttpBody{
