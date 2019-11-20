@@ -842,7 +842,7 @@ func ParseAddress(address string) LibPostalParsed {
 	var parsed []LibPostal
 	jsonErr := json.Unmarshal(body, &parsed)
 	if jsonErr != nil {
-		log.Fatalf("error parsing address parser response: %v", jsonErr)
+		log.Fatalf("error parsing address parser response: %v, body %v", jsonErr, string(body))
 	} else {
 		log.Printf("address parser reponse: %v", string(body))
 	}
