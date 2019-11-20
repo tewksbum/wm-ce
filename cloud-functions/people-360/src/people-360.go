@@ -228,6 +228,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
+
+	if len(input.Signature.RecordID) == 0 {
+		// ensure record id is not blank or we'll have problem
+		input.Signature.RecordID = uuid.New().String()
+	}
 	MatchByValue0 := input.Signature.RecordID
 
 	MatchByKey1 := "TRUSTEDID"
@@ -263,23 +268,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// missing address type
 
-	QueryText := fmt.Sprintf(
-		"with fiberlist as ("+
-			"SELECT fibers "+
-			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
-			"WHERE "+
-			"(s.RecordID = '%s') OR "+
-			"(m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-			"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') "+
-			") select distinct f from fiberlist, unnest(fibers) f",
-		ProjectID, DatasetID, SetTableName,
-		MatchByValue0,
-		MatchByKey1, MatchByValue1,
-		MatchByKey2, MatchByValue2,
-		MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B,
-		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E)
+	QueryText := fmt.Sprintf("with fiberlist as (SELECT fibers FROM `%s.%s.%s` WHERE (exists (select 1 from UNNEST(signatures) s where s.RecordID = '%s')) ", ProjectID, DatasetID, SetTableName, strings.Replace(MatchByValue0, "'", "\\'", -1))
+	if len(MatchByValue1) > 0 {
+		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey1, strings.Replace(MatchByValue1, "'", "\\'", -1))
+	}
+	if len(MatchByValue2) > 0 {
+		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey2, strings.Replace(MatchByValue2, "'", "\\'", -1))
+	}
+	if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey3A, strings.Replace(MatchByValue3A, "'", "\\'", -1), MatchByKey3B, strings.Replace(MatchByValue3B, "'", "\\'", -1))
+	}
+	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey5A, strings.Replace(MatchByValue5A, "'", "\\'", -1), MatchByKey5B, strings.Replace(MatchByValue5B, "'", "\\'", -1), MatchByKey5C, strings.Replace(MatchByValue5C, "'", "\\'", -1), MatchByKey5D, strings.Replace(MatchByValue5D, "'", "\\'", -1), MatchByKey5E, strings.Replace(MatchByValue5E, "'", "\\'", -1))
+	}
+	QueryText += ") select distinct f from fiberlist, unnest(fibers) f"
 	log.Printf("Match Query Text: %s", QueryText)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
