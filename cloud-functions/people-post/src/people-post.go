@@ -917,7 +917,7 @@ func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
 	if len(nameParts) > 1 && col.PeopleERR.FirstName == 1 && col.PeopleERR.LastName == 1 {
 		if strings.Contains(nameParts[0], ",") {
 			commaLess := strings.Replace(nameParts[0], ",", "", 1)
-			SetMkField(&mko, "FNAME", strings.Join(nameParts[1:]), col.Name)
+			SetMkField(&mko, "FNAME", strings.Join(nameParts[1:], ""), col.Name)
 			SetMkField(&mko, "LNAME", commaLess, col.Name)
 		} else {
 			SetMkField(&mko, "FNAME", nameParts[0], col.Name)
