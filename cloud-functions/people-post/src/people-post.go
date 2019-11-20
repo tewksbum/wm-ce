@@ -107,6 +107,7 @@ type PeopleERR struct {
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
 	Address3            int `json:"Address3"`
+	FullAddress         int `json:"FullAddress"`
 	Age                 int `json:"Age"`
 	Birthday            int `json:"Birthday"`
 	City                int `json:"City"`
@@ -378,6 +379,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// AdType
 		mkOutput.ADTYPE.Value = AssignAddressType(&column)
 
+		if dev { log.Printf("Title flagging true with: %v %v %v %v", column.Name, column.Value, matchKey, input.Signature.EventID) }
+
 		// ***** set high confidence items
 		if column.PeopleERR.TrustedID == 1 {
 			trustedID = column.Value
@@ -398,34 +401,32 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			dormCol = index
 		} else if column.PeopleERR.Room == 1 {
 			roomCol = index
-		} else if column.PeopleERR.ContainsRole == 0 {
+		} 
+		
+		if column.PeopleERR.ContainsRole == 0 {
+			if dev { log.Printf("Non people column %v", input.Signature.EventID) }
 			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
 			fullName = checkSetFullName(mkOutput, column)
 			if fullName {
+				if dev { log.Printf("tagged as fullname %v", input.Signature.EventID) }
 				column.MatchKey = ""
 				column.PeopleERR.FirstName = 0
 				column.PeopleERR.LastName = 0
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
 				if dev { log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
-				column.MatchKey = "FNAME"
+				// column.MatchKey = "FNAME"
 			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
 				if dev { log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
-				column.MatchKey = "LNAME"
-			} else if column.PeopleERR.Address1 == 1 {
-				// concat address
-				// handling concatenated address ERR = Address, VAL = 1 Main Pleastenville
-				// this is handled below w/ address parser
+				// column.MatchKey = "LNAME"
+			} else if column.PeopleERR.FullName || ( column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1 && column.PeopleERR.ContainsAddress ) {
 				concatAdd = true
 				concatAddCol = index
-			} else if column.PeopleERR.City == 1 && column.PeopleERR.State == 1 {
+				// else if column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1  {
 				// concatCityState = true
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
-				// && column.PeopleERR.Address2 == 0 && column.PeopleERR.Address3 == 0 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 && !column.PeopleVER.IS_EMAIL {
-				// else if column.PeopleERR.Address2 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
-				// } else if column.PeopleERR.Address3 == 1 && column.PeopleERR.FirstName == 0 && column.PeopleERR.LastName == 0 {
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
 				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
@@ -462,9 +463,33 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				phoneCount = phoneCount + 1
 				phoneList = append(phoneList, index)
+			} else if column.PeopleERR.FirstName == 1 && column.PeopleERR.LastName == 0 {
+				if dev { log.Printf("FName with ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
+			} else if column.PeopleERR.LastName == 1 && column.PeopleERR.FirstName == 0 {
+				if dev { log.Printf("LName with ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 			}
 
-		} else if column.PeopleERR.ContainsRole == 1 {
+		// else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
+		// 	SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
+		// 	SetMkField(&mkOutput, "CITY", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
+		// 	SetMkField(&mkOutput, "STATE", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
+		// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+		// } else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
+		// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
+
+
+		}  
+		
+		if column.PeopleERR.ContainsRole == 1 {
 			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
 				if dev { log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
@@ -515,21 +540,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
-
-		// else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS1", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS2", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
-		// 	SetMkField(&mkOutput, "ADDRESS3", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
-		// 	SetMkField(&mkOutput, "CITY", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
-		// 	SetMkField(&mkOutput, "STATE", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
-		// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
-		// } else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
-		// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
 
 		input.Columns[index] = column
 	}

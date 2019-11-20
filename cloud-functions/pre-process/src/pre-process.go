@@ -112,6 +112,7 @@ type PeopleERR struct {
 	Address1            int `json:"Address1"`
 	Address2            int `json:"Address2"`
 	Address3            int `json:"Address3"`
+	FullAddress         int `json:"FullAddress"`
 	Age                 int `json:"Age"`
 	Birthday            int `json:"Birthday"`
 	City                int `json:"City"`
@@ -743,6 +744,8 @@ func GetPeopleERR(column string) PeopleERR {
 			err.County = 1
 		case "country", "country (blank for us)":
 			err.Country = 1
+		case "address", "student address", "parent address", "home address", "permanent address":
+			err.FullAddress = 1
 		case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
 			err.Email = 1
 		case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
