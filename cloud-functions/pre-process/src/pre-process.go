@@ -141,6 +141,17 @@ type PeopleERR struct {
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
+	ContainsFirstName 	int `json:"ContainsFirstName"`
+	ContainsLastName 	int `json:"ContainsLastName"`
+	ContainsCountry 	int `json:"ContainsCountry"`
+	ContainsEmail 		int `json:"ContainsEmail"`
+	ContainsAddress 	int `json:"ContainsAddress"`
+	ContainsCity 		int `json:"ContainsCity"`
+	ContainsState 		int `json:"ContainsState"`
+	ContainsZipCode 	int `json:"ContainsZipCode"`
+	ContainsPhone 		int `json:"ContainsPhone"`
+	ContainsTitle 		int `json:"ContainsTitle"`
+	ContainsRole 		int `json:"ContainsRole"`
 }
 
 type ProductERR struct {
@@ -433,7 +444,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.Address1 == 1 {
 			columnFlags.PeopleAddress1 = true
 		}
-		if column.PeopleERR.Address == 1 {
+		if column.PeopleERR.ContainsAddress == 1 {
 			columnFlags.PeopleAddress = true
 		}
 		if column.PeopleERR.ZipCode == 1 {
@@ -698,105 +709,105 @@ func GetPeopleERR(column string) PeopleERR {
 
 	key := strings.ToLower(column)
 	switch key {
-	case "fname", "f name", "first name", "name first", "first_name", "first", "nickname":
-		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
-		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name":
-		err.MiddleName = 1
-	case "suffix", "jr., iii, etc.":
-		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
-		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
-		err.Address2 = 1
-	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
-		err.Address3 = 1
-	case "city", "city ", "street city":
-		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
-		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
-		err.ZipCode = 1
-	case "citystzip", "city/st/zip ":
-		err.City = 1
-		err.State = 1
-		err.ZipCode = 1
-	case "county":
-		err.County = 1
-	case "country", "country (blank for us)":
-		err.Country = 1
-	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
-		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
-		err.Email = 1
-		err.ParentEmail = 1
-	case "gender", "m/f":
-		err.Gender = 1
-	case "pfname", "pfname1", "pfname2":
-		err.ParentFirstName = 1
-	case "plname", "plname1", "plname2":
-		err.ParentLastName = 1
-	case "phone", "phone1", "hphone", "cphone", "mphone":
-		err.Phone = 1
-	case "bday", "birthday":
-		err.Birthday = 1
-	case "age":
-		err.Age = 1
-	case "pname", "pname1", "pname2", "pname 1", "pname 2":
-		err.ParentFirstName = 1
-		err.ParentLastName = 1
-		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name":
-		err.FullName = 1
-		err.FirstName = 1
-		err.LastName = 1
-	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence":
-		err.Dorm = 1
-	case "room", "room number", "room #":
-		err.Room = 1
-	case "organization":
-		err.Organization = 1
-	case "title", "course year", "grad date":
-		err.Title = 1
-	case "studentid", "student id", "id":
-		err.TrustedID = 1
+		case "fname", "f name", "first name", "name first", "first_name", "first", "nickname":
+			err.FirstName = 1
+		case "lname", "lname ", "l name ", "l name", "last name", "name last", "last":
+			err.LastName = 1
+		case "mi", "mi ", "mname", "m", "middle name":
+			err.MiddleName = 1
+		case "suffix", "jr., iii, etc.":
+			err.Suffix = 1
+		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
+			err.Address1 = 1
+		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
+			err.Address2 = 1
+		case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
+			err.Address3 = 1
+		case "city", "city ", "street city":
+			err.City = 1
+		case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+			err.State = 1
+		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
+			err.ZipCode = 1
+		case "citystzip", "city/st/zip ":
+			err.City = 1
+			err.State = 1
+			err.ZipCode = 1
+		case "county":
+			err.County = 1
+		case "country", "country (blank for us)":
+			err.Country = 1
+		case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
+			err.Email = 1
+		case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+			// err.Email = 1
+			err.ParentEmail = 1
+		case "gender", "m/f":
+			err.Gender = 1
+		case "pfname", "pfname1", "pfname2":
+			err.ParentFirstName = 1
+		case "plname", "plname1", "plname2":
+			err.ParentLastName = 1
+		case "phone", "phone1", "hphone", "cphone", "mphone":
+			err.Phone = 1
+		case "bday", "birthday":
+			err.Birthday = 1
+		case "age":
+			err.Age = 1
+		case "pname", "pname1", "pname2", "pname 1", "pname 2":
+			err.ParentFirstName = 1
+			err.ParentLastName = 1
+			err.ParentName = 1
+		case "fullname", "full name", "student name", "students name":
+			err.FullName = 1
+			err.FirstName = 1
+			err.LastName = 1
+		case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence":
+			err.Dorm = 1
+		case "room", "room number", "room #":
+			err.Room = 1
+		case "organization":
+			err.Organization = 1
+		case "title", "course year", "grad date":
+			err.Title = 1
+		case "studentid", "student id", "id":
+			err.TrustedID = 1
 	}
 
 	if strings.Contains(key, "first") || strings.Contains(key, "fname") {
-		err.FirstName = 1
+		err.ContainsFirstName = 1
 	}
 	if strings.Contains(key, "last") || strings.Contains(key, "lname") {
-		err.LastName = 1
+		err.ContainsLastName = 1
 	}
 	if strings.Contains(key, "country") {
-		err.Country = 1
+		err.ContainsCountry = 1
 	}
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
-		err.Email = 1
+		err.ContainsEmail = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
-		err.Address = 1
+		err.ContainsAddress = 1
 	}
 	if strings.Contains(key, "city") {
-		err.City = 1
+		err.ContainsCity = 1
 	}
 	if strings.Contains(key, "state") {
-		err.State = 1
+		err.ContainsState = 1
 	}
 	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
-		err.ZipCode = 1
+		err.ContainsZipCode = 1
 	}
 	if strings.Contains(key, "phone") {
-		err.Phone = 1
+		err.ContainsPhone = 1
 	}
 
 	// these should be looked up on a per owner basis
 	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
-		err.Title = 1
+		err.ContainsTitle = 1
 	}
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") {
-		err.Role = 1
+		err.ContainsRole = 1
 	}
 
 	// correct some assignments
