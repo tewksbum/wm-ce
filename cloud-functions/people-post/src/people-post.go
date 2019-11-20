@@ -303,6 +303,7 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var ap http.Client
+var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 var MLLabels map[string]string
 
@@ -317,7 +318,6 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
-
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -386,14 +386,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
 		} else if column.PeopleERR.Title == 1 {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
-			log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+			if dev { log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 			SetMkField(&mkOutput, "TITLE", calcClassYear(column.Value), column.Name)
 			matchKey = ""
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
 			column.PeopleERR.State = 0   // override this is NOT a state value
 		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			log.Printf("dorm flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+			if dev { log.Printf("dorm flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 			haveDorm = true
 			dormCol = index
 		} else if column.PeopleERR.Room == 1 {
@@ -407,11 +407,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.PeopleERR.FirstName = 0
 				column.PeopleERR.LastName = 0
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
-				log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				if dev { log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "FNAME", column.Value, column.Name)
 				column.MatchKey = "FNAME"
 			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
-				log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				if dev { log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
 				column.MatchKey = "LNAME"
 			} else if column.PeopleERR.Address1 == 1 && column.PeopleERR.State == 1 {
@@ -467,11 +467,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.ContainsRole == 1 {
 			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
-				log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				if dev { log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
-				log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				if dev { log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
@@ -573,7 +573,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// handle MAR values
 	if emailCount > 1 {
-		log.Printf("Have multiple emails: %v", emailCount)
+		if dev { log.Printf("Have multiple emails: %v", emailCount) }
 		for i := 1; i < len(emailList); i++ {
 			// update email value... and resend...
 			mkOutput.EMAIL.Value = input.Columns[emailList[i]].Value
@@ -584,17 +584,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					mkOutput.EMAIL.Type = "Private"
 				}
 			}
-			log.Printf("pubbing MAR email %v ", mkOutput.EMAIL.Value)
+			if dev { log.Printf("pubbing MAR email %v ", mkOutput.EMAIL.Value) }
 			pubRecord(ctx, &input, mkOutput)
 		}
 	}
 	if phoneCount > 1 {
-		log.Printf("Have multiple phones: %v", phoneCount)
+		if dev { log.Printf("Have multiple phones: %v", phoneCount) }
 		for i := 1; i < len(phoneList); i++ {
 			// update phone value... and resend...
 			mkOutput.PHONE.Value = input.Columns[phoneList[i]].Value
 			mkOutput.PHONE.Source = input.Columns[phoneList[i]].Name
-			log.Printf("pubbing MAR phone %v ", mkOutput.PHONE.Value)
+			if dev { log.Printf("pubbing MAR phone %v ", mkOutput.PHONE.Value) }
 			pubRecord(ctx, &input, mkOutput)
 		}
 	}
@@ -611,16 +611,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.STATE.Value = ""
 		mkOutput.ZIP.Value = ""
 		mkOutput.ADTYPE.Value = "Campus"
-		log.Printf("pubbing Dorm %v ", input.Columns[dormCol].Name)
+		if dev { log.Printf("pubbing Dorm %v ", input.Columns[dormCol].Name) }
 		pubRecord(ctx, &input, mkOutput)
 	}
 
 	// handle mpr
 	for i := 0; i < len(mpr); i++ {
-		log.Printf("mpr loop %v", i)
-		log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value)
+		if dev { log.Printf("mpr loop %v", i) }
+		if dev { log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value) }
 		if (mpr[i].FNAME.Value != "") || (mpr[i].EMAIL.Value != "") {
-			log.Printf("have mpr value %v", i)
+			if dev { log.Printf("have mpr value %v", i) }
 			if mpr[i].FNAME.Value != "" {
 				mkOutput.FNAME.Value = mpr[i].FNAME.Value
 				mkOutput.FNAME.Source = mpr[i].FNAME.Source
@@ -673,7 +673,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 			addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 			a := ParseAddress(addressInput)
-			log.Printf("address parser returned %v", a)
+			if dev { log.Printf("address parser returned %v", a) }
 			if len(a.CITY) > 0 {
 				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
 				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
@@ -767,7 +767,7 @@ func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 func SetMkField(v *PeopleOutput, field string, value string, source string) string {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
-
+	if dev { log.Printf("SetMkField: %v %v %v", field, value, source) }
 	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
 	return value
 }
