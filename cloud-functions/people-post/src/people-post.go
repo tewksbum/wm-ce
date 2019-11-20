@@ -82,8 +82,9 @@ type PeopleOutput struct {
 	ZIP       MatchKeyField `json:"zip" bigquery:"zip"`
 	ZIP5      MatchKeyField `json:"zip5" bigquery:"zip5"`
 	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
-	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adType" bigquery:"adtype"`
+	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
+	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
 
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
@@ -390,6 +391,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if dev { log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 			SetMkField(&mkOutput, "TITLE", calcClassYear(column.Value), column.Name)
+			SetMkField(&mkOutput, "STATUS", calcClassDesig(column.Value), column.Name)
 			matchKey = ""
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
@@ -584,17 +586,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
 		mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 		mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
-		mkOutput.AD3.Value = ""
+		// mkOutput.AD3.Value = ""
 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-		mkOutput.AD1.Source += ", AddressParser"
-		mkOutput.AD1NO.Source += ", AddressParser"
-		mkOutput.AD2.Source += ", AddressParser"
-		mkOutput.AD3.Source += ", AddressParser"
-		mkOutput.CITY.Source += ", AddressParser"
-		mkOutput.STATE.Source += ", AddressParser"
-		mkOutput.ZIP.Source += ", AddressParser"
+		mkOutput.ADPARSER.Value = "libpostal"
 	}
 
 	// check zip city state match
@@ -663,77 +659,58 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// handle mpr
 	for i := 0; i < len(mpr); i++ {
 		if dev { log.Printf("mpr loop %v", i) }
-		if dev { log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value) }
+		// if dev { log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value) }
 		if (mpr[i].FNAME.Value != "") || (mpr[i].EMAIL.Value != "") {
 			if dev { log.Printf("have mpr value %v", i) }
 			if mpr[i].FNAME.Value != "" {
-				mkOutput.FNAME.Value = mpr[i].FNAME.Value
-				mkOutput.FNAME.Source = mpr[i].FNAME.Source
+				SetMkField(&mkOutput, "FNAME", mpr[i].FNAME.Value, mpr[i].FNAME.Source)
 			} else {
-				mkOutput.FNAME.Value = ""
-				mkOutput.FNAME.Source = ""
+				SetMkField(&mkOutput, "FNAME", "", "")
 			}
 			if mpr[i].LNAME.Value != "" {
-				mkOutput.LNAME.Value = mpr[i].LNAME.Value
-				mkOutput.LNAME.Source = mpr[i].LNAME.Source
+				SetMkField(&mkOutput, "LNAME", mpr[i].LNAME.Value, mpr[i].LNAME.Source)
 			}
 			if mpr[i].AD1.Value != "" {
-				mkOutput.AD1.Value = mpr[i].AD1.Value
-				mkOutput.AD1.Source = mpr[i].AD1.Source
+				SetMkField(&mkOutput, "AD1", mpr[i].AD1.Value, mpr[i].AD1.Source)
 			}
 			if mpr[i].AD2.Value != "" {
-				mkOutput.AD2.Value = mpr[i].AD2.Value
-				mkOutput.AD2.Source = mpr[i].AD2.Source
+				SetMkField(&mkOutput, "AD2", mpr[i].AD2.Value, mpr[i].AD2.Source)
 			}
 			if mpr[i].AD3.Value != "" {
-				mkOutput.AD3.Value = mpr[i].AD3.Value
-				mkOutput.AD3.Source = mpr[i].AD3.Source
+				SetMkField(&mkOutput, "AD3", mpr[i].AD3.Value, mpr[i].AD3.Source)
 			}
 			if mpr[i].CITY.Value != "" {
-				mkOutput.CITY.Value = mpr[i].CITY.Value
-				mkOutput.CITY.Source = mpr[i].CITY.Source
+				SetMkField(&mkOutput, "CITY", mpr[i].CITY.Value, mpr[i].CITY.Source)
 			}
 			if mpr[i].STATE.Value != "" {
-				mkOutput.STATE.Value = mpr[i].STATE.Value
-				mkOutput.STATE.Source = mpr[i].STATE.Source
+				SetMkField(&mkOutput, "STATE", mpr[i].STATE.Value, mpr[i].STATE.Source)
 			}
 			if mpr[i].ZIP.Value != "" {
-				mkOutput.ZIP.Value = mpr[i].ZIP.Value
-				mkOutput.ZIP.Source = mpr[i].ZIP.Source
+				SetMkField(&mkOutput, "ZIP", mpr[i].ZIP.Value, mpr[i].ZIP.Source)
 			}
 			if mpr[i].EMAIL.Value != "" {
-				mkOutput.EMAIL.Value = mpr[i].EMAIL.Value
-				mkOutput.EMAIL.Source = mpr[i].EMAIL.Source
+				SetMkField(&mkOutput, "EMAIL", mpr[i].EMAIL.Value, mpr[i].EMAIL.Source)
 			} else {
-				mkOutput.EMAIL.Value = ""
-				mkOutput.EMAIL.Source = ""
+				SetMkField(&mkOutput, "EMAIL", "", "")
 			}
 			if mpr[i].PHONE.Value != "" {
-				mkOutput.PHONE.Value = mpr[i].PHONE.Value
-				mkOutput.PHONE.Source = mpr[i].PHONE.Source
+				SetMkField(&mkOutput, "PHONE", mpr[i].PHONE.Value, mpr[i].PHONE.Source)
 			} else {
-				mkOutput.PHONE.Value = ""
-				mkOutput.PHONE.Source = ""
+				SetMkField(&mkOutput, "PHONE", "", "")
 			}
 
 			addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 			a := ParseAddress(addressInput)
-			if dev { log.Printf("address parser returned %v", a) }
+			if dev { log.Printf("mpr address parser returned %v", a) }
 			if len(a.CITY) > 0 {
 				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
 				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 				mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
-				mkOutput.AD3.Value = ""
+				// mkOutput.AD3.Value = ""
 				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-				mkOutput.AD1.Source += ", AddressParser"
-				mkOutput.AD1NO.Source += ", AddressParser"
-				mkOutput.AD2.Source += ", AddressParser"
-				mkOutput.AD3.Source += ", AddressParser"
-				mkOutput.CITY.Source += ", AddressParser"
-				mkOutput.STATE.Source += ", AddressParser"
-				mkOutput.ZIP.Source += ", AddressParser"
+				mkOutput.ADPARSER.Value = "libpostal"
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
@@ -998,5 +975,20 @@ func calcClassYear(cy string) string {
 		default:
 			return strconv.Itoa(time.Now().Year() + 4)
 		}
+	}
+}
+
+func calcClassDesig(cy string) string {
+	switch strings.ToLower(cy) {
+		case "freshman", "frosh", "fresh", "fr":
+			return "FR"
+		case "sophomore", "soph", "so":
+			return "SO"
+		case "junior", "jr":
+			return "JR"
+		case "senior", "sr":
+			return "SR"
+		default:
+			return ""
 	}
 }

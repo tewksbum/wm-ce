@@ -75,8 +75,9 @@ type PeopleOutput struct {
 	ZIP       MatchKeyField `json:"zip" bigquery:"zip"`
 	ZIP5      MatchKeyField `json:"zip5" bigquery:"zip5"`
 	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
-	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adType" bigquery:"adtype"`
+	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
+	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
 
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
@@ -126,13 +127,14 @@ type People360Output struct {
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
-var BQPrefix = os.Getenv("BQPREFIX")
+var BQPrefix = os.Getenv("ENVIRONMENT")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
 var ESUid = os.Getenv("ELASTICUSER")
 var ESPwd = os.Getenv("ELASTICPWD")
 var ESIndex = os.Getenv("ELASTICINDEX")
+var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
