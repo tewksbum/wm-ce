@@ -595,7 +595,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				mkOutput.AD2.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
 			} else {
 				mkOutput.AD1.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
-				mkOutput.AD1NO.Value = strings.ToUpper(a.PO_BOX)
+				mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
 			}
 		} else {
 			mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
@@ -654,7 +654,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mkOutput.AD1.Value = input.Columns[dormCol].Value
 		mkOutput.AD1.Source = input.Columns[dormCol].Name
 		if roomCol > 0 {
-			mkOutput.AD2.Value = input.Columns[roomCol].Value
+			mkOutput.AD2.Value = input.Columns[roomCol].Name + ": " + input.Columns[roomCol].Value
 			mkOutput.AD2.Source = input.Columns[roomCol].Name
 		} else {
 			mkOutput.AD2.Value = ""
@@ -723,10 +723,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					if len(a.HOUSE_NUMBER) > 0 {
 						mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
 						mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-						mkOutput.AD2.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
+						mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
 					} else {
-						mkOutput.AD1.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
-						mkOutput.AD1NO.Value = strings.ToUpper(a.PO_BOX)
+						mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
+						mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
 					}
 				} else {
 					mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
