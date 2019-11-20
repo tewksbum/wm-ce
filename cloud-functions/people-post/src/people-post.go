@@ -583,14 +583,25 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	a := ParseAddress(addressInput)
 	log.Printf("address parser returned %v", a)
 	if len(a.CITY) > 0 {
-		mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-		mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-		mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
-		// mkOutput.AD3.Value = ""
 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+		mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
 		mkOutput.ADPARSER.Value = "libpostal"
+		if len(a.PO_BOX) > 0 {
+			if len(a.HOUSE_NUMBER) > 0 {
+				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+				mkOutput.AD2.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
+			} else {
+				mkOutput.AD1.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
+				mkOutput.AD1NO.Value = strings.ToUpper(a.PO_BOX)
+			}
+		} else {
+			mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+			mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+			mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+		}
 	}
 
 	// check zip city state match
@@ -703,14 +714,25 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			a := ParseAddress(addressInput)
 			if dev { log.Printf("mpr address parser returned %v", a) }
 			if len(a.CITY) > 0 {
-				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-				mkOutput.AD2.Value = strings.ToUpper(a.UNIT)
-				// mkOutput.AD3.Value = ""
 				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+				mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
 				mkOutput.ADPARSER.Value = "libpostal"
+				if len(a.PO_BOX) > 0 {
+					if len(a.HOUSE_NUMBER) > 0 {
+						mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+						mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+						mkOutput.AD2.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
+					} else {
+						mkOutput.AD1.Value = "BOX" + " " + strings.ToUpper(a.PO_BOX)
+						mkOutput.AD1NO.Value = strings.ToUpper(a.PO_BOX)
+					}
+				} else {
+					mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+					mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+					mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+				}
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
