@@ -54,6 +54,15 @@ type PeopleFiber struct {
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
 
+type PeopleFiberDS struct {
+	Signature Signature `json:"signature" datastore:"signature"`
+	// Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
+	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
+	MatchKeys   PeopleOutput     `json:"matchkeys" datastore:"matchkeys"`
+	FiberID     *datastore.Key   `datastore:"__key__"`
+	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+}
+
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
 	Source string `json:"source" bigquery:"source"`
@@ -125,16 +134,21 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
 }
 
+type SetDS struct {
+	ID        *datastore.Key `datastore:"__key__"`
+	CreatedAt time.Time      `json:"createdAt" datastore:"createdAt"`
+}
+
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
-var BQPrefix = os.Getenv("ENVIRONMENT")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
 var ESUid = os.Getenv("ELASTICUSER")
 var ESPwd = os.Getenv("ELASTICPWD")
 var ESIndex = os.Getenv("ELASTICINDEX")
+var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
 
 var ps *pubsub.Client
@@ -195,7 +209,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := Env + strconv.FormatInt(input.Signature.OwnerID, 10)
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
@@ -235,9 +249,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// store in DS
 	dsKind := "Fiber"
-	dsKey := datastore.IncompleteKey(dsKind, nil)
-	dsKey.Namespace = fmt.Sprintf("%v-%v", BQPrefix, input.Signature.OwnerID)
-	if _, err := ds.Put(ctx, dsKey, &fiber); err != nil {
+	dsKey := datastore.NameKey(dsKind, fiber.FiberID, nil)
+	dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
+	dsFiber := GetFiberDS(&fiber)
+	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
 		log.Fatalf("Exception storing %v sig %v, error %v", dsKind, input.Signature, err)
 	}
 
@@ -317,6 +332,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// Collect all fiber IDs
 	var FiberCollection []string
+	var ExpiredSetCollection []string
 	for {
 		var fibers []bigquery.Value
 		err = BQIterator.Next(&fibers)
@@ -326,10 +342,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
 		} else {
 			log.Printf("Fetched from BQ: %v", fibers)
-			for _, f := range fibers {
-				fs := fmt.Sprintf("%v", f)
-				if !Contains(FiberCollection, fs) {
-					FiberCollection = append(FiberCollection, fs)
+			// with the query above, we get 2 elements, first value is set id, second is fiber id
+			// collect the set id for deletion
+			// collect the fiber ids to build new set
+			for i, f := range fibers {
+				if i == 0 {
+					fs := fmt.Sprintf("%v", f)
+					if !Contains(ExpiredSetCollection, fs) {
+						ExpiredSetCollection = append(ExpiredSetCollection, fs)
+					}
+				} else {
+					fs := fmt.Sprintf("%v", f)
+					if !Contains(FiberCollection, fs) {
+						FiberCollection = append(FiberCollection, fs)
+					}
 				}
 			}
 		}
@@ -339,17 +365,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// get all the Fibers
 	var Fibers []PeopleFiber
-
+	var FiberKeys []*datastore.Key
 	for _, fiber := range FiberCollection {
-		var FoundFibers []PeopleFiber
-		query := datastore.NewQuery(dsKind).Namespace(dsKey.Namespace).Filter("FiberID =", fiber).Limit(1)
-		if _, err := ds.GetAll(ctx, query, &FoundFibers); err != nil {
-			log.Fatalf("Error querying fiber: %v", err)
-		}
-		if len(FoundFibers) > 0 {
-			Fibers = append(Fibers, FoundFibers[0])
-		}
+		FiberKeys = append(FiberKeys, datastore.NameKey(dsKind, fiber, nil))
 	}
+	if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
+		log.Fatalf("Error fecthing fibers: %v", err)
+	}
+
+	// for _, fiber := range FiberCollection {
+	// 	var FoundFibers []PeopleFiber
+	// 	query := datastore.NewQuery(dsKind).Namespace(dsKey.Namespace).Filter("FiberID =", fiber).Limit(1)
+	// 	if _, err := ds.GetAll(ctx, query, &FoundFibers); err != nil {
+	// 		log.Fatalf("Error querying fiber: %v", err)
+	// 	}
+	// 	if len(FoundFibers) > 0 {
+	// 		Fibers = append(Fibers, FoundFibers[0])
+	// 	}
+	// }
 
 	// sort by createdAt desc
 	sort.Slice(Fibers, func(i, j int) bool {
@@ -484,6 +517,25 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
+	// record the set id in DS
+	dsKind = "Set"
+	dsKey = datastore.NameKey(dsKind, output.ID, nil)
+	var setDs SetDS
+	setDs.CreatedAt = output.CreatedAt
+	dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
+	if _, err := ds.Put(ctx, dsKey, &setDs); err != nil {
+		log.Fatalf("Exception storing %v sig %v, error %v", dsKind, input.Signature, err)
+	}
+
+	// remove expired sets from DS
+	var SetKeys []*datastore.Key
+	for _, set := range ExpiredSetCollection {
+		SetKeys = append(SetKeys, datastore.NameKey(dsKind, set, nil))
+	}
+	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
+		log.Fatalf("Error deleting sets: %v", err)
+	}
+
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
@@ -575,4 +627,14 @@ func PersistInES(ctx context.Context, v interface{}) bool {
 		log.Printf("[%s] document ID=%v, Message=%v", esRes.Status(), esID, string(resB))
 		return true
 	}
+}
+
+func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
+	p := PeopleFiberDS{
+		Signature:   v.Signature,
+		Passthrough: v.Passthrough,
+		MatchKeys:   v.MatchKeys,
+		CreatedAt:   v.CreatedAt,
+	}
+	return p
 }
