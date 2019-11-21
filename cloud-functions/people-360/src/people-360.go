@@ -401,6 +401,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(FiberMatchKeys, name)
+			log.Printf("fiber %v matchkey %v value %v", i, name, mk)
 			value := strings.TrimSpace(GetMkField(&fiber.MatchKeys, name).Value)
 			if len(mk.Key) > 0 {
 				if len(value) > 0 && !Contains(mk.Values, value) {
@@ -418,11 +419,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	for _, name := range MatchKeyList {
 		mk := GetMatchKeyFields(FiberMatchKeys, name)
-		log.Printf("mk.Values %v", mk.Values)
+		log.Printf("mk.Values %v: %v", name, mk.Values)
 	}
 
 	output.MatchKeys = FiberMatchKeys
-	log.Printf("Fiber signatures: %v", FiberSignatures)
 
 	HasNewValues := false
 	// check to see if there are any new values
