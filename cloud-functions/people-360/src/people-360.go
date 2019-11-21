@@ -520,13 +520,12 @@ func GetMatchKeyFields(v []MatchKey360, key string) *MatchKey360 {
 }
 
 func Contains(slice []string, item string) bool {
-	set := make(map[string]struct{}, len(slice))
-	for _, s := range slice {
-		set[s] = struct{}{}
+	for _, v := range slice {
+		if strings.EqualFold(v, item) {
+			return true
+		}
 	}
-
-	_, ok := set[item]
-	return ok
+	return false
 }
 
 func ConvertPassthrough(v map[string]string) []Passthrough360 {
