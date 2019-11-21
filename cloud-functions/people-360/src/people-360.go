@@ -389,35 +389,37 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var output People360Output
 	MatchKeyList := structs.Names(&PeopleOutput{})
 
-	var FiberMatchKeys []MatchKey360
+	FiberMatchKeys := make(map[string][]string)
 
 	var FiberSignatures []Signature
 
 	// collect all fiber match key values
 	for _, name := range MatchKeyList {
-		FiberMatchKeys = append(FiberMatchKeys, MatchKey360{Key: name})
+		FiberMatchKeys[name] = []string{}
 	}
 
 	for i, fiber := range Fibers {
 		log.Printf("loaded fiber %v of %v: %v", i, len(Fibers), fiber)
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
-			mk := GetMatchKeyFields(FiberMatchKeys, name)
-			log.Printf("fiber %v matchkey %v value %v", i, name, mk)
 			value := strings.TrimSpace(GetMkField(&fiber.MatchKeys, name).Value)
-			if len(value) > 0 && !Contains(mk.Values, value) {
-				mk.Values = append(mk.Values, value)
+			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
+				FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
 			}
 		}
 		log.Printf("FiberMatchKey values %v", FiberMatchKeys)
 	}
-
+	var MatchKeysFromFiber []MatchKey360
 	for _, name := range MatchKeyList {
-		mk := GetMatchKeyFields(FiberMatchKeys, name)
-		log.Printf("mk.Values %v: %v", name, mk.Values)
+		mk360 := MatchKey360{
+			Key:    name,
+			Values: FiberMatchKeys[name],
+		}
+		MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
+		log.Printf("mk.Values %v: %v", name, FiberMatchKeys[name])
 	}
 
-	output.MatchKeys = FiberMatchKeys
+	output.MatchKeys = MatchKeysFromFiber
 
 	HasNewValues := false
 	// check to see if there are any new values
