@@ -411,6 +411,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				mk.Values = append(mk.Values, value)
 			}
 		}
+		log.Printf("FiberMatchKey values %v", FiberMatchKeys)
 	}
 
 	for _, name := range MatchKeyList {
