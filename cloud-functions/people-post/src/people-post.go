@@ -389,7 +389,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
 		} else if column.PeopleERR.Organization == 1 {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
-		} else if column.PeopleERR.Title == 1 {
+		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if dev { log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 			SetMkField(&mkOutput, "TITLE", calcClassYear(column.Value), column.Name)

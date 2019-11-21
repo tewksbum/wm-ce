@@ -778,7 +778,8 @@ func GetPeopleERR(column string) PeopleERR {
 			err.Room = 1
 		case "organization":
 			err.Organization = 1
-		case "title", "course year", "grad date", "class", "grade":
+		case "title", "course year", "grad date", "class", "grade": 
+			// also see contains logic...
 			err.Title = 1
 		case "studentid", "student id", "id":
 			err.TrustedID = 1
