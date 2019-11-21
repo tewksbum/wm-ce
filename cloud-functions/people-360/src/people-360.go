@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -281,7 +282,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", "\\'", -1)
 	// missing address type
 
-	QueryText := fmt.Sprintf("with fiberlist as (SELECT fibers FROM `%s.%s.%s` WHERE (exists (select 1 from UNNEST(signatures) s where s.RecordID = '%s')) ", ProjectID, DatasetID, SetTableName, strings.Replace(MatchByValue0, "'", "\\'", -1))
+	QueryText := fmt.Sprintf("with fiberlist as (SELECT id, fibers FROM `%s.%s.%s` WHERE (exists (select 1 from UNNEST(signatures) s where s.RecordID = '%s')) ", ProjectID, DatasetID, SetTableName, strings.Replace(MatchByValue0, "'", "\\'", -1))
 	if len(MatchByValue1) > 0 {
 		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey1, strings.Replace(MatchByValue1, "'", "\\'", -1))
 	}
@@ -294,7 +295,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
 		QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey5A, strings.Replace(MatchByValue5A, "'", "\\'", -1), MatchByKey5B, strings.Replace(MatchByValue5B, "'", "\\'", -1), MatchByKey5C, strings.Replace(MatchByValue5C, "'", "\\'", -1), MatchByKey5D, strings.Replace(MatchByValue5D, "'", "\\'", -1), MatchByKey5E, strings.Replace(MatchByValue5E, "'", "\\'", -1))
 	}
-	QueryText += ") select distinct f from fiberlist, unnest(fibers) f"
+	QueryText += ") select distinct id, f from fiberlist, unnest(fibers) f"
 	log.Printf("Match Query Text: %s", QueryText)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"
@@ -324,6 +325,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else if err != nil {
 			log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
 		} else {
+			log.Printf("Fetched from BQ: %v", fibers)
 			for _, f := range fibers {
 				fs := fmt.Sprintf("%v", f)
 				if !Contains(FiberCollection, fs) {
@@ -348,6 +350,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			Fibers = append(Fibers, FoundFibers[0])
 		}
 	}
+
+	// sort by createdAt desc
+	sort.Slice(Fibers, func(i, j int) bool {
+		return Fibers[i].CreatedAt.After(Fibers[j].CreatedAt)
+	})
 
 	// if len(FiberCollection) > 0 {
 	// 	FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"

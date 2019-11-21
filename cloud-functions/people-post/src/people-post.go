@@ -426,10 +426,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		if column.PeopleERR.ContainsRole == 0 {
-			if dev { log.Printf("People role: %v", input.Signature.EventID) }
+			if dev {
+				log.Printf("People role: %v", input.Signature.EventID)
+			}
 			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
-			fullName = checkSetFullName(mkOutput, column)
+			fullName = checkSetFullName(&mkOutput, column)
 			// could do something here to make it immutable... if we get a hit... then suppress all other name values?
 			if fullName {
 				if dev {
@@ -465,27 +467,39 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				SetMkField(&mkOutput, "AD2", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
-				if dev {log.Printf("Address 3 VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("Address 3 VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
 			} else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
-				if dev {log.Printf("CITY VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("CITY VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "CITY", column.Value, column.Name)
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
-				if dev {log.Printf("STATE VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("STATE VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
-				if dev {log.Printf("ZIP VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("ZIP VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
 				// fix zip code that has leading 0 stripped out
 				if matchKey == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
 					column.Value = LeftPad2Len(column.Value, "0", 5)
 				}
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
-				if dev {log.Printf("Country VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("Country VER & ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
 			} else if column.PeopleVER.IS_EMAIL {
 				// phone & email ONLY check VER
-				if dev {log.Printf("Email VER: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+				if dev {
+					log.Printf("Email VER: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				SetMkField(&mkOutput, "EMAIL", column.Value, column.Name)
 				// type email if ends with gmail, yahoo, hotmail
 				if len(mkOutput.EMAIL.Value) > 0 {
@@ -499,7 +513,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
 				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
 				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
-					if dev {log.Printf("Phone VER & US format: %v %v %v", column.Name, column.Value, input.Signature.EventID)}
+					if dev {
+						log.Printf("Phone VER & US format: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+					}
 					SetMkField(&mkOutput, "PHONE", column.Value, column.Name)
 				}
 				phoneCount = phoneCount + 1
@@ -610,14 +626,20 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			}
 		} else if column.PeopleERR.ContainsRole == 1 {
-			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
+			if dev {
+				log.Printf("Non people role: %v", input.Signature.EventID)
+			}
 			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
-				if dev { log.Printf("Parent ERR FName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev {
+					log.Printf("Parent ERR FName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
-				if dev { log.Printf("Parent ERR LName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				if dev {
+					log.Printf("Parent ERR LName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
@@ -1115,26 +1137,29 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	return value
 }
 
-func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
-	if dev { log.Printf("checking Full Name...") }
-	if (col.PeopleERR.FullName == 1 || 
-		(col.PeopleVER.IS_FIRSTNAME && col.PeopleVER.IS_LASTNAME && 
-			((col.PeopleERR.ContainsFirstName == 1 && col.PeopleERR.ContainsFirstName == 1) ||
-			(col.PeopleERR.ContainsFirstName == 0 && col.PeopleERR.ContainsFirstName == 0 ))
-		) 
-	{
+func checkSetFullName(mko *PeopleOutput, col InputColumn) bool {
+	if dev {
+		log.Printf("checking Full Name...")
+	}
+	if col.PeopleERR.FullName == 1 || (col.PeopleVER.IS_FIRSTNAME && col.PeopleVER.IS_LASTNAME && ((col.PeopleERR.ContainsFirstName == 1 && col.PeopleERR.ContainsLastName == 1) || (col.PeopleERR.ContainsFirstName == 0 && col.PeopleERR.ContainsLastName == 0))) {
 		nameParts := strings.Split(col.Value, " ")
 		if len(nameParts) > 1 {
-			if dev { log.Printf("have multi-name...") }
+			if dev {
+				log.Printf("have multi-name...")
+			}
 			if strings.Contains(nameParts[0], ",") {
 				commaLess := strings.Replace(nameParts[0], ",", "", 1)
-				SetMkField(&mko, "FNAME", strings.Join(nameParts[1:], ""), col.Name)
-				SetMkField(&mko, "LNAME", commaLess, col.Name)
-				if dev { log.Printf("commaLess...: %v ", commaLess) }
+				SetMkField(mko, "FNAME", strings.Join(nameParts[1:], ""), col.Name)
+				SetMkField(mko, "LNAME", commaLess, col.Name)
+				if dev {
+					log.Printf("commaLess...: %v ", commaLess)
+				}
 			} else {
-				SetMkField(&mko, "FNAME", nameParts[0], col.Name)
-				SetMkField(&mko, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
-				if dev { log.Printf("fullname name: %v ", nameParts[0]) }
+				SetMkField(mko, "FNAME", nameParts[0], col.Name)
+				SetMkField(mko, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
+				if dev {
+					log.Printf("fullname name: %v ", nameParts[0])
+				}
 			}
 			return true
 		}

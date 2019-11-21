@@ -53,7 +53,7 @@ type ImmutableDS struct {
 	EventType string    `datastore:"Type"`
 	EventID   string    `datastore:"EventID"`
 	RecordID  string    `datastore:"RecordID"`
-	Fields    string    `datastore:"Fields,noindex"`
+	Fields    []KVP     `datastore:"Fields,noindex"`
 	TimeStamp time.Time `datastore:"Created"`
 }
 
@@ -80,6 +80,11 @@ type NERCache struct {
 	Source       string       `json:"source`
 }
 
+type KVP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value string `json:"v" datastore:"v"`
+}
+
 // NERrequest request
 type NERrequest struct {
 	Owner  string
@@ -101,6 +106,7 @@ var RedisAddress = os.Getenv("MEMSTORE")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var NERThreshold = 1000
 var NERApi = os.Getenv("NERAPI")
+var Env = os.Getenv("ENVIRONMENT")
 
 var ds *datastore.Client
 var ps *pubsub.Client
@@ -148,14 +154,14 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 		EventID:   immutable.EventID,
 		EventType: immutable.EventType,
 		RecordID:  immutable.RecordID,
-		Fields:    ToJson(&immutable.Fields),
+		Fields:    ToKVPSlice(&immutable.Fields),
 		TimeStamp: immutable.TimeStamp,
 	}
 
 	// store this in DS
-	dsKind := fmt.Sprintf("%v-%v", input.Signature.OwnerID, input.Signature.Source)
+	dsKind := "Record"
 	dsKey := datastore.IncompleteKey(dsKind, nil)
-	dsKey.Namespace = DSNameSpace
+	dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
 	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
 		log.Fatalf("Exception storing record kind %v sig %v, error %v", dsKind, input.Signature, err)
 	}
@@ -329,4 +335,15 @@ func ToJson(v *map[string]string) string {
 		return ""
 	}
 
+}
+
+func ToKVPSlice(v *map[string]string) []KVP {
+	var result []KVP
+	for k, v := range *v {
+		result = append(result, KVP{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return result
 }
