@@ -396,23 +396,23 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var FiberSignatures []Signature
 
 	// collect all fiber match key values
-	for _, fiber := range Fibers {
-		log.Printf("loaded fiber %v", fiber)
+	for i, fiber := range Fibers {
+		log.Printf("loaded fiber %v of %v: %v", i, len(Fibers), fiber)
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
 		for _, name := range MatchKeyList {
 			mk := GetMatchKeyFields(FiberMatchKeys, name)
-			value := GetMkField(&fiber.MatchKeys, name).Value
+			value := strings.TrimSpace(GetMkField(&fiber.MatchKeys, name).Value)
 			if len(mk.Key) > 0 {
-				if !Contains(mk.Values, value) && len(value) > 0 {
+				if len(value) > 0 && !Contains(mk.Values, value) {
 					mk.Values = append(mk.Values, value)
 				}
-			} else {
+			} else if len(value) > 0 {
 				// didn't find it in the existing collection, add it
 				mk.Key = name
 				mk.Value = value
 				mk.Values = append(mk.Values, value)
-				FiberMatchKeys = append(FiberMatchKeys, *mk)
 			}
+			FiberMatchKeys = append(FiberMatchKeys, *mk)
 		}
 	}
 
@@ -459,7 +459,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		mk := GetMatchKeyFields(output.MatchKeys, name)
 		mk.Key = name
-		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		mk.Value = strings.TrimSpace(GetMkField(&input.MatchKeys, name).Value)
 		// if blank, assign it a value
 		if len(mk.Value) == 0 && len(mk.Values) > 0 {
 			mk.Value = mk.Values[0]
