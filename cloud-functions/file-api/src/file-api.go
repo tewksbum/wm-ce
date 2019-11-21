@@ -36,8 +36,8 @@ type Event struct {
 	Status      string
 	Created     time.Time
 	Endpoint    string
-	Passthrough string
-	Attributes  string
+	Passthrough []KVP
+	Attributes  []KVP
 }
 
 type Signature struct {
@@ -52,6 +52,11 @@ type Output struct {
 	Passthrough map[string]string      `json:"passthrough"`
 	Attributes  map[string]string      `json:"attributes"`
 	EventData   map[string]interface{} `json:"eventData"`
+}
+
+type KVP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value string `json:"v" datastore:"v"`
 }
 
 // ProjectID is the env var of project id
@@ -151,8 +156,8 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Created:     time.Now(),
 		Source:      input.Source,
 		Owner:       input.Owner,
-		Passthrough: ToJson(&input.Passthrough),
-		Attributes:  ToJson(&input.Attributes),
+		Passthrough: ToKVPSlice(&input.Passthrough),
+		Attributes:  ToKVPSlice(&input.Attributes),
 		EventID:     uuid.New().String(),
 		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
@@ -206,4 +211,15 @@ func ToJson(v *map[string]string) string {
 		return ""
 	}
 
+}
+
+func ToKVPSlice(v *map[string]string) []KVP {
+	var result []KVP
+	for k, v := range *v {
+		result = append(result, KVP{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return result
 }
