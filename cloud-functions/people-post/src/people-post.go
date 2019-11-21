@@ -352,7 +352,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var roomCol int   // this should be abstracted...
 	var mpr [3]PeopleOutput
 	var memNumb int
-	var addressInput string
+	// var addressInput string
 
 	// MPR checks
 	memNumb = 0
@@ -708,7 +708,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// 	}
 	// }
 
-	AddressParse(&mkOutput&input, concatCityState, concatCityStateCol, concatAdd, concatAddCol)
+	AddressParse(&mkOutput, &input, concatCityState, concatCityStateCol, concatAdd, concatAddCol)
 
 	// check zip city state match
 	ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
@@ -999,6 +999,7 @@ func IndexOf(element string, data []string) int {
 }
 
 func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatCityStateCol int, concatAdd bool, concatAddCol int) {
+	var addressInput string
 
 	if !concatCityState && !concatAdd {
 		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + mko.CITY.Value + " " + mko.STATE.Value + " " + mko.ZIP.Value
