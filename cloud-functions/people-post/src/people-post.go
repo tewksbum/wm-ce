@@ -430,13 +430,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
 			fullName = checkSetFullName(mkOutput, column)
+			// could do something here to make it immutable... if we get a hit... then suppress all other name values?
 			if fullName {
 				if dev {
 					log.Printf("tagged as fullname %v", input.Signature.EventID)
 				}
-				// column.MatchKey = ""
-				// column.PeopleERR.FirstName = 0
-				// column.PeopleERR.LastName = 0
+				// do we REALLY want to be doing this?
+				column.MatchKey = ""
+				column.PeopleERR.FirstName = 0
+				column.PeopleVER.IS_FIRSTNAME = false
+				column.PeopleERR.LastName = 0
+				column.PeopleVER.IS_LASTNAME = false
+				column.PeopleERR.ContainsFirstName = 0
+				column.PeopleERR.ContainsLastName = 0
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
 				if dev {
 					log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
