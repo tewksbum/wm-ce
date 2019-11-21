@@ -19,7 +19,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	// "github.com/ulule/deepcopier"
-	//lick me
 )
 
 // PubSubMessage is the payload of a pubsub event
