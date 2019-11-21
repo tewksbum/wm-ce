@@ -300,6 +300,7 @@ var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
+var reState = regexp.MustCompile(`(?i)^AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC$`)
 
 var listCityStateZip []CityStateZip
 
@@ -339,7 +340,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// var ClassYear string
 	var concatAdd bool
 	var concatAddCol int
-	// var concatCityState bool
+	var concatCityState bool
+	var concatCityStateCol int
 	var fullName bool
 	var emailCount int
 	var phoneCount int
@@ -404,6 +406,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			dormCol = index
 		} else if column.PeopleERR.Room == 1 {
 			roomCol = index
+		} else if column.PeopleERR.FullAddress == 1 {
+			if dev { log.Printf("Full Address: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			concatAdd = true
+			concatAddCol = index
+		} else if column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1 {
+			if dev { log.Printf("ConcatAddress: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+			concatCityState = true
+			concatCityStateCol = index
 		} 
 		
 		if column.PeopleERR.ContainsRole == 0 {
@@ -422,12 +432,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
 				if dev { log.Printf("LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
-			} else if column.PeopleERR.FullAddress == 1 || ( column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1 && column.PeopleERR.ContainsAddress == 1 ) {
-				if dev { log.Printf("Full Address: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
-				concatAdd = true
-				concatAddCol = index
-				// else if column.PeopleERR.ContainsState && column.PeopleERR.ContainsCity &&  == 1  {
-				// concatCityState = true
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
 				if dev { log.Printf("Address 1: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
@@ -594,37 +598,47 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// parse address as needed
-	if !concatAdd {
-		addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
-	} else {
-		addressInput = input.Columns[concatAddCol].Value
-	}
+	// if !concatCityState && !concatAdd {
+	// 	addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + " " + mkOutput.Country.Value
+	// } else if !concatAdd && concatCityState {
+	// 	addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + input.Columns[concatCityStateCol].Value
+	// } else if concatAdd && !concatCityState {
+	// 	addressInput = input.Columns[concatAddCol].Value
+	// } else if concatAdd && concatCityState {
+	// 	// this is potentially duplicate data?
+	// 	addressInput = input.Columns[concatAddCol].Value + input.Columns[concatCityStateCol].Value
+	// }
 
-	a := ParseAddress(addressInput)
-	log.Printf("address parser returned %v", a)
-	if len(a.CITY) > 0 {
-		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
-		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
-		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-		if len(a.COUNTRY) > 0 {
-			mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
-		}
-		mkOutput.ADPARSER.Value = "libpostal"
-		if len(a.PO_BOX) > 0 {
-			if len(a.HOUSE_NUMBER) > 0 {
-				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-				mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
-			} else {
-				mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
-				mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
-			}
-		} else {
-			mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-			mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-			mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
-		}
-	}
+	// if len(strings.TrimSpace(addressInput)) > 0 {
+	// 	a := ParseAddress(addressInput)
+	// 	log.Printf("address parser returned %v", a)
+	// 	if len(a.CITY) > 0 {
+	// 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
+	// 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
+	// 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+	// 		if len(a.COUNTRY) > 0 {
+	// 			mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+	// 		}
+	// 		mkOutput.ADPARSER.Value = "libpostal"
+	// 		if len(a.PO_BOX) > 0 {
+	// 			if len(a.HOUSE_NUMBER) > 0 {
+	// 				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+	// 				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+	// 				mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
+	// 			} else {
+	// 				mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
+	// 				mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
+	// 			}
+	// 		} else {
+	// 			mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+	// 			mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+	// 			mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+	// 		}
+	// 		if reState.MatchString(a.STATE) { SetMkField(&mkOutput, "COUNTRY", "US", "WM") }
+	// 	}
+	// }
+
+	AddressParse(&mkOutput &input, concatCityState, concatCityStateCol, concatAdd, concatAddCol)
 
 	// check zip city state match
 	ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
@@ -733,29 +747,32 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 
 			addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
-			a := ParseAddress(addressInput)
-			if dev { log.Printf("mpr address parser returned %v", a) }
-			if len(a.CITY) > 0 {
-				mkOutput.CITY.Value = strings.ToUpper(a.CITY)
-				mkOutput.STATE.Value = strings.ToUpper(a.STATE)
-				mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-				if len(a.COUNTRY) > 0 {
-					mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
-				}
-				mkOutput.ADPARSER.Value = "libpostal"
-				if len(a.PO_BOX) > 0 {
-					if len(a.HOUSE_NUMBER) > 0 {
+			if len(strings.TrimSpace(addressInput)) > 0 {
+				a := ParseAddress(addressInput)
+				if dev { log.Printf("mpr address parser returned %v", a) }
+				if len(a.CITY) > 0 {
+					mkOutput.CITY.Value = strings.ToUpper(a.CITY)
+					mkOutput.STATE.Value = strings.ToUpper(a.STATE)
+					mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
+					if len(a.COUNTRY) > 0 {
+						mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+					}
+					mkOutput.ADPARSER.Value = "libpostal"
+					if len(a.PO_BOX) > 0 {
+						if len(a.HOUSE_NUMBER) > 0 {
+							mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+							mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+							mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
+						} else {
+							mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
+							mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
+						}
+					} else {
 						mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
 						mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-						mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
-					} else {
-						mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
-						mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
+						mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
 					}
-				} else {
-					mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-					mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-					mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+					if reState.MatchString(a.STATE) { SetMkField(&mkOutput, "COUNTRY", "US", "WM") }
 				}
 			}
 
@@ -889,6 +906,54 @@ func IndexOf(element string, data []string) int {
 		}
 	}
 	return -1 //not found.
+}
+
+func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatCityStateCol int, concatAdd bool, concatAddCol int) {
+
+	if !concatCityState && !concatAdd {
+		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + mko.CITY.Value + " " + mko.STATE.Value + " " + mko.ZIP.Value 
+		if dev { log.Printf("!concatAdd + !concatCityState %v ", addressInput) }
+	} else if !concatAdd && concatCityState {
+		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + input.Columns[concatCityStateCol].Value
+		if dev { log.Printf("!concatAdd + concatCityState %v ", addressInput) }
+	} else if concatAdd && !concatCityState {
+		addressInput = input.Columns[concatAddCol].Value
+		if dev { log.Printf("concatAdd + !concatCityState %v ", addressInput) }
+	} else if concatAdd && concatCityState {
+		// this is potentially duplicate data?
+		addressInput = input.Columns[concatAddCol].Value + input.Columns[concatCityStateCol].Value
+		if dev { log.Printf("concatAdd + concatCityState %v ", addressInput) }
+	}
+
+	if len(strings.TrimSpace(addressInput)) > 0 {
+		a := ParseAddress(addressInput)
+		log.Printf("address parser returned %v", a)
+		if len(a.CITY) > 0 {
+			mko.CITY.Value = strings.ToUpper(a.CITY)
+			mko.STATE.Value = strings.ToUpper(a.STATE)
+			mko.ZIP.Value = strings.ToUpper(a.POSTCODE)
+			if len(a.COUNTRY) > 0 {
+				mko.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+			}
+			mko.ADPARSER.Value = "libpostal"
+			if len(a.PO_BOX) > 0 {
+				if len(a.HOUSE_NUMBER) > 0 {
+					mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+					mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+					mko.AD2.Value = strings.ToUpper(a.PO_BOX)
+				} else {
+					mko.AD1.Value = strings.ToUpper(a.PO_BOX)
+					mko.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
+				}
+			} else {
+				mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+				mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+				mko.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+			}
+			if reState.MatchString(a.STATE) { SetMkField(&mko, "COUNTRY", "US", "WM") }
+		}
+	}
+
 }
 
 func ParseAddress(address string) LibPostalParsed {
