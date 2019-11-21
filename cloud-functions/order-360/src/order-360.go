@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,7 +24,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerid"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventid"`
 	EventType string `json:"eventType" bigquery:"eventtype"`
@@ -53,21 +53,21 @@ type MatchKeyField struct {
 }
 
 type OrderOutput struct {
-	ID         MatchKeyField `json:"id" bigquery:"id"`
-	NUMBER     MatchKeyField `json:"number" bigquery:"number"`
-	DATE   	   MatchKeyField `json:"date" bigquery:"date"`
+	ID     MatchKeyField `json:"id" bigquery:"id"`
+	NUMBER MatchKeyField `json:"number" bigquery:"number"`
+	DATE   MatchKeyField `json:"date" bigquery:"date"`
 
 	CUSTOMERID MatchKeyField `json:"customerId" bigquery:"customerId"`
 
-	SUBTOTAL   MatchKeyField `json:"subtotal" bigquery:"subtotal"`
-	SHIPPING   MatchKeyField `json:"shipping" bigquery:"shipping"`
-	DISCOUNT   MatchKeyField `json:"discount" bigquery:"discount"`
-	TAX   	   MatchKeyField `json:"tax" bigquery:"tax"`
-	TOTAL  	   MatchKeyField `json:"total" bigquery:"total"`
+	SUBTOTAL MatchKeyField `json:"subtotal" bigquery:"subtotal"`
+	SHIPPING MatchKeyField `json:"shipping" bigquery:"shipping"`
+	DISCOUNT MatchKeyField `json:"discount" bigquery:"discount"`
+	TAX      MatchKeyField `json:"tax" bigquery:"tax"`
+	TOTAL    MatchKeyField `json:"total" bigquery:"total"`
 }
 
 type Signature360 struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerId"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerId"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventId"`
 	EventType string `json:"eventType" bigquery:"eventType"`
@@ -103,6 +103,8 @@ var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
+var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -132,7 +134,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// if we don't have a matchable key... drop!!
-	if (input.MatchKeys.ID.Value == "" && input.MatchKeys.NUMBER.Value == "") {
+	if input.MatchKeys.ID.Value == "" && input.MatchKeys.NUMBER.Value == "" {
 		return nil
 	}
 
@@ -143,7 +145,7 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := reAlphaNumeric.ReplaceAllString(BQPrefix+input.Signature.OwnerID, "")
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
@@ -183,15 +185,15 @@ func Order360(ctx context.Context, m PubSubMessage) error {
 
 	QueryText := fmt.Sprintf(
 		"SELECT * "+
-		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
-		"WHERE "+
+			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
+			"WHERE "+
 			"((s.RecordID = '%s') OR "+
 			"(m.key = '%s' and u = '%s') "+
 			"OR (m.key = '%s' and u = '%s')) "+
-		"ORDER BY timestamp DESC",
-		ProjectID, DatasetID, SetTableName, 
+			"ORDER BY timestamp DESC",
+		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
-		MatchByKey1, MatchByValue1, 
+		MatchByKey1, MatchByValue1,
 		MatchByKey2, MatchByValue2)
 	BQQuery := bq.Query(QueryText)
 	BQQuery.Location = "US"

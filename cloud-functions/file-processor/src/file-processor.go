@@ -36,7 +36,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
@@ -147,7 +147,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 
 			// store the file without an extension, the extension will be detected inside streamer
-			fileName := strconv.FormatInt(input.Signature.OwnerID, 10) + "/" + input.Signature.EventID
+			fileName := input.Signature.OwnerID + "/" + input.Signature.EventID
 			bucket := sb.Bucket(BucketName)
 			file := bucket.Object(fileName)
 			writer := file.NewWriter(ctx)
@@ -224,7 +224,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			// Call NER API
 			NerRequest := NERrequest{
-				Owner:  fmt.Sprintf("%v", input.Signature.OwnerID),
+				Owner:  input.Signature.OwnerID,
 				Source: "wemade",
 				Data:   GetColumnars(headers, records),
 			}

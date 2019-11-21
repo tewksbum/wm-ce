@@ -16,7 +16,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
@@ -54,17 +54,17 @@ type MatchKeyField struct {
 }
 
 type OrderOutput struct {
-	ID         MatchKeyField `json:"id"         bigquery:"id"`
-	NUMBER     MatchKeyField `json:"number"     bigquery:"number"`
-	DATE   	   MatchKeyField `json:"date"       bigquery:"date"`
+	ID     MatchKeyField `json:"id"         bigquery:"id"`
+	NUMBER MatchKeyField `json:"number"     bigquery:"number"`
+	DATE   MatchKeyField `json:"date"       bigquery:"date"`
 
 	CUSTOMERID MatchKeyField `json:"customerId" bigquery:"customerId"`
 
-	SUBTOTAL   MatchKeyField `json:"subtotal"   bigquery:"subtotal"`
-	SHIPPING   MatchKeyField `json:"shipping"   bigquery:"shipping"`
-	DISCOUNT   MatchKeyField `json:"discount"   bigquery:"discount"`
-	TAX   	   MatchKeyField `json:"tax" 	    bigquery:"tax"`
-	TOTAL  	   MatchKeyField `json:"total"      bigquery:"total"`
+	SUBTOTAL MatchKeyField `json:"subtotal"   bigquery:"subtotal"`
+	SHIPPING MatchKeyField `json:"shipping"   bigquery:"shipping"`
+	DISCOUNT MatchKeyField `json:"discount"   bigquery:"discount"`
+	TAX      MatchKeyField `json:"tax" 	    bigquery:"tax"`
+	TOTAL    MatchKeyField `json:"total"      bigquery:"total"`
 }
 
 type OrderERR struct {
@@ -72,7 +72,7 @@ type OrderERR struct {
 	Number     int `json:"Number"`
 	Date       int `json:"Date"`
 	CustomerID int `json:"CustomerID"`
-	SubTotal   int `json:"SubTotal"`	
+	SubTotal   int `json:"SubTotal"`
 	Shipping   int `json:"Shipping"`
 	Discount   int `json:"Tax"`
 	Tax        int `json:"Discount"`

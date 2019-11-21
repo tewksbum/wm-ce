@@ -24,7 +24,7 @@ var KindTemplate = os.Getenv("KINDTEMPLATTE")
 var Namespace = os.Getenv("NAMESPACE")
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`

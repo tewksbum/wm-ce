@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,7 +24,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerid"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventid"`
 	EventType string `json:"eventType" bigquery:"eventtype"`
@@ -59,14 +59,14 @@ type OrderDetailOutput struct {
 	ORDERNUMBER   MatchKeyField `json:"ordernumber" bigquery:"ordernumber"`
 	CONSIGNMENTID MatchKeyField `json:"consignmentid" bigquery:"consignmentid"`
 
-	PRODUCTID  MatchKeyField `json:"productid" bigquery:"productid"`
-	PRODUCTSKU MatchKeyField `json:"productsku" bigquery:"productsku"`
-	PRODUCTUPC MatchKeyField `json:"productupc" bigquery:"productupc"`
+	PRODUCTID       MatchKeyField `json:"productid" bigquery:"productid"`
+	PRODUCTSKU      MatchKeyField `json:"productsku" bigquery:"productsku"`
+	PRODUCTUPC      MatchKeyField `json:"productupc" bigquery:"productupc"`
 	PRODUCTQUANTITY MatchKeyField `json:"productquantity" bigquery:"productquantity"`
 }
 
 type Signature360 struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerId"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerId"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventId"`
 	EventType string `json:"eventType" bigquery:"eventType"`
@@ -101,6 +101,8 @@ var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
+
+var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -142,7 +144,7 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := reAlphaNumeric.ReplaceAllString(BQPrefix+input.Signature.OwnerID, "")
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
@@ -179,12 +181,12 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 
 	QueryText := fmt.Sprintf(
 		"SELECT * "+
-		"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
-		"WHERE "+
+			"FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values) u, UNNEST(signatures) s "+
+			"WHERE "+
 			"((s.RecordID = '%s') OR "+
 			"(m.key = '%s' and u = '%s')) "+
-		"ORDER BY timestamp DESC", 
-		ProjectID, DatasetID, SetTableName, 
+			"ORDER BY timestamp DESC",
+		ProjectID, DatasetID, SetTableName,
 		MatchByValue0,
 		MatchByKey1, MatchByValue1)
 

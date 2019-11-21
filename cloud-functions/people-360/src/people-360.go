@@ -9,8 +9,8 @@ import (
 	"log"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -31,7 +31,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerid"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventid"`
 	EventType string `json:"eventType" bigquery:"eventtype"`
@@ -106,7 +106,7 @@ type PeopleOutput struct {
 }
 
 type Signature360 struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerId"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerId"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventId"`
 	EventType string `json:"eventType" bigquery:"eventType"`
@@ -150,6 +150,8 @@ var ESPwd = os.Getenv("ELASTICPWD")
 var ESIndex = os.Getenv("ELASTICINDEX")
 var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
+
+var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -209,7 +211,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := Env + strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := reAlphaNumeric.ReplaceAllString(Env+input.Signature.OwnerID, "")
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
