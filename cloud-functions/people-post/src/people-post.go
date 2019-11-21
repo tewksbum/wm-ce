@@ -1050,7 +1050,7 @@ func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatC
 				mko.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
 			}
 			if reState.MatchString(a.STATE) {
-				SetMkField(&mko, "COUNTRY", "US", "WM")
+				SetMkField(mko, "COUNTRY", "US", "WM")
 			}
 		}
 	}
