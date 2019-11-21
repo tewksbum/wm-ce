@@ -32,7 +32,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
@@ -142,18 +142,18 @@ type PeopleERR struct {
 	AddressTypeHome     int `json:"ATHome"`
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
-	ContainsFirstName 	int `json:"ContainsFirstName"`
-	ContainsLastName 	int `json:"ContainsLastName"`
-	ContainsCountry 	int `json:"ContainsCountry"`
-	ContainsEmail 		int `json:"ContainsEmail"`
-	ContainsAddress 	int `json:"ContainsAddress"`
-	ContainsCity 		int `json:"ContainsCity"`
-	ContainsState 		int `json:"ContainsState"`
-	ContainsZipCode 	int `json:"ContainsZipCode"`
-	ContainsPhone 		int `json:"ContainsPhone"`
-	ContainsTitle 		int `json:"ContainsTitle"`
-	ContainsRole 		int `json:"ContainsRole"`
-	Junk 				int `json:"Junk"`
+	ContainsFirstName   int `json:"ContainsFirstName"`
+	ContainsLastName    int `json:"ContainsLastName"`
+	ContainsCountry     int `json:"ContainsCountry"`
+	ContainsEmail       int `json:"ContainsEmail"`
+	ContainsAddress     int `json:"ContainsAddress"`
+	ContainsCity        int `json:"ContainsCity"`
+	ContainsState       int `json:"ContainsState"`
+	ContainsZipCode     int `json:"ContainsZipCode"`
+	ContainsPhone       int `json:"ContainsPhone"`
+	ContainsTitle       int `json:"ContainsTitle"`
+	ContainsRole        int `json:"ContainsRole"`
+	Junk                int `json:"Junk"`
 }
 
 type ProductERR struct {
@@ -508,31 +508,43 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID)
+		}
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
+		}
 	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
+		}
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
 	if columnFlags.PeopleEmail {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> Email %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> Email %v", input.Signature.EventID)
+		}
 	}
 	if columnFlags.PeopleClientID {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
+		}
 	}
 	// if we don't have ANY columns... throw it to people to try out ver...
 	if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
 		flags.People = true
-		if dev { log.Printf("have a people entity >>> Headless %v", input.Signature.EventID) }
+		if dev {
+			log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
+		}
 	}
 
 	if columnFlags.ProductID && columnFlags.ProductName {
@@ -551,10 +563,16 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
-	if dev { log.Printf("entity flags %v %v", flags, input.Signature.EventID) }
-	if dev { log.Printf("column flags %v %v", columnFlags, input.Signature.EventID) }
-	if dev { log.Printf("columns %v %v", columns, input.Signature.EventID) }
-	
+	if dev {
+		log.Printf("entity flags %v %v", flags, input.Signature.EventID)
+	}
+	if dev {
+		log.Printf("column flags %v %v", columnFlags, input.Signature.EventID)
+	}
+	if dev {
+		log.Printf("columns %v %v", columns, input.Signature.EventID)
+	}
+
 	// run VER
 	for i, column := range columns {
 		column.EventVER = GetEventVER(&column)
@@ -582,12 +600,18 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				}
 				columns[i] = column
 			}
-			if dev { log.Printf("columns %v", columns) }
+			if dev {
+				log.Printf("columns %v", columns)
+			}
 		}
 
 		mlInput := BuildMLData(columns)
-		if dev { log.Printf("mlinput: %v", mlInput) }
-		if dev { log.Printf("columns: %v", columns) }
+		if dev {
+			log.Printf("mlinput: %v", mlInput)
+		}
+		if dev {
+			log.Printf("columns: %v", columns)
+		}
 		mlJSON, _ := json.Marshal(mlInput)
 		log.Printf("ML request %v", string(mlJSON))
 		reqBody := &ml.GoogleApi__HttpBody{
@@ -717,78 +741,78 @@ func GetPeopleERR(column string) PeopleERR {
 
 	key := strings.ToLower(column)
 	switch key {
-		case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname":
-			err.FirstName = 1
-		case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last":
-			err.LastName = 1
-		case "mi", "mi ", "mname", "m", "middle name", "middle_name":
-			err.MiddleName = 1
-		case "suffix", "jr., iii, etc.":
-			err.Suffix = 1
-		case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
-			err.Address1 = 1
-		case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
-			err.Address2 = 1
-		case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
-			err.Address3 = 1
-		case "city", "city ", "street city":
-			err.City = 1
-		case "state", "st", "state ", "state_province", "st ", "state province", "street state":
-			err.State = 1
-		case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
-			err.ZipCode = 1
-		case "citystzip", "city/st/zip ":
-			err.City = 1
-			err.State = 1
-			err.ZipCode = 1
-		case "county":
-			err.County = 1
-		case "country", "country (blank for us)":
-			err.Country = 1
-		case "address", "student address", "parent address", "home address", "permanent address":
-			err.FullAddress = 1
-		case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
-			err.Email = 1
-		case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
-			// err.Email = 1
-			err.ParentEmail = 1
-		case "gender", "m/f":
-			err.Gender = 1
-		case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname":
-			err.ParentFirstName = 1
-		case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname":
-			err.ParentLastName = 1
-		case "phone", "phone1", "hphone", "cphone", "mphone":
-			err.Phone = 1
-		case "bday", "birthday":
-			err.Birthday = 1
-		case "age":
-			err.Age = 1
-		case "pname", "pname1", "pname2", "pname 1", "pname 2":
-			err.ParentFirstName = 1
-			err.ParentLastName = 1
-			err.ParentName = 1
-		case "fullname", "full name", "student name", "students name":
-			err.FullName = 1
-			err.FirstName = 1
-			err.LastName = 1
-		case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence":
-			err.Dorm = 1
-		case "room", "room number", "room #":
-			err.Room = 1
-		case "organization":
-			err.Organization = 1
-		case "title", "course year", "grad date", "class", "grade": 
-			// also see contains logic...
-			err.Title = 1
-		case "studentid", "student id", "id":
-			err.TrustedID = 1
+	case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname":
+		err.FirstName = 1
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last":
+		err.LastName = 1
+	case "mi", "mi ", "mname", "m", "middle name", "middle_name":
+		err.MiddleName = 1
+	case "suffix", "jr., iii, etc.":
+		err.Suffix = 1
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
+		err.Address1 = 1
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
+		err.Address2 = 1
+	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
+		err.Address3 = 1
+	case "city", "city ", "street city":
+		err.City = 1
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+		err.State = 1
+	case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
+		err.ZipCode = 1
+	case "citystzip", "city/st/zip ":
+		err.City = 1
+		err.State = 1
+		err.ZipCode = 1
+	case "county":
+		err.County = 1
+	case "country", "country (blank for us)":
+		err.Country = 1
+	case "address", "student address", "parent address", "home address", "permanent address":
+		err.FullAddress = 1
+	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
+		err.Email = 1
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+		// err.Email = 1
+		err.ParentEmail = 1
+	case "gender", "m/f":
+		err.Gender = 1
+	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname":
+		err.ParentFirstName = 1
+	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname":
+		err.ParentLastName = 1
+	case "phone", "phone1", "hphone", "cphone", "mphone":
+		err.Phone = 1
+	case "bday", "birthday":
+		err.Birthday = 1
+	case "age":
+		err.Age = 1
+	case "pname", "pname1", "pname2", "pname 1", "pname 2":
+		err.ParentFirstName = 1
+		err.ParentLastName = 1
+		err.ParentName = 1
+	case "fullname", "full name", "student name", "students name":
+		err.FullName = 1
+		err.FirstName = 1
+		err.LastName = 1
+	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence":
+		err.Dorm = 1
+	case "room", "room number", "room #":
+		err.Room = 1
+	case "organization":
+		err.Organization = 1
+	case "title", "course year", "grad date", "class", "grade":
+		// also see contains logic...
+		err.Title = 1
+	case "studentid", "student id", "id":
+		err.TrustedID = 1
 	}
 
 	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
 		err.ContainsFirstName = 1
 	}
-	if (strings.Contains(key, "last") && strings.Contains(key, "name"))  || strings.Contains(key, "lname") {
+	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") {
 		err.ContainsLastName = 1
 	}
 	if strings.Contains(key, "country") {

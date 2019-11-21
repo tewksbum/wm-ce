@@ -24,7 +24,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerid"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerid"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventid"`
 	EventType string `json:"eventType" bigquery:"eventtype"`
@@ -63,7 +63,7 @@ type CampaignOutput struct {
 }
 
 type Signature360 struct {
-	OwnerID   int64  `json:"ownerId" bigquery:"ownerId"`
+	OwnerID   string `json:"ownerId" bigquery:"ownerId"`
 	Source    string `json:"source" bigquery:"source"`
 	EventID   string `json:"eventId" bigquery:"eventId"`
 	EventType string `json:"eventType" bigquery:"eventType"`

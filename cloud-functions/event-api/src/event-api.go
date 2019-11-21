@@ -28,7 +28,7 @@ type Customer struct {
 }
 
 type Event struct {
-	CustomerID  int64
+	CustomerID  string
 	Owner       string
 	EventID     string
 	EventType   string
@@ -41,7 +41,7 @@ type Event struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
@@ -164,7 +164,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 
 	// log the request
 	event := &Event{
-		CustomerID:  customer.Key.ID,
+		CustomerID:  customer.Key.Name,
 		Created:     time.Now(),
 		Source:      input.Source,
 		Owner:       input.Owner,
@@ -190,7 +190,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	output.Attributes = input.Attributes
 	output.EventData = input.EventData
 	output.Signature = Signature{
-		OwnerID:   customer.Key.ID,
+		OwnerID:   customer.Key.Name,
 		Source:    input.Source,
 		EventID:   input.EventID,
 		EventType: input.EventType,

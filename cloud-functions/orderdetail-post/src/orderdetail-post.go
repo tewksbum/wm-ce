@@ -16,7 +16,7 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
@@ -54,10 +54,10 @@ type MatchKeyField struct {
 }
 
 type OrderDetailOutput struct {
-	ID              MatchKeyField `json:"id"`
-	ORDERID         MatchKeyField `json:"orderid"`
-	ORDERNUMBER     MatchKeyField `json:"ordernumber"`
-	CONSIGNMENTID   MatchKeyField `json:"consignmentid"`
+	ID            MatchKeyField `json:"id"`
+	ORDERID       MatchKeyField `json:"orderid"`
+	ORDERNUMBER   MatchKeyField `json:"ordernumber"`
+	CONSIGNMENTID MatchKeyField `json:"consignmentid"`
 
 	PRODUCTID       MatchKeyField `json:"productid"`
 	PRODUCTSKU      MatchKeyField `json:"productsku"`
