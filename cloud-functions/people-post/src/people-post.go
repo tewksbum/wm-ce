@@ -529,6 +529,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ContainsLastName == 1 {
 				if dev { log.Printf("LName with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				SetMkField(&mkOutput, "LNAME", column.Value, column.Name)
+			} else if column.PeopleERR.ContainsAddress == 1 {
+				if dev { log.Printf("Ad1 with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
+				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			}
 			// if column.PeopleVER.IS_COUNTRY {
 			// 	if dev { log.Printf("VER COUNTRY: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
