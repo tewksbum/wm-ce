@@ -427,9 +427,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		if column.PeopleERR.ContainsRole == 0 {
-			if dev {
-				log.Printf("People role: %v", input.Signature.EventID)
-			}
+			if dev { log.Printf("People role: %v", input.Signature.EventID) }
 			// ***** check primary first
 			// if we detect a fullname, stop checking everything else
 			fullName = checkSetFullName(mkOutput, column)
@@ -606,20 +604,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// 	SetMkField(&mkOutput, "COUNTRY", column.Value, column.Name)
 			// }
 		} else if column.PeopleERR.ContainsRole == 1 {
-			if dev {
-				log.Printf("Non people role: %v", input.Signature.EventID)
-			}
+			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
 			// ***** check mpr second
 			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
-				if dev {
-					log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-				}
+				if dev { log.Printf("Parent FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
-				if dev {
-					log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-				}
+				if dev { log.Printf("Parent LName with VER & ERR & !FName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
@@ -666,47 +658,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		input.Columns[index] = column
 	}
-
-	// parse address as needed
-	// if !concatCityState && !concatAdd {
-	// 	addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + mkOutput.CITY.Value + " " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + " " + mkOutput.Country.Value
-	// } else if !concatAdd && concatCityState {
-	// 	addressInput = mkOutput.AD1.Value + " " + mkOutput.AD2.Value + " " + input.Columns[concatCityStateCol].Value
-	// } else if concatAdd && !concatCityState {
-	// 	addressInput = input.Columns[concatAddCol].Value
-	// } else if concatAdd && concatCityState {
-	// 	// this is potentially duplicate data?
-	// 	addressInput = input.Columns[concatAddCol].Value + input.Columns[concatCityStateCol].Value
-	// }
-
-	// if len(strings.TrimSpace(addressInput)) > 0 {
-	// 	a := ParseAddress(addressInput)
-	// 	log.Printf("address parser returned %v", a)
-	// 	if len(a.CITY) > 0 {
-	// 		mkOutput.CITY.Value = strings.ToUpper(a.CITY)
-	// 		mkOutput.STATE.Value = strings.ToUpper(a.STATE)
-	// 		mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
-	// 		if len(a.COUNTRY) > 0 {
-	// 			mkOutput.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
-	// 		}
-	// 		mkOutput.ADPARSER.Value = "libpostal"
-	// 		if len(a.PO_BOX) > 0 {
-	// 			if len(a.HOUSE_NUMBER) > 0 {
-	// 				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-	// 				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-	// 				mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
-	// 			} else {
-	// 				mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
-	// 				mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
-	// 			}
-	// 		} else {
-	// 			mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-	// 			mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-	// 			mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
-	// 		}
-	// 		if reState.MatchString(a.STATE) { SetMkField(&mkOutput, "COUNTRY", "US", "WM") }
-	// 	}
-	// }
 
 	AddressParse(&mkOutput, &input, concatCityState, concatCityStateCol, concatAdd, concatAddCol)
 
@@ -1154,15 +1105,19 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 }
 
 func checkSetFullName(mko PeopleOutput, col InputColumn) bool {
+	if dev { log.Printf("checking Full Name...") }
 	nameParts := strings.Split(col.Value, " ")
 	if len(nameParts) > 1 && col.PeopleERR.FirstName == 1 && col.PeopleERR.LastName == 1 {
+		if dev { log.Printf("have multi-name...") }
 		if strings.Contains(nameParts[0], ",") {
 			commaLess := strings.Replace(nameParts[0], ",", "", 1)
 			SetMkField(&mko, "FNAME", strings.Join(nameParts[1:], ""), col.Name)
 			SetMkField(&mko, "LNAME", commaLess, col.Name)
+			if dev { log.Printf("commaLess...: %v ", commaLess) }
 		} else {
 			SetMkField(&mko, "FNAME", nameParts[0], col.Name)
 			SetMkField(&mko, "LNAME", strings.Join(nameParts[1:], " "), col.Name)
+			if dev { log.Printf("fullname name: %v ", nameParts[0]) }
 		}
 		return true
 	} else {
