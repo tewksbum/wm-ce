@@ -435,9 +435,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if dev {
 					log.Printf("tagged as fullname %v", input.Signature.EventID)
 				}
-				column.MatchKey = ""
-				column.PeopleERR.FirstName = 0
-				column.PeopleERR.LastName = 0
+				// column.MatchKey = ""
+				// column.PeopleERR.FirstName = 0
+				// column.PeopleERR.LastName = 0
 			} else if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
 				if dev {
 					log.Printf("FName with VER & ERR & !LName ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
@@ -652,6 +652,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if matchKey != "" {
 			// if NOTHING else has been set... give the model a try...
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				log.Printf("trying to fill in blank field...: ")
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
 		}
@@ -978,8 +979,12 @@ func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatC
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(addressInput)
 		log.Printf("address parser returned %v", a)
-		if len(a.CITY) > 0 {
-			mko.CITY.Value = strings.ToUpper(a.CITY)
+		if len(a.CITY) > 0 || len(a.CITY_DISTRICT) > 0 {
+			if len(a.CITY) > 0 {
+				mko.CITY.Value = strings.ToUpper(a.CITY)
+			} else {
+				mko.CITY.Value = strings.ToUpper(a.CITY_DISTRICT)
+			}
 			mko.STATE.Value = strings.ToUpper(a.STATE)
 			mko.ZIP.Value = strings.ToUpper(a.POSTCODE)
 			if len(a.COUNTRY) > 0 {

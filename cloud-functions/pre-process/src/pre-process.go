@@ -754,9 +754,9 @@ func GetPeopleERR(column string) PeopleERR {
 			err.ParentEmail = 1
 		case "gender", "m/f":
 			err.Gender = 1
-		case "pfname", "pfname1", "pfname2":
+		case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname":
 			err.ParentFirstName = 1
-		case "plname", "plname1", "plname2":
+		case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname":
 			err.ParentLastName = 1
 		case "phone", "phone1", "hphone", "cphone", "mphone":
 			err.Phone = 1
