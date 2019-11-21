@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 	"reflect"
-	"strconv"
+	"regexp"
 	"strings"
 	"time"
 
@@ -99,6 +99,8 @@ var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 
+var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -134,7 +136,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := BQPrefix + strconv.FormatInt(input.Signature.OwnerID, 10)
+	DatasetID := reAlphaNumeric.ReplaceAllString(BQPrefix+input.Signature.OwnerID, "")
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
