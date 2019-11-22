@@ -211,7 +211,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := reAlphaNumeric.ReplaceAllString(Env+input.Signature.OwnerID, "")
+	DatasetID := strings.ToLower(reAlphaNumeric.ReplaceAllString(Env+input.Signature.OwnerID, ""))
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
@@ -375,8 +375,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		FiberKeys = append(FiberKeys, dsFiberGetKey)
 		Fibers = append(Fibers, PeopleFiber{})
 	}
-	if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
-		log.Fatalf("Error fecthing fibers: %v", err)
+	if len(FiberKeys) > 0 {
+		if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
+			log.Fatalf("Error fecthing fibers: %v", err)
+		}
 	}
 
 	// for _, fiber := range FiberCollection {
