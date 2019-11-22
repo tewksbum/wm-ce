@@ -401,7 +401,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.ContainsStudentRole == 1 {
 			SetMkField(&mkOutput, "ROLE", column.Value, column.Name)
 			roleCount++
-		else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
+		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if dev {
 				log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
