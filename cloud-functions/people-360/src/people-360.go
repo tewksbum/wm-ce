@@ -250,7 +250,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store in DS
-	dsNameSpace := fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
+	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
 	dsKind := "Fiber"
 	dsKey := datastore.NameKey(dsKind, fiber.FiberID, nil)
 	dsKey.Namespace = dsNameSpace
