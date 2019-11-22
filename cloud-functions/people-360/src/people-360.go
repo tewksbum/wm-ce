@@ -250,9 +250,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store in DS
+	dsNameSpace := fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
 	dsKind := "Fiber"
 	dsKey := datastore.NameKey(dsKind, fiber.FiberID, nil)
-	dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
+	dsKey.Namespace = dsNameSpace
 	dsFiber := GetFiberDS(&fiber)
 	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
 		log.Fatalf("Exception storing %v sig %v, error %v", dsKind, input.Signature, err)
@@ -369,7 +370,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	var FiberKeys []*datastore.Key
 	for _, fiber := range FiberCollection {
-		FiberKeys = append(FiberKeys, datastore.NameKey(dsKind, fiber, nil))
+		dsFiberGetKey := datastore.NameKey(dsKind, fiber, nil)
+		dsFiberGetKey.Namespace = dsNameSpace
+		FiberKeys = append(FiberKeys, dsFiberGetKey)
+
+		dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
 	}
 	Fibers := make([]PeopleFiber, len(FiberKeys))
 	if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
@@ -523,9 +528,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// record the set id in DS
 	dsKind = "Set"
 	dsKey = datastore.NameKey(dsKind, output.ID, nil)
+	dsKey.Namespace = dsNameSpace
+
 	var setDs SetDS
 	setDs.CreatedAt = output.CreatedAt
-	dsKey.Namespace = fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID)
 	if _, err := ds.Put(ctx, dsKey, &setDs); err != nil {
 		log.Fatalf("Exception storing %v sig %v, error %v", dsKind, input.Signature, err)
 	}
