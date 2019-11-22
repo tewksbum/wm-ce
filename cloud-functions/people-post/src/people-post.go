@@ -725,7 +725,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				fullName = checkSetFullName(&mkOutput, column)
 			}
-		} else if matchKey != "" {
+		} else if len(matchKey) > 0 {
 			// if NOTHING else has been set... give the model a try...
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				log.Printf("trying to fill in blank field...: ")
@@ -739,20 +739,20 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	AddressParse(&mkOutput, &input, concatCityState, concatCityStateCol, concatAdd, concatAddCol)
 
 	// check zip city state match
-	ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
-	// >>>>>disable during development...
-	if ZipCheck == false && len(mkOutput.AD1.Value) > 0 && false {
-		address := strings.Join([]string{mkOutput.AD1.Value, mkOutput.AD2.Value, mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value}, ",")
-		correctedOutputAddress := CorrectAddress(address)
-		if len(correctedOutputAddress) > 0 {
-			mkOutput.ADCORRECT.Value = "ZipCheck"
-			mkOutput.AD1.Value = strings.Join([]string{correctedOutputAddress[0].Components.PrimaryNumber, " ", correctedOutputAddress[0].Components.StreetPredirection, " ", correctedOutputAddress[0].Components.StreetName, " ", correctedOutputAddress[0].Components.StreetSuffix}, "")
-			mkOutput.AD2.Value = strings.Join([]string{correctedOutputAddress[0].Components.SecondaryDesignator, " ", correctedOutputAddress[0].Components.SecondaryNumber}, "")
-			mkOutput.CITY.Value = correctedOutputAddress[0].Components.CityName
-			mkOutput.STATE.Value = correctedOutputAddress[0].Components.StateAbbreviation
-			mkOutput.ZIP.Value = correctedOutputAddress[0].Components.Zipcode
-		}
-	}
+	// ZipCheck := CheckCityStateZip(mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value)
+	// // >>>>>disable during development...
+	// if ZipCheck == false && len(mkOutput.AD1.Value) > 0 && false {
+	// 	address := strings.Join([]string{mkOutput.AD1.Value, mkOutput.AD2.Value, mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value}, ",")
+	// 	correctedOutputAddress := CorrectAddress(address)
+	// 	if len(correctedOutputAddress) > 0 {
+	// 		mkOutput.ADCORRECT.Value = "ZipCheck"
+	// 		mkOutput.AD1.Value = strings.Join([]string{correctedOutputAddress[0].Components.PrimaryNumber, " ", correctedOutputAddress[0].Components.StreetPredirection, " ", correctedOutputAddress[0].Components.StreetName, " ", correctedOutputAddress[0].Components.StreetSuffix}, "")
+	// 		mkOutput.AD2.Value = strings.Join([]string{correctedOutputAddress[0].Components.SecondaryDesignator, " ", correctedOutputAddress[0].Components.SecondaryNumber}, "")
+	// 		mkOutput.CITY.Value = correctedOutputAddress[0].Components.CityName
+	// 		mkOutput.STATE.Value = correctedOutputAddress[0].Components.StateAbbreviation
+	// 		mkOutput.ZIP.Value = correctedOutputAddress[0].Components.Zipcode
+	// 	}
+	// }
 
 	// TODO: check for overriding default value... 2x title values
 	if roleCount > 0 {
@@ -761,7 +761,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// pub the record
 	log.Printf("pubbing student...: %v", mkOutput)
-	pubRecord(ctx, &input, mkOutput)
+	pubRecord(ctx, &input, mkOutput, "")
 
 	// handle MAR values
 	if emailCount > 1 {
@@ -781,7 +781,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if dev {
 				log.Printf("pubbing MAR email %v ", mkOutput.EMAIL.Value)
 			}
-			pubRecord(ctx, &input, mkOutput)
+			pubRecord(ctx, &input, mkOutput, "")
 		}
 	}
 	if phoneCount > 1 {
@@ -795,7 +795,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if dev {
 				log.Printf("pubbing MAR phone %v ", mkOutput.PHONE.Value)
 			}
-			pubRecord(ctx, &input, mkOutput)
+			pubRecord(ctx, &input, mkOutput, "")
 		}
 	}
 	if haveDorm {
@@ -814,7 +814,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if dev {
 			log.Printf("pubbing Dorm %v ", input.Columns[dormCol].Name)
 		}
-		pubRecord(ctx, &input, mkOutput)
+		pubRecord(ctx, &input, mkOutput, "")
 	}
 
 	// handle mpr
@@ -823,42 +823,42 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			log.Printf("mpr loop %v", i)
 		}
 		// if dev { log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value) }
-		if (mpr[i].FNAME.Value != "") || (mpr[i].EMAIL.Value != "") {
+		if (len(mpr[i].FNAME.Value) > 0) || (len(mpr[i].EMAIL.Value) > 0) {
 			if dev {
 				log.Printf("have mpr value %v", i)
 			}
-			if mpr[i].FNAME.Value != "" {
+			if len(mpr[i].FNAME.Value) > 0 {
 				SetMkField(&mkOutput, "FNAME", mpr[i].FNAME.Value, mpr[i].FNAME.Source)
 			} else {
 				SetMkField(&mkOutput, "FNAME", "", "")
 			}
-			if mpr[i].LNAME.Value != "" {
+			if len(mpr[i].LNAME.Value) > 0 {
 				SetMkField(&mkOutput, "LNAME", mpr[i].LNAME.Value, mpr[i].LNAME.Source)
 			}
-			if mpr[i].AD1.Value != "" {
+			if len(mpr[i].AD1.Value) > 0 {
 				SetMkField(&mkOutput, "AD1", mpr[i].AD1.Value, mpr[i].AD1.Source)
 			}
-			if mpr[i].AD2.Value != "" {
+			if len(mpr[i].AD2.Value) > 0 {
 				SetMkField(&mkOutput, "AD2", mpr[i].AD2.Value, mpr[i].AD2.Source)
 			}
-			if mpr[i].AD3.Value != "" {
+			if len(mpr[i].AD3.Value) > 0 {
 				SetMkField(&mkOutput, "AD3", mpr[i].AD3.Value, mpr[i].AD3.Source)
 			}
-			if mpr[i].CITY.Value != "" {
+			if len(mpr[i].CITY.Value) > 0 {
 				SetMkField(&mkOutput, "CITY", mpr[i].CITY.Value, mpr[i].CITY.Source)
 			}
-			if mpr[i].STATE.Value != "" {
+			if len(mpr[i].STATE.Value) > 0 {
 				SetMkField(&mkOutput, "STATE", mpr[i].STATE.Value, mpr[i].STATE.Source)
 			}
-			if mpr[i].ZIP.Value != "" {
+			if len(mpr[i].ZIP.Value) > 0 {
 				SetMkField(&mkOutput, "ZIP", mpr[i].ZIP.Value, mpr[i].ZIP.Source)
 			}
-			if mpr[i].EMAIL.Value != "" {
+			if len(mpr[i].EMAIL.Value) > 0 {
 				SetMkField(&mkOutput, "EMAIL", mpr[i].EMAIL.Value, mpr[i].EMAIL.Source)
 			} else {
 				SetMkField(&mkOutput, "EMAIL", "", "")
 			}
-			if mpr[i].PHONE.Value != "" {
+			if len(mpr[i].PHONE.Value) > 0 {
 				SetMkField(&mkOutput, "PHONE", mpr[i].PHONE.Value, mpr[i].PHONE.Source)
 			} else {
 				SetMkField(&mkOutput, "PHONE", "", "")
@@ -899,7 +899,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 
 			mkOutput.ROLE.Value = "parent" // this should be generalized
-			pubRecord(ctx, &input, mkOutput)
+			pubRecord(ctx, &input, mkOutput, "-"+strconv.Itoa(i+1))
 
 		}
 	}
@@ -1160,9 +1160,12 @@ func extractMemberNumb(colVal string) int {
 	return 0
 }
 
-func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput) {
+func pubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string) {
 	var output Output
 	output.Signature = input.Signature
+	if len(suffix) > 0 {
+		output.Signature.RecordID += suffix
+	}
 	output.Passthrough = input.Passthrough
 
 	output.MatchKeys = mkOutput
