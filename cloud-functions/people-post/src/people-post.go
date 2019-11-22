@@ -641,7 +641,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
 			
 			if column.PeopleERR.ParentName == 1 {
-				fullName = checkSetFullName(&mkOutput, mpr[memNumb])	
+				// fullName = checkSetFullName(&mkOutput, mpr[memNumb])
+				fullName = checkSetFullName(&mkOutput, column)
 			} else if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
 				if dev { log.Printf("Parent ERR FName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].FNAME.Value = column.Value
@@ -695,7 +696,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ContainsName == 1  { 
 				// already in role = 1 branch...
 				// at this point, have already hopefully cleared the parent fname, lname...
-// fullName = checkSetFullName(&mkOutput, column)
+				fullName = checkSetFullName(&mkOutput, column)
 			}
 		} else if matchKey != "" {
 			// if NOTHING else has been set... give the model a try...
