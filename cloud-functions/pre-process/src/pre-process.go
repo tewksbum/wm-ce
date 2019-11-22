@@ -840,6 +840,7 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
 		err.ContainsZipCode = 1
+		err.ZipCode = 1
 	}
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
