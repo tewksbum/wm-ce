@@ -144,7 +144,7 @@ type PeopleERR struct {
 	AddressTypeShipping int `json:"ATShipping"`
 	ContainsFirstName   int `json:"ContainsFirstName"`
 	ContainsLastName    int `json:"ContainsLastName"`
-	ContainsName    	int `json:"ContainsName"`
+	ContainsName        int `json:"ContainsName"`
 	ContainsCountry     int `json:"ContainsCountry"`
 	ContainsEmail       int `json:"ContainsEmail"`
 	ContainsAddress     int `json:"ContainsAddress"`
@@ -820,7 +820,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") {
 		err.ContainsLastName = 1
 	}
-	if (strings.Contains(key, "name") {
+	if strings.Contains(key, "name") {
 		err.ContainsName = 1
 	}
 	if strings.Contains(key, "country") {
