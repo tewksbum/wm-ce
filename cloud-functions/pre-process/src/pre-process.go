@@ -153,6 +153,7 @@ type PeopleERR struct {
 	ContainsPhone       int `json:"ContainsPhone"`
 	ContainsTitle       int `json:"ContainsTitle"`
 	ContainsRole        int `json:"ContainsRole"`
+	ContainsStudentRole int `json:"ContainsStudentRole"`
 	Junk                int `json:"Junk"`
 }
 
@@ -740,18 +741,19 @@ func GetPeopleERR(column string) PeopleERR {
 	var err PeopleERR
 
 	key := strings.ToLower(column)
+	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname":
+	case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last", "surname", "student last name":
 		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name", "middle_name":
+	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
@@ -759,7 +761,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.City = 1
 	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
 		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "zip postcode", "street zip":
+	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
@@ -776,7 +778,7 @@ func GetPeopleERR(column string) PeopleERR {
 	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
 		// err.Email = 1
 		err.ParentEmail = 1
-	case "gender", "m/f":
+	case "gender", "m/f", "sex", "student sex", "student gender":
 		err.Gender = 1
 	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname":
 		err.ParentFirstName = 1
@@ -807,6 +809,8 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Title = 1
 	case "studentid", "student id", "id":
 		err.TrustedID = 1
+	case "role":
+		err.ContainsStudentRole = 1
 	}
 
 	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {

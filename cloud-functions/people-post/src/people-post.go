@@ -86,6 +86,7 @@ type PeopleOutput struct {
 	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
 	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
+	ADCORRECT MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
 
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
@@ -149,6 +150,7 @@ type PeopleERR struct {
 	ContainsPhone       int `json:"ContainsPhone"`
 	ContainsTitle       int `json:"ContainsTitle"`
 	ContainsRole        int `json:"ContainsRole"`
+	ContainsStudentRole int `json:"ContainsStudentRole"`
 	Junk                int `json:"Junk"`
 }
 
@@ -353,6 +355,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var mpr [3]PeopleOutput
 	var memNumb int
 	// var addressInput string
+	var roleCount int
 
 	// MPR checks
 	memNumb = 0
@@ -373,6 +376,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		concatAdd = false
 		// concatCityState = false
 		memNumb = extractMemberNumb(column.Name) // used for mpr
+		roleCount = 0
 
 		// assign ML prediction to column
 		predictionValue := input.Prediction.Predictions[index]
@@ -382,6 +386,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// AdType
 		mkOutput.ADTYPE.Value = AssignAddressType(&column)
+		mkOutput.ADCORRECT.Value = 0
 
 		if dev {
 			log.Printf("Posting column, value, prediction: %v %v %v %v", column.Name, column.Value, matchKey, input.Signature.EventID)
@@ -393,6 +398,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetMkField(&mkOutput, "CLIENTID", trustedID, column.Name)
 		} else if column.PeopleERR.Organization == 1 {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
+		} else if column.PeopleERR.Gender == 1 {
+			SetMkField(&mkOutput, "GENDER", column.Value, column.Name)
+		else if column.PeopleERR.ContainsStudentRole == 1 {
+				SetMkField(&mkOutput, "ROLE", column.Value, column.Name)
+				roleCount++
 		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if dev {
@@ -703,12 +713,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		address := strings.Join([]string{mkOutput.AD1.Value, mkOutput.AD2.Value, mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value}, ",")
 		correctedOutputAddress := CorrectAddress(address)
 		if len(correctedOutputAddress) > 0 {
+			mkOutput.ADCORRECT.Value = 1
 			mkOutput.AD1.Value = strings.Join([]string{correctedOutputAddress[0].Components.PrimaryNumber, " ", correctedOutputAddress[0].Components.StreetPredirection, " ", correctedOutputAddress[0].Components.StreetName, " ", correctedOutputAddress[0].Components.StreetSuffix}, "")
 			mkOutput.AD2.Value = strings.Join([]string{correctedOutputAddress[0].Components.SecondaryDesignator, " ", correctedOutputAddress[0].Components.SecondaryNumber}, "")
 			mkOutput.CITY.Value = correctedOutputAddress[0].Components.CityName
 			mkOutput.STATE.Value = correctedOutputAddress[0].Components.StateAbbreviation
 			mkOutput.ZIP.Value = correctedOutputAddress[0].Components.Zipcode
 		}
+	}
+
+// TODO: check for overriding default value... 2x title values
+	if roleCount > 0 {
+		// what do we do... when dafault role was submitted?  in our case... take the max value?
 	}
 
 	// pub the record

@@ -88,6 +88,7 @@ type PeopleOutput struct {
 	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
 	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
+	ADCORRECT MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
 
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
