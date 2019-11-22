@@ -19,9 +19,9 @@ type APIOutput struct {
 
 // DatastoreCustomer contains wemade Customer fields
 type DatastoreCustomer struct {
-	Name        string         `json:"name"`
 	ID          *int64         `json:"id" datastore:"-"`
 	ExternalID  *string        `json:"externalId" datastore:"-"`
+	Name        string         `json:"name"`
 	Owner       string         `json:"owner"`
 	AccessKey   string         `json:"accessKey"`
 	Enabled     bool           `json:"enabled"`
@@ -29,4 +29,10 @@ type DatastoreCustomer struct {
 	CreatedBy   *datastore.Key `json:"createdBy"`
 	Key         *datastore.Key `json:"key" datastore:"__key__"`
 	Updated     bool           `json:"-" datastore:"-"`
+}
+
+// DSFilter an filter instance
+type DSFilter struct {
+	Filter string
+	Value  interface{}
 }
