@@ -723,7 +723,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if dev {
 					log.Printf("Parent loose name: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
-				fullName = checkSetFullName(&mkOutput, column)
+				fullName = checkSetFullName(&mpr[memNumb], column)
 			}
 		} else if len(matchKey) > 0 {
 			// if NOTHING else has been set... give the model a try...
@@ -820,7 +820,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// handle mpr
 	for i := 0; i < len(mpr); i++ {
 		if dev {
-			log.Printf("mpr loop %v", i)
+			log.Printf("mpr loop %v values %v", i, mpr[i])
 		}
 		// if dev { log.Printf("will generate mpr if it has fname, email %v %v", mpr[i].FNAME.Value, mpr[i].EMAIL.Value) }
 		if (len(mpr[i].FNAME.Value) > 0) || (len(mpr[i].EMAIL.Value) > 0) {
