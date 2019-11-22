@@ -74,7 +74,7 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 				return nil, logger.Err(err)
 			}
 		} else {
-			if c.CreatedBy != owner.Key {
+			if c.CreatedBy.String() != owner.Key.String() {
 				return nil, logger.ErrFmtStr(ErrRecordNotCreatedBy, EntityCustomer)
 			}
 		}

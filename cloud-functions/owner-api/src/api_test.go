@@ -39,7 +39,7 @@ func TestUpsert(t *testing.T) {
 		// "accessKey": "3bb44f5242738d99820cd6a6b9588ae426749b88",
 		"customer": map[string]interface{}{
 			// "id":         5631844431167488,
-			"externalId": "ocmtest",
+			"externalId": "testorg",
 			"owner":      "ocmtest-test",
 			"name":       "OCMtest",
 			"enabled":    true,
