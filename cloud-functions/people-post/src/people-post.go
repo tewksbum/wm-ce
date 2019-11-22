@@ -624,6 +624,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					log.Printf("Ad1 with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
+			} else if column.PeopleERR.ContainsZipCode == 1 {
+				if dev {
+					log.Printf("Zip with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+				}
+				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
 			}
 		} else if column.PeopleERR.ContainsRole == 1 {
 			if dev {
@@ -1021,7 +1026,7 @@ func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatC
 			mko.ADPARSER.Value = "libpostal"
 			if len(a.PO_BOX) > 0 {
 				if len(a.HOUSE_NUMBER) > 0 {
-					mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+					mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB)
 					mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 					mko.AD2.Value = strings.ToUpper(a.PO_BOX)
 				} else {
