@@ -27,12 +27,10 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 		return customer, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	accessKey := input.AccessKey
-
 	filters := []DSFilter{
 		DSFilter{
 			Filter: FilterCustomersAccessKey,
-			Value:  accessKey,
+			Value:  input.AccessKey,
 		},
 	}
 	owner, err := getCustomer(ctx, projID, namespace, filters, true)
@@ -50,9 +48,9 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 	// if input.Customer.ExternalID == nil {
 	// 	return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "ExternalID is not set")
 	// }
-
+	accessKey := generateAccessKey(owner.AccessKey)
 	key := ds.BuildKey(EntityCustomer, namespace, input.Customer.ID, input.Customer.ExternalID)
-	input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
+	input.Customer.AccessKey = accessKey
 	if input.Customer.ID != nil || input.Customer.ExternalID != nil {
 		filters = []DSFilter{
 			DSFilter{
