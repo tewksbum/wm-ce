@@ -1169,7 +1169,8 @@ func checkSetFullName(mko *PeopleOutput, col InputColumn) bool {
 	if dev {
 		log.Printf("checking Full Name...")
 	}
-	if col.PeopleERR.FullName == 1 || (col.PeopleVER.IS_FIRSTNAME && col.PeopleVER.IS_LASTNAME && ((col.PeopleERR.ContainsFirstName == 1 && col.PeopleERR.ContainsLastName == 1) || (col.PeopleERR.ContainsFirstName == 0 && col.PeopleERR.ContainsLastName == 0))) {
+	if col.PeopleERR.ContainsRole == 1 || col.PeopleERR.FullName == 1 || 
+		(col.PeopleVER.IS_FIRSTNAME && col.PeopleVER.IS_LASTNAME && ((col.PeopleERR.ContainsFirstName == 1 && col.PeopleERR.ContainsLastName == 1) || (col.PeopleERR.ContainsFirstName == 0 && col.PeopleERR.ContainsLastName == 0))) {
 		nameParts := strings.Split(col.Value, " ")
 		if len(nameParts) > 1 {
 			if dev {
