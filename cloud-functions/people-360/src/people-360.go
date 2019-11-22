@@ -151,6 +151,8 @@ var ESPwd = os.Getenv("ELASTICPWD")
 var ESIndex = os.Getenv("ELASTICINDEX")
 var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
+var DSKindSet = os.Getenv("DSKINDSET")
+var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -252,7 +254,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// store in DS
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
-	dsKey := datastore.NameKey("Fiber", fiber.FiberID, nil)
+	dsKey := datastore.NameKey(DSKindFiber, fiber.FiberID, nil)
 	dsKey.Namespace = dsNameSpace
 	dsFiber := GetFiberDS(&fiber)
 	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
@@ -371,7 +373,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var FiberKeys []*datastore.Key
 	var Fibers []PeopleFiber
 	for _, fiber := range FiberCollection {
-		dsFiberGetKey := datastore.NameKey("Fiber", fiber, nil)
+		dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
 		dsFiberGetKey.Namespace = dsNameSpace
 		FiberKeys = append(FiberKeys, dsFiberGetKey)
 		Fibers = append(Fibers, PeopleFiber{})
@@ -527,7 +529,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// record the set id in DS
-	dsKey = datastore.NameKey("Set", output.ID, nil)
+	dsKey = datastore.NameKey(DSKindSet, output.ID, nil)
 	dsKey.Namespace = dsNameSpace
 
 	var setDs SetDS
@@ -539,7 +541,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// remove expired sets from DS
 	var SetKeys []*datastore.Key
 	for _, set := range ExpiredSetCollection {
-		setKey := datastore.NameKey("Set", set, nil)
+		setKey := datastore.NameKey(DSKindSet, set, nil)
 		setKey.Namespace = dsNameSpace
 		SetKeys = append(SetKeys, setKey)
 	}

@@ -98,6 +98,8 @@ var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
+var DSKindSet = os.Getenv("DSKINDSET")
+var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -136,7 +138,7 @@ func Campaign360(ctx context.Context, m PubSubMessage) error {
 	fiberMeta := &bigquery.TableMetadata{
 		Schema: bc,
 	}
-	DatasetID := reAlphaNumeric.ReplaceAllString(BQPrefix+input.Signature.OwnerID, "")
+	DatasetID := strings.ToLower(reAlphaNumeric.ReplaceAllString(BQPrefix+input.Signature.OwnerID, ""))
 	// make sure dataset exists
 	dsmeta := &bigquery.DatasetMetadata{
 		Location: "US", // Create the dataset in the US.
@@ -300,13 +302,12 @@ func GetMatchKeyFields(v []MatchKey360, key string) MatchKey360 {
 }
 
 func Contains(slice []string, item string) bool {
-	set := make(map[string]struct{}, len(slice))
-	for _, s := range slice {
-		set[s] = struct{}{}
+	for _, v := range slice {
+		if strings.EqualFold(v, item) {
+			return true
+		}
 	}
-
-	_, ok := set[item]
-	return ok
+	return false
 }
 
 func ConvertPassthrough(v map[string]string) []Passthrough360 {
