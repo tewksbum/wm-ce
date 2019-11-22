@@ -537,7 +537,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var SetKeys []*datastore.Key
 	for _, set := range ExpiredSetCollection {
 		setKey := datastore.NameKey("Set", set, nil)
-		setKey.NameSpace = dsNameSpace
+		setKey.Namespace = dsNameSpace
 		SetKeys = append(SetKeys, setKey)
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
