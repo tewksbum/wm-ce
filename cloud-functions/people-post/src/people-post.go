@@ -514,7 +514,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// type email if ends with gmail, yahoo, hotmail
 				if len(mkOutput.EMAIL.Value) > 0 {
 					email := strings.ToLower(mkOutput.EMAIL.Value)
-					if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") {
+					if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") || strings.HasSuffix(email, "msn.com") || strings.HasSuffix(email, "aol.com") || strings.HasSuffix(email, "comcast.net") {
 						mkOutput.EMAIL.Type = "Private"
 					}
 				}
