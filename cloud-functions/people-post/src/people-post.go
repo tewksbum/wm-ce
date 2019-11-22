@@ -600,7 +600,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					log.Printf("VER ADDRESS3 & !Junk: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
 				SetMkField(&mkOutput, "AD3", column.Value, column.Name)
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 {
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 {
 				if dev {
 					log.Printf("VER CITY & !Junk, Fname, Lname, Mname ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
@@ -635,12 +635,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					log.Printf("Ad1 with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
-			} else if column.PeopleERR.ContainsZipCode == 1 {
-				if dev {
-					log.Printf("Zip with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-				}
-				SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
-			}
+			} 
+			// else if column.PeopleERR.ContainsZipCode == 1 {
+			// 	if dev {
+			// 		log.Printf("Zip with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
+			// 	}
+			// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
+			// }
 		} else if column.PeopleERR.ContainsRole == 1 {
 			if dev {
 				log.Printf("Non people role: %v", input.Signature.EventID)
