@@ -599,7 +599,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					log.Printf("VER STATE: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
 				SetMkField(&mkOutput, "STATE", column.Value, column.Name)
-			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.Junk == 0 {
+			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode && column.PeopleERR.Junk == 0 {
 				if dev {
 					log.Printf("VER ZIP: %v %v %v", column.Name, column.Value, input.Signature.EventID)
 				}
