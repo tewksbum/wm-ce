@@ -12,6 +12,8 @@ var (
 const (
 	// EntityCustomer Customer kind - table
 	EntityCustomer string = "Customer"
+	// FilterCustomersCreatedBy filter for customers by "CreatedBy"
+	FilterCustomersCreatedBy string = "CreatedBy = "
 	// FilterCustomersAccessKey filter for customers by access key
 	FilterCustomersAccessKey string = "AccessKey = "
 	// FilterCustomersByKey filter for customers by __key__
@@ -26,6 +28,7 @@ var (
 	ErrDecodingRequest      string = "Error decoding request %#v"
 	ErrInternalErrorOcurred string = "Internal error occurred %#v"
 	ErrRecordNotFound       string = "%s not found"
+	ErrRecordNotCreatedBy   string = "%s not created by owner"
 	ErrAccountNotEnabled    string = "Account not enabled"
 	ErrStatusNoContent      string = "Method [%s] is not allowed"
 )

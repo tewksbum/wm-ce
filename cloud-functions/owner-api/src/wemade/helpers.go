@@ -27,9 +27,13 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 		return customer, logger.ErrFmt(ErrDecodingRequest, err)
 	}
 
-	accessKey := input.AccessKey
-
-	owner, err := getCustomer(ctx, projID, namespace, FilterCustomersAccessKey, accessKey, true)
+	filters := []DSFilter{
+		DSFilter{
+			Filter: FilterCustomersAccessKey,
+			Value:  input.AccessKey,
+		},
+	}
+	owner, err := getCustomer(ctx, projID, namespace, filters, true)
 	if err != nil || !owner.Enabled {
 		return customer, err
 	}
@@ -44,33 +48,56 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 	// if input.Customer.ExternalID == nil {
 	// 	return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "ExternalID is not set")
 	// }
-
+	accessKey := generateAccessKey(owner.AccessKey)
 	key := ds.BuildKey(EntityCustomer, namespace, input.Customer.ID, input.Customer.ExternalID)
-	c, err := getCustomer(ctx, projID, namespace, FilterCustomersByKey, key, false)
-	if err != nil && strings.Contains(err.Error(), fmt.Sprintf(ErrRecordNotFound, EntityCustomer)) {
-		input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
-		logger.InfoFmt("input.Customer: %+v", input.Customer)
-		if input.Customer.Name == "" {
-			return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "Customer NAME is empty")
+	input.Customer.AccessKey = accessKey
+	if input.Customer.ID != nil || input.Customer.ExternalID != nil {
+		filters = []DSFilter{
+			DSFilter{
+				Filter: FilterCustomersByKey,
+				Value:  key,
+			},
+			// DSFilter{
+			// 	Filter: FilterCustomersCreatedBy,
+			// 	Value:  owner.Key,
+			// },
 		}
-	}
-	if c.AccessKey == "" {
-		input.Customer.AccessKey = generateAccessKey(owner.AccessKey)
-	} else {
-		input.Customer.Updated = true
-		input.Customer.AccessKey = c.AccessKey
-		input.Customer.CreatedBy = c.CreatedBy
-		if input.Customer.Name == "" {
-			input.Customer.Name = c.Name
+		c, err := getCustomer(ctx, projID, namespace, filters, true)
+		if err != nil {
+			if strings.Contains(err.Error(), fmt.Sprintf(ErrRecordNotFound, EntityCustomer)) {
+				input.Customer.AccessKey = accessKey
+				// logger.InfoFmt("input.Customer: %+v", input.Customer)
+				if input.Customer.Name == "" {
+					return nil, logger.ErrFmtStr(ErrInternalErrorOcurred, "Customer NAME is empty")
+				}
+			} else {
+				return nil, logger.Err(err)
+			}
+		} else {
+			if c.CreatedBy.String() != owner.Key.String() {
+				return nil, logger.ErrFmtStr(ErrRecordNotCreatedBy, EntityCustomer)
+			}
 		}
-		if input.Customer.Owner == "" {
-			input.Customer.Owner = c.Owner
+		if c.AccessKey != "" {
+			input.Customer.Updated = true
+			input.Customer.AccessKey = c.AccessKey
+			input.Customer.CreatedBy = c.CreatedBy
+			if input.Customer.Name == "" {
+				input.Customer.Name = c.Name
+			}
+			if input.Customer.Owner == "" {
+				input.Customer.Owner = c.Owner
+			}
 		}
+		// Permissions storage
+		if len(c.Permissions) > 0 {
+			input.Customer.Permissions = append(input.Customer.Permissions, c.Permissions...)
+		}
+		// if c.CreatedBy == nil {
+		// 	input.Customer.CreatedBy = owner.Key
+		// }
 	}
-	// Permissions storage
-	if len(c.Permissions) > 0 {
-		input.Customer.Permissions = append(input.Customer.Permissions, c.Permissions...)
-	}
+	input.Customer.CreatedBy = owner.Key
 	input.Customer.Permissions = utils.SliceUniqMapStr(input.Customer.Permissions)
 	var ps []string
 	for _, p := range input.Customer.Permissions {
@@ -80,13 +107,12 @@ func UpsertCustomer(projID string, namespace string, data []byte) (customer *Dat
 			}
 		}
 	}
-	logger.InfoFmt("ps: %q", ps)
+	// logger.InfoFmt("ps: %q", ps)
 	input.Customer.Permissions = ps
-	if c.CreatedBy == nil {
-		input.Customer.CreatedBy = owner.Key
-	}
-	err = upsertKind(ctx, projID, key, input.Customer)
-	return input.Customer, err
+	customer = input.Customer
+	// logger.InfoFmt("key: %#v\ncustomer: %#v\nsrc: %#v", key, customer, customer)
+	err = UpsertKind(ctx, projID, key, customer)
+	return customer, err
 }
 
 func generateAccessKey(salty string) string {
@@ -108,14 +134,17 @@ func buildPermission(entity string, permission string) string {
 	return entity + ":" + permission
 }
 
-func getCustomer(ctx context.Context, projID string, ns string, filter string, filterKey interface{}, checkEnabled bool) (DatastoreCustomer, error) {
-	var c DatastoreCustomer
+func getCustomer(ctx context.Context, projID string, ns string, filters []DSFilter,
+	checkEnabled bool) (c DatastoreCustomer, err error) {
+	// Instance a datastore client
 	dsClient, err := ds.GetClient(&ctx, projID)
 	if err != nil {
 		return c, logger.ErrFmt(ErrInternalErrorOcurred, err)
 	}
-	query := ds.QueryTablenamespace(EntityCustomer, ns).
-		Filter(filter, filterKey).Limit(1)
+	query := ds.QueryTablenamespace(EntityCustomer, ns)
+	for _, f := range filters {
+		query = query.Filter(f.Filter, f.Value)
+	}
 
 	var entities []DatastoreCustomer
 
@@ -135,7 +164,7 @@ func getCustomer(ctx context.Context, projID string, ns string, filter string, f
 }
 
 // UpsertKind upserts the kind data
-func upsertKind(ctx context.Context, projID string, key *datastore.Key, src interface{}) error {
+func UpsertKind(ctx context.Context, projID string, key *datastore.Key, src interface{}) error {
 	dsClient, err := ds.GetClient(&ctx, projID)
 	if err != nil {
 		return logger.ErrFmt(ErrInternalErrorOcurred, err)
@@ -143,8 +172,16 @@ func upsertKind(ctx context.Context, projID string, key *datastore.Key, src inte
 	m := ds.UpsertMutation(key, src)
 	keys, err := dsClient.Mutate(ctx, m)
 	if err != nil {
-		return logger.ErrFmt(ErrInternalErrorOcurred, err)
+		if err.Error() == "datastore: invalid entity type" {
+			m = ds.InsertMutation(key, src)
+			keys, err = dsClient.Mutate(ctx, m)
+			if err != nil {
+				return logger.ErrFmt("[UpsertKind.Insert] - "+ErrInternalErrorOcurred, err)
+			}
+		} else {
+			return logger.ErrFmt("[UpsertKind.Upsert] - "+ErrInternalErrorOcurred, err)
+		}
 	}
-	logger.InfoFmt("[upsertKind] Stored key(s): %q", keys)
+	logger.InfoFmt("[UpsertKind] Stored key(s): %q", keys)
 	return nil
 }

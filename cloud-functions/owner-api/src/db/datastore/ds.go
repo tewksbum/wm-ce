@@ -25,6 +25,11 @@ func UpsertMutation(k *datastore.Key, src interface{}) *datastore.Mutation {
 	return datastore.NewUpsert(k, src)
 }
 
+// InsertMutation insert object in ds kind
+func InsertMutation(k *datastore.Key, src interface{}) *datastore.Mutation {
+	return datastore.NewInsert(k, src)
+}
+
 // BuildKey builds a ds key
 func BuildKey(kind string, namespace string, id *int64, name *string) *datastore.Key {
 	key := &datastore.Key{

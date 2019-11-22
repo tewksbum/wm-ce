@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"segment/utils/logger"
 
 	"segment/wemade"
 )
@@ -39,12 +38,12 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		errToHTTP(w, r, err)
 		return
 	}
-	logger.InfoFmt("rec: %#v", rec)
+	// logger.InfoFmt("rec: %#v", rec)
 	// If all goes well...
 	if !rec.Updated {
 		w.WriteHeader(http.StatusCreated)
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
-	HTTPWriteOutput(w, apiOutputWithResult(true, successMsg, rec.AccessKey))
+	HTTPWriteOutput(w, apiOutputWithResult(true, successMsg, rec))
 }
