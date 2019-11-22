@@ -400,7 +400,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
 		} else if column.PeopleERR.Gender == 1 {
 			SetMkField(&mkOutput, "GENDER", column.Value, column.Name)
-		else if column.PeopleERR.ContainsStudentRole == 1 {
+		} else if column.PeopleERR.ContainsStudentRole == 1 {
 				SetMkField(&mkOutput, "ROLE", column.Value, column.Name)
 				roleCount++
 		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
