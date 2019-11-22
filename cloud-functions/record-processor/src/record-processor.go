@@ -107,6 +107,7 @@ var PubSubTopic = os.Getenv("PSOUTPUT")
 var NERThreshold = 1000
 var NERApi = os.Getenv("NERAPI")
 var Env = os.Getenv("ENVIRONMENT")
+var DSKind = os.Getenv("DSKIND")
 
 var ds *datastore.Client
 var ps *pubsub.Client
@@ -159,11 +160,10 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// store this in DS
-	dsKind := "Record"
-	dsKey := datastore.IncompleteKey(dsKind, nil)
+	dsKey := datastore.IncompleteKey(DSKind, nil)
 	dsKey.Namespace = strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
 	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
-		log.Fatalf("Exception storing record kind %v sig %v, error %v", dsKind, input.Signature, err)
+		log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
 	}
 
 	// check if NER exists
@@ -176,7 +176,7 @@ func ProcessRecord(ctx context.Context, m PubSubMessage) error {
 		} else if NER.ApplyCounter > NERThreshold {
 			// need to recompute NER
 			var entities []Immutable
-			query := datastore.NewQuery(dsKind).Namespace(DSNameSpace)
+			query := datastore.NewQuery(DSKind).Namespace(DSNameSpace)
 			query.Order("-created").Limit(100)
 
 			if _, err := ds.GetAll(ctx, query, &entities); err != nil {
