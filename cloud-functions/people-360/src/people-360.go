@@ -536,7 +536,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// remove expired sets from DS
 	var SetKeys []*datastore.Key
 	for _, set := range ExpiredSetCollection {
-		SetKeys = append(SetKeys, datastore.NameKey(dsKind, set, nil))
+		setKey := datastore.NameKey("Set", set, nil)
+		setKey.NameSpace = dsNameSpace
+		SetKeys = append(SetKeys, setKey)
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
 		log.Fatalf("Error deleting sets: %v", err)
