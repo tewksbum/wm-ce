@@ -366,11 +366,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Fiber Collection: %v", FiberCollection)
 
 	// get all the Fibers
-	var Fibers []PeopleFiber
+
 	var FiberKeys []*datastore.Key
 	for _, fiber := range FiberCollection {
 		FiberKeys = append(FiberKeys, datastore.NameKey(dsKind, fiber, nil))
 	}
+	Fibers := make([]PeopleFiber, len(FiberKeys))
 	if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
 		log.Fatalf("Error fecthing fibers: %v", err)
 	}
