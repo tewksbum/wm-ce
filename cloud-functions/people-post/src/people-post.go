@@ -140,6 +140,7 @@ type PeopleERR struct {
 	AddressTypeBilling  int `json:"ATBilling"`
 	AddressTypeShipping int `json:"ATShipping"`
 	ContainsFirstName   int `json:"ContainsFirstName"`
+	ContainsName    	int `json:"ContainsName"`
 	ContainsLastName    int `json:"ContainsLastName"`
 	ContainsCountry     int `json:"ContainsCountry"`
 	ContainsEmail       int `json:"ContainsEmail"`
@@ -327,9 +328,6 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
-// TODO:  Role
-// TODO:  Gender
-
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
@@ -399,11 +397,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Organization == 1 {
 			SetMkField(&mkOutput, "ORGANIZATION", column.Value, column.Name)
 		} else if column.PeopleERR.Gender == 1 {
+// TODO: can we do some automated detection here...
 			SetMkField(&mkOutput, "GENDER", column.Value, column.Name)
 		} else if column.PeopleERR.ContainsStudentRole == 1 {
-				SetMkField(&mkOutput, "ROLE", column.Value, column.Name)
-				roleCount++
-		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
+			SetMkField(&mkOutput, "ROLE", column.Value, column.Name)
+			roleCount++
+		else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
 			// corrects the situation where FR, SO, JR, SR is identified as a country
 			if dev {
 				log.Printf("Title flagging true with: %v %v %v", column.Name, column.Value, input.Signature.EventID)
@@ -636,49 +635,48 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				SetMkField(&mkOutput, "AD1", column.Value, column.Name)
 			} 
-			// else if column.PeopleERR.ContainsZipCode == 1 {
-			// 	if dev {
-			// 		log.Printf("Zip with loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-			// 	}
-			// 	SetMkField(&mkOutput, "ZIP", column.Value, column.Name)
-			// }
+			
 		} else if column.PeopleERR.ContainsRole == 1 {
-			if dev {
-				log.Printf("Non people role: %v", input.Signature.EventID)
-			}
-			// ***** check mpr second
-			if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
-				if dev {
-					log.Printf("Parent ERR FName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-				}
+	// ************ check mpr second
+			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
+			
+			if column.PeopleERR.ParentName == 1 {
+				fullName = checkSetFullName(&mkOutput, mpr[memNumb])	
+			} else if column.PeopleERR.ParentFirstName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.ContainsFirstName == 1) {
+				if dev { log.Printf("Parent ERR FName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].FNAME.Value = column.Value
 				mpr[memNumb].FNAME.Source = column.Name
 			} else if column.PeopleERR.ParentLastName == 1 || (column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsLastName == 1) {
-				if dev {
-					log.Printf("Parent ERR LName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID)
-				}
+				if dev { log.Printf("Parent ERR LName or with VER & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].LNAME.Value = column.Value
 				mpr[memNumb].LNAME.Source = column.Name
 			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.ContainsAddress == 1 {
+				if dev { log.Printf("Parent AD1 Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				// look for a specifically called out MPR address
 				mpr[memNumb].AD1.Value = column.Value
 				mpr[memNumb].AD1.Source = column.Name
 			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.ContainsAddress == 1 {
+				if dev { log.Printf("Parent AD2 Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].AD2.Value = column.Value
 				mpr[memNumb].AD2.Source = column.Name
 			} else if column.PeopleVER.IS_CITY && column.PeopleERR.ContainsCity == 1 {
+				if dev { log.Printf("Parent CITY Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].CITY.Value = column.Value
 				mpr[memNumb].CITY.Source = column.Name
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.ContainsState == 1 {
+				if dev { log.Printf("Parent STATE Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].STATE.Value = column.Value
 				mpr[memNumb].STATE.Source = column.Name
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 {
+				if dev { log.Printf("Parent ZIP Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].ZIP.Value = column.Value
 				mpr[memNumb].ZIP.Source = column.Name
 			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.ContainsCountry == 1 {
+				if dev { log.Printf("Parent COUNTRY Ver & loose ERR: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].COUNTRY.Value = column.Value
 				mpr[memNumb].COUNTRY.Source = column.Name
 			} else if column.PeopleVER.IS_EMAIL {
+				if dev { log.Printf("Parent EMAIL Ver: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 				mpr[memNumb].EMAIL.Value = column.Value
 				mpr[memNumb].EMAIL.Source = column.Name
 				if len(mkOutput.EMAIL.Value) > 0 {
@@ -690,9 +688,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
 				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
 				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) {
+					if dev { log.Printf("Parent PHONE Ver: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 					mpr[memNumb].PHONE.Value = column.Value
 					mpr[memNumb].PHONE.Source = column.Name
 				}
+			} else if column.PeopleERR.ContainsName == 1  { 
+				// already in role = 1 branch...
+				// at this point, have already hopefully cleared the parent fname, lname...
+// fullName = checkSetFullName(&mkOutput, column)
 			}
 		} else if matchKey != "" {
 			// if NOTHING else has been set... give the model a try...
