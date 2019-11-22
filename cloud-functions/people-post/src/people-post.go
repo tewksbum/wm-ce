@@ -386,7 +386,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// AdType
 		mkOutput.ADTYPE.Value = AssignAddressType(&column)
-		mkOutput.ADCORRECT.Value = 0
+		// mkOutput.ADCORRECT.Value = 0
 
 		if dev {
 			log.Printf("Posting column, value, prediction: %v %v %v %v", column.Name, column.Value, matchKey, input.Signature.EventID)
@@ -713,7 +713,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		address := strings.Join([]string{mkOutput.AD1.Value, mkOutput.AD2.Value, mkOutput.CITY.Value, mkOutput.STATE.Value, mkOutput.ZIP.Value}, ",")
 		correctedOutputAddress := CorrectAddress(address)
 		if len(correctedOutputAddress) > 0 {
-			mkOutput.ADCORRECT.Value = 1
+			mkOutput.ADCORRECT.Value = "ZipCheck"
 			mkOutput.AD1.Value = strings.Join([]string{correctedOutputAddress[0].Components.PrimaryNumber, " ", correctedOutputAddress[0].Components.StreetPredirection, " ", correctedOutputAddress[0].Components.StreetName, " ", correctedOutputAddress[0].Components.StreetSuffix}, "")
 			mkOutput.AD2.Value = strings.Join([]string{correctedOutputAddress[0].Components.SecondaryDesignator, " ", correctedOutputAddress[0].Components.SecondaryNumber}, "")
 			mkOutput.CITY.Value = correctedOutputAddress[0].Components.CityName
