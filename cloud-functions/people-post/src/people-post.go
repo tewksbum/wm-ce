@@ -638,7 +638,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			
 		} else if column.PeopleERR.ContainsRole == 1 {
 	// ************ check mpr second
-			if dev { log.Printf("Non people role: %v", input.Signature.EventID) }
+			if dev { log.Printf("Non people role: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
 			
 			if column.PeopleERR.ParentName == 1 {
 				if dev { log.Printf("Parent ERR Fullname: %v %v %v", column.Name, column.Value, input.Signature.EventID) }
