@@ -398,7 +398,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		var parsedName NameParsed
-		if column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
+		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
 			// this might be a full name, try to parse it and see if we have first and last names
 			parsedName = ParseName(column.Value)
 			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 {
@@ -504,7 +504,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
 				currentOutput = GetOutputByType(&outputs, "default")
-				log.Printf("output current length %v", len(outputs))
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput = GetOutputByType(&outputs, "dorm")
 					log.Printf("output %v", currentOutput)
