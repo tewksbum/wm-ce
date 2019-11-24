@@ -559,6 +559,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				SetMkField(&(currentOutput.Output), "ADTYPE", "Campus", column.Name)
 			case "ROOM":
 				SetMkField(&(currentOutput.Output), "AD2", column.Name+": "+column.Value, column.Name)
+			case "FULLADDRESS":
+				SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
+			case "CITYSTATEZIP":
+				SetMkField(&(currentOutput.Output), "CITY", column.Value, column.Name)
 			default:
 				SetMkFieldWithType(&(currentOutput.Output), matchKeyAssigned, column.Value, column.Name, column.Type)
 			}
@@ -572,7 +576,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		} else {
-			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
+			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 
 		input.Columns[index] = column
@@ -731,7 +735,7 @@ func IndexOf(element string, data []string) int {
 func ProcessAddress(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	if len(strings.TrimSpace(addressInput)) > 0 {
-		a := ParseAddress(addressInput)
+		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
 		if dev {
 			log.Printf("mpr address parser returned %v from input %v", a, addressInput)
 		}
