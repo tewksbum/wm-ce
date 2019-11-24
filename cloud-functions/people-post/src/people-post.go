@@ -504,8 +504,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 {
 				currentOutput = GetOutputByType(outputs, "default")
+				log.Printf("output current length %v", len(outputs))
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput = GetOutputByType(outputs, "dorm")
+					log.Printf("output current length %v", len(outputs))
 				}
 				currentValue := GetMkField(&currentOutput.Output, matchKeyAssigned)
 				for {
@@ -514,6 +516,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					}
 					MARCounter++
 					currentOutput = GetOutputByTypeAndSequence(outputs, "mar", MARCounter)
+					log.Printf("output current length %v", len(outputs))
 					currentValue = GetMkField(&currentOutput.Output, matchKeyAssigned)
 				}
 			} else {
@@ -524,8 +527,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// how should this counter be used
 				if mprExtracted > 0 {
 					currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", mprExtracted)
+					log.Printf("output current length %v", len(outputs))
 				} else {
 					currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", MPRCounter)
+					log.Printf("output current length %v", len(outputs))
 					currentValue := GetMkField(&currentOutput.Output, matchKeyAssigned)
 					for {
 						if len(currentValue.Value) == 0 {
@@ -533,6 +538,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						}
 						MPRCounter++
 						currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", MPRCounter)
+						log.Printf("output current length %v", len(outputs))
 						currentValue = GetMkField(&currentOutput.Output, matchKeyAssigned)
 					}
 				}
