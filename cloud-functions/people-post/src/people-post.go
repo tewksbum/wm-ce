@@ -502,11 +502,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		if len(matchKeyAssigned) > 0 {
-			if column.PeopleERR.ContainsRole == 0 {
-				currentOutput = GetOutputByType(outputs, "default")
+			if column.PeopleERR.ContainsRole == 0 { // not MPR
+				currentOutput = GetOutputByType(&outputs, "default")
 				log.Printf("output current length %v", len(outputs))
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
-					currentOutput = GetOutputByType(outputs, "dorm")
+					currentOutput = GetOutputByType(&outputs, "dorm")
 					log.Printf("output current length %v", len(outputs))
 				}
 				currentValue := GetMkField(&currentOutput.Output, matchKeyAssigned)
@@ -515,30 +515,26 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						break
 					}
 					MARCounter++
-					currentOutput = GetOutputByTypeAndSequence(outputs, "mar", MARCounter)
-					log.Printf("output current length %v", len(outputs))
+					currentOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
 					currentValue = GetMkField(&currentOutput.Output, matchKeyAssigned)
 				}
-			} else {
+			} else { // MPR
 				mprExtracted := ExtractMPRCounter(column.Name)
 				if MPRCounter == 0 {
 					MPRCounter++
 				}
 				// how should this counter be used
 				if mprExtracted > 0 {
-					currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", mprExtracted)
-					log.Printf("output current length %v", len(outputs))
+					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", mprExtracted)
 				} else {
-					currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", MPRCounter)
-					log.Printf("output current length %v", len(outputs))
+					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
 					currentValue := GetMkField(&currentOutput.Output, matchKeyAssigned)
 					for {
 						if len(currentValue.Value) == 0 {
 							break
 						}
 						MPRCounter++
-						currentOutput = GetOutputByTypeAndSequence(outputs, "mpr", MPRCounter)
-						log.Printf("output current length %v", len(outputs))
+						currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
 						currentValue = GetMkField(&currentOutput.Output, matchKeyAssigned)
 					}
 				}
@@ -985,8 +981,8 @@ func ParseName(v string) NameParsed {
 	return NameParsed{}
 }
 
-func GetOutputByType(s []PostRecord, t string) *PostRecord {
-	for _, v := range s {
+func GetOutputByType(s *[]PostRecord, t string) *PostRecord {
+	for _, v := range *s {
 		if v.Type == t {
 			return &v
 		}
@@ -996,12 +992,12 @@ func GetOutputByType(s []PostRecord, t string) *PostRecord {
 		Sequence: 1,
 		Output:   PeopleOutput{},
 	}
-	s = append(s, v)
+	*s = append(*s, v)
 	return &v
 }
 
-func GetOutputByTypeAndSequence(s []PostRecord, t string, i int) *PostRecord {
-	for _, v := range s {
+func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) *PostRecord {
+	for _, v := range *s {
 		if v.Type == t && v.Sequence == i {
 			return &v
 		}
@@ -1018,6 +1014,6 @@ func GetOutputByTypeAndSequence(s []PostRecord, t string, i int) *PostRecord {
 		Sequence: i,
 		Output:   o,
 	}
-	s = append(s, v)
+	*s = append(*s, v)
 	return &v
 }
