@@ -15,7 +15,7 @@ steps:
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: people-post
+    _FUNCTION_NAME: people-post-test
     _TRIGGER_TOPIC: people-prepipe
     _ENTRY_POINT: PostProcessPeople
 options:
