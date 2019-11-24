@@ -12,10 +12,11 @@ steps:
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
-    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+    dir: './cloud-functions/${_PROJECT_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: people-post-test
+    _PROJECT_NAME: people-post
     _TRIGGER_TOPIC: people-prepipe
     _ENTRY_POINT: PostProcessPeople
 options:
