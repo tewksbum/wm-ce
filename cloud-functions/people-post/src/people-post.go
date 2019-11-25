@@ -510,11 +510,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Printf("matchkey assigned is %v", matchKeyAssigned)
 
 		var currentOutput *PostRecord
+		var indexOutput int
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
-				currentOutput = GetOutputByType(&outputs, "default")
+				currentOutput, indexOutput = GetOutputByType(&outputs, "default")
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
-					currentOutput = GetOutputByType(&outputs, "dorm")
+					currentOutput, indexOutput = GetOutputByType(&outputs, "dorm")
 				}
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				for {
@@ -522,7 +523,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						break
 					}
 					MARCounter++
-					currentOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
+					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
 					currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				}
 			} else { // MPR
@@ -532,16 +533,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				// how should this counter be used
 				if mprExtracted > 0 {
-					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", mprExtracted)
+					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", mprExtracted)
 				} else {
-					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
+					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
 					currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					for {
 						if len(currentValue.Value) == 0 {
 							break
 						}
 						MPRCounter++
-						currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
 						currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					}
 				}
@@ -578,6 +579,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
 				}
 			}
+
+			outputs[indexOutput] = *currentOutput
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
@@ -993,10 +996,10 @@ func ParseName(v string) NameParsed {
 	return NameParsed{}
 }
 
-func GetOutputByType(s *[]PostRecord, t string) *PostRecord {
-	for _, v := range *s {
+func GetOutputByType(s *[]PostRecord, t string) (*PostRecord, int) {
+	for index, v := range *s {
 		if v.Type == t {
-			return &v
+			return &v, index
 		}
 	}
 	v := PostRecord{
@@ -1005,13 +1008,13 @@ func GetOutputByType(s *[]PostRecord, t string) *PostRecord {
 		Output:   PeopleOutput{},
 	}
 	*s = append(*s, v)
-	return &v
+	return &v, len(*s) + 1
 }
 
-func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) *PostRecord {
-	for _, v := range *s {
+func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) (*PostRecord, int) {
+	for index, v := range *s {
 		if v.Type == t && v.Sequence == i {
-			return &v
+			return &v, index
 		}
 	}
 	o := PeopleOutput{}
@@ -1027,5 +1030,5 @@ func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) *PostRecord {
 		Output:   o,
 	}
 	*s = append(*s, v)
-	return &v
+	return &v, len(*s) + 1
 }
