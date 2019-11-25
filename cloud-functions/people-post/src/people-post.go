@@ -580,8 +580,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			log.Printf("CurrentOutput is %v", *currentOutput)
-			log.Printf("outputs is %v", outputs)
+			//columnOutput := *currentOutput
 			outputs[indexOutput] = *currentOutput
+			log.Printf("outputs is %v", outputs)
 
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
