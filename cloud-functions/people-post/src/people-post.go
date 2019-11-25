@@ -378,8 +378,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		mlMatchKey := MLLabels[predictionKey]
 		column.MatchKey = mlMatchKey
 
-		var currentOutput *PostRecord
-
 		// let's figure out which column this goes to
 		if column.PeopleERR.TrustedID == 1 {
 			column.MatchKey1 = "CLIENTID"
@@ -510,6 +508,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			matchKeyAssigned = column.MatchKey
 		}
 		log.Printf("matchkey assigned is %v", matchKeyAssigned)
+
+		var currentOutput *PostRecord
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
 				currentOutput = GetOutputByType(&outputs, "default")
@@ -582,7 +582,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 		log.Printf("Outputs is %v", outputs)
-		input.Columns[index] = column
+		// input.Columns[index] = column // dont need to update the input
 	}
 
 	log.Printf("Finishing with %v outputs", len(outputs))
@@ -674,19 +674,22 @@ func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 func SetMkField(v *PeopleOutput, field string, value string, source string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
 	if dev {
 		log.Printf("SetMkField: %v %v %v", field, value, source)
+		log.Printf("MkField %v", GetMkField(v, field))
 	}
-	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
 }
 
 func SetMkFieldWithType(v *PeopleOutput, field string, value string, source string, t string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
+
+	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source, Type: t}))
 	if dev {
 		log.Printf("SetMkField: %v %v %v %v", field, value, source, t)
+		log.Printf("MkField %v", GetMkField(v, field))
 	}
-	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source, Type: t}))
 }
 
 func CheckCityStateZip(city string, state string, zip string) bool {
