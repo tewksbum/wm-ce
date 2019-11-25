@@ -832,7 +832,7 @@ func ProcessAddress(mkOutput *PeopleOutput) {
 			mkOutput.ADPARSER.Value = "libpostal"
 			if len(a.PO_BOX) > 0 {
 				if len(a.HOUSE_NUMBER) > 0 {
-					mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+					mkOutput.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
 					mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 					mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
 				} else {
@@ -840,7 +840,7 @@ func ProcessAddress(mkOutput *PeopleOutput) {
 					mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
 				}
 			} else {
-				mkOutput.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+				mkOutput.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
 				mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 				mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
 			}
@@ -896,7 +896,7 @@ func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatC
 			mko.ADPARSER.Value = "libpostal"
 			if len(a.PO_BOX) > 0 {
 				if len(a.HOUSE_NUMBER) > 0 {
-					mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB)
+					mko.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
 					mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
 					mko.AD2.Value = strings.ToUpper(a.PO_BOX)
 				} else {
