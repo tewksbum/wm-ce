@@ -541,6 +541,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.MatchKey2 = "ADTYPE"
 		}
 
+		// clear MatchKey if Junk
+		if column.PeopleERR.Junk == 1 {
+			column.MatchKey = ""
+		}
+
 		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
 		matchKeyAssigned := ""
 		if len(column.MatchKey1) > 0 {
@@ -548,7 +553,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if len(column.MatchKey) > 0 { // use the model default
 			matchKeyAssigned = column.MatchKey
 		}
-		log.Printf("matchkey assigned is %v", matchKeyAssigned)
+		LogDev(fmt.Sprintf("matchkey assigned is %v", matchKeyAssigned))
 
 		var currentOutput *PostRecord
 		var indexOutput int
@@ -620,16 +625,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
 				}
 			}
-			log.Printf("CurrentOutput is %v", *currentOutput)
 			//columnOutput := *currentOutput
-			log.Printf("index %v, outputs length %v", indexOutput, len(outputs))
 			outputs[indexOutput] = *currentOutput
-			log.Printf("outputs is %v", outputs)
-
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
-		log.Printf("Outputs is %v", outputs)
+		LogDev(fmt.Sprintf("Outputs is %v", outputs))
 		// input.Columns[index] = column // dont need to update the input
 	}
 
