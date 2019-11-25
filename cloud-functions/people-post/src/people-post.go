@@ -360,7 +360,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
-	log.Printf("people-post for record: %v", input.Signature.RecordID)
+	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
 
 	// iterate through every column on the input record to decide what the column is...
 	for index, column := range input.Columns {
@@ -642,22 +642,39 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		LogDev(fmt.Sprintf("Outputs is %v", outputs))
 		// input.Columns[index] = column // dont need to update the input
 	}
+	LogDev(fmt.Sprintf("Finishing with %v outputs", len(outputs)))
 
-	log.Printf("Finishing with %v outputs", len(outputs))
-
+	defaultOutput, _ := GetOutputByType(&outputs, "default")
 	for i, v := range outputs {
 		// clean up the address
 		ProcessAddress(&(v.Output))
-		log.Printf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output)
+		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
 		if v.Type == "mpr" {
 			suffix = strconv.Itoa(v.Sequence)
+			CopyFieldsToMPR(&(defaultOutput.Output), &(v.Output))
 		}
 		PubRecord(ctx, &input, v.Output, suffix)
 	}
-
 	return nil
+}
 
+func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
+	r := reflect.ValueOf(a)
+	w := reflect.ValueOf(b)
+	v := reflect.Indirect(r)
+	z := reflect.Indirect(w)
+	e := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		name := e.Field(i).Name
+		if name != "EMAIL" && name != "PHONE" { // do not copy email and phone
+			s := v.FieldByName(name).Interface().(MatchKeyField)
+			t := z.FieldByName(name).Interface().(MatchKeyField)
+			if len(t.Value) == 0 {
+				z.FieldByName(e.Field(i).Name).Set(reflect.ValueOf(s))
+			}
+		}
+	}
 }
 
 func CorrectAddress(in string) SmartyStreetResponse {
