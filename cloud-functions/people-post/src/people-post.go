@@ -324,10 +324,10 @@ var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
-var reState = regexp.MustCompile(`(?i)^AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC|PR$`)
+var reState = regexp.MustCompile(`(?i)^AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 
-var listCityStateZip []CityStateZip
+// var listCityStateZip []CityStateZip // intended to be part of address correction
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -343,7 +343,7 @@ func init() {
 	// topic2 = ps.Topic(PubSubTopic2)
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sClient, _ := storage.NewClient(ctx)
-	listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json")
+	// listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
@@ -649,7 +649,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
 		if v.Type == "mpr" {
-			suffix = strconv.Itoa(v.Sequence)
+			suffix = "-^-" + strconv.Itoa(v.Sequence)
 			CopyFieldsToMPR(&(defaultOutput.Output), &(v.Output))
 		}
 		StandardizeAddress(&(v.Output))
@@ -676,53 +676,53 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	}
 }
 
-func CorrectAddress(in string) SmartyStreetResponse {
-	var smartyStreetResponse SmartyStreetResponse
-	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
-	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
-	response, err := http.Get(smartyStreetRequestURL)
-	if err != nil {
-		log.Fatalf("smartystreet request failed: %v", err)
-	} else {
-		if response.StatusCode != 200 {
-			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
-		}
-		data, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			log.Fatalf("Couldn't read the smartystreet response: %v", err)
-		}
-		log.Printf("smartystreet response %v", string(data))
-		json.Unmarshal(data, &smartyStreetResponse)
+// func CorrectAddress(in string) SmartyStreetResponse {
+// 	var smartyStreetResponse SmartyStreetResponse
+// 	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
+// 	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
+// 	response, err := http.Get(smartyStreetRequestURL)
+// 	if err != nil {
+// 		log.Fatalf("smartystreet request failed: %v", err)
+// 	} else {
+// 		if response.StatusCode != 200 {
+// 			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
+// 		}
+// 		data, err := ioutil.ReadAll(response.Body)
+// 		if err != nil {
+// 			log.Fatalf("Couldn't read the smartystreet response: %v", err)
+// 		}
+// 		log.Printf("smartystreet response %v", string(data))
+// 		json.Unmarshal(data, &smartyStreetResponse)
 
-		if len(smartyStreetResponse) > 0 {
-			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
-			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
-			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
-			// 	correctedAddress.Add2 = ""
-			// }
-			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
-			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
-			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
-			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
-			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
-			// }
-			// correctedAddress.CityStateZipMatch = true
-			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
-			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
-			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
-			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
-			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
-			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
+// 		if len(smartyStreetResponse) > 0 {
+// 			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
+// 			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
+// 			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
+// 			// 	correctedAddress.Add2 = ""
+// 			// }
+// 			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
+// 			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
+// 			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
+// 			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
+// 			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
+// 			// }
+// 			// correctedAddress.CityStateZipMatch = true
+// 			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
+// 			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
+// 			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
+// 			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
+// 			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
+// 			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
 
-			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
-			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
+// 			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
+// 			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
 
-			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
-			return smartyStreetResponse
-		}
-	}
-	return nil
-}
+// 			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
+// 			return smartyStreetResponse
+// 		}
+// 	}
+// 	return nil
+// }
 
 func IsInt(s string) bool {
 	for _, c := range s {
@@ -767,57 +767,57 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 	}
 }
 
-func CheckCityStateZip(city string, state string, zip string) bool {
-	checkZip := zip
-	if len(checkZip) > 5 {
-		checkZip = checkZip[0:5]
-	}
-	checkCity := strings.TrimSpace(strings.ToLower(city))
-	checkState := strings.TrimSpace(strings.ToLower(state))
-	var result bool
-	result = false
+// intended to be part of address correction
+// func CheckCityStateZip(city string, state string, zip string) bool {
+// 	checkZip := zip
+// 	if len(checkZip) > 5 {
+// 		checkZip = checkZip[0:5]
+// 	}
+// 	checkCity := strings.TrimSpace(strings.ToLower(city))
+// 	checkState := strings.TrimSpace(strings.ToLower(state))
+// 	var result bool
+// 	result = false
 
-	// TODO: store this in binary search tree or something
-	for _, item := range listCityStateZip {
-		if IndexOf(checkCity, item.Cities) > -1 && checkState == item.State && checkZip == item.Zip {
-			return true
-		}
-	}
-	return result
-}
+// 	// TODO: store this in binary search tree or something
+// 	for _, item := range listCityStateZip {
+// 		if IndexOf(checkCity, item.Cities) > -1 && checkState == item.State && checkZip == item.Zip {
+// 			return true
+// 		}
+// 	}
+// 	return result
+// }
 
-func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
-	var result []CityStateZip
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
+// intended to be part of address correction
+// func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
+// 	var result []CityStateZip
+// 	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rc.Close()
 
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	json.Unmarshal(data, &result)
-	return result, nil
-}
+// 	data, err := ioutil.ReadAll(rc)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	json.Unmarshal(data, &result)
+// 	return result, nil
+// }
 
-func IndexOf(element string, data []string) int {
-	for k, v := range data {
-		if element == v {
-			return k
-		}
-	}
-	return -1 //not found.
-}
+// func IndexOf(element string, data []string) int {
+// 	for k, v := range data {
+// 		if element == v {
+// 			return k
+// 		}
+// 	}
+// 	return -1 //not found.
+// }
 
 func StandardizeAddress(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
-		if dev {
-			log.Printf("address parser returned %v from input %v", a, addressInput)
-		}
+		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a.CITY) > 0 || len(a.CITY_DISTRICT) > 0 {
 			mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 			if len(a.CITY) == 0 && len(a.CITY_DISTRICT) > 0 {
@@ -833,7 +833,10 @@ func StandardizeAddress(mkOutput *PeopleOutput) {
 				if len(a.HOUSE_NUMBER) > 0 {
 					mkOutput.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
 					mkOutput.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-					mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
+					LogDev(fmt.Sprintf("StandardizeAddress po comparison: %v %v", strings.ToUpper(mkOutput.AD1.Value), strings.ToUpper(a.PO_BOX)))
+					if strings.ToUpper(mkOutput.AD1.Value) != strings.ToUpper(a.PO_BOX) {
+						mkOutput.AD2.Value = strings.ToUpper(a.PO_BOX)
+					}
 				} else {
 					mkOutput.AD1.Value = strings.ToUpper(a.PO_BOX)
 					mkOutput.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
@@ -844,6 +847,7 @@ func StandardizeAddress(mkOutput *PeopleOutput) {
 				mkOutput.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
 			}
 			if reState.MatchString(a.STATE) {
+				LogDev(fmt.Sprintf("overriding country by state value: &v", a.STATE))
 				mkOutput.COUNTRY.Value = "US"
 				mkOutput.COUNTRY.Source = "WM"
 			}
@@ -852,68 +856,67 @@ func StandardizeAddress(mkOutput *PeopleOutput) {
 }
 
 // DEPRECATED, keeping for reference
-func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatCityStateCol int, concatAdd bool, concatAddCol int) {
-	var addressInput string
+// func AddressParse(mko *PeopleOutput, input *Input, concatCityState bool, concatCityStateCol int, concatAdd bool, concatAddCol int) {
+// 	var addressInput string
 
-	if !concatCityState && !concatAdd {
-		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + mko.CITY.Value + " " + mko.STATE.Value + " " + mko.ZIP.Value
-		if dev {
-			log.Printf("!concatAdd + !concatCityState %v ", addressInput)
-		}
-	} else if !concatAdd && concatCityState {
-		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + input.Columns[concatCityStateCol].Value
-		if dev {
-			log.Printf("!concatAdd + concatCityState %v ", addressInput)
-		}
-	} else if concatAdd && !concatCityState {
-		addressInput = input.Columns[concatAddCol].Value
-		if dev {
-			log.Printf("concatAdd + !concatCityState %v ", addressInput)
-		}
-	} else if concatAdd && concatCityState {
-		// this is potentially duplicate data?
-		addressInput = input.Columns[concatAddCol].Value + input.Columns[concatCityStateCol].Value
-		if dev {
-			log.Printf("concatAdd + concatCityState %v ", addressInput)
-		}
-	}
+// 	if !concatCityState && !concatAdd {
+// 		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + mko.CITY.Value + " " + mko.STATE.Value + " " + mko.ZIP.Value
+// 		if dev {
+// 			log.Printf("!concatAdd + !concatCityState %v ", addressInput)
+// 		}
+// 	} else if !concatAdd && concatCityState {
+// 		addressInput = mko.AD1.Value + " " + mko.AD2.Value + " " + input.Columns[concatCityStateCol].Value
+// 		if dev {
+// 			log.Printf("!concatAdd + concatCityState %v ", addressInput)
+// 		}
+// 	} else if concatAdd && !concatCityState {
+// 		addressInput = input.Columns[concatAddCol].Value
+// 		if dev {
+// 			log.Printf("concatAdd + !concatCityState %v ", addressInput)
+// 		}
+// 	} else if concatAdd && concatCityState {
+// 		// this is potentially duplicate data?
+// 		addressInput = input.Columns[concatAddCol].Value + input.Columns[concatCityStateCol].Value
+// 		if dev {
+// 			log.Printf("concatAdd + concatCityState %v ", addressInput)
+// 		}
+// 	}
+// 	if len(strings.TrimSpace(addressInput)) > 0 {
+// 		a := ParseAddress(addressInput)
+// 		log.Printf("address parser returned %v", a)
+// 		if len(a.CITY) > 0 || len(a.CITY_DISTRICT) > 0 {
+// 			if len(a.CITY) > 0 {
+// 				mko.CITY.Value = strings.ToUpper(a.CITY)
+// 			} else {
+// 				mko.CITY.Value = strings.ToUpper(a.CITY_DISTRICT)
+// 			}
+// 			mko.STATE.Value = strings.ToUpper(a.STATE)
+// 			mko.ZIP.Value = strings.ToUpper(a.POSTCODE)
+// 			if len(a.COUNTRY) > 0 {
+// 				mko.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
+// 			}
+// 			mko.ADPARSER.Value = "libpostal"
+// 			if len(a.PO_BOX) > 0 {
+// 				if len(a.HOUSE_NUMBER) > 0 {
+// 					mko.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
+// 					mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+// 					mko.AD2.Value = strings.ToUpper(a.PO_BOX)
+// 				} else {
+// 					mko.AD1.Value = strings.ToUpper(a.PO_BOX)
+// 					mko.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
+// 				}
+// 			} else {
+// 				mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
+// 				mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
+// 				mko.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
+// 			}
+// 			if reState.MatchString(a.STATE) {
+// 				SetMkField(mko, "COUNTRY", "US", "WM")
+// 			}
+// 		}
+// 	}
 
-	if len(strings.TrimSpace(addressInput)) > 0 {
-		a := ParseAddress(addressInput)
-		log.Printf("address parser returned %v", a)
-		if len(a.CITY) > 0 || len(a.CITY_DISTRICT) > 0 {
-			if len(a.CITY) > 0 {
-				mko.CITY.Value = strings.ToUpper(a.CITY)
-			} else {
-				mko.CITY.Value = strings.ToUpper(a.CITY_DISTRICT)
-			}
-			mko.STATE.Value = strings.ToUpper(a.STATE)
-			mko.ZIP.Value = strings.ToUpper(a.POSTCODE)
-			if len(a.COUNTRY) > 0 {
-				mko.COUNTRY.Value = strings.ToUpper(a.COUNTRY)
-			}
-			mko.ADPARSER.Value = "libpostal"
-			if len(a.PO_BOX) > 0 {
-				if len(a.HOUSE_NUMBER) > 0 {
-					mko.AD1.Value = strings.TrimSpace(strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD + " " + a.SUBURB))
-					mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-					mko.AD2.Value = strings.ToUpper(a.PO_BOX)
-				} else {
-					mko.AD1.Value = strings.ToUpper(a.PO_BOX)
-					mko.AD1NO.Value = strings.TrimPrefix(a.PO_BOX, "PO BOX ")
-				}
-			} else {
-				mko.AD1.Value = strings.ToUpper(a.HOUSE_NUMBER + " " + a.ROAD)
-				mko.AD1NO.Value = strings.ToUpper(a.HOUSE_NUMBER)
-				mko.AD2.Value = strings.ToUpper(a.LEVEL) + " " + strings.ToUpper(a.UNIT)
-			}
-			if reState.MatchString(a.STATE) {
-				SetMkField(mko, "COUNTRY", "US", "WM")
-			}
-		}
-	}
-
-}
+// }
 
 func ParseAddress(address string) LibPostalParsed {
 	baseUrl, err := url.Parse(AddressParserBaseUrl)
