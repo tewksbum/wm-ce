@@ -579,8 +579,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
 				}
 			}
-
+			log.Printf("CurrentOutput is %v", *currentOutput)
+			log.Printf("outputs is %v", outputs)
 			outputs[indexOutput] = *currentOutput
+
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
