@@ -818,7 +818,7 @@ func StandardizeAddress(mkOutput *PeopleOutput) {
 		if dev {
 			log.Printf("address parser returned %v from input %v", a, addressInput)
 		}
-		if len(a.CITY) > 0 {
+		if len(a.CITY) > 0 || len(a.CITY_DISTRICT) > 0 {
 			mkOutput.CITY.Value = strings.ToUpper(a.CITY)
 			if len(a.CITY) == 0 && len(a.CITY_DISTRICT) > 0 {
 				mkOutput.CITY.Value = strings.ToUpper(a.CITY_DISTRICT)
