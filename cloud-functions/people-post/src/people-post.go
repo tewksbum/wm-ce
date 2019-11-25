@@ -363,7 +363,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// iterate through every column on the input record to decide what the column is...
 	for index, column := range input.Columns {
-		// assign ML prediction to column
+		// start with some sanitization
+		column.Value = strings.TrimSpace(column.Value)
+		column.Value = reNewline.ReplaceAllString(column.Value, " ")
+		column.Value = strings.Replace(column.Value, "  ", " ", -1)
+		column.Value = strings.Replace(column.Value, "  ", " ", -1)
+		if len(column.Value) == 0 { //dont need to work with blank values
+			continue
+		}
+
+		// capture ML prediction to column
 		predictionValue := input.Prediction.Predictions[index]
 		predictionKey := strconv.Itoa(int(predictionValue))
 		mlMatchKey := MLLabels[predictionKey]
