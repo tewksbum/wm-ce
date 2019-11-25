@@ -1012,7 +1012,7 @@ func GetOutputByType(s *[]PostRecord, t string) (*PostRecord, int) {
 		Output:   PeopleOutput{},
 	}
 	*s = append(*s, v)
-	return &v, len(*s) + 1
+	return &v, len(*s) - 1
 }
 
 func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) (*PostRecord, int) {
@@ -1034,5 +1034,5 @@ func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) (*PostRecord, 
 		Output:   o,
 	}
 	*s = append(*s, v)
-	return &v, len(*s) + 1
+	return &v, len(*s) - 1
 }
