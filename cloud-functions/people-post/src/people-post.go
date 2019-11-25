@@ -638,7 +638,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Finishing with %v outputs", len(outputs))
 
 	for i, v := range outputs {
-		// parse the address
+		// clean up the address
+		ProcessAddress(&(v.Output))
 		log.Printf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output)
 		suffix := ""
 		if v.Type == "mpr" {
@@ -791,7 +792,7 @@ func ProcessAddress(mkOutput *PeopleOutput) {
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
 		if dev {
-			log.Printf("mpr address parser returned %v from input %v", a, addressInput)
+			log.Printf("address parser returned %v from input %v", a, addressInput)
 		}
 		if len(a.CITY) > 0 {
 			mkOutput.CITY.Value = strings.ToUpper(a.CITY)
