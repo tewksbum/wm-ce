@@ -581,6 +581,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 			log.Printf("CurrentOutput is %v", *currentOutput)
 			//columnOutput := *currentOutput
+			log.Printf("index %v, outputs length %v", indexOutput, len(outputs))
 			outputs[indexOutput] = *currentOutput
 			log.Printf("outputs is %v", outputs)
 
