@@ -821,6 +821,9 @@ func ProcessAddress(mkOutput *PeopleOutput) {
 		}
 		if len(a.CITY) > 0 {
 			mkOutput.CITY.Value = strings.ToUpper(a.CITY)
+			if len(a.CITY) == 0 && len(a.CITY_DISTRICT) > 0 {
+				mkOutput.CITY.Value = strings.ToUpper(a.CITY_DISTRICT)
+			}
 			mkOutput.STATE.Value = strings.ToUpper(a.STATE)
 			mkOutput.ZIP.Value = strings.ToUpper(a.POSTCODE)
 			if len(a.COUNTRY) > 0 {
