@@ -40,15 +40,16 @@ type Prediction struct {
 }
 
 type InputColumn struct {
-	NER       NER       `json:"NER"`
-	PeopleERR PeopleERR `json:"PeopleERR"`
-	PeopleVER PeopleVER `json:"VER"`
-	Name      string    `json:"Name"`
-	Value     string    `json:"Value"`
-	Type      string    `json:"Type"`
-	MatchKey  string    `json:"MK"`  // model match key
-	MatchKey1 string    `json:"MK1"` // assigned key 1
-	MatchKey2 string    `json:"MK2"` // assigned key 2
+	NER         NER       `json:"NER"`
+	PeopleERR   PeopleERR `json:"PeopleERR"`
+	PeopleVER   PeopleVER `json:"VER"`
+	Name        string    `json:"Name"`
+	Value       string    `json:"Value"`
+	Type        string    `json:"Type"`
+	MatchKey    string    `json:"MK"`  // model match key
+	MatchKey1   string    `json:"MK1"` // assigned key 1
+	MatchKey2   string    `json:"MK2"` // assigned key 2
+	IsAttribute bool      `json:"IsAttr"`
 }
 
 type Input struct {
@@ -558,6 +559,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		var currentOutput *PostRecord
 		var indexOutput int
+		skipValue := false
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
 				currentOutput, indexOutput = GetOutputByType(&outputs, "default")
@@ -565,13 +567,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					currentOutput, indexOutput = GetOutputByType(&outputs, "dorm")
 				}
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
-				for {
-					if len(currentValue.Value) == 0 {
-						break
+				if column.IsAttribute && len(currentValue.Value) > 0 {
+					skipValue = true
+				} else { // skip the MAR if it is an attribute
+					for {
+						if len(currentValue.Value) == 0 {
+							break
+						}
+						MARCounter++
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
+						currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					}
-					MARCounter++
-					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
-					currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				}
 			} else { // MPR
 				mprExtracted := ExtractMPRCounter(column.Name)
@@ -595,39 +601,41 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			// let's assign the value
-			switch matchKeyAssigned {
-			case "TITLE":
-				SetMkField(&(currentOutput.Output), "TITLE", CalcClassYear(column.Value), column.Name)
-			case "FULLNAME":
-				SetMkField(&(currentOutput.Output), "FULLNAME", column.Value, column.Name)
-				if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 {
-					SetMkField(&(currentOutput.Output), "FNAME", parsedName.FNAME, column.Name)
-					SetMkField(&(currentOutput.Output), "LNAME", parsedName.LNAME, column.Name)
+			if !skipValue {
+				// let's assign the value
+				switch matchKeyAssigned {
+				case "TITLE":
+					SetMkField(&(currentOutput.Output), "TITLE", CalcClassYear(column.Value), column.Name)
+				case "FULLNAME":
+					SetMkField(&(currentOutput.Output), "FULLNAME", column.Value, column.Name)
+					if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 {
+						SetMkField(&(currentOutput.Output), "FNAME", parsedName.FNAME, column.Name)
+						SetMkField(&(currentOutput.Output), "LNAME", parsedName.LNAME, column.Name)
+					}
+				case "DORM":
+					SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
+					SetMkField(&(currentOutput.Output), "ADTYPE", "Campus", column.Name)
+				case "ROOM":
+					SetMkField(&(currentOutput.Output), "AD2", column.Name+": "+column.Value, column.Name)
+				case "FULLADDRESS":
+					SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
+				case "CITYSTATEZIP":
+					SetMkField(&(currentOutput.Output), "CITY", column.Value, column.Name)
+				default:
+					SetMkFieldWithType(&(currentOutput.Output), matchKeyAssigned, column.Value, column.Name, column.Type)
 				}
-			case "DORM":
-				SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
-				SetMkField(&(currentOutput.Output), "ADTYPE", "Campus", column.Name)
-			case "ROOM":
-				SetMkField(&(currentOutput.Output), "AD2", column.Name+": "+column.Value, column.Name)
-			case "FULLADDRESS":
-				SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
-			case "CITYSTATEZIP":
-				SetMkField(&(currentOutput.Output), "CITY", column.Value, column.Name)
-			default:
-				SetMkFieldWithType(&(currentOutput.Output), matchKeyAssigned, column.Value, column.Name, column.Type)
-			}
 
-			if len(column.MatchKey2) > 0 {
-				switch column.MatchKey2 {
-				case "STATUS":
-					SetMkField(&(currentOutput.Output), "STATUS", CalcClassDesig(column.Value), column.Name)
-				case "ADTYPE":
-					SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
+				if len(column.MatchKey2) > 0 {
+					switch column.MatchKey2 {
+					case "STATUS":
+						SetMkField(&(currentOutput.Output), "STATUS", CalcClassDesig(column.Value), column.Name)
+					case "ADTYPE":
+						SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
+					}
 				}
+				//columnOutput := *currentOutput
+				outputs[indexOutput] = *currentOutput
 			}
-			//columnOutput := *currentOutput
-			outputs[indexOutput] = *currentOutput
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}

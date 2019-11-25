@@ -253,6 +253,7 @@ type InputColumn struct {
 	Name           string         `json:"Name"`
 	Value          string         `json:"Value"`
 	MatchKey       string         `json:"MK"`
+	IsAttribute    bool           `json:"IsAttr"`
 }
 
 type CityStateZip struct {
@@ -419,8 +420,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// append attributes
 	for k, v := range input.Attributes {
 		attribute := InputColumn{
-			Name:  k,
-			Value: v,
+			Name:        k,
+			Value:       v,
+			IsAttribute: true,
 		}
 		columns = append(columns, attribute)
 	}
