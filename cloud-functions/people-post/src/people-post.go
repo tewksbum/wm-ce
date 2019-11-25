@@ -550,10 +550,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		matchKeyAssigned := ""
 		if len(column.MatchKey1) > 0 {
 			matchKeyAssigned = column.MatchKey1
+			LogDev(fmt.Sprintf("matchkey assigned is %v from rules", matchKeyAssigned))
 		} else if len(column.MatchKey) > 0 { // use the model default
 			matchKeyAssigned = column.MatchKey
+			LogDev(fmt.Sprintf("matchkey assigned is %v from prediction", matchKeyAssigned))
 		}
-		LogDev(fmt.Sprintf("matchkey assigned is %v", matchKeyAssigned))
 
 		var currentOutput *PostRecord
 		var indexOutput int
