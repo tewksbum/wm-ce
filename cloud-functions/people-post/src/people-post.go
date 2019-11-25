@@ -76,7 +76,7 @@ type PeopleOutput struct {
 	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
 	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
 	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
-	FULLNAME   MatchKeyField // do not output in json or store in BQ
+	FULLNAME   MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 
 	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD1NO        MatchKeyField `json:"ad1no" bigquery:"ad1no"`
@@ -91,10 +91,10 @@ type PeopleOutput struct {
 	ADTYPE       MatchKeyField `json:"adtype" bigquery:"adtype"`
 	ADPARSER     MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
-	DORM         MatchKeyField // do not output in json or store in BQ
-	ROOM         MatchKeyField // do not output in json or store in BQ
-	FULLADDRESS  MatchKeyField // do not output in json or store in BQ
-	CITYSTATEZIP MatchKeyField // do not output in json or store in BQ
+	DORM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
+	ROOM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
+	FULLADDRESS  MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
+	CITYSTATEZIP MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
@@ -500,7 +500,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if len(column.MatchKey) > 0 { // use the model default
 			matchKeyAssigned = column.MatchKey
 		}
-
+		log.Printf("matchkey assigned is %v", matchKeyAssigned)
 		if len(matchKeyAssigned) > 0 {
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
 				currentOutput = GetOutputByType(&outputs, "default")
@@ -577,7 +577,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else {
 			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
-
+		log.Printf("Outputs is %v", outputs)
 		input.Columns[index] = column
 	}
 
@@ -667,24 +667,22 @@ func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 }
 
 // I'm guessing what this does is record SOR >< MatchKey field mapping... for ABM
-func SetMkField(v *PeopleOutput, field string, value string, source string) string {
+func SetMkField(v *PeopleOutput, field string, value string, source string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	if dev {
 		log.Printf("SetMkField: %v %v %v", field, value, source)
 	}
 	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
-	return value
 }
 
-func SetMkFieldWithType(v *PeopleOutput, field string, value string, source string, t string) string {
+func SetMkFieldWithType(v *PeopleOutput, field string, value string, source string, t string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	if dev {
 		log.Printf("SetMkField: %v %v %v %v", field, value, source, t)
 	}
 	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source, Type: t}))
-	return value
 }
 
 func CheckCityStateZip(city string, state string, zip string) bool {
