@@ -646,14 +646,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	defaultOutput, _ := GetOutputByType(&outputs, "default")
 	for i, v := range outputs {
-		// clean up the address
-		ProcessAddress(&(v.Output))
 		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
 		if v.Type == "mpr" {
 			suffix = strconv.Itoa(v.Sequence)
 			CopyFieldsToMPR(&(defaultOutput.Output), &(v.Output))
 		}
+		StandardizeAddress(&(v.Output))
 		PubRecord(ctx, &input, v.Output, suffix)
 	}
 	return nil
@@ -812,7 +811,7 @@ func IndexOf(element string, data []string) int {
 	return -1 //not found.
 }
 
-func ProcessAddress(mkOutput *PeopleOutput) {
+func StandardizeAddress(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
