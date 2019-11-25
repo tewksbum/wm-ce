@@ -359,8 +359,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
-	var currentOutput *PostRecord
-
 	log.Printf("people-post for record: %v", input.Signature.RecordID)
 
 	// iterate through every column on the input record to decide what the column is...
@@ -370,6 +368,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		predictionKey := strconv.Itoa(int(predictionValue))
 		mlMatchKey := MLLabels[predictionKey]
 		column.MatchKey = mlMatchKey
+
+		var currentOutput *PostRecord
 
 		// let's figure out which column this goes to
 		if column.PeopleERR.TrustedID == 1 {
@@ -506,7 +506,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				currentOutput = GetOutputByType(&outputs, "default")
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput = GetOutputByType(&outputs, "dorm")
-					log.Printf("output %v", currentOutput)
 				}
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				for {
@@ -515,7 +514,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					}
 					MARCounter++
 					currentOutput = GetOutputByTypeAndSequence(&outputs, "mar", MARCounter)
-					log.Printf("output %v", currentOutput)
 					currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				}
 			} else { // MPR
@@ -526,10 +524,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// how should this counter be used
 				if mprExtracted > 0 {
 					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", mprExtracted)
-					log.Printf("output %v", currentOutput)
 				} else {
 					currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
-					log.Printf("output %v", currentOutput)
 					currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					for {
 						if len(currentValue.Value) == 0 {
@@ -537,7 +533,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						}
 						MPRCounter++
 						currentOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
-						log.Printf("output %v", currentOutput)
 						currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					}
 				}
