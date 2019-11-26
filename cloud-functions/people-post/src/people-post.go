@@ -17,8 +17,8 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/storage"
 	// "github.com/ulule/deepcopier"
-	// box
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -75,6 +75,7 @@ type PeopleOutput struct {
 	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
 	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
 	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
+	MNAME      MatchKeyField `json:"mname" bigquery:"mname"`
 	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
 	FULLNAME   MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 
@@ -323,7 +324,7 @@ var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
-var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
+var reState = regexp.MustCompile(`(?i)^AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 
 // var listCityStateZip []CityStateZip // intended to be part of address correction
@@ -465,6 +466,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.FirstName == 1 {
 				column.MatchKey1 = "FNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.FirstName == 1"))
+			} else if column.PeopleERR.MiddleName == 1 {
+				column.MatchKey1 = "MNAME"
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME"))
 			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME {
 				column.MatchKey1 = "LNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME"))
@@ -813,7 +817,7 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 // }
 
 func StandardizeAddress(mkOutput *PeopleOutput) {
-	addressInput := mkOutput.AD1.Value + " " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
+	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
