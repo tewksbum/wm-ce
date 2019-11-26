@@ -13,14 +13,6 @@ detect_changed_folders() {
 run_builds() {
     echo `pwd`
     echo $(ls)
-    echo ''
-    echo '__  __                         _           _ _     _  '
-    echo '|  \/  |                       | |         (_) |   | |'
-    echo '| \  / | ___  _ __   ___ ______| |__  _   _ _| | __| |'
-    echo '| |\/| |/ _ \| '_ \ / _ \______| '_ \| | | | | |/ _` |'
-    echo '| |  | | (_) | | | | (_) |     | |_) | |_| | | | (_| |'
-    echo '|_|  |_|\___/|_| |_|\___/      |_.__/ \__,_|_|_|\__,_|'
-    echo ''
     for component in $changed_components
     do
         if ! [[ " ${IGNORE_FILES[@]} " =~ "$component" ]]; then
