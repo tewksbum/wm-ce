@@ -8,12 +8,15 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/datastore"
 	"github.com/google/uuid"
+
+	"github.com/fatih/structs"
 )
 
 // Customer contains Customer fields
@@ -78,6 +81,74 @@ type Record struct {
 	RecordID  string    `datastore:"RecordID"`
 	Fields    []KVP     `datastore:"Fields,noindex"`
 	TimeStamp time.Time `datastore:"Created"`
+}
+
+type Fiber struct {
+	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
+	Source      string           `json:"source" datastore:"source"`
+	EventID     string           `json:"eventId" datastore:"eventid"`
+	EventType   string           `json:"eventType" datastore:"eventtype"`
+	RecordID    string           `json:"recordId" datastore:"recordid"`
+	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
+	MatchKeys   MatchKeys        `json:"matchkeys" datastore:"matchkeys"`
+	FiberID     *datastore.Key   `datastore:"__key__"`
+	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+}
+
+type Signature struct {
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+}
+
+type Passthrough360 struct {
+	Name  string
+	Value string
+}
+
+type MatchKeys struct {
+	SALUTATION MatchKeyField
+	NICKNAME   MatchKeyField
+	FNAME      MatchKeyField
+	FINITIAL   MatchKeyField
+	LNAME      MatchKeyField
+
+	AD1       MatchKeyField
+	AD1NO     MatchKeyField
+	AD2       MatchKeyField
+	AD3       MatchKeyField
+	CITY      MatchKeyField
+	STATE     MatchKeyField
+	ZIP       MatchKeyField
+	ZIP5      MatchKeyField
+	COUNTRY   MatchKeyField
+	MAILROUTE MatchKeyField
+	ADTYPE    MatchKeyField
+	ADPARSER  MatchKeyField
+	ADCORRECT MatchKeyField
+
+	EMAIL MatchKeyField
+	PHONE MatchKeyField
+
+	TRUSTEDID MatchKeyField
+	CLIENTID  MatchKeyField
+
+	GENDER MatchKeyField
+	AGE    MatchKeyField
+	DOB    MatchKeyField
+
+	ORGANIZATION MatchKeyField
+	TITLE        MatchKeyField
+	ROLE         MatchKeyField
+	STATUS       MatchKeyField
+}
+
+type MatchKeyField struct {
+	Value  string
+	Source string
+	Type   string
 }
 
 type KVP struct {
@@ -205,58 +276,83 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 	var output interface{}
 	columns := make(map[string]ColumnStat)
+	columnMaps := make(map[string][]string)
 
 	if strings.EqualFold(input.ReportType, "file") {
 		report := FileReport{
 			RequestID: input.RequestID,
 		}
 		var records []Record
+		var fibers []Fiber
 		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
-
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
-		} else {
-			report.RowCount = len(records)
-			var minTime time.Time
-			var maxTime time.Time
-			for i, r := range records {
-				if i == 0 {
-					minTime = r.TimeStamp
-					maxTime = r.TimeStamp
-				}
-				if r.TimeStamp.After(maxTime) {
-					maxTime = r.TimeStamp
-				}
-				if r.TimeStamp.Before(minTime) {
-					minTime = r.TimeStamp
-				}
-				for _, f := range r.Fields {
-					name := strings.ToUpper(f.Key)
-					value := strings.TrimSpace(f.Value)
-					stat := ColumnStat{Name: name}
-					if val, ok := columns[name]; ok {
-						stat = val
-					}
-					if len(value) > 0 {
-						stat.Sparsity++
-						if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
-							stat.Min = value
-						}
-						if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
-							stat.Max = value
-						}
-					}
-
-					columns[name] = stat
-				}
-			}
-			report.ColumnCount = len(columns)
-			for _, v := range columns {
-				report.Columns = append(report.Columns, v)
-			}
-			report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
-			report.ProcessedOn = minTime
+			return
 		}
+		FibersQuery := datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID)
+		if _, err := ds.GetAll(ctx, FibersQuery, &fibers); err != nil {
+			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+
+		MatchKeyNames := structs.Names(&MatchKeys{})
+		for _, f := range fibers {
+			for _, m := range MatchKeyNames {
+				mk := GetMatchKeyFieldByName(&(f.MatchKeys), m)
+				columnTarget := []string{m}
+				if len(mk.Source) > 0 {
+					if val, ok := columnMaps[mk.Source]; ok {
+						columnTarget = val
+						if !Contains(columnTarget, m) {
+							columnTarget = append(columnTarget, m)
+						}
+					}
+					columnMaps[mk.Source] = columnTarget
+				}
+			}
+		}
+
+		report.RowCount = len(records)
+		var minTime time.Time
+		var maxTime time.Time
+		for i, r := range records {
+			if i == 0 {
+				minTime = r.TimeStamp
+				maxTime = r.TimeStamp
+			}
+			if r.TimeStamp.After(maxTime) {
+				maxTime = r.TimeStamp
+			}
+			if r.TimeStamp.Before(minTime) {
+				minTime = r.TimeStamp
+			}
+			for _, f := range r.Fields {
+				name := strings.ToUpper(f.Key)
+				value := strings.TrimSpace(f.Value)
+				stat := ColumnStat{Name: name}
+				if val, ok := columns[name]; ok {
+					stat = val
+				}
+				if len(value) > 0 {
+					stat.Sparsity++
+					if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+						stat.Min = value
+					}
+					if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+						stat.Max = value
+					}
+				}
+
+				columns[name] = stat
+			}
+		}
+		report.ColumnCount = len(columns)
+		for _, v := range columns {
+			v.Mapped = columnMaps[v.Name]
+			report.Columns = append(report.Columns, v)
+		}
+		report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
+		report.ProcessedOn = minTime
 
 		output = report
 	} else {
@@ -266,4 +362,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	outputJSON, _ := json.Marshal(output)
 	fmt.Fprintf(w, string(outputJSON))
+}
+
+func GetMatchKeyFieldByName(v *MatchKeys, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func Contains(slice []string, item string) bool {
+	for _, v := range slice {
+		if strings.EqualFold(v, item) {
+			return true
+		}
+	}
+	return false
 }
