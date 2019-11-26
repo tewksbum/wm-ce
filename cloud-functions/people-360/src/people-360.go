@@ -55,8 +55,11 @@ type PeopleFiber struct {
 }
 
 type PeopleFiberDS struct {
-	Signature Signature `json:"signature" datastore:"signature"`
-	// Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
+	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
+	Source      string           `json:"source" datastore:"source"`
+	EventID     string           `json:"eventId" datastore:"eventid"`
+	EventType   string           `json:"eventType" datastore:"eventtype"`
+	RecordID    string           `json:"recordId" datastore:"recordid"`
 	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
 	MatchKeys   PeopleOutput     `json:"matchkeys" datastore:"matchkeys"`
 	FiberID     *datastore.Key   `datastore:"__key__"`
@@ -669,7 +672,11 @@ func PersistInES(ctx context.Context, v interface{}) bool {
 
 func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 	p := PeopleFiberDS{
-		Signature:   v.Signature,
+		OwnerID:     v.Signature.OwnerID,
+		Source:      v.Signature.Source,
+		EventType:   v.Signature.EventType,
+		EventID:     v.Signature.EventID,
+		RecordID:    v.Signature.RecordID,
 		Passthrough: v.Passthrough,
 		MatchKeys:   v.MatchKeys,
 		CreatedAt:   v.CreatedAt,
