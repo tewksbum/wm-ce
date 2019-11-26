@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/git
+    args: ["fetch", "--unshallow"]
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args: ["build.sh"]
+    env:
+      - "REPO_NAME=$REPO_NAME"
+      - "BRANCH_NAME=$BRANCH_NAME"
+      - "COMMIT_SHA=$COMMIT_SHA"
+      - "COMMIT_STATE_BUCKET=<bucket-name>"
