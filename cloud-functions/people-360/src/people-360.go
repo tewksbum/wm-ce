@@ -532,9 +532,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	dsKey = datastore.NameKey(DSKindSet, output.ID, nil)
 	dsKey.Namespace = dsNameSpace
 
-	var setDs SetDS
-	setDs.CreatedAt = output.CreatedAt
-	if _, err := ds.Put(ctx, dsKey, &setDs); err != nil {
+	// var setDs SetDS
+	// setDs.CreatedAt = output.CreatedAt
+	if _, err := ds.Put(ctx, dsKey, &output); err != nil {
 		log.Fatalf("Exception storing Set sig %v, error %v", input.Signature, err)
 	}
 
