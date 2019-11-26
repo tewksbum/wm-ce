@@ -201,33 +201,64 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
 		return
 	}
-	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", id: \"%v\"}", event.EventID)
 
 	var output interface{}
+	var columns map[string]ColumnStat
 
 	if strings.EqualFold(input.ReportType, "file") {
-		output = FileReport{
+		report := FileReport{
 			RequestID: input.RequestID,
 		}
 		var records []Record
-		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
+		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID).Order("Created")
 
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
 		} else {
-			log.Printf("Retrieved records %v", records)
+			report.RowCount = len(records)
+			var minTime time.Time
+			var maxTime time.Time
+			for i, r := range records {
+				if i == 0 {
+					minTime = r.TimeStamp
+					maxTime = r.TimeStamp
+				}
+				if r.TimeStamp.After(maxTime) {
+					maxTime = r.TimeStamp
+				}
+				for _, f := range r.Fields {
+					name := strings.ToUpper(f.Key)
+					value := strings.TrimSpace(f.Value)
+					stat := ColumnStat{Name: name}
+					if val, ok := columns[name]; ok {
+						stat = val
+					}
+					if len(value) > 0 {
+						stat.Sparsity++
+						if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+							stat.Min = value
+						}
+						if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+							stat.Max = value
+						}
+					}
+
+					columns[name] = stat
+				}
+			}
+			report.ColumnCount = len(columns)
+			for _, v := range columns {
+				report.Columns = append(report.Columns, v)
+			}
+			report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
+			report.ProcessedOn = minTime
 		}
 
-		/*
-					RequestID   string
-			RowCount    int
-			ColumnCount int
-			Columns     []ColumnStat
-			ProcessedOn time.Time
-			PcocessTime string
-			Counts      TypedCount*/
+		output = report
 	} else {
-		output = OwnerReport{}
+		report := OwnerReport{}
+
+		output = report
 	}
 	outputJSON, _ := json.Marshal(output)
 	fmt.Fprintf(w, string(outputJSON))
