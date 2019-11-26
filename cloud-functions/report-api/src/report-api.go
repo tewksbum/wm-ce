@@ -203,7 +203,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var output interface{}
-	var columns map[string]ColumnStat
+	columns := make(map[string]ColumnStat)
 
 	if strings.EqualFold(input.ReportType, "file") {
 		report := FileReport{
