@@ -210,7 +210,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			RequestID: input.RequestID,
 		}
 		var records []Record
-		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID).Order("Created")
+		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
 
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -225,6 +225,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 				if r.TimeStamp.After(maxTime) {
 					maxTime = r.TimeStamp
+				}
+				if r.TimeStamp.Before(minTime) {
+					minTime = r.TimeStamp
 				}
 				for _, f := range r.Fields {
 					name := strings.ToUpper(f.Key)
