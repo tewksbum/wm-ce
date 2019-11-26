@@ -342,7 +342,7 @@ func init() {
 	topic = ps.Topic(PubSubTopic)
 	// topic2 = ps.Topic(PubSubTopic2)
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
-	sClient, _ := storage.NewClient(ctx)
+	// sClient, _ := storage.NewClient(ctx)
 	// listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
