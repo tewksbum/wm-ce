@@ -1,7 +1,7 @@
 steps:
   - name: gcr.io/cloud-builders/gcloud
     entrypoint: bash
-    args: ["build.sh"]
+    args: ["cloud-functions/build.sh"]
     env:
       - "REPO_NAME=$REPO_NAME"
       - "BRANCH_NAME=$BRANCH_NAME"
