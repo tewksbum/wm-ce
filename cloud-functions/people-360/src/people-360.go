@@ -135,6 +135,19 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
 }
 
+type People360OutputDS struct {
+	ID           string           `json:"id" datastore:"id"`
+	OwnerID      string           `json:"ownerId" datastore:"ownerId"`
+	Source       string           `json:"source" datastore:"source"`
+	EventID      string           `json:"eventId" datastore:"eventId"`
+	EventType    string           `json:"eventType" datastore:"eventType"`
+	Signatures   []Signature      `json:"signatures" datastore:"signatures"`
+	CreatedAt    time.Time        `json:"createdAt" datastore:"createdAt"`
+	Fibers       []string         `json:"fibers" datastore:"fibers"`
+	Passthroughs []Passthrough360 `json:"passthroughs" datastore:"passthroughs"`
+	MatchKeys    []MatchKey360    `json:"matchKeys" datastore:"matchKeys"`
+}
+
 type SetDS struct {
 	ID        *datastore.Key `datastore:"__key__"`
 	CreatedAt time.Time      `json:"createdAt" datastore:"createdAt"`
@@ -534,7 +547,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// var setDs SetDS
 	// setDs.CreatedAt = output.CreatedAt
-	if _, err := ds.Put(ctx, dsKey, &output); err != nil {
+	var outputDS People360OutputDS
+	outputDS.ID = output.ID
+	outputDS.OwnerID = output.Signature.OwnerID
+	outputDS.Source = output.Signature.Source
+	outputDS.EventID = output.Signature.EventID
+	outputDS.EventType = output.Signature.EventType
+	outputDS.Signatures = output.Signatures
+	outputDS.Fibers = output.Fibers
+	outputDS.Passthroughs = output.Passthroughs
+	outputDS.CreatedAt = output.CreatedAt
+	outputDS.MatchKeys = output.MatchKeys
+
+	if _, err := ds.Put(ctx, dsKey, &outputDS); err != nil {
 		log.Fatalf("Exception storing Set sig %v, error %v", input.Signature, err)
 	}
 
