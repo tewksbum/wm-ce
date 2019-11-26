@@ -48,3 +48,11 @@ We do not use master branch
 - cloud-functions / people-360
 - cloud-functions / product-360
 - cloud-functions / household-360
+
+
+## CI/CD
+gcloud  command example to set up cloud buiild trigger 
+*this does not actually work*
+```
+   gcloud beta builds triggers create github --description="github-household-360" --repo-name="context-engine" --repo-owner="jyang-wemade" --branch-pattern="^dev$|^prod$" --included-files="cloud-functions/household-360/**" --build-config="cloud-functions/household-360/cloudbuild.yaml" 
+```
