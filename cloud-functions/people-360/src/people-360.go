@@ -66,6 +66,16 @@ type PeopleFiberDS struct {
 	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
 }
 
+type PeopleSetMember struct {
+	SetID     string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberID   string
+}
+
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
 	Source string `json:"source" bigquery:"source"`
@@ -78,6 +88,7 @@ type PeopleOutput struct {
 	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
 	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
 	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
+	MNAME      MatchKeyField `json:"mname" bigquery:"mname"`
 
 	AD1       MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD1NO     MatchKeyField `json:"ad1no" bigquery:"ad1no"`
@@ -169,6 +180,7 @@ var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+var DSKindMember = os.Getenv("DSKINDMEMBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -456,20 +468,27 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Fibers: %v", Fibers)
 
 	var output People360Output
-	MatchKeyList := structs.Names(&PeopleOutput{})
-
-	FiberMatchKeys := make(map[string][]string)
-
 	var FiberSignatures []Signature
-
+	output.ID = uuid.New().String()
+	MatchKeyList := structs.Names(&PeopleOutput{})
+	FiberMatchKeys := make(map[string][]string)
 	// collect all fiber match key values
 	for _, name := range MatchKeyList {
 		FiberMatchKeys[name] = []string{}
 	}
-
+	var SetMembers []PeopleSetMember
 	for i, fiber := range Fibers {
 		log.Printf("loaded fiber %v of %v: %v", i, len(Fibers), fiber)
 		FiberSignatures = append(FiberSignatures, fiber.Signature)
+		SetMembers = append(SetMembers, PeopleSetMember{
+			SetID:     output.ID,
+			OwnerID:   fiber.Signature.OwnerID,
+			Source:    fiber.Signature.Source,
+			EventType: fiber.Signature.EventType,
+			EventID:   fiber.Signature.EventID,
+			RecordID:  fiber.Signature.RecordID,
+			FiberID:   fiber.FiberID,
+		})
 		for _, name := range MatchKeyList {
 			value := strings.TrimSpace(GetMkField(&fiber.MatchKeys, name).Value)
 			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
@@ -507,7 +526,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// append to the output value
-	output.ID = uuid.New().String()
+
 	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
@@ -536,6 +555,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
+
+	SetMembers = append(SetMembers, PeopleSetMember{
+		SetID:     output.ID,
+		OwnerID:   input.Signature.OwnerID,
+		Source:    input.Signature.Source,
+		EventType: input.Signature.EventType,
+		EventID:   input.Signature.EventID,
+		RecordID:  input.Signature.RecordID,
+		FiberID:   fiber.FiberID,
+	})
 
 	// store the set
 	SetInserter := SetTable.Inserter()
@@ -602,6 +631,17 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		},
 	})
 
+	// store set member in DS
+	var MemberKeys []*datastore.Key
+	for i := 0; i < len(SetMembers); i++ {
+		memberKey := datastore.IncompleteKey(DSKindMember, nil)
+		memberKey.Namespace = dsNameSpace
+		MemberKeys = append(MemberKeys, memberKey)
+	}
+
+	if _, err := ds.PutMulti(ctx, MemberKeys, SetMembers); err != nil {
+		log.Fatalf("Exception storing Set Members sig %v, error %v", input.Signature, err)
+	}
 	return nil
 }
 
