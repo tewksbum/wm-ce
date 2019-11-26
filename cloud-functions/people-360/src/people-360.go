@@ -557,6 +557,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	outputDS.Fibers = output.Fibers
 	outputDS.Passthroughs = output.Passthroughs
 	outputDS.CreatedAt = output.CreatedAt
+	outputDS.MatchKeys = output.MatchKeys
 
 	if _, err := ds.Put(ctx, dsKey, &outputDS); err != nil {
 		log.Fatalf("Exception storing Set sig %v, error %v", input.Signature, err)
