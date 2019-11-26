@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -151,8 +152,12 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// log the request
+	OwnerKey := customer.Key.Name
+	if len(OwnerKey) == 0 {
+		OwnerKey = strconv.FormatInt(customer.Key.ID, 10)
+	}
 	event := &Event{
-		CustomerID:  customer.Key.Name,
+		CustomerID:  OwnerKey,
 		Created:     time.Now(),
 		Source:      input.Source,
 		Owner:       input.Owner,
@@ -179,7 +184,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	output.EventData = make(map[string]interface{})
 	output.EventData["fileUrl"] = input.FileURL
 	output.Signature = Signature{
-		OwnerID:   customer.Key.Name,
+		OwnerID:   OwnerKey,
 		Source:    input.Source,
 		EventID:   event.EventID,
 		EventType: event.EventType,
