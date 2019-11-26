@@ -11,6 +11,8 @@ detect_changed_folders() {
 }
 
 run_builds() {
+    echo `pwd`
+    echo $(ls)
     echo ''
     echo '__  __                         _           _ _     _  '
     echo '|  \/  |                       | |         (_) |   | |'
