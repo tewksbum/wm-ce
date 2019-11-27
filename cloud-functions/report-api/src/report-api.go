@@ -134,6 +134,7 @@ type MatchKeys struct {
 	FNAME      MatchKeyField
 	FINITIAL   MatchKeyField
 	LNAME      MatchKeyField
+	MNAME      MatchKeyField
 
 	AD1       MatchKeyField
 	AD1NO     MatchKeyField
