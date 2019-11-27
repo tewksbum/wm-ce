@@ -654,14 +654,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	})
 
 	// store set member in DS
-	var MemberKeys []*datastore.Key
+	var SetMemberKeys []*datastore.Key
 	for i := 0; i < len(SetMembers); i++ {
 		memberKey := datastore.IncompleteKey(DSKindMember, nil)
 		memberKey.Namespace = dsNameSpace
-		MemberKeys = append(MemberKeys, memberKey)
+		SetMemberKeys = append(SetMemberKeys, memberKey)
 	}
 
-	if _, err := ds.PutMulti(ctx, MemberKeys, SetMembers); err != nil {
+	if _, err := ds.PutMulti(ctx, SetMemberKeys, SetMembers); err != nil {
 		log.Fatalf("Exception storing Set Members sig %v, error %v", input.Signature, err)
 	}
 	return nil
