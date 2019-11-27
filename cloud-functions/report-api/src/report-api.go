@@ -188,6 +188,7 @@ var dev = Environment == "dev"
 var DSKRecord = os.Getenv("DSKINDRECORD")
 var DSKFiber = os.Getenv("DSKINDFIBER")
 var DSKSet = os.Getenv("DSKINDSET")
+var DSKSetMember = os.Getenv("DSKINDSETMEMBER")
 
 // global vars
 var ctx context.Context
@@ -305,6 +306,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		var records []Record
 		var fibers []Fiber
+		var sets []string
 		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -313,6 +315,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		FibersQuery := datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID)
 		if _, err := ds.GetAll(ctx, FibersQuery, &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+		SetMemberQuery := datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID).Project("SetID").Distinct()
+		if _, err := ds.GetAll(ctx, SetMemberQuery, &sets); err != nil {
+			log.Fatalf("Error querying set members: %v", err)
 			return
 		}
 
