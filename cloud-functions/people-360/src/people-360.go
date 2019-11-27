@@ -55,15 +55,44 @@ type PeopleFiber struct {
 }
 
 type PeopleFiberDS struct {
-	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
-	Source      string           `json:"source" datastore:"source"`
-	EventID     string           `json:"eventId" datastore:"eventid"`
-	EventType   string           `json:"eventType" datastore:"eventtype"`
-	RecordID    string           `json:"recordId" datastore:"recordid"`
-	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys" datastore:"matchkeys"`
-	FiberID     *datastore.Key   `datastore:"__key__"`
-	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+	FiberID      *datastore.Key   `datastore:"__key__"`
+	CreatedAt    time.Time        `datastore:"createdat"`
+	OwnerID      string           `datastore:"ownerid"`
+	Source       string           `datastore:"source"`
+	EventID      string           `datastore:"eventid"`
+	EventType    string           `datastore:"eventtype"`
+	RecordID     string           `datastore:"recordid"`
+	SALUTATION   MatchKeyField    `datastore:"mkf.salutation"`
+	NICKNAME     MatchKeyField    `datastore:"mkf.nickname"`
+	FNAME        MatchKeyField    `datastore:"mkf.fname"`
+	FINITIAL     MatchKeyField    `datastore:"mkf.finitial"`
+	LNAME        MatchKeyField    `datastore:"mkf.lname"`
+	MNAME        MatchKeyField    `datastore:"mkf.mname"`
+	AD1          MatchKeyField    `datastore:"mkf.ad1"`
+	AD1NO        MatchKeyField    `datastore:"mkf.ad1no"`
+	AD2          MatchKeyField    `datastore:"mkf.ad2"`
+	AD3          MatchKeyField    `datastore:"mkf.ad3"`
+	CITY         MatchKeyField    `datastore:"mkf.city"`
+	STATE        MatchKeyField    `datastore:"mkf.state"`
+	ZIP          MatchKeyField    `datastore:"mkf.zip"`
+	ZIP5         MatchKeyField    `datastore:"mkf.zip5"`
+	COUNTRY      MatchKeyField    `datastore:"mkf.country"`
+	MAILROUTE    MatchKeyField    `datastore:"mkf.mailroute"`
+	ADTYPE       MatchKeyField    `datastore:"mkf.adtype"`
+	ADPARSER     MatchKeyField    `datastore:"mkf.adparser"`
+	ADCORRECT    MatchKeyField    `datastore:"mkf.adcorrect"`
+	EMAIL        MatchKeyField    `datastore:"mkf.email"`
+	PHONE        MatchKeyField    `datastore:"mkf.phone"`
+	TRUSTEDID    MatchKeyField    `datastore:"mkf.trustedid"`
+	CLIENTID     MatchKeyField    `datastore:"mkf.clientid"`
+	GENDER       MatchKeyField    `datastore:"mkf.gender"`
+	AGE          MatchKeyField    `datastore:"mkf.age"`
+	DOB          MatchKeyField    `datastore:"mkf.dob"`
+	ORGANIZATION MatchKeyField    `datastore:"mkf.organization"`
+	TITLE        MatchKeyField    `datastore:"mkf.title"`
+	ROLE         MatchKeyField    `datastore:"mkf.role"`
+	STATUS       MatchKeyField    `datastore:"mkf.status"`
+	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
 type PeopleSetMember struct {
@@ -508,7 +537,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			FiberID:   fiber.FiberID.Name,
 		})
 		for _, name := range MatchKeyList {
-			value := strings.TrimSpace(GetMkField(&fiber.MatchKeys, name).Value)
+			value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
 			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
 				FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
 			}
@@ -530,8 +559,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
-		mk := GetMatchKeyFields(output.MatchKeys, name)
-		mk.Value = GetMkField(&input.MatchKeys, name).Value
+		mk := GetMatchKey360ByName(output.MatchKeys, name)
+		mk.Value = GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
 		if !Contains(mk.Values, mk.Value) {
 			HasNewValues = true
 			break
@@ -560,9 +589,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
 	for _, name := range MatchKeyList {
-		mk := GetMatchKeyFields(output.MatchKeys, name)
+		mk := GetMatchKey360ByName(output.MatchKeys, name)
 		mk.Key = name
-		mk.Value = strings.TrimSpace(GetMkField(&input.MatchKeys, name).Value)
+		mk.Value = strings.TrimSpace(GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value)
 		// if blank, assign it a value
 		if len(mk.Value) == 0 && len(mk.Values) > 0 {
 			mk.Value = mk.Values[0]
@@ -692,13 +721,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetMkField(v *PeopleOutput, field string) MatchKeyField {
+func GetMatchKeyFieldFromStruct(v *PeopleOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
 }
 
-func GetMatchKeyFields(v []MatchKey360, key string) *MatchKey360 {
+func GetMatchKeyFieldFromDSFiber(v *PeopleFiberDS, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 	for _, m := range v {
 		if m.Key == key {
 			return &m
@@ -765,9 +800,9 @@ func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 		EventID:     v.Signature.EventID,
 		RecordID:    v.Signature.RecordID,
 		Passthrough: v.Passthrough,
-		MatchKeys:   v.MatchKeys,
 		CreatedAt:   v.CreatedAt,
 	}
+	PopulateFiberMatchKeys(&p, &(v.MatchKeys))
 	return p
 }
 
@@ -789,20 +824,34 @@ func SetPeople360SetOutputFieldValues(v *People360OutputDS, field string, value 
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetOutputFieldValues: %v %v", field, value))
+	LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
 func SetPeople360GoldenOutputFieldValue(v *People360GoldenDS, field string, value string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetOutputFieldValue: %v %v", field, value))
+	LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
+}
+
+func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 }
 
 func PopulateSetOutputSignatures(target *People360OutputDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
+	}
+}
+
+func PopulateFiberMatchKeys(target *PeopleFiberDS, source *PeopleOutput) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetPeopleFiberMatchKeyField(target, key, GetMatchKeyFieldFromStruct(source, key))
 	}
 }
 
