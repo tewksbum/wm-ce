@@ -62,36 +62,36 @@ type PeopleFiberDS struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
-	SALUTATION   MatchKeyField    `datastore:"mkf.salutation"`
-	NICKNAME     MatchKeyField    `datastore:"mkf.nickname"`
-	FNAME        MatchKeyField    `datastore:"mkf.fname"`
-	FINITIAL     MatchKeyField    `datastore:"mkf.finitial"`
-	LNAME        MatchKeyField    `datastore:"mkf.lname"`
-	MNAME        MatchKeyField    `datastore:"mkf.mname"`
-	AD1          MatchKeyField    `datastore:"mkf.ad1"`
-	AD1NO        MatchKeyField    `datastore:"mkf.ad1no"`
-	AD2          MatchKeyField    `datastore:"mkf.ad2"`
-	AD3          MatchKeyField    `datastore:"mkf.ad3"`
-	CITY         MatchKeyField    `datastore:"mkf.city"`
-	STATE        MatchKeyField    `datastore:"mkf.state"`
-	ZIP          MatchKeyField    `datastore:"mkf.zip"`
-	ZIP5         MatchKeyField    `datastore:"mkf.zip5"`
-	COUNTRY      MatchKeyField    `datastore:"mkf.country"`
-	MAILROUTE    MatchKeyField    `datastore:"mkf.mailroute"`
-	ADTYPE       MatchKeyField    `datastore:"mkf.adtype"`
-	ADPARSER     MatchKeyField    `datastore:"mkf.adparser"`
-	ADCORRECT    MatchKeyField    `datastore:"mkf.adcorrect"`
-	EMAIL        MatchKeyField    `datastore:"mkf.email"`
-	PHONE        MatchKeyField    `datastore:"mkf.phone"`
-	TRUSTEDID    MatchKeyField    `datastore:"mkf.trustedid"`
-	CLIENTID     MatchKeyField    `datastore:"mkf.clientid"`
-	GENDER       MatchKeyField    `datastore:"mkf.gender"`
-	AGE          MatchKeyField    `datastore:"mkf.age"`
-	DOB          MatchKeyField    `datastore:"mkf.dob"`
-	ORGANIZATION MatchKeyField    `datastore:"mkf.organization"`
-	TITLE        MatchKeyField    `datastore:"mkf.title"`
-	ROLE         MatchKeyField    `datastore:"mkf.role"`
-	STATUS       MatchKeyField    `datastore:"mkf.status"`
+	SALUTATION   MatchKeyField    `datastore:"mk-salutation"`
+	NICKNAME     MatchKeyField    `datastore:"mk-nickname"`
+	FNAME        MatchKeyField    `datastore:"mk-fname"`
+	FINITIAL     MatchKeyField    `datastore:"mk-finitial"`
+	LNAME        MatchKeyField    `datastore:"mk-lname"`
+	MNAME        MatchKeyField    `datastore:"mk-mname"`
+	AD1          MatchKeyField    `datastore:"mk-ad1"`
+	AD1NO        MatchKeyField    `datastore:"mk-ad1no"`
+	AD2          MatchKeyField    `datastore:"mk-ad2"`
+	AD3          MatchKeyField    `datastore:"mk-ad3"`
+	CITY         MatchKeyField    `datastore:"mk-city"`
+	STATE        MatchKeyField    `datastore:"mk-state"`
+	ZIP          MatchKeyField    `datastore:"mk-zip"`
+	ZIP5         MatchKeyField    `datastore:"mk-zip5"`
+	COUNTRY      MatchKeyField    `datastore:"mk-country"`
+	MAILROUTE    MatchKeyField    `datastore:"mk-mailroute"`
+	ADTYPE       MatchKeyField    `datastore:"mk-adtype"`
+	ADPARSER     MatchKeyField    `datastore:"mk-adparser"`
+	ADCORRECT    MatchKeyField    `datastore:"mk-adcorrect"`
+	EMAIL        MatchKeyField    `datastore:"mk-email"`
+	PHONE        MatchKeyField    `datastore:"mk-phone"`
+	TRUSTEDID    MatchKeyField    `datastore:"mk-trustedid"`
+	CLIENTID     MatchKeyField    `datastore:"mk-clientid"`
+	GENDER       MatchKeyField    `datastore:"mk-gender"`
+	AGE          MatchKeyField    `datastore:"mk-age"`
+	DOB          MatchKeyField    `datastore:"mk-dob"`
+	ORGANIZATION MatchKeyField    `datastore:"mk-organization"`
+	TITLE        MatchKeyField    `datastore:"mk-title"`
+	ROLE         MatchKeyField    `datastore:"mk-role"`
+	STATUS       MatchKeyField    `datastore:"mk-status"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
