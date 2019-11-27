@@ -306,7 +306,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		var records []Record
 		var fibers []Fiber
-		var sets []interface{}
+		var sets []string
 		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -317,7 +317,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
-		SetMemberQuery := datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID).Project("SetID").Distinct()
+		SetMemberQuery := datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID).Project("SetID")
 		if _, err := ds.GetAll(ctx, SetMemberQuery, &sets); err != nil {
 			log.Fatalf("Error querying set members: %v", err)
 			return
