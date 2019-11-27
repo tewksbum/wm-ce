@@ -342,7 +342,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 							columnTarget = append(columnTarget, m)
 						}
 					}
-					columnMaps[mk.Source] = columnTarget
+					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
 				}
 			}
 		}
