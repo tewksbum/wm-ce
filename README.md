@@ -51,8 +51,7 @@ We do not use master branch
 
 
 ## CI/CD
-gcloud  command example to set up cloud buiild trigger 
-*this does not actually work*
+gcloud command example to set up cloud buiild trigger 
 ```
-   gcloud beta builds triggers create github --description="github-household-360" --repo-name="context-engine" --repo-owner="jyang-wemade" --branch-pattern="^dev$|^prod$" --included-files="cloud-functions/household-360/**" --build-config="cloud-functions/household-360/cloudbuild.yaml" 
+   gcloud alpha builds triggers create github --description="github-household-360" --repo-name="context-engine" --repo-owner="jyang-wemade" --branch-pattern="^dev$|^prod$" --included-files="cloud-functions/household-360/**" --build-config="cloud-functions/household-360/cloudbuild.yaml" 
 ```
