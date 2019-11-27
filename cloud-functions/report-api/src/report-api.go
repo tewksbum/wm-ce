@@ -306,7 +306,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		var records []Record
 		var fibers []Fiber
-		var sets []string
+		var sets []interface{}
 		RecordsQuery := datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID)
 		if _, err := ds.GetAll(ctx, RecordsQuery, &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -404,5 +404,5 @@ func Contains(slice []string, item string) bool {
 			return true
 		}
 	}
-	return false 
+	return false
 }
