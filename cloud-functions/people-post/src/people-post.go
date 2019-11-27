@@ -326,7 +326,15 @@ var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
+var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
+
+func reMilityBaseCity(key string) bool {
+	if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
+		return true
+	}
+	return false
+}
 
 // var listCityStateZip []CityStateZip // intended to be part of address correction
 
@@ -424,6 +432,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0"))
 			}
 		}
+
 		if len(column.MatchKey1) == 0 {
 			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
 				column.MatchKey1 = "FNAME"
@@ -528,6 +537,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				column.MatchKey1 = "AD1"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsAddress == 1"))
 			}
+		}
+
+		if reMilityBaseCity(column.Value) {
+			column.MatchKey1 = "CITY"
+			LogDev(fmt.Sprintf("overriding city by military base: &v", column.Value))
+		}
+
+		if reOverseasBaseState.MatchString(column.Value) {
+			column.MatchKey1 = "STATE"
+			LogDev(fmt.Sprintf("overriding state by USPS base designation: &v", column.Value))
 		}
 
 		// fix zip code that has leading 0 stripped out
@@ -822,6 +841,7 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 
 func StandardizeAddress(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
+	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := ParseAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
