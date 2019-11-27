@@ -151,21 +151,79 @@ type People360Output struct {
 }
 
 type People360OutputDS struct {
-	ID           string           `json:"id" datastore:"id"`
-	OwnerID      string           `json:"ownerId" datastore:"ownerId"`
-	Source       string           `json:"source" datastore:"source"`
-	EventID      string           `json:"eventId" datastore:"eventId"`
-	EventType    string           `json:"eventType" datastore:"eventType"`
-	Signatures   []Signature      `json:"signatures" datastore:"signatures"`
-	CreatedAt    time.Time        `json:"createdAt" datastore:"createdAt"`
-	Fibers       []string         `json:"fibers" datastore:"fibers"`
-	Passthroughs []Passthrough360 `json:"passthroughs" datastore:"passthroughs"`
-	MatchKeys    []MatchKey360    `json:"matchKeys" datastore:"matchKeys"`
+	ID           string    `datastore:"id"`
+	OwnerID      []string  `datastore:"sig.ownerId"`
+	Source       []string  `datastore:"sig.source"`
+	EventID      []string  `datastore:"sig.eventId"`
+	EventType    []string  `datastore:"sig.eventType"`
+	RecordID     []string  `datastore:"sig.recordId"`
+	CreatedAt    time.Time `datastore:"createdat"`
+	Fibers       []string  `datastore:"fibers"`
+	SALUTATION   []string  `datastore:"mk.salutation"`
+	NICKNAME     []string  `datastore:"mk.nickname"`
+	FNAME        []string  `datastore:"mk.fname"`
+	FINITIAL     []string  `datastore:"mk.finitial"`
+	LNAME        []string  `datastore:"mk.lname"`
+	MNAME        []string  `datastore:"mk.mname"`
+	AD1          []string  `datastore:"mk.ad1"`
+	AD1NO        []string  `datastore:"mk.ad1no"`
+	AD2          []string  `datastore:"mk.ad2"`
+	AD3          []string  `datastore:"mk.ad3"`
+	CITY         []string  `datastore:"mk.city"`
+	STATE        []string  `datastore:"mk.state"`
+	ZIP          []string  `datastore:"mk.zip"`
+	ZIP5         []string  `datastore:"mk.zip5"`
+	COUNTRY      []string  `datastore:"mk.country"`
+	MAILROUTE    []string  `datastore:"mk.mailroute"`
+	ADTYPE       []string  `datastore:"mk.adtype"`
+	ADPARSER     []string  `datastore:"mk.adparser"`
+	ADCORRECT    []string  `datastore:"mk.adcorrect"`
+	EMAIL        []string  `datastore:"mk.email"`
+	PHONE        []string  `datastore:"mk.phone"`
+	TRUSTEDID    []string  `datastore:"mk.trustedid"`
+	CLIENTID     []string  `datastore:"mk.clientid"`
+	GENDER       []string  `datastore:"mk.gender"`
+	AGE          []string  `datastore:"mk.age"`
+	DOB          []string  `datastore:"mk.dob"`
+	ORGANIZATION []string  `datastore:"mk.organization"`
+	TITLE        []string  `datastore:"mk.title"`
+	ROLE         []string  `datastore:"mk.role"`
+	STATUS       []string  `datastore:"mk.status"`
 }
 
-type SetDS struct {
-	ID        *datastore.Key `datastore:"__key__"`
-	CreatedAt time.Time      `json:"createdAt" datastore:"createdAt"`
+type People360GoldenDS struct {
+	ID           string    `datastore:"id"`
+	CreatedAt    time.Time `datastore:"createdat"`
+	SALUTATION   string    `datastore:"mk.salutation"`
+	NICKNAME     string    `datastore:"mk.nickname"`
+	FNAME        string    `datastore:"mk.fname"`
+	FINITIAL     string    `datastore:"mk.finitial"`
+	LNAME        string    `datastore:"mk.lname"`
+	MNAME        string    `datastore:"mk.mname"`
+	AD1          string    `datastore:"mk.ad1"`
+	AD1NO        string    `datastore:"mk.ad1no"`
+	AD2          string    `datastore:"mk.ad2"`
+	AD3          string    `datastore:"mk.ad3"`
+	CITY         string    `datastore:"mk.city"`
+	STATE        string    `datastore:"mk.state"`
+	ZIP          string    `datastore:"mk.zip"`
+	ZIP5         string    `datastore:"mk.zip5"`
+	COUNTRY      string    `datastore:"mk.country"`
+	MAILROUTE    string    `datastore:"mk.mailroute"`
+	ADTYPE       string    `datastore:"mk.adtype"`
+	ADPARSER     string    `datastore:"mk.adparser"`
+	ADCORRECT    string    `datastore:"mk.adcorrect"`
+	EMAIL        string    `datastore:"mk.email"`
+	PHONE        string    `datastore:"mk.phone"`
+	TRUSTEDID    string    `datastore:"mk.trustedid"`
+	CLIENTID     string    `datastore:"mk.clientid"`
+	GENDER       string    `datastore:"mk.gender"`
+	AGE          string    `datastore:"mk.age"`
+	DOB          string    `datastore:"mk.dob"`
+	ORGANIZATION string    `datastore:"mk.organization"`
+	TITLE        string    `datastore:"mk.title"`
+	ROLE         string    `datastore:"mk.role"`
+	STATUS       string    `datastore:"mk.status"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -180,6 +238,7 @@ var ESIndex = os.Getenv("ELASTICINDEX")
 var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
+var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 var DSKindMember = os.Getenv("DSKINDMEMBER")
 
@@ -533,25 +592,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// record the set id in DS
-	dsKey = datastore.NameKey(DSKindSet, output.ID, nil)
-	dsKey.Namespace = dsNameSpace
+	var setDS People360OutputDS
+	setKey := datastore.NameKey(DSKindSet, output.ID, nil)
+	setKey.Namespace = dsNameSpace
+	setDS.ID = output.ID
+	setDS.Fibers = output.Fibers
+	setDS.CreatedAt = output.CreatedAt
+	PopulateSetOutputSignatures(&setDS, output.Signatures)
+	PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
+	if _, err := ds.Put(ctx, setKey, &setDS); err != nil {
+		log.Fatalf("Exception storing set with sig %v, error %v", input.Signature, err)
+	}
 
-	// var setDs SetDS
-	// setDs.CreatedAt = output.CreatedAt
-	var outputDS People360OutputDS
-	outputDS.ID = output.ID
-	outputDS.OwnerID = output.Signature.OwnerID
-	outputDS.Source = output.Signature.Source
-	outputDS.EventID = output.Signature.EventID
-	outputDS.EventType = output.Signature.EventType
-	outputDS.Signatures = output.Signatures
-	outputDS.Fibers = output.Fibers
-	outputDS.Passthroughs = output.Passthroughs
-	outputDS.CreatedAt = output.CreatedAt
-	outputDS.MatchKeys = output.MatchKeys
-
-	if _, err := ds.Put(ctx, dsKey, &outputDS); err != nil {
-		log.Fatalf("Exception storing Set sig %v, error %v", input.Signature, err)
+	var goldenDS People360GoldenDS
+	goldenKey := datastore.NameKey(DSKindGolden, output.ID, nil)
+	goldenKey.Namespace = dsNameSpace
+	goldenDS.ID = output.ID
+	goldenDS.CreatedAt = output.CreatedAt
+	PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
+	if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
+		log.Fatalf("Exception storing golden record with sig %v, error %v", input.Signature, err)
 	}
 
 	// remove expired sets and setmembers from DS
@@ -702,4 +762,77 @@ func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 		CreatedAt:   v.CreatedAt,
 	}
 	return p
+}
+
+func GetSignatureField(v *Signature, field string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(string)
+}
+
+func GetSignatureSliceValues(source []Signature, field string) []string {
+	slice := []string{}
+	for _, s := range source {
+		slice = append(slice, GetSignatureField(&s, field))
+	}
+	return slice
+}
+
+func SetPeople360SetOutputFieldValues(v *People360OutputDS, field string, value []string) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetOutputFieldValues: %v %v", field, value))
+}
+
+func SetPeople360GoldenOutputFieldValue(v *People360GoldenDS, field string, value string) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetOutputFieldValue: %v %v", field, value))
+}
+
+func PopulateSetOutputSignatures(target *People360OutputDS, values []Signature) {
+	KeyList := structs.Names(&Signature{})
+	for _, key := range KeyList {
+		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
+	}
+}
+
+func PopulateSetOutputMatchKeys(target *People360OutputDS, values []MatchKey360) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetPeople360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
+	}
+}
+
+func PopulateGoldenOutputMatchKeys(target *People360GoldenDS, values []MatchKey360) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))
+	}
+}
+
+func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Value
+		}
+	}
+	return ""
+}
+
+func GetSetValuesFromMatchKeys(values []MatchKey360, key string) []string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Values
+		}
+	}
+	return []string{}
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }
