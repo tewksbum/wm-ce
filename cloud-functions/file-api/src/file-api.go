@@ -177,7 +177,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -3\"}")
 		return
 	}
-	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", id: \"%v\"}", event.EventID)
+	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", \"id\": \"%v\"}", event.EventID)
 
 	var output Output
 	output.Passthrough = input.Passthrough
