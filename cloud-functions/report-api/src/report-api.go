@@ -95,6 +95,26 @@ type Fiber struct {
 	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
 }
 
+type PeopleSetMember struct {
+	SetID     string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberID   string
+}
+
+type HouseholdSetMember struct {
+	SetID     string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberID   string
+}
+
 type Signature struct {
 	OwnerID   string
 	Source    string

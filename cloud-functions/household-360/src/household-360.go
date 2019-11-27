@@ -127,6 +127,16 @@ type HouseHold360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
 }
 
+type HouseholdSetMember struct {
+	SetID     string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberID   string
+}
+
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var PubSubTopic2 = os.Getenv("PSOUTPUT2")
