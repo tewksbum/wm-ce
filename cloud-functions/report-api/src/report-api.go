@@ -307,18 +307,28 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var records []Record
 		var fibers []Fiber
 		var setMembers []PeopleSetMember
+		var setIDs []string
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
 			return
 		}
+		log.Printf("records retrieved: %v", records)
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
+		log.Printf("fibers retrieved: %v", fibers)
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
 			log.Fatalf("Error querying set members: %v", err)
 			return
 		}
+		log.Printf("set members retrieved: %v", setMembers)
+		for _, v := range setMembers {
+			if !Contains(setIDs, v.SetID) {
+				setIDs = append(setIDs, v.SetID)
+			}
+		}
+		log.Printf("set id retrieved: %v", setIDs)
 
 		MatchKeyNames := structs.Names(&MatchKeys{})
 		for _, f := range fibers {
@@ -336,6 +346,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+		log.Printf("column maps: %v", columnMaps)
 
 		report.RowCount = len(records)
 		var minTime time.Time
@@ -379,6 +390,15 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
 		report.ProcessedOn = minTime
 
+		report.Counts = TypedCount{
+			Person:        len(setIDs),
+			Dupe:          len(fibers) - len(setIDs),
+			Throwaway:     len(records) - len(fibers),
+			HouseHold:     0,
+			International: 0,
+			Freshman:      0,
+			Upperclassmen: 0,
+		}
 		output = report
 	} else {
 		report := OwnerReport{}
