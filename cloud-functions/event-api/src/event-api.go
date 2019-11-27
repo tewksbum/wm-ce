@@ -109,7 +109,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{success: false, message: \"Error decoding request\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Error decoding request\"}")
 		log.Fatalf("error decoding request %v", err)
 		return
 	}
@@ -119,7 +119,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error accessing datastore: %v", err)
-		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -1\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -1\"}")
 		return
 	}
 	var entities []Customer
@@ -128,25 +128,25 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	if _, err := dsClient.GetAll(ctx, query, &entities); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error querying customer: %v", err)
-		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -2\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -2\"}")
 		return
 	}
 	if len(entities) == 0 {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "{success: false, message: \"Invalid access key, -10\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Invalid access key, -10\"}")
 		return
 	}
 
 	customer := entities[0]
 	if customer.Enabled == false {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "{success: false, message: \"Account is not enabled, -11\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Account is not enabled, -11\"}")
 		return
 	}
 
 	if !strings.EqualFold(customer.Owner, input.Owner) {
 		w.WriteHeader(http.StatusUnauthorized)
-		fmt.Fprint(w, "{success: false, message: \"Invalid credentials, -9\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Invalid credentials, -9\"}")
 		return
 	}
 
@@ -186,10 +186,10 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	if _, err := dsClient.Put(ctx, eventKey, event); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error logging event: %v", err)
-		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -3\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
 		return
 	}
-	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", id: \"%v\"}", input.EventID)
+	fmt.Fprintf(w, "{\"success\": true, \"message\": \"Request queued\", \"id\": \"%v\"}", input.EventID)
 
 	var output Output
 	output.Passthrough = input.Passthrough
