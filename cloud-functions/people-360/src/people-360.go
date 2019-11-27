@@ -409,7 +409,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	if len(FiberKeys) > 0 {
 		if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil {
-			log.Fatalf("Error fetching fibers ns %v kind %v: %v", dsNameSpace, DSKindFiber, err)
+			log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
 		}
 	}
 
