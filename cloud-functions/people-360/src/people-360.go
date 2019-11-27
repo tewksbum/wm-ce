@@ -617,11 +617,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// remove expired sets and setmembers from DS
 	var SetKeys []*datastore.Key
 	var MemberKeys []*datastore.Key
+	var GoldenKeys []*datastore.Key
 	var MemberDeleteKeys []*datastore.Key
 	for _, set := range ExpiredSetCollection {
 		setKey := datastore.NameKey(DSKindSet, set, nil)
 		setKey.Namespace = dsNameSpace
 		SetKeys = append(SetKeys, setKey)
+		goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+		goldenKey.Namespace = dsNameSpace
+		GoldenKeys = append(GoldenKeys, goldenKey)
 		query := datastore.NewQuery(DSKindMember).Namespace(dsNameSpace).Filter("SetID =", set).KeysOnly()
 		if _, err := ds.GetAll(ctx, query, &MemberDeleteKeys); err != nil {
 			log.Fatalf("Error querying setmembers by set id: %v", err)
@@ -633,6 +637,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
 		log.Fatalf("Error deleting sets: %v", err)
+	}
+	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
+		log.Fatalf("Error deleting golden records: %v", err)
 	}
 	if err := ds.DeleteMulti(ctx, MemberKeys); err != nil {
 		log.Fatalf("Error deleting setmemberss: %v", err)
