@@ -74,6 +74,7 @@ type PeopleSetMember struct {
 	EventType string
 	RecordID  string
 	FiberID   string
+	ID        *datastore.Key `datastore:"__key__"`
 }
 
 type MatchKeyField struct {
@@ -595,16 +596,37 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Exception storing Set sig %v, error %v", input.Signature, err)
 	}
 
-	// remove expired sets from DS
+	// remove expired sets and setmembers from DS
 	var SetKeys []*datastore.Key
+	var MemberKeys []*datastore.Key
+	var MemberDeleteKeys []*datastore.Key
 	for _, set := range ExpiredSetCollection {
 		setKey := datastore.NameKey(DSKindSet, set, nil)
 		setKey.Namespace = dsNameSpace
 		SetKeys = append(SetKeys, setKey)
+		query := datastore.NewQuery(DSKindMember).Namespace(dsNameSpace).Filter("SetID =", set).KeysOnly()
+		if _, err := ds.GetAll(ctx, query, &MemberDeleteKeys); err != nil {
+			log.Fatalf("Error querying setmembers by set id: %v", err)
+		} else {
+			for _, s := range MemberDeleteKeys {
+				MemberKeys = append(MemberKeys, s)
+			}
+		}
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
 		log.Fatalf("Error deleting sets: %v", err)
 	}
+	if err := ds.DeleteMulti(ctx, MemberKeys); err != nil {
+		log.Fatalf("Error deleting setmemberss: %v", err)
+	}
+
+	// get all set members to delete
+
+	// 	var FoundFibers []PeopleFiber
+	// 	query := datastore.NewQuery(dsKind).Namespace(dsKey.Namespace).Filter("FiberID =", fiber).Limit(1)
+	// 	if _, err := ds.GetAll(ctx, query, &FoundFibers); err != nil {
+	// 		log.Fatalf("Error querying fiber: %v", err)
+	// 	}
 
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
