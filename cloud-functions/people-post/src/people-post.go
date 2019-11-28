@@ -673,17 +673,20 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// check to see if we need to deal with MAR that needs to be merged back to the default output
 	// specifically we are checking if the MAR field is AD1 and if default has a blank AD2
+	indexToSkip := -1
 	for i, v := range outputs {
 		if v.Type == "default" {
 			ad2 := GetMkField (&(v.Output), "AD2")
 			if len(ad2.Value) == 0 { // see if we have a MAR with AD1 only
-				for _, o := range outputs {
+				for j, o := range outputs {
 					if o.Type == "mar" {
 						populatedKeys := GetPopulatedMatchKeys (&(o.Output))
 						if len(populatedKeys) == 1 && populatedKeys[0] == "AD1"{
 							mar := GetMkField(&(o.Output), "AD1")
 							SetMkField(&(v.Output), "AD2", mar.Value, mar.Source)
 							outputs[i] = v
+							LogDev(fmt.Sprintf("mar check assigned mar AD1 to default"))
+							indexToSkip = j
 						} else {
 							LogDev(fmt.Sprintf("mar check returned list of populated keys: %v", populatedKeys))
 						}
@@ -694,6 +697,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	for i, v := range outputs {
+		if i == indexToSkip {
+			continue
+		}
 		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
 		if v.Type == "mpr" {
