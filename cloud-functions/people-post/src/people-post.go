@@ -17,9 +17,8 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/pubsub"
-	// "cloud.google.com/go/storage"
-	// "github.com/ulule/deepcopier"
-	// box
+
+	"github.com/fatih/structs"
 )
 
 // PubSubMessage is the payload of a pubsub event
@@ -671,6 +670,31 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("Finishing with %v outputs", len(outputs)))
 
 	defaultOutput, _ := GetOutputByType(&outputs, "default")
+
+	// check to see if we need to deal with MAR that needs to be merged back to the default output
+	// specifically we are checking if the MAR field is AD1 and if default has a blank AD2
+	defaultOutputIndex := 0
+	for i, v := range outputs {
+		if v.Type == "default" {
+			defaultOutputIndex = i
+			ad2 := GetMkField (&v, "AD2")
+			if len(ad2.Value) == 0 { // see if we have a MAR with AD1 only
+				for _, o := range outputs {
+					if o.Type == "mar" {
+						populatedKeys := GetPopulatedMatchKeys (&(o.Output))
+						if len(populatedKeys) == 1 && populatedKeys[0] == "AD1"{
+							mar := GetMkField(&(o.Output), "AD1")
+							SetMkField(&(v.Output), "AD2", mar.Value, mar.Source)
+							outputs[i] = v
+						} else {
+							LogDev(fmt.Sprintf("mar check returned list of populated keys: %v"), populatedKeys)
+						}
+					}
+				}				
+			}
+		}
+	}
+
 	for i, v := range outputs {
 		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
@@ -682,6 +706,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		PubRecord(ctx, &input, v.Output, suffix)
 	}
 	return nil
+}
+
+func GetPopulatedMatchKeys (a *PeopleOutput) []string {
+	names := structs.Names(&PeopleOutput{})
+	result := []string{}
+	for _, n := range names {
+		mk := GetMkField(a, n)
+		if len(mk.Value) > 0 {
+			result = append(result, n)
+		}
+	}
+	return result
 }
 
 func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
