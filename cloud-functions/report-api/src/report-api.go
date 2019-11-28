@@ -9,9 +9,11 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"cloud.google.com/go/datastore"
 	"github.com/google/uuid"
@@ -331,9 +333,33 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("set id retrieved: %v", setIDs)
 
 		MatchKeyNames := structs.Names(&MatchKeys{})
+
+		InternationalCount := 0
+		FreshmenCount := 0
+		UpperclassmenCount := 0
+		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
 			for _, m := range MatchKeyNames {
 				mk := GetMatchKeyFieldByName(&(f.MatchKeys), m)
+				if m == "COUNTRY" {
+					country := strings.ToUpper(mk.Value)
+					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+						InternationalCount++
+					}
+				} else if m == "TITLE" {
+					title := mk.Value
+					if IsInt(title) {
+						class, err := strconv.Atoi(title)
+						if err == nil {
+							if class == CurrentYear+4 {
+								FreshmenCount++
+							} else if class >= CurrentYear && class < CurrentYear+4 {
+								UpperclassmenCount++
+							}
+						}
+					}
+
+				}
 				columnTarget := []string{m}
 				if len(mk.Source) > 0 {
 					if val, ok := columnMaps[mk.Source]; ok {
@@ -387,6 +413,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			v.Mapped = columnMaps[v.Name]
 			report.Columns = append(report.Columns, v)
 		}
+
+		sort.Slice(report.Columns, func(i, j int) bool {
+			return strings.Compare(report.Columns[i].Name, report.Columns[j].Name) > 0
+		})
+
 		report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
 		report.ProcessedOn = minTime
 
@@ -395,9 +426,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			Dupe:          len(fibers) - len(setIDs),
 			Throwaway:     len(records) - len(fibers),
 			HouseHold:     0,
-			International: 0,
-			Freshman:      0,
-			Upperclassmen: 0,
+			International: InternationalCount,
+			Freshman:      FreshmenCount,
+			Upperclassmen: UpperclassmenCount,
 		}
 		output = report
 	} else {
@@ -422,4 +453,13 @@ func Contains(slice []string, item string) bool {
 		}
 	}
 	return false
+}
+
+func IsInt(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
 }
