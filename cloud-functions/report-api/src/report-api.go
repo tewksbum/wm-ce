@@ -86,15 +86,44 @@ type Record struct {
 }
 
 type Fiber struct {
-	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
-	Source      string           `json:"source" datastore:"source"`
-	EventID     string           `json:"eventId" datastore:"eventid"`
-	EventType   string           `json:"eventType" datastore:"eventtype"`
-	RecordID    string           `json:"recordId" datastore:"recordid"`
-	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
-	MatchKeys   MatchKeys        `json:"matchkeys" datastore:"matchkeys"`
-	FiberID     *datastore.Key   `datastore:"__key__"`
-	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+	FiberID      *datastore.Key   `datastore:"__key__"`
+	CreatedAt    time.Time        `datastore:"createdat"`
+	OwnerID      string           `datastore:"ownerid"`
+	Source       string           `datastore:"source"`
+	EventID      string           `datastore:"eventid"`
+	EventType    string           `datastore:"eventtype"`
+	RecordID     string           `datastore:"recordid"`
+	SALUTATION   MatchKeyField    `datastore:"salutation"`
+	NICKNAME     MatchKeyField    `datastore:"nickname"`
+	FNAME        MatchKeyField    `datastore:"fname"`
+	FINITIAL     MatchKeyField    `datastore:"finitial"`
+	LNAME        MatchKeyField    `datastore:"lname"`
+	MNAME        MatchKeyField    `datastore:"mname"`
+	AD1          MatchKeyField    `datastore:"ad1"`
+	AD1NO        MatchKeyField    `datastore:"ad1no"`
+	AD2          MatchKeyField    `datastore:"ad2"`
+	AD3          MatchKeyField    `datastore:"ad3"`
+	CITY         MatchKeyField    `datastore:"city"`
+	STATE        MatchKeyField    `datastore:"state"`
+	ZIP          MatchKeyField    `datastore:"zip"`
+	ZIP5         MatchKeyField    `datastore:"zip5"`
+	COUNTRY      MatchKeyField    `datastore:"country"`
+	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
+	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ADPARSER     MatchKeyField    `datastore:"adparser"`
+	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	EMAIL        MatchKeyField    `datastore:"email"`
+	PHONE        MatchKeyField    `datastore:"phone"`
+	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
+	CLIENTID     MatchKeyField    `datastore:"clientid"`
+	GENDER       MatchKeyField    `datastore:"gender"`
+	AGE          MatchKeyField    `datastore:"age"`
+	DOB          MatchKeyField    `datastore:"dob"`
+	ORGANIZATION MatchKeyField    `datastore:"organization"`
+	TITLE        MatchKeyField    `datastore:"title"`
+	ROLE         MatchKeyField    `datastore:"role"`
+	STATUS       MatchKeyField    `datastore:"status"`
+	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
 type PeopleSetMember struct {
@@ -340,7 +369,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
 			for _, m := range MatchKeyNames {
-				mk := GetMatchKeyFieldByName(&(f.MatchKeys), m)
+				mk := GetMatchKeyFieldFromFiberByName(&f, m)
 				if m == "COUNTRY" {
 					country := strings.ToUpper(mk.Value)
 					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
@@ -440,7 +469,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, string(outputJSON))
 }
 
-func GetMatchKeyFieldByName(v *MatchKeys, field string) MatchKeyField {
+func GetMatchKeyFieldFromFiberByName(v *Fiber, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
