@@ -677,7 +677,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	for i, v := range outputs {
 		if v.Type == "default" {
 			defaultOutputIndex = i
-			ad2 := GetMkField (&v, "AD2")
+			ad2 := GetMkField (&(v.Output), "AD2")
 			if len(ad2.Value) == 0 { // see if we have a MAR with AD1 only
 				for _, o := range outputs {
 					if o.Type == "mar" {
@@ -687,7 +687,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 							SetMkField(&(v.Output), "AD2", mar.Value, mar.Source)
 							outputs[i] = v
 						} else {
-							LogDev(fmt.Sprintf("mar check returned list of populated keys: %v"), populatedKeys)
+							LogDev(fmt.Sprintf("mar check returned list of populated keys: %v", populatedKeys))
 						}
 					}
 				}				
