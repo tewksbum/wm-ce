@@ -339,6 +339,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var fibers []Fiber
 		var setMembers []PeopleSetMember
 		var setIDs []string
+
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
 			return
@@ -366,8 +367,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		InternationalCount := 0
 		FreshmenCount := 0
 		UpperclassmenCount := 0
+		recordIDs := []string{}
 		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
+			recordID := Left(f.RecordID, 36)
+			if !Contains(recordIDs, recordID) {
+				recordIDs = append(recordIDs, recordID)
+			}
+
 			for _, m := range MatchKeyNames {
 				mk := GetMatchKeyFieldFromFiberByName(&f, m)
 				if m == "COUNTRY" {
@@ -453,7 +460,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.Counts = TypedCount{
 			Person:        len(setIDs),
 			Dupe:          len(fibers) - len(setIDs),
-			Throwaway:     len(records) - len(fibers),
+			Throwaway:     len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			HouseHold:     0,
 			International: InternationalCount,
 			Freshman:      FreshmenCount,
@@ -491,4 +498,14 @@ func IsInt(s string) bool {
 		}
 	}
 	return true
+}
+
+func Left(str string, num int) string {
+	if num <= 0 {
+		return ``
+	}
+	if num > len(str) {
+		num = len(str)
+	}
+	return str[:num]
 }
