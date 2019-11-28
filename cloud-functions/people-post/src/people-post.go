@@ -673,10 +673,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// check to see if we need to deal with MAR that needs to be merged back to the default output
 	// specifically we are checking if the MAR field is AD1 and if default has a blank AD2
-	defaultOutputIndex := 0
 	for i, v := range outputs {
 		if v.Type == "default" {
-			defaultOutputIndex = i
 			ad2 := GetMkField (&(v.Output), "AD2")
 			if len(ad2.Value) == 0 { // see if we have a MAR with AD1 only
 				for _, o := range outputs {
