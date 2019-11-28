@@ -405,6 +405,7 @@ type People struct {
 	Organization string  `json:"organization" bigquery:"organization"`
 	Title        string  `json:"title" bigquery:"title"`
 	Role         string  `json:"role" bigquery:"role"`
+	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect"`
 }
 
 // Email email+type struct
@@ -426,6 +427,7 @@ type Household struct {
 	Address1    string `json:"address1" bigquery:"address1"`
 	Address2    string `json:"address2" bigquery:"address2"`
 	Address3    string `json:"address3" bigquery:"address3"`
+	AdCorrect   string `json:"adcorrect" bigquery:"adcorrect"`
 	City        string `json:"city" bigquery:"city"`
 	State       string `json:"state" bigquery:"state"`
 	Zip         string `json:"zip" bigquery:"zip"`
