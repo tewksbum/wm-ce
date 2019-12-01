@@ -126,15 +126,15 @@ type Fiber struct {
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
-type PeopleSetMember struct {
-	SetID     string
-	OwnerID   string
-	Source    string
-	EventID   string
-	EventType string
-	RecordID  string
-	FiberID   string
-}
+// type PeopleSetMember struct {
+// 	SetID     string
+// 	OwnerID   string
+// 	Source    string
+// 	EventID   string
+// 	EventType string
+// 	RecordID  string
+// 	FiberID   string
+// }
 
 type HouseholdSetMember struct {
 	SetID     string
@@ -206,6 +206,78 @@ type MatchKeyField struct {
 type KVP struct {
 	Key   string `json:"k" datastore:"k"`
 	Value string `json:"v" datastore:"v"`
+}
+
+type PeopleSet struct {
+	ID                     string    `datastore:"id"`
+	OwnerID                []string  `datastore:"ownerid"`
+	Source                 []string  `datastore:"source"`
+	EventID                []string  `datastore:"eventid"`
+	EventType              []string  `datastore:"eventtype"`
+	RecordID               []string  `datastore:"recordid"`
+	RecordIDNormalized     []string  `datastore:"recordidnormalized"`
+	CreatedAt              time.Time `datastore:"createdat"`
+	Fibers                 []string  `datastore:"fibers"`
+	SALUTATION             []string  `datastore:"salutation"`
+	SALUTATIONNormalized   []string  `datastore:"salutationnormalized"`
+	NICKNAME               []string  `datastore:"nickname"`
+	NICKNAMENormalized     []string  `datastore:"nicknamenormalized"`
+	FNAME                  []string  `datastore:"fname"`
+	FNAMENormalized        []string  `datastore:"fnamenormalized"`
+	FINITIAL               []string  `datastore:"finitial"`
+	FINITIALNormalized     []string  `datastore:"finitialnormalized"`
+	LNAME                  []string  `datastore:"lname"`
+	LNAMENormalized        []string  `datastore:"lnamenormalized"`
+	MNAME                  []string  `datastore:"mname"`
+	MNAMENormalized        []string  `datastore:"mnamenormalized"`
+	AD1                    []string  `datastore:"ad1"`
+	AD1Normalized          []string  `datastore:"ad1normalized"`
+	AD1NO                  []string  `datastore:"ad1no"`
+	AD1NONormalized        []string  `datastore:"ad1nonormalized"`
+	AD2                    []string  `datastore:"ad2"`
+	AD2Normalized          []string  `datastore:"ad2normalized"`
+	AD3                    []string  `datastore:"ad3"`
+	AD3Normalized          []string  `datastore:"ad3normalized"`
+	CITY                   []string  `datastore:"city"`
+	CITYNormalized         []string  `datastore:"citynormalized"`
+	STATE                  []string  `datastore:"state"`
+	STATENormalized        []string  `datastore:"statenormalized"`
+	ZIP                    []string  `datastore:"zip"`
+	ZIPNormalized          []string  `datastore:"zipnormalized"`
+	ZIP5                   []string  `datastore:"zip5"`
+	ZIP5Normalized         []string  `datastore:"zip5normalized"`
+	COUNTRY                []string  `datastore:"country"`
+	COUNTRYNormalized      []string  `datastore:"countrynormalized"`
+	MAILROUTE              []string  `datastore:"mailroute"`
+	MAILROUTENormalized    []string  `datastore:"mailroutenormalized"`
+	ADTYPE                 []string  `datastore:"adtype"`
+	ADTYPENormalized       []string  `datastore:"adtypenormalized"`
+	ADPARSER               []string  `datastore:"adparser"`
+	ADPARSERNormalized     []string  `datastore:"adparsernormalized"`
+	ADCORRECT              []string  `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string  `datastore:"adcorrectnormalized"`
+	EMAIL                  []string  `datastore:"email"`
+	EMAILNormalized        []string  `datastore:"emailnormalized"`
+	PHONE                  []string  `datastore:"phone"`
+	PHONENormalized        []string  `datastore:"phonenormalized"`
+	TRUSTEDID              []string  `datastore:"trustedid"`
+	TRUSTEDIDNormalized    []string  `datastore:"trustedidnormalized"`
+	CLIENTID               []string  `datastore:"clientid"`
+	CLIENTIDNormalized     []string  `datastore:"clientidnormalized"`
+	GENDER                 []string  `datastore:"gender"`
+	GENDERNormalized       []string  `datastore:"gendernormalized"`
+	AGE                    []string  `datastore:"age"`
+	AGENormalized          []string  `datastore:"agenormalized"`
+	DOB                    []string  `datastore:"dob"`
+	DOBNormalized          []string  `datastore:"dobnormalized"`
+	ORGANIZATION           []string  `datastore:"organization"`
+	ORGANIZATIONNormalized []string  `datastore:"organizationnormalized"`
+	TITLE                  []string  `datastore:"title"`
+	TITLENormalized        []string  `datastore:"titlenormalized"`
+	ROLE                   []string  `datastore:"role"`
+	ROLENormalized         []string  `datastore:"rolenormalized"`
+	STATUS                 []string  `datastore:"status"`
+	STATUSNormalized       []string  `datastore:"statusnormalized"`
 }
 
 // ProjectID is the env var of project id
@@ -337,7 +409,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		var records []Record
 		var fibers []Fiber
-		var setMembers []PeopleSetMember
+		var sets []PeopleSet
+		// var setMembers []PeopleSetMember
 		var setIDs []string
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
@@ -345,21 +418,29 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("records retrieved: %v", records)
+
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
 		log.Printf("fibers retrieved: %v", fibers)
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
-			log.Fatalf("Error querying set members: %v", err)
+
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
 			return
 		}
-		log.Printf("set members retrieved: %v", setMembers)
-		for _, v := range setMembers {
-			if !Contains(setIDs, v.SetID) {
-				setIDs = append(setIDs, v.SetID)
-			}
-		}
+		log.Printf("fibers retrieved: %v", fibers)
+
+		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
+		// 	log.Fatalf("Error querying set members: %v", err)
+		// 	return
+		// }
+		// log.Printf("set members retrieved: %v", setMembers)
+		// for _, v := range setMembers {
+		// 	if !Contains(setIDs, v.SetID) {
+		// 		setIDs = append(setIDs, v.SetID)
+		// 	}
+		// }
 		log.Printf("set id retrieved: %v", setIDs)
 
 		MatchKeyNames := structs.Names(&MatchKeys{})
@@ -458,8 +539,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Counts = TypedCount{
-			Person:        len(setIDs),
-			Dupe:          len(fibers) - len(setIDs),
+			Person:        len(sets),
+			Dupe:          len(fibers) - len(sets),
 			Throwaway:     len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			HouseHold:     0,
 			International: InternationalCount,
