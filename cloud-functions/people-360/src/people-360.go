@@ -738,7 +738,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// remove expired sets and setmembers from DS
 	var SetKeys []*datastore.Key
-	var MemberKeys []*datastore.Key
+	// var MemberKeys []*datastore.Key
 	var GoldenKeys []*datastore.Key
 
 	for _, set := range expiredSetCollection {
