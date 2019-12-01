@@ -280,6 +280,41 @@ type PeopleSet struct {
 	STATUSNormalized       []string  `datastore:"statusnormalized"`
 }
 
+type PeopleGolden struct {
+	ID           string    `datastore:"id"`
+	CreatedAt    time.Time `datastore:"createdat"`
+	SALUTATION   string    `datastore:"salutation"`
+	NICKNAME     string    `datastore:"nickname"`
+	FNAME        string    `datastore:"fname"`
+	FINITIAL     string    `datastore:"finitial"`
+	LNAME        string    `datastore:"lname"`
+	MNAME        string    `datastore:"mname"`
+	AD1          string    `datastore:"ad1"`
+	AD1NO        string    `datastore:"ad1no"`
+	AD2          string    `datastore:"ad2"`
+	AD3          string    `datastore:"ad3"`
+	CITY         string    `datastore:"city"`
+	STATE        string    `datastore:"state"`
+	ZIP          string    `datastore:"zip"`
+	ZIP5         string    `datastore:"zip5"`
+	COUNTRY      string    `datastore:"country"`
+	MAILROUTE    string    `datastore:"mailroute"`
+	ADTYPE       string    `datastore:"adtype"`
+	ADPARSER     string    `datastore:"adparser"`
+	ADCORRECT    string    `datastore:"adcorrect"`
+	EMAIL        string    `datastore:"email"`
+	PHONE        string    `datastore:"phone"`
+	TRUSTEDID    string    `datastore:"trustedid"`
+	CLIENTID     string    `datastore:"clientid"`
+	GENDER       string    `datastore:"gender"`
+	AGE          string    `datastore:"age"`
+	DOB          string    `datastore:"dob"`
+	ORGANIZATION string    `datastore:"organization"`
+	TITLE        string    `datastore:"title"`
+	ROLE         string    `datastore:"role"`
+	STATUS       string    `datastore:"status"`
+}
+
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
@@ -291,7 +326,7 @@ var dev = Environment == "dev"
 var DSKRecord = os.Getenv("DSKINDRECORD")
 var DSKFiber = os.Getenv("DSKINDFIBER")
 var DSKSet = os.Getenv("DSKINDSET")
-var DSKSetMember = os.Getenv("DSKINDSETMEMBER")
+var DSKGolden = os.Getenv("DSKINDGOLDEN")
 
 // global vars
 var ctx context.Context
@@ -410,8 +445,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var records []Record
 		var fibers []Fiber
 		var sets []PeopleSet
-		// var setMembers []PeopleSetMember
 		var setIDs []string
+		var golden []PeopleGolden
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -429,7 +464,12 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Error querying sets: %v", err)
 			return
 		}
-		log.Printf("fibers retrieved: %v", fibers)
+		log.Printf("sets retrieved: %v", sets)
+
+		// get the set ids
+		for _, s := range sets {
+			setIDs = append(setIDs, s.ID)
+		}
 
 		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
 		// 	log.Fatalf("Error querying set members: %v", err)
@@ -442,6 +482,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// 	}
 		// }
 		log.Printf("set id retrieved: %v", setIDs)
+
+		var goldenKeys []*datastore.Key
+		for _, s := range setIDs {
+			dsGoldenKey := datastore.NameKey(DSKGolden, s, nil)
+			dsGoldenKey.Namespace = OwnerNamespace
+			goldenKeys = append(goldenKeys, dsGoldenKey)
+			golden = append(golden, PeopleGolden{})
+		}
+		if len(goldenKeys) > 0 {
+			if err := ds.GetMulti(ctx, goldenKeys, golden); err != nil && err != datastore.ErrNoSuchEntity {
+				log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", OwnerNamespace, DSKGolden, goldenKeys, err)
+			}
+		}
 
 		MatchKeyNames := structs.Names(&MatchKeys{})
 
@@ -458,25 +511,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 			for _, m := range MatchKeyNames {
 				mk := GetMatchKeyFieldFromFiberByName(&f, m)
-				if m == "COUNTRY" {
-					country := strings.ToUpper(mk.Value)
-					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
-						InternationalCount++
-					}
-				} else if m == "TITLE" {
-					title := mk.Value
-					if IsInt(title) {
-						class, err := strconv.Atoi(title)
-						if err == nil {
-							if class == CurrentYear+4 {
-								FreshmenCount++
-							} else if class >= CurrentYear && class < CurrentYear+4 {
-								UpperclassmenCount++
-							}
-						}
-					}
-
-				}
 				columnTarget := []string{m}
 				if len(mk.Source) > 0 {
 					if val, ok := columnMaps[mk.Source]; ok {
@@ -488,6 +522,31 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
 				}
 			}
+		}
+
+		for _, g := range golden {
+			for _, m := range MatchKeyNames {
+				mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
+				if m == "COUNTRY" {
+					country := strings.ToUpper(mkValue)
+					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+						InternationalCount++
+					}
+				} else if m == "TITLE" {
+					if IsInt(mkValue) {
+						class, err := strconv.Atoi(mkValue)
+						if err == nil {
+							if class == CurrentYear+4 {
+								FreshmenCount++
+							} else if class >= CurrentYear && class < CurrentYear+4 {
+								UpperclassmenCount++
+							}
+						}
+					}
+
+				}
+			}
+
 		}
 		log.Printf("column maps: %v", columnMaps)
 
@@ -561,6 +620,12 @@ func GetMatchKeyFieldFromFiberByName(v *Fiber, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
+}
+
+func GetMatchKeyFieldFromFGoldenByName(v *PeopleGolden, field string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(string)
 }
 
 func Contains(slice []string, item string) bool {
