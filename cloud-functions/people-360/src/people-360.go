@@ -94,16 +94,16 @@ type PeopleFiberDS struct {
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
-type PeopleSetMember struct {
-	SetID     string
-	OwnerID   string
-	Source    string
-	EventID   string
-	EventType string
-	RecordID  string
-	FiberID   string
-	ID        *datastore.Key `datastore:"__key__"`
-}
+// type PeopleSetMember struct {
+// 	SetID     string
+// 	OwnerID   string
+// 	Source    string
+// 	EventID   string
+// 	EventType string
+// 	RecordID  string
+// 	FiberID   string
+// 	ID        *datastore.Key `datastore:"__key__"`
+// }
 
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
@@ -610,7 +610,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		FiberMatchKeys[name] = []string{}
 	}
-	var SetMembers []PeopleSetMember
+	//var SetMembers []PeopleSetMember
 	for i, fiber := range Fibers {
 		log.Printf("loaded fiber %v of %v: %v", i, len(Fibers), fiber)
 		FiberSignatures = append(FiberSignatures, Signature{
@@ -620,15 +620,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			EventID:   fiber.EventID,
 			RecordID:  fiber.RecordID,
 		})
-		SetMembers = append(SetMembers, PeopleSetMember{
-			SetID:     output.ID,
-			OwnerID:   fiber.OwnerID,
-			Source:    fiber.Source,
-			EventType: fiber.EventType,
-			EventID:   fiber.EventID,
-			RecordID:  fiber.RecordID,
-			FiberID:   fiber.FiberID.Name,
-		})
+		// SetMembers = append(SetMembers, PeopleSetMember{
+		// 	SetID:     output.ID,
+		// 	OwnerID:   fiber.OwnerID,
+		// 	Source:    fiber.Source,
+		// 	EventType: fiber.EventType,
+		// 	EventID:   fiber.EventID,
+		// 	RecordID:  fiber.RecordID,
+		// 	FiberID:   fiber.FiberID.Name,
+		// })
 		for _, name := range MatchKeyList {
 			value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
 			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
@@ -696,15 +696,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	output.MatchKeys = OutputMatchKeys
 
-	SetMembers = append(SetMembers, PeopleSetMember{
-		SetID:     output.ID,
-		OwnerID:   input.Signature.OwnerID,
-		Source:    input.Signature.Source,
-		EventType: input.Signature.EventType,
-		EventID:   input.Signature.EventID,
-		RecordID:  input.Signature.RecordID,
-		FiberID:   fiber.FiberID,
-	})
+	// SetMembers = append(SetMembers, PeopleSetMember{
+	// 	SetID:     output.ID,
+	// 	OwnerID:   input.Signature.OwnerID,
+	// 	Source:    input.Signature.Source,
+	// 	EventType: input.Signature.EventType,
+	// 	EventID:   input.Signature.EventID,
+	// 	RecordID:  input.Signature.RecordID,
+	// 	FiberID:   fiber.FiberID,
+	// })
 
 	// store the set
 	SetInserter := SetTable.Inserter()
@@ -748,15 +748,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 		goldenKey.Namespace = dsNameSpace
 		GoldenKeys = append(GoldenKeys, goldenKey)
-		var MemberDeleteKeys []*datastore.Key
-		query := datastore.NewQuery(DSKindMember).Namespace(dsNameSpace).Filter("SetID =", set).KeysOnly()
-		if _, err := ds.GetAll(ctx, query, &MemberDeleteKeys); err != nil {
-			log.Fatalf("Error querying setmembers by set id: %v", err)
-		} else {
-			for _, s := range MemberDeleteKeys {
-				MemberKeys = append(MemberKeys, s)
-			}
-		}
+		// var MemberDeleteKeys []*datastore.Key
+		// query := datastore.NewQuery(DSKindMember).Namespace(dsNameSpace).Filter("SetID =", set).KeysOnly()
+		// if _, err := ds.GetAll(ctx, query, &MemberDeleteKeys); err != nil {
+		// 	log.Fatalf("Error querying setmembers by set id: %v", err)
+		// } else {
+		// 	for _, s := range MemberDeleteKeys {
+		// 		MemberKeys = append(MemberKeys, s)
+		// 	}
+		// }
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
 		log.Fatalf("Error deleting sets: %v", err)
@@ -764,11 +764,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
 		log.Fatalf("Error deleting golden records: %v", err)
 	}
-	if err := ds.DeleteMulti(ctx, MemberKeys); err != nil {
-		log.Fatalf("Error deleting setmemberss: %v", err)
-	} else {
-		log.Printf("deleting set members by keys: %v", MemberKeys)
-	}
+	// if err := ds.DeleteMulti(ctx, MemberKeys); err != nil {
+	// 	log.Fatalf("Error deleting setmemberss: %v", err)
+	// } else {
+	// 	log.Printf("deleting set members by keys: %v", MemberKeys)
+	// }
 
 	// get all set members to delete
 
@@ -798,16 +798,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	})
 
 	// store set member in DS
-	var SetMemberKeys []*datastore.Key
-	for i := 0; i < len(SetMembers); i++ {
-		memberKey := datastore.IncompleteKey(DSKindMember, nil)
-		memberKey.Namespace = dsNameSpace
-		SetMemberKeys = append(SetMemberKeys, memberKey)
-	}
+	// var SetMemberKeys []*datastore.Key
+	// for i := 0; i < len(SetMembers); i++ {
+	// 	memberKey := datastore.IncompleteKey(DSKindMember, nil)
+	// 	memberKey.Namespace = dsNameSpace
+	// 	SetMemberKeys = append(SetMemberKeys, memberKey)
+	// }
 
-	if _, err := ds.PutMulti(ctx, SetMemberKeys, SetMembers); err != nil {
-		log.Fatalf("Exception storing Set Members sig %v, error %v", input.Signature, err)
-	}
+	// if _, err := ds.PutMulti(ctx, SetMemberKeys, SetMembers); err != nil {
+	// 	log.Fatalf("Exception storing Set Members sig %v, error %v", input.Signature, err)
+	// }
 	return nil
 }
 
