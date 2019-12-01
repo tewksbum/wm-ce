@@ -677,7 +677,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if output.CreatedAt.IsZero() {
 		output.CreatedAt = time.Now()
 	}
-	output.Fibers = append(FiberCollection, fiber.FiberID)
+	output.Fibers = append(matchedFibers, fiber.FiberID)
 	output.Passthroughs = OutputPassthrough
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
