@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
+	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
 	"github.com/fatih/structs"
@@ -46,6 +47,18 @@ type HouseHoldFiber struct {
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
 
+type HouseHoldFiberDS struct {
+	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
+	Source      string           `json:"source" datastore:"source"`
+	EventID     string           `json:"eventId" datastore:"eventid"`
+	EventType   string           `json:"eventType" datastore:"eventtype"`
+	RecordID    string           `json:"recordId" datastore:"recordid"`
+	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
+	MatchKeys   PeopleOutput     `json:"matchkeys" datastore:"matchkeys"`
+	FiberID     *datastore.Key   `datastore:"__key__"`
+	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+}
+
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
 	Source string `json:"source" bigquery:"source"`
@@ -53,31 +66,36 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	FNAME    MatchKeyField `json:"fname" bigquery:"fname"`
-	FINITIAL MatchKeyField `json:"finitial" bigquery:"finitial"`
-	LNAME    MatchKeyField `json:"lname" bigquery:"lname"`
-	CITY     MatchKeyField `json:"city" bigquery:"city"`
-	STATE    MatchKeyField `json:"state" bigquery:"state"`
-	ZIP      MatchKeyField `json:"zip" bigquery:"zip"`
-	ZIP5     MatchKeyField `json:"zip5" bigquery:"zip5"`
-	COUNTRY  MatchKeyField `json:"country" bigquery:"country"`
-	EMAIL    MatchKeyField `json:"email" bigquery:"email"`
-	PHONE    MatchKeyField `json:"phone" bigquery:"phone"`
-	AD1      MatchKeyField `json:"ad1" bigquery:"ad1"`
-	AD2      MatchKeyField `json:"ad2" bigquery:"ad2"`
-	ADTYPE   MatchKeyField `json:"adType" bigquery:"adtype"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
-
-	CLIENTID   MatchKeyField `json:"clientId" bigquery:"clientid"`
 	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
 	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
+	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
+	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
+	MNAME      MatchKeyField `json:"mname" bigquery:"mname"`
+
+	AD1       MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD1NO     MatchKeyField `json:"ad1no" bigquery:"ad1no"`
+	AD2       MatchKeyField `json:"ad2" bigquery:"ad2"`
+	AD3       MatchKeyField `json:"ad3" bigquery:"ad3"`
+	CITY      MatchKeyField `json:"city" bigquery:"city"`
+	STATE     MatchKeyField `json:"state" bigquery:"state"`
+	ZIP       MatchKeyField `json:"zip" bigquery:"zip"`
+	ZIP5      MatchKeyField `json:"zip5" bigquery:"zip5"`
+	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
+	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
+	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
+	ADCORRECT MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
+
+	EMAIL MatchKeyField `json:"email" bigquery:"email"`
+	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
+
+	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
+	CLIENTID  MatchKeyField `json:"clientId" bigquery:"clientid"`
 
 	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
 	AGE    MatchKeyField `json:"age" bigquery:"age"`
 	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
-
-	MAILROUTE MatchKeyField `json:"mailRoute" bigquery:"mailroute"`
 
 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
@@ -125,6 +143,19 @@ type HouseHold360Output struct {
 	Fibers       []string         `json:"fibers" bigquery:"fibers"`
 	Passthroughs []Passthrough360 `json:"passthroughs" bigquery:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
+}
+
+type HouseHold360OutputDS struct {
+	ID           string           `json:"id" datastore:"id"`
+	OwnerID      string           `json:"ownerId" datastore:"ownerId"`
+	Source       string           `json:"source" datastore:"source"`
+	EventID      string           `json:"eventId" datastore:"eventId"`
+	EventType    string           `json:"eventType" datastore:"eventType"`
+	Signatures   []Signature      `json:"signatures" datastore:"signatures"`
+	CreatedAt    time.Time        `json:"createdAt" datastore:"createdAt"`
+	Fibers       []string         `json:"fibers" datastore:"fibers"`
+	Passthroughs []Passthrough360 `json:"passthroughs" datastore:"passthroughs"`
+	MatchKeys    []MatchKey360    `json:"matchKeys" datastore:"matchKeys"`
 }
 
 type HouseholdSetMember struct {
