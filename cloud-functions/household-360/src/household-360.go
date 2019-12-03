@@ -300,7 +300,6 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
 		log.Fatalf("error insertinng into fiber table %v", err)
-		return nil
 	}
 
 	// store in DS
@@ -510,7 +509,6 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	SetInserter := SetTable.Inserter()
 	if err := SetInserter.Put(ctx, output); err != nil {
 		log.Fatalf("error insertinng into set table %v", err)
-		return nil
 	}
 
 	// record the set id in DS
