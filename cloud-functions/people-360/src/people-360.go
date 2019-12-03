@@ -1,11 +1,9 @@
 package people360
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -20,9 +18,6 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/google/uuid"
-
-	"github.com/elastic/go-elasticsearch/v6"
-	"github.com/elastic/go-elasticsearch/v6/esapi"
 )
 
 type PubSubMessage struct {
@@ -49,12 +44,12 @@ type PeopleFiber struct {
 	// Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
 	MatchKeys   PeopleOutput     `json:"matchkeys" bigquery:"matchkeys"`
-	FiberID     string           `json:"fiberId" bigquery:"id"`
+	ID          string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
 
 type PeopleFiberDS struct {
-	FiberID      *datastore.Key   `datastore:"__key__"`
+	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`
 	OwnerID      string           `datastore:"ownerid"`
 	Source       string           `datastore:"source"`
@@ -93,17 +88,6 @@ type PeopleFiberDS struct {
 	STATUS       MatchKeyField    `datastore:"status"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
-
-// type PeopleSetMember struct {
-// 	SetID     string
-// 	OwnerID   string
-// 	Source    string
-// 	EventID   string
-// 	EventType string
-// 	RecordID  string
-// 	FiberID   string
-// 	ID        *datastore.Key `datastore:"__key__"`
-// }
 
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
@@ -178,111 +162,111 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
 }
 
-type People360OutputDS struct {
-	ID                     string    `datastore:"id"`
-	OwnerID                []string  `datastore:"ownerid"`
-	Source                 []string  `datastore:"source"`
-	EventID                []string  `datastore:"eventid"`
-	EventType              []string  `datastore:"eventtype"`
-	RecordID               []string  `datastore:"recordid"`
-	RecordIDNormalized     []string  `datastore:"recordidnormalized"`
-	CreatedAt              time.Time `datastore:"createdat"`
-	Fibers                 []string  `datastore:"fibers"`
-	SALUTATION             []string  `datastore:"salutation"`
-	SALUTATIONNormalized   []string  `datastore:"salutationnormalized"`
-	NICKNAME               []string  `datastore:"nickname"`
-	NICKNAMENormalized     []string  `datastore:"nicknamenormalized"`
-	FNAME                  []string  `datastore:"fname"`
-	FNAMENormalized        []string  `datastore:"fnamenormalized"`
-	FINITIAL               []string  `datastore:"finitial"`
-	FINITIALNormalized     []string  `datastore:"finitialnormalized"`
-	LNAME                  []string  `datastore:"lname"`
-	LNAMENormalized        []string  `datastore:"lnamenormalized"`
-	MNAME                  []string  `datastore:"mname"`
-	MNAMENormalized        []string  `datastore:"mnamenormalized"`
-	AD1                    []string  `datastore:"ad1"`
-	AD1Normalized          []string  `datastore:"ad1normalized"`
-	AD1NO                  []string  `datastore:"ad1no"`
-	AD1NONormalized        []string  `datastore:"ad1nonormalized"`
-	AD2                    []string  `datastore:"ad2"`
-	AD2Normalized          []string  `datastore:"ad2normalized"`
-	AD3                    []string  `datastore:"ad3"`
-	AD3Normalized          []string  `datastore:"ad3normalized"`
-	CITY                   []string  `datastore:"city"`
-	CITYNormalized         []string  `datastore:"citynormalized"`
-	STATE                  []string  `datastore:"state"`
-	STATENormalized        []string  `datastore:"statenormalized"`
-	ZIP                    []string  `datastore:"zip"`
-	ZIPNormalized          []string  `datastore:"zipnormalized"`
-	ZIP5                   []string  `datastore:"zip5"`
-	ZIP5Normalized         []string  `datastore:"zip5normalized"`
-	COUNTRY                []string  `datastore:"country"`
-	COUNTRYNormalized      []string  `datastore:"countrynormalized"`
-	MAILROUTE              []string  `datastore:"mailroute"`
-	MAILROUTENormalized    []string  `datastore:"mailroutenormalized"`
-	ADTYPE                 []string  `datastore:"adtype"`
-	ADTYPENormalized       []string  `datastore:"adtypenormalized"`
-	ADPARSER               []string  `datastore:"adparser"`
-	ADPARSERNormalized     []string  `datastore:"adparsernormalized"`
-	ADCORRECT              []string  `datastore:"adcorrect"`
-	ADCORRECTNormalized    []string  `datastore:"adcorrectnormalized"`
-	EMAIL                  []string  `datastore:"email"`
-	EMAILNormalized        []string  `datastore:"emailnormalized"`
-	PHONE                  []string  `datastore:"phone"`
-	PHONENormalized        []string  `datastore:"phonenormalized"`
-	TRUSTEDID              []string  `datastore:"trustedid"`
-	TRUSTEDIDNormalized    []string  `datastore:"trustedidnormalized"`
-	CLIENTID               []string  `datastore:"clientid"`
-	CLIENTIDNormalized     []string  `datastore:"clientidnormalized"`
-	GENDER                 []string  `datastore:"gender"`
-	GENDERNormalized       []string  `datastore:"gendernormalized"`
-	AGE                    []string  `datastore:"age"`
-	AGENormalized          []string  `datastore:"agenormalized"`
-	DOB                    []string  `datastore:"dob"`
-	DOBNormalized          []string  `datastore:"dobnormalized"`
-	ORGANIZATION           []string  `datastore:"organization"`
-	ORGANIZATIONNormalized []string  `datastore:"organizationnormalized"`
-	TITLE                  []string  `datastore:"title"`
-	TITLENormalized        []string  `datastore:"titlenormalized"`
-	ROLE                   []string  `datastore:"role"`
-	ROLENormalized         []string  `datastore:"rolenormalized"`
-	STATUS                 []string  `datastore:"status"`
-	STATUSNormalized       []string  `datastore:"statusnormalized"`
+type PeopleSetDS struct {
+	ID                     *datastore.Key `datastore:"__key__"`
+	OwnerID                []string       `datastore:"ownerid"`
+	Source                 []string       `datastore:"source"`
+	EventID                []string       `datastore:"eventid"`
+	EventType              []string       `datastore:"eventtype"`
+	RecordID               []string       `datastore:"recordid"`
+	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
+	CreatedAt              time.Time      `datastore:"createdat"`
+	Fibers                 []string       `datastore:"fibers"`
+	SALUTATION             []string       `datastore:"salutation"`
+	SALUTATIONNormalized   []string       `datastore:"salutationnormalized"`
+	NICKNAME               []string       `datastore:"nickname"`
+	NICKNAMENormalized     []string       `datastore:"nicknamenormalized"`
+	FNAME                  []string       `datastore:"fname"`
+	FNAMENormalized        []string       `datastore:"fnamenormalized"`
+	FINITIAL               []string       `datastore:"finitial"`
+	FINITIALNormalized     []string       `datastore:"finitialnormalized"`
+	LNAME                  []string       `datastore:"lname"`
+	LNAMENormalized        []string       `datastore:"lnamenormalized"`
+	MNAME                  []string       `datastore:"mname"`
+	MNAMENormalized        []string       `datastore:"mnamenormalized"`
+	AD1                    []string       `datastore:"ad1"`
+	AD1Normalized          []string       `datastore:"ad1normalized"`
+	AD1NO                  []string       `datastore:"ad1no"`
+	AD1NONormalized        []string       `datastore:"ad1nonormalized"`
+	AD2                    []string       `datastore:"ad2"`
+	AD2Normalized          []string       `datastore:"ad2normalized"`
+	AD3                    []string       `datastore:"ad3"`
+	AD3Normalized          []string       `datastore:"ad3normalized"`
+	CITY                   []string       `datastore:"city"`
+	CITYNormalized         []string       `datastore:"citynormalized"`
+	STATE                  []string       `datastore:"state"`
+	STATENormalized        []string       `datastore:"statenormalized"`
+	ZIP                    []string       `datastore:"zip"`
+	ZIPNormalized          []string       `datastore:"zipnormalized"`
+	ZIP5                   []string       `datastore:"zip5"`
+	ZIP5Normalized         []string       `datastore:"zip5normalized"`
+	COUNTRY                []string       `datastore:"country"`
+	COUNTRYNormalized      []string       `datastore:"countrynormalized"`
+	MAILROUTE              []string       `datastore:"mailroute"`
+	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
+	ADTYPE                 []string       `datastore:"adtype"`
+	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ADPARSER               []string       `datastore:"adparser"`
+	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
+	ADCORRECT              []string       `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	EMAIL                  []string       `datastore:"email"`
+	EMAILNormalized        []string       `datastore:"emailnormalized"`
+	PHONE                  []string       `datastore:"phone"`
+	PHONENormalized        []string       `datastore:"phonenormalized"`
+	TRUSTEDID              []string       `datastore:"trustedid"`
+	TRUSTEDIDNormalized    []string       `datastore:"trustedidnormalized"`
+	CLIENTID               []string       `datastore:"clientid"`
+	CLIENTIDNormalized     []string       `datastore:"clientidnormalized"`
+	GENDER                 []string       `datastore:"gender"`
+	GENDERNormalized       []string       `datastore:"gendernormalized"`
+	AGE                    []string       `datastore:"age"`
+	AGENormalized          []string       `datastore:"agenormalized"`
+	DOB                    []string       `datastore:"dob"`
+	DOBNormalized          []string       `datastore:"dobnormalized"`
+	ORGANIZATION           []string       `datastore:"organization"`
+	ORGANIZATIONNormalized []string       `datastore:"organizationnormalized"`
+	TITLE                  []string       `datastore:"title"`
+	TITLENormalized        []string       `datastore:"titlenormalized"`
+	ROLE                   []string       `datastore:"role"`
+	ROLENormalized         []string       `datastore:"rolenormalized"`
+	STATUS                 []string       `datastore:"status"`
+	STATUSNormalized       []string       `datastore:"statusnormalized"`
 }
 
-type People360GoldenDS struct {
-	ID           string    `datastore:"id"`
-	CreatedAt    time.Time `datastore:"createdat"`
-	SALUTATION   string    `datastore:"salutation"`
-	NICKNAME     string    `datastore:"nickname"`
-	FNAME        string    `datastore:"fname"`
-	FINITIAL     string    `datastore:"finitial"`
-	LNAME        string    `datastore:"lname"`
-	MNAME        string    `datastore:"mname"`
-	AD1          string    `datastore:"ad1"`
-	AD1NO        string    `datastore:"ad1no"`
-	AD2          string    `datastore:"ad2"`
-	AD3          string    `datastore:"ad3"`
-	CITY         string    `datastore:"city"`
-	STATE        string    `datastore:"state"`
-	ZIP          string    `datastore:"zip"`
-	ZIP5         string    `datastore:"zip5"`
-	COUNTRY      string    `datastore:"country"`
-	MAILROUTE    string    `datastore:"mailroute"`
-	ADTYPE       string    `datastore:"adtype"`
-	ADPARSER     string    `datastore:"adparser"`
-	ADCORRECT    string    `datastore:"adcorrect"`
-	EMAIL        string    `datastore:"email"`
-	PHONE        string    `datastore:"phone"`
-	TRUSTEDID    string    `datastore:"trustedid"`
-	CLIENTID     string    `datastore:"clientid"`
-	GENDER       string    `datastore:"gender"`
-	AGE          string    `datastore:"age"`
-	DOB          string    `datastore:"dob"`
-	ORGANIZATION string    `datastore:"organization"`
-	TITLE        string    `datastore:"title"`
-	ROLE         string    `datastore:"role"`
-	STATUS       string    `datastore:"status"`
+type PeopleGoldenDS struct {
+	ID           *datastore.Key `datastore:"__key__"`
+	CreatedAt    time.Time      `datastore:"createdat"`
+	SALUTATION   string         `datastore:"salutation"`
+	NICKNAME     string         `datastore:"nickname"`
+	FNAME        string         `datastore:"fname"`
+	FINITIAL     string         `datastore:"finitial"`
+	LNAME        string         `datastore:"lname"`
+	MNAME        string         `datastore:"mname"`
+	AD1          string         `datastore:"ad1"`
+	AD1NO        string         `datastore:"ad1no"`
+	AD2          string         `datastore:"ad2"`
+	AD3          string         `datastore:"ad3"`
+	CITY         string         `datastore:"city"`
+	STATE        string         `datastore:"state"`
+	ZIP          string         `datastore:"zip"`
+	ZIP5         string         `datastore:"zip5"`
+	COUNTRY      string         `datastore:"country"`
+	MAILROUTE    string         `datastore:"mailroute"`
+	ADTYPE       string         `datastore:"adtype"`
+	ADPARSER     string         `datastore:"adparser"`
+	ADCORRECT    string         `datastore:"adcorrect"`
+	EMAIL        string         `datastore:"email"`
+	PHONE        string         `datastore:"phone"`
+	TRUSTEDID    string         `datastore:"trustedid"`
+	CLIENTID     string         `datastore:"clientid"`
+	GENDER       string         `datastore:"gender"`
+	AGE          string         `datastore:"age"`
+	DOB          string         `datastore:"dob"`
+	ORGANIZATION string         `datastore:"organization"`
+	TITLE        string         `datastore:"title"`
+	ROLE         string         `datastore:"role"`
+	STATUS       string         `datastore:"status"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -299,7 +283,6 @@ var dev = os.Getenv("ENVIRONMENT") == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
-var DSKindMember = os.Getenv("DSKINDMEMBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -310,7 +293,6 @@ var topic2 *pubsub.Topic
 var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
-var es *elasticsearch.Client
 var ds *datastore.Client
 
 // var setSchema bigquery.Schema
@@ -324,12 +306,6 @@ func init() {
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
 	bs, _ = bigquery.InferSchema(People360Output{})
 	bc, _ = bigquery.InferSchema(PeopleFiber{})
-
-	es, _ = elasticsearch.NewClient(elasticsearch.Config{
-		Addresses: []string{ESUrl},
-		Username:  ESUid,
-		Password:  ESPwd,
-	})
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
@@ -385,13 +361,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber PeopleFiber
 	fiber.CreatedAt = time.Now()
-	fiber.FiberID = uuid.New().String()
+	fiber.ID = uuid.New().String()
 	fiber.MatchKeys = input.MatchKeys
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
-
-	// let's log this into ES
-	_ = PersistInES(ctx, fiber)
 
 	// store in BQ
 	FiberInserter := FiberTable.Inserter()
@@ -401,15 +374,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// store in DS
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
-	dsKey := datastore.NameKey(DSKindFiber, fiber.FiberID, nil)
+	dsKey := datastore.NameKey(DSKindFiber, fiber.ID, nil)
 	dsKey.Namespace = dsNameSpace
 	dsFiber := GetFiberDS(&fiber)
+	dsFiber.ID = dsKey
 	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
 		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
 	}
 
 	// locate existing set
-
 	if len(input.Signature.RecordID) == 0 {
 		// ensure record id is not blank or we'll have problem
 		input.Signature.RecordID = uuid.New().String()
@@ -439,8 +412,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
 	// missing address type
 
-	matchedSets := []People360OutputDS{}
-	queriedSets := []People360OutputDS{}
+	matchedSets := []PeopleSetDS{}
+	queriedSets := []PeopleSetDS{}
 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
 	if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 		log.Fatalf("Error querying sets query 1: %v", err)
@@ -500,8 +473,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var matchedFibers []string
 	var expiredSetCollection []string
 	for _, s := range matchedSets {
-		if !Contains(expiredSetCollection, s.ID) {
-			expiredSetCollection = append(expiredSetCollection, s.ID)
+		if !Contains(expiredSetCollection, s.ID.Name) {
+			expiredSetCollection = append(expiredSetCollection, s.ID.Name)
 		}
 		if len(s.Fibers) > 0 {
 			for _, f := range s.Fibers {
@@ -512,71 +485,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
-	// QueryText := fmt.Sprintf("with fiberlist as (SELECT id, fibers FROM `%s.%s.%s` WHERE (exists (select 1 from UNNEST(signatures) s where s.RecordID = '%s')) ", ProjectID, DatasetID, SetTableName, MatchByValue0)
-	// if len(MatchByValue1) > 0 {
-	// 	QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey1, MatchByValue1)
-	// }
-	// if len(MatchByValue2) > 0 {
-	// 	QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey2, MatchByValue2)
-	// }
-	// if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
-	// 	QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey3A, MatchByValue3A, MatchByKey3B, MatchByValue3B)
-	// }
-	// if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
-	// 	QueryText += fmt.Sprintf("OR (exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s') AND exists (select 1 from UNNEST(matchKeys) m, UNNEST(m.values) u  where m.key = '%s' and u = '%s')) ", MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C, MatchByKey5D, MatchByValue5D, MatchByKey5E, MatchByValue5E)
-	// }
-	// QueryText += ") select distinct id, f from fiberlist, unnest(fibers) f"
-	// log.Printf("Match Query Text: %s", QueryText)
-	// BQQuery := bq.Query(QueryText)
-	// BQQuery.Location = "US"
-	// BQJob, err := BQQuery.Run(ctx)
-	// if err != nil {
-	// 	log.Fatalf("%v Could not query bq: %v", input.Signature.EventID, err)
-	// 	return err
-	// }
-	// BQStatus, err := BQJob.Wait(ctx)
-	// if err != nil {
-	// 	log.Fatalf("%v Error while waiting for bq job: %v", input.Signature.EventID, err)
-	// 	return err
-	// }
-	// if err := BQStatus.Err(); err != nil {
-	// 	log.Fatalf("%v bq execution error: %v", input.Signature.EventID, err)
-	// 	return err
-	// }
-	// BQIterator, err := BQJob.Read(ctx)
-
-	// // Collect all fiber IDs
-	// var FiberCollection []string
-
-	// for {
-	// 	var fibers []bigquery.Value
-	// 	err = BQIterator.Next(&fibers)
-	// 	if err == iterator.Done {
-	// 		break
-	// 	} else if err != nil {
-	// 		log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
-	// 	} else {
-	// 		log.Printf("Fetched from BQ: %v", fibers)
-	// 		// with the query above, we get 2 elements, first value is set id, second is fiber id
-	// 		// collect the set id for deletion
-	// 		// collect the fiber ids to build new set
-	// 		for i, f := range fibers {
-	// 			if i == 0 {
-	// 				fs := fmt.Sprintf("%v", f)
-	// 				if !Contains(expiredSetCollection, fs) {
-	// 					expiredSetCollection = append(expiredSetCollection, fs)
-	// 				}
-	// 			} else {
-	// 				fs := fmt.Sprintf("%v", f)
-	// 				if !Contains(FiberCollection, fs) {
-	// 					FiberCollection = append(FiberCollection, fs)
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	log.Printf("Fiber Collection: %v", matchedFibers)
+	LogDev(fmt.Sprintf("Fiber Collection: %v", matchedFibers))
 
 	// get all the Fibers
 
@@ -599,7 +508,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		return Fibers[i].CreatedAt.After(Fibers[j].CreatedAt)
 	})
 
-	log.Printf("Fibers: %v", Fibers)
+	LogDev(fmt.Sprintf("Fibers: %v", Fibers))
 
 	var output People360Output
 	var FiberSignatures []Signature
@@ -612,7 +521,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	//var SetMembers []PeopleSetMember
 	for i, fiber := range Fibers {
-		log.Printf("loaded fiber %v of %v: %v", i, len(Fibers), fiber)
+		LogDev(fmt.Sprintf("loaded fiber %v of %v: %v", i, len(Fibers), fiber))
 		FiberSignatures = append(FiberSignatures, Signature{
 			OwnerID:   fiber.OwnerID,
 			Source:    fiber.Source,
@@ -620,22 +529,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			EventID:   fiber.EventID,
 			RecordID:  fiber.RecordID,
 		})
-		// SetMembers = append(SetMembers, PeopleSetMember{
-		// 	SetID:     output.ID,
-		// 	OwnerID:   fiber.OwnerID,
-		// 	Source:    fiber.Source,
-		// 	EventType: fiber.EventType,
-		// 	EventID:   fiber.EventID,
-		// 	RecordID:  fiber.RecordID,
-		// 	FiberID:   fiber.FiberID.Name,
-		// })
+
 		for _, name := range MatchKeyList {
 			value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
 			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
 				FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
 			}
 		}
-		log.Printf("FiberMatchKey values %v", FiberMatchKeys)
+		LogDev(fmt.Sprintf("FiberMatchKey values %v", FiberMatchKeys))
 	}
 	var MatchKeysFromFiber []MatchKey360
 	for _, name := range MatchKeyList {
@@ -644,7 +545,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			Values: FiberMatchKeys[name],
 		}
 		MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
-		log.Printf("mk.Values %v: %v", name, FiberMatchKeys[name])
+		LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
 	}
 
 	output.MatchKeys = MatchKeysFromFiber
@@ -677,7 +578,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if output.CreatedAt.IsZero() {
 		output.CreatedAt = time.Now()
 	}
-	output.Fibers = append(matchedFibers, fiber.FiberID)
+	output.Fibers = append(matchedFibers, fiber.ID)
 	output.Passthroughs = OutputPassthrough
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
@@ -696,16 +597,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	output.MatchKeys = OutputMatchKeys
 
-	// SetMembers = append(SetMembers, PeopleSetMember{
-	// 	SetID:     output.ID,
-	// 	OwnerID:   input.Signature.OwnerID,
-	// 	Source:    input.Signature.Source,
-	// 	EventType: input.Signature.EventType,
-	// 	EventID:   input.Signature.EventID,
-	// 	RecordID:  input.Signature.RecordID,
-	// 	FiberID:   fiber.FiberID,
-	// })
-
 	// store the set
 	SetInserter := SetTable.Inserter()
 	if err := SetInserter.Put(ctx, output); err != nil {
@@ -714,10 +605,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// record the set id in DS
-	var setDS People360OutputDS
+	var setDS PeopleSetDS
 	setKey := datastore.NameKey(DSKindSet, output.ID, nil)
 	setKey.Namespace = dsNameSpace
-	setDS.ID = output.ID
+	setDS.ID = setKey
 	setDS.Fibers = output.Fibers
 	setDS.CreatedAt = output.CreatedAt
 	PopulateSetOutputSignatures(&setDS, output.Signatures)
@@ -726,10 +617,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Exception storing set with sig %v, error %v", input.Signature, err)
 	}
 
-	var goldenDS People360GoldenDS
+	var goldenDS PeopleGoldenDS
 	goldenKey := datastore.NameKey(DSKindGolden, output.ID, nil)
 	goldenKey.Namespace = dsNameSpace
-	goldenDS.ID = output.ID
+	goldenDS.ID = goldenKey
 	goldenDS.CreatedAt = output.CreatedAt
 	PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 	if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
@@ -748,15 +639,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 		goldenKey.Namespace = dsNameSpace
 		GoldenKeys = append(GoldenKeys, goldenKey)
-		// var MemberDeleteKeys []*datastore.Key
-		// query := datastore.NewQuery(DSKindMember).Namespace(dsNameSpace).Filter("SetID =", set).KeysOnly()
-		// if _, err := ds.GetAll(ctx, query, &MemberDeleteKeys); err != nil {
-		// 	log.Fatalf("Error querying setmembers by set id: %v", err)
-		// } else {
-		// 	for _, s := range MemberDeleteKeys {
-		// 		MemberKeys = append(MemberKeys, s)
-		// 	}
-		// }
 	}
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
 		log.Fatalf("Error deleting sets: %v", err)
@@ -764,13 +646,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
 		log.Fatalf("Error deleting golden records: %v", err)
 	}
-	// if err := ds.DeleteMulti(ctx, MemberKeys); err != nil {
-	// 	log.Fatalf("Error deleting setmemberss: %v", err)
-	// } else {
-	// 	log.Printf("deleting set members by keys: %v", MemberKeys)
-	// }
-
-	// get all set members to delete
 
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
@@ -786,7 +661,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
-		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
 
 	topic2.Publish(ctx, &pubsub.Message{
@@ -797,17 +672,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		},
 	})
 
-	// store set member in DS
-	// var SetMemberKeys []*datastore.Key
-	// for i := 0; i < len(SetMembers); i++ {
-	// 	memberKey := datastore.IncompleteKey(DSKindMember, nil)
-	// 	memberKey.Namespace = dsNameSpace
-	// 	SetMemberKeys = append(SetMemberKeys, memberKey)
-	// }
-
-	// if _, err := ds.PutMulti(ctx, SetMemberKeys, SetMembers); err != nil {
-	// 	log.Fatalf("Exception storing Set Members sig %v, error %v", input.Signature, err)
-	// }
 	return nil
 }
 
@@ -855,33 +719,6 @@ func ConvertPassthrough(v map[string]string) []Passthrough360 {
 	return result
 }
 
-func PersistInES(ctx context.Context, v interface{}) bool {
-	esJSON, _ := json.Marshal(v)
-	esID := uuid.New().String()
-	esReq := esapi.IndexRequest{
-		Index:        ESIndex,
-		DocumentType: "record",
-		DocumentID:   esID,
-		Body:         bytes.NewReader(esJSON),
-		Refresh:      "true",
-	}
-	esRes, err := esReq.Do(ctx, es)
-	if err != nil {
-		log.Fatalf("Error getting response: %s", err)
-	}
-	defer esRes.Body.Close()
-
-	if esRes.IsError() {
-		resB, _ := ioutil.ReadAll(esRes.Body)
-		log.Printf("[%s] Error indexing document ID=%v, Message=%v", esRes.Status(), esID, string(resB))
-		return false
-	} else {
-		resB, _ := ioutil.ReadAll(esRes.Body)
-		log.Printf("[%s] document ID=%v, Message=%v", esRes.Status(), esID, string(resB))
-		return true
-	}
-}
-
 func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 	p := PeopleFiberDS{
 		OwnerID:     v.Signature.OwnerID,
@@ -918,14 +755,14 @@ func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string
 	return slice
 }
 
-func SetPeople360SetOutputFieldValues(v *People360OutputDS, field string, value []string) {
+func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
 	LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
-func SetPeople360GoldenOutputFieldValue(v *People360GoldenDS, field string, value string) {
+func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
@@ -939,7 +776,7 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 }
 
-func PopulateSetOutputSignatures(target *People360OutputDS, values []Signature) {
+func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
@@ -956,7 +793,7 @@ func PopulateFiberMatchKeys(target *PeopleFiberDS, source *PeopleOutput) {
 	}
 }
 
-func PopulateSetOutputMatchKeys(target *People360OutputDS, values []MatchKey360) {
+func PopulateSetOutputMatchKeys(target *PeopleSetDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
 		SetPeople360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
@@ -964,7 +801,7 @@ func PopulateSetOutputMatchKeys(target *People360OutputDS, values []MatchKey360)
 	}
 }
 
-func PopulateGoldenOutputMatchKeys(target *People360GoldenDS, values []MatchKey360) {
+func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
 		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))

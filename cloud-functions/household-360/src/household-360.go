@@ -8,6 +8,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 
 	"github.com/fatih/structs"
 	"github.com/google/uuid"
-	"google.golang.org/api/iterator"
 )
 
 type PubSubMessage struct {
@@ -43,20 +43,29 @@ type HouseHoldFiber struct {
 	//Passthrough map[string]string `json:"passthrough" bigquery:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough" bigquery:"passthrough"`
 	MatchKeys   HouseHoldOutput  `json:"matchkeys" bigquery:"matchkeys"`
-	FiberID     string           `json:"fiberId" bigquery:"id"`
+	ID          string           `json:"fiberId" bigquery:"id"`
 	CreatedAt   time.Time        `json:"createdAt" bigquery:"createdAt"`
 }
 
 type HouseHoldFiberDS struct {
-	OwnerID     string           `json:"ownerId" datastore:"ownerid"`
-	Source      string           `json:"source" datastore:"source"`
-	EventID     string           `json:"eventId" datastore:"eventid"`
-	EventType   string           `json:"eventType" datastore:"eventtype"`
-	RecordID    string           `json:"recordId" datastore:"recordid"`
-	Passthrough []Passthrough360 `json:"passthrough" datastore:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys" datastore:"matchkeys"`
-	FiberID     *datastore.Key   `datastore:"__key__"`
-	CreatedAt   time.Time        `json:"createdAt" datastore:"createdAt"`
+	ID          *datastore.Key   `datastore:"__key__"`
+	CreatedAt   time.Time        `datastore:"createdAt"`
+	OwnerID     string           `datastore:"ownerid"`
+	Source      string           `datastore:"source"`
+	EventID     string           `datastore:"eventid"`
+	EventType   string           `datastore:"eventtype"`
+	RecordID    string           `datastore:"recordid"`
+	LNAME       MatchKeyField    `datastore:"lname"`
+	CITY        MatchKeyField    `datastore:"city"`
+	STATE       MatchKeyField    `datastore:"state"`
+	ZIP         MatchKeyField    `datastore:"zip"`
+	ZIP5        MatchKeyField    `datastore:"zip5"`
+	COUNTRY     MatchKeyField    `datastore:"country"`
+	AD1         MatchKeyField    `datastore:"ad1"`
+	AD1NO       MatchKeyField    `datastore:"ad1no"`
+	AD2         MatchKeyField    `datastore:"ad2"`
+	ADTYPE      MatchKeyField    `datastore:"adtype"`
+	Passthrough []Passthrough360 `datastore:"passthrough"`
 }
 
 type MatchKeyField struct {
@@ -111,6 +120,7 @@ type HouseHoldOutput struct {
 	ZIP5    MatchKeyField `json:"zip5" bigquery:"zip5"`
 	COUNTRY MatchKeyField `json:"country" bigquery:"country"`
 	AD1     MatchKeyField `json:"ad1" bigquery:"ad1"`
+	AD1NO   MatchKeyField `json:"ad1no" bigquery:"ad1no"`
 	AD2     MatchKeyField `json:"ad2" bigquery:"ad2"`
 	ADTYPE  MatchKeyField `json:"adType" bigquery:"adtype"`
 }
@@ -145,27 +155,51 @@ type HouseHold360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys" bigquery:"matchKeys"`
 }
 
-type HouseHold360OutputDS struct {
-	ID           string           `json:"id" datastore:"id"`
-	OwnerID      string           `json:"ownerId" datastore:"ownerId"`
-	Source       string           `json:"source" datastore:"source"`
-	EventID      string           `json:"eventId" datastore:"eventId"`
-	EventType    string           `json:"eventType" datastore:"eventType"`
-	Signatures   []Signature      `json:"signatures" datastore:"signatures"`
-	CreatedAt    time.Time        `json:"createdAt" datastore:"createdAt"`
-	Fibers       []string         `json:"fibers" datastore:"fibers"`
-	Passthroughs []Passthrough360 `json:"passthroughs" datastore:"passthroughs"`
-	MatchKeys    []MatchKey360    `json:"matchKeys" datastore:"matchKeys"`
+type HouseHoldSetDS struct {
+	ID                 *datastore.Key `datastore:"__key__"`
+	OwnerID            []string       `datastore:"ownerid"`
+	Source             []string       `datastore:"source"`
+	EventID            []string       `datastore:"eventid"`
+	EventType          []string       `datastore:"eventtype"`
+	RecordID           []string       `datastore:"recordid"`
+	RecordIDNormalized []string       `datastore:"recordidnormalized"`
+	CreatedAt          time.Time      `datastore:"createdat"`
+	Fibers             []string       `datastore:"fibers"`
+	LNAME              []string       `datastore:"lname"`
+	LNAMENormalized    []string       `datastore:"lnamenormalized"`
+	CITY               []string       `datastore:"city"`
+	CITYNormalized     []string       `datastore:"citynormalized"`
+	STATE              []string       `datastore:"state"`
+	STATENormalized    []string       `datastore:"statenormalized"`
+	ZIP                []string       `datastore:"zip"`
+	ZIPNormalized      []string       `datastore:"zipnormalized"`
+	ZIP5               []string       `datastore:"zip5"`
+	ZIP5Normalized     []string       `datastore:"zip5normalized"`
+	COUNTRY            []string       `datastore:"country"`
+	COUNTRYNormalized  []string       `datastore:"countrynormalized"`
+	AD1                []string       `datastore:"ad1"`
+	AD1Normalized      []string       `datastore:"ad1normalized"`
+	AD1NO              []string       `datastore:"ad1no"`
+	AD1NONormalized    []string       `datastore:"ad1nonormalized"`
+	AD2                []string       `datastore:"ad2"`
+	AD2Normalized      []string       `datastore:"ad2normalized"`
+	ADTYPE             []string       `datastore:"adtype"`
+	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
 }
 
-type HouseholdSetMember struct {
-	SetID     string
-	OwnerID   string
-	Source    string
-	EventID   string
-	EventType string
-	RecordID  string
-	FiberID   string
+type HouseHoldGoldenDS struct {
+	ID        *datastore.Key `datastore:"__key__"`
+	CreatedAt time.Time      `datastore:"createdat"`
+	LNAME     string         `datastore:"lname"`
+	CITY      string         `datastore:"city"`
+	STATE     string         `datastore:"state"`
+	ZIP       string         `datastore:"zip"`
+	ZIP5      string         `datastore:"zip5"`
+	COUNTRY   string         `datastore:"country"`
+	AD1       string         `datastore:"ad1"`
+	AD1NO     string         `datastore:"ad1no"`
+	AD2       string         `datastore:"ad2"`
+	ADTYPE    string         `datastore:"adtype"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -175,7 +209,10 @@ var BQPrefix = os.Getenv("BQPREFIX")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var DSKindSet = os.Getenv("DSKINDSET")
+var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+var Env = os.Getenv("ENVIRONMENT")
+var dev = Env == "dev"
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -186,6 +223,7 @@ var topic2 *pubsub.Topic
 var bq *bigquery.Client
 var bs bigquery.Schema
 var bc bigquery.Schema
+var ds *datastore.Client
 
 // var setSchema bigquery.Schema
 
@@ -197,6 +235,7 @@ func init() {
 	bq, _ = bigquery.NewClient(ctx, ProjectID)
 	bs, _ = bigquery.InferSchema(HouseHold360Output{})
 	bc, _ = bigquery.InferSchema(HouseHoldFiber{})
+	ds, _ = datastore.NewClient(ctx, ProjectID)
 
 	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
 }
@@ -244,6 +283,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	HouseholdMatchKeys.ZIP5 = input.MatchKeys.ZIP5
 	HouseholdMatchKeys.COUNTRY = input.MatchKeys.COUNTRY
 	HouseholdMatchKeys.AD1 = input.MatchKeys.AD1
+	HouseholdMatchKeys.AD1NO = input.MatchKeys.AD1NO
 	HouseholdMatchKeys.AD2 = input.MatchKeys.AD2
 	HouseholdMatchKeys.ADTYPE = input.MatchKeys.ADTYPE
 
@@ -251,131 +291,179 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber HouseHoldFiber
 	fiber.CreatedAt = time.Now()
-	fiber.FiberID = uuid.New().String()
+	fiber.ID = uuid.New().String()
 	fiber.MatchKeys = HouseholdMatchKeys
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
+	// store in BQ
 	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
 		log.Fatalf("error insertinng into fiber table %v", err)
 		return nil
 	}
 
+	// store in DS
+	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+	dsKey := datastore.NameKey(DSKindFiber, fiber.ID, nil)
+	dsKey.Namespace = dsNameSpace
+	dsFiber := GetFiberDS(&fiber)
+	dsFiber.ID = dsKey
+	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
+		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
+	}
+
 	// locate existing set
 	MatchByKey4A := "ZIP5"
-	MatchByValue4A := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", "\\'", -1)
+	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", `''`, -1)
 	MatchByKey4B := "LNAME"
-	MatchByValue4B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", "\\'", -1)
-	// MISSING STREET NUMBER
+	MatchByValue4B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
+	MatchByKey4C := "AD1NO"
+	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
 
 	MatchByKey5A := "CITY"
-	MatchByValue5A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", "\\'", -1)
+	MatchByValue5A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", `''`, -1)
 	MatchByKey5B := "STATE"
-	MatchByValue5B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", "\\'", -1)
+	MatchByValue5B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", `''`, -1)
 	MatchByKey5C := "LNAME"
-	MatchByValue5C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", "\\'", -1)
-	// MISSING STREET NUMBER
+	MatchByValue5C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
+	MatchByKey5D := "AD1NO"
+	MatchByValue5D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
 
 	MatchByKey6A := "AD2"
-	MatchByValue6A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", "\\'", -1)
+	MatchByValue6A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
 	MatchByKey6B := "ZIP5"
-	MatchByValue6B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", "\\'", -1)
-	// MISSING STREET NUMBER
+	MatchByValue6B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
+	MatchByKey6C := "AD1NO"
+	MatchByValue6C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
 
-	QueryText := fmt.Sprintf("SELECT fibers FROM `%s.%s.%s`, UNNEST(matchKeys) m, UNNEST(m.values)u WHERE "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s') OR "+
-		"(m.key = '%s' and u = '%s' AND m.key = '%s' and u = '%s')"+
-		"ORDER BY timestamp DESC", ProjectID, DatasetID, SetTableName,
-		MatchByKey4A, MatchByValue4A, MatchByKey4B, MatchByValue4B,
-		MatchByKey5A, MatchByValue5A, MatchByKey5B, MatchByValue5B, MatchByKey5C, MatchByValue5C,
-		MatchByKey6A, MatchByValue6A, MatchByKey6B, MatchByValue6B)
-
-	BQQuery := bq.Query(QueryText)
-	BQQuery.Location = "US"
-	BQJob, err := BQQuery.Run(ctx)
-	if err != nil {
-		log.Fatalf("%v Could not query bq: %v", input.Signature.EventID, err)
-		return err
-	}
-	BQStatus, err := BQJob.Wait(ctx)
-	if err != nil {
-		log.Fatalf("%v Error while waiting for bq job: %v", input.Signature.EventID, err)
-		return err
-	}
-	if err := BQStatus.Err(); err != nil {
-		log.Fatalf("%v bq execution error: %v", input.Signature.EventID, err)
-		return err
-	}
-	BQIterator, err := BQJob.Read(ctx)
-
-	// Collect all fiber IDs
-	var FiberCollection []string
-	for {
-		var fibers []bigquery.Value
-		err = BQIterator.Next(&fibers)
-		if err == iterator.Done {
-			break
-		} else if err != nil {
-			log.Fatalf("%v bq exception getting fiber: %v", input.Signature.EventID, err)
+	matchedSets := []HouseHoldSetDS{}
+	queriedSets := []HouseHoldSetDS{}
+	if len(MatchByValue4A) > 0 && len(MatchByValue4B) > 0 && len(MatchByValue4C) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter(strings.ToLower(MatchByKey4A)+"normalized =", strings.ToUpper(MatchByValue4A)).
+			Filter(strings.ToLower(MatchByKey4B)+"normalized =", strings.ToUpper(MatchByValue4B)).
+			Filter(strings.ToLower(MatchByKey4C)+"normalized =", strings.ToUpper(MatchByValue4C))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
-			for _, f := range fibers {
-				fs := fmt.Sprintf("%s", f)
-				if !Contains(FiberCollection, fs) {
-					FiberCollection = append(FiberCollection, fs)
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
+	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
+			Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
+			Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
+			Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
+	if len(MatchByValue6A) > 0 && len(MatchByValue6B) > 0 && len(MatchByValue6C) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter(strings.ToLower(MatchByKey6A)+"normalized =", strings.ToUpper(MatchByValue6A)).
+			Filter(strings.ToLower(MatchByKey6B)+"normalized =", strings.ToUpper(MatchByValue6B)).
+			Filter(strings.ToLower(MatchByKey6C)+"normalized =", strings.ToUpper(MatchByValue6C))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
+
+	var matchedFibers []string
+	var expiredSetCollection []string
+	for _, s := range matchedSets {
+		if !Contains(expiredSetCollection, s.ID.Name) {
+			expiredSetCollection = append(expiredSetCollection, s.ID.Name)
+		}
+		if len(s.Fibers) > 0 {
+			for _, f := range s.Fibers {
+				if !Contains(matchedFibers, f) {
+					matchedFibers = append(matchedFibers, f)
 				}
 			}
 		}
 	}
 
-	// get all the Fibers
-	var Fibers []HouseHoldFiber
-	if len(FiberCollection) > 0 {
-		FiberList := "'" + strings.Join(FiberCollection, "', '") + "'"
-		QueryText := fmt.Sprintf("SELECT * FROM `%s.%s.%s` WHERE id IN (%s) ORDER BY createdAt DESC", ProjectID, DatasetID, FiberTableName, FiberList)
-		BQQuery := bq.Query(QueryText)
-		BQQuery.Location = "US"
-		BQJob, err := BQQuery.Run(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not query bq fibers: %v", input.Signature.EventID, err)
-			return err
-		}
-		BQStatus, err := BQJob.Wait(ctx)
-		if err != nil {
-			log.Fatalf("%v Error while waiting for bq fibers job: %v", input.Signature.EventID, err)
-			return err
-		}
-		if err := BQStatus.Err(); err != nil {
-			log.Fatalf("%v bq fibers execution error: %v", input.Signature.EventID, err)
-			return err
-		}
-		BQIterator, err := BQJob.Read(ctx)
+	LogDev(fmt.Sprintf("Fiber Collection: %v", matchedFibers))
 
-		// Collect all fiber IDs
-		for {
-			var fiber HouseHoldFiber
-			err = BQIterator.Next(&fiber)
-			if err == iterator.Done {
-				break
-			} else if err != nil {
-				log.Fatalf("%v bq returned value not matching expected type: %v", input.Signature.EventID, err)
-			} else {
-				Fibers = append(Fibers, fiber)
-			}
+	// get all the Fibers
+	var FiberKeys []*datastore.Key
+	var Fibers []HouseHoldFiberDS
+	for _, fiber := range matchedFibers {
+		dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
+		dsFiberGetKey.Namespace = dsNameSpace
+		FiberKeys = append(FiberKeys, dsFiberGetKey)
+		Fibers = append(Fibers, HouseHoldFiberDS{})
+	}
+	if len(FiberKeys) > 0 {
+		if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
+			log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
 		}
 	}
 
-	var output HouseHold360Output
-	var FiberMatchKeys []MatchKey360
+	// sort by createdAt desc
+	sort.Slice(Fibers, func(i, j int) bool {
+		return Fibers[i].CreatedAt.After(Fibers[j].CreatedAt)
+	})
 
+	LogDev(fmt.Sprintf("Fibers: %v", Fibers))
+
+	var output HouseHold360Output
+	var FiberSignatures []Signature
+	output.ID = uuid.New().String()
 	MatchKeyList := structs.Names(&HouseHoldOutput{})
+	FiberMatchKeys := make(map[string][]string)
+	// collect all fiber match key values
+	for _, name := range MatchKeyList {
+		FiberMatchKeys[name] = []string{}
+	}
+	//var SetMembers []HouseHoldSetMember
+	for i, fiber := range Fibers {
+		LogDev(fmt.Sprintf("loaded fiber %v of %v: %v", i, len(Fibers), fiber))
+		FiberSignatures = append(FiberSignatures, Signature{
+			OwnerID:   fiber.OwnerID,
+			Source:    fiber.Source,
+			EventType: fiber.EventType,
+			EventID:   fiber.EventID,
+			RecordID:  fiber.RecordID,
+		})
+
+		for _, name := range MatchKeyList {
+			value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
+			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
+				FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
+			}
+		}
+		LogDev(fmt.Sprintf("FiberMatchKey values %v", FiberMatchKeys))
+	}
+	var MatchKeysFromFiber []MatchKey360
+	for _, name := range MatchKeyList {
+		mk360 := MatchKey360{
+			Key:    name,
+			Values: FiberMatchKeys[name],
+		}
+		MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
+		LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
+	}
+
+	output.MatchKeys = MatchKeysFromFiber
+
 	HasNewValues := false
 	// check to see if there are any new values
 	for _, name := range MatchKeyList {
-		log.Printf("Getting %v value", name)
-		mk := GetMatchKeyFields(output.MatchKeys, name)
-		mk.Value = GetMkField(&HouseholdMatchKeys, name).Value
+		mk := GetMatchKey360ByName(output.MatchKeys, name)
+		mk.Value = GetMatchKeyFieldFromPeopleOutput(&input.MatchKeys, name).Value
 		if !Contains(mk.Values, mk.Value) {
 			HasNewValues = true
 			break
@@ -387,23 +475,9 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
-	// collect all fiber match key values
-	for _, fiber := range Fibers {
-		for _, name := range MatchKeyList {
-			mk := GetMatchKeyFields(output.MatchKeys, name)
-			value := GetMkField(&fiber.MatchKeys, name).Value
-			if !Contains(mk.Values, value) && len(value) > 0 {
-				mk.Values = append(mk.Values, value)
-			}
-		}
-
-	}
-	output.MatchKeys = FiberMatchKeys
-
 	// append to the output value
-	output.ID = uuid.New().String()
-	output.TimeStamp = time.Now()
-	output.Signatures = append(output.Signatures, input.Signature)
+
+	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
 		Source:    input.Signature.Source,
@@ -413,22 +487,22 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	if output.CreatedAt.IsZero() {
 		output.CreatedAt = time.Now()
 	}
-	output.Fibers = append(output.Fibers, input.Signature.RecordID)
+	output.Fibers = append(matchedFibers, fiber.ID)
 	output.Passthroughs = OutputPassthrough
-
 	//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 	var OutputMatchKeys []MatchKey360
 	for _, name := range MatchKeyList {
-		mk := GetMatchKeyFields(output.MatchKeys, name)
+		mk := GetMatchKey360ByName(output.MatchKeys, name)
 		mk.Key = name
-		mk.Value = GetMkField(&HouseholdMatchKeys, name).Value
+		mk.Value = strings.TrimSpace(GetMatchKeyFieldFromPeopleOutput(&input.MatchKeys, name).Value)
+		// if blank, assign it a value
 		if len(mk.Value) == 0 && len(mk.Values) > 0 {
 			mk.Value = mk.Values[0]
 		}
 		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
-		OutputMatchKeys = append(OutputMatchKeys, mk)
+		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
 
@@ -437,6 +511,49 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	if err := SetInserter.Put(ctx, output); err != nil {
 		log.Fatalf("error insertinng into set table %v", err)
 		return nil
+	}
+
+	// record the set id in DS
+	var setDS HouseHoldSetDS
+	setKey := datastore.NameKey(DSKindSet, output.ID, nil)
+	setKey.Namespace = dsNameSpace
+	setDS.ID = setKey
+	setDS.Fibers = output.Fibers
+	setDS.CreatedAt = output.CreatedAt
+	PopulateSetOutputSignatures(&setDS, output.Signatures)
+	PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
+	if _, err := ds.Put(ctx, setKey, &setDS); err != nil {
+		log.Fatalf("Exception storing set with sig %v, error %v", input.Signature, err)
+	}
+
+	var goldenDS HouseHoldGoldenDS
+	goldenKey := datastore.NameKey(DSKindGolden, output.ID, nil)
+	goldenKey.Namespace = dsNameSpace
+	goldenDS.ID = goldenKey
+	goldenDS.CreatedAt = output.CreatedAt
+	PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
+	if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
+		log.Fatalf("Exception storing golden record with sig %v, error %v", input.Signature, err)
+	}
+
+	// remove expired sets and setmembers from DS
+	var SetKeys []*datastore.Key
+	// var MemberKeys []*datastore.Key
+	var GoldenKeys []*datastore.Key
+
+	for _, set := range expiredSetCollection {
+		setKey := datastore.NameKey(DSKindSet, set, nil)
+		setKey.Namespace = dsNameSpace
+		SetKeys = append(SetKeys, setKey)
+		goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+		goldenKey.Namespace = dsNameSpace
+		GoldenKeys = append(GoldenKeys, goldenKey)
+	}
+	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
+		log.Fatalf("Error deleting sets: %v", err)
+	}
+	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
+		log.Fatalf("Error deleting golden records: %v", err)
 	}
 
 	// push into pubsub
@@ -453,7 +570,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
-		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
 
 	topic2.Publish(ctx, &pubsub.Message{
@@ -503,4 +620,167 @@ func ConvertPassthrough(v map[string]string) []Passthrough360 {
 		}
 	}
 	return result
+}
+
+func GetFiberDS(v *HouseHoldFiber) HouseHoldFiberDS {
+	p := HouseHoldFiberDS{
+		OwnerID:     v.Signature.OwnerID,
+		Source:      v.Signature.Source,
+		EventType:   v.Signature.EventType,
+		EventID:     v.Signature.EventID,
+		RecordID:    v.Signature.RecordID,
+		Passthrough: v.Passthrough,
+		CreatedAt:   v.CreatedAt,
+	}
+	PopulateFiberMatchKeys(&p, &(v.MatchKeys))
+	return p
+}
+
+func PopulateFiberMatchKeys(target *HouseHoldFiberDS, source *HouseHoldOutput) {
+	KeyList := structs.Names(&HouseHoldOutput{})
+	for _, key := range KeyList {
+		SetHouseHoldFiberMatchKeyField(target, key, GetMatchKeyFieldFromHouseHoldOutput(source, key))
+	}
+}
+
+func SetHouseHoldFiberMatchKeyField(v *HouseHoldFiberDS, field string, value MatchKeyField) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetHouseHoldFiberMatchKeyField: %v %v", field, value))
+}
+
+func GetMatchKeyFieldFromPeopleOutput(v *PeopleOutput, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func GetMatchKeyFieldFromHouseHoldOutput(v *HouseHoldOutput, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
+}
+
+func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
+	for _, m := range v {
+		if m.Key == key {
+			return &m
+		}
+	}
+	return &MatchKey360{}
+}
+
+func GetMatchKeyFieldFromDSFiber(v *HouseHoldFiberDS, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func PopulateSetOutputSignatures(target *HouseHoldSetDS, values []Signature) {
+	KeyList := structs.Names(&Signature{})
+	for _, key := range KeyList {
+		SetHouseHold360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
+		if key == "RecordID" {
+			SetHouseHold360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
+		}
+	}
+}
+
+func SetHouseHold360SetOutputFieldValues(v *HouseHoldSetDS, field string, value []string) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetHouseHold360SetOutputFieldValues: %v %v", field, value))
+}
+
+func SetHouseHold360GoldenOutputFieldValue(v *HouseHoldGoldenDS, field string, value string) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(value))
+	LogDev(fmt.Sprintf("SetHouseHold360GoldenOutputFieldValue: %v %v", field, value))
+}
+
+func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string {
+	slice := []string{}
+	for _, s := range source {
+		slice = append(slice, Left(GetSignatureField(&s, field), 36))
+	}
+	return slice
+}
+
+func GetSignatureSliceValues(source []Signature, field string) []string {
+	slice := []string{}
+	for _, s := range source {
+		slice = append(slice, GetSignatureField(&s, field))
+	}
+	return slice
+}
+
+func GetSignatureField(v *Signature, field string) string {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(string)
+}
+
+func Left(str string, num int) string {
+	if num <= 0 {
+		return ``
+	}
+	if num > len(str) {
+		num = len(str)
+	}
+	return str[:num]
+}
+
+func PopulateSetOutputMatchKeys(target *HouseHoldSetDS, values []MatchKey360) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetHouseHold360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
+		SetHouseHold360SetOutputFieldValues(target, key+"Normalized", GetSetValuesFromMatchKeysNormalized(values, key))
+	}
+}
+
+func PopulateGoldenOutputMatchKeys(target *HouseHoldGoldenDS, values []MatchKey360) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetHouseHold360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))
+	}
+}
+
+func GetSetValuesFromMatchKeys(values []MatchKey360, key string) []string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Values
+		}
+	}
+	return []string{}
+}
+
+func GetSetValuesFromMatchKeysNormalized(values []MatchKey360, key string) []string {
+	result := []string{}
+	for _, m := range values {
+		if m.Key == key {
+			for _, v := range m.Values {
+				result = append(result, strings.ToUpper(v))
+			}
+			return result
+		}
+	}
+	return []string{}
+}
+
+func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Value
+		}
+	}
+	return ""
 }

@@ -86,7 +86,7 @@ type Record struct {
 }
 
 type Fiber struct {
-	FiberID      *datastore.Key   `datastore:"__key__"`
+	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`
 	OwnerID      string           `datastore:"ownerid"`
 	Source       string           `datastore:"source"`
@@ -126,26 +126,6 @@ type Fiber struct {
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
-// type PeopleSetMember struct {
-// 	SetID     string
-// 	OwnerID   string
-// 	Source    string
-// 	EventID   string
-// 	EventType string
-// 	RecordID  string
-// 	FiberID   string
-// }
-
-type HouseholdSetMember struct {
-	SetID     string
-	OwnerID   string
-	Source    string
-	EventID   string
-	EventType string
-	RecordID  string
-	FiberID   string
-}
-
 type Signature struct {
 	OwnerID   string
 	Source    string
@@ -159,7 +139,7 @@ type Passthrough360 struct {
 	Value string
 }
 
-type MatchKeys struct {
+type PeopleMatchKeys struct {
 	SALUTATION MatchKeyField
 	NICKNAME   MatchKeyField
 	FNAME      MatchKeyField
@@ -197,6 +177,19 @@ type MatchKeys struct {
 	STATUS       MatchKeyField
 }
 
+type HouseHoldMatchKeys struct {
+	LNAME   MatchKeyField
+	CITY    MatchKeyField
+	STATE   MatchKeyField
+	ZIP     MatchKeyField
+	ZIP5    MatchKeyField
+	COUNTRY MatchKeyField
+	AD1     MatchKeyField
+	AD1NO   MatchKeyField
+	AD2     MatchKeyField
+	ADTYPE  MatchKeyField
+}
+
 type MatchKeyField struct {
 	Value  string
 	Source string
@@ -209,110 +202,110 @@ type KVP struct {
 }
 
 type PeopleSet struct {
-	ID                     string    `datastore:"id"`
-	OwnerID                []string  `datastore:"ownerid"`
-	Source                 []string  `datastore:"source"`
-	EventID                []string  `datastore:"eventid"`
-	EventType              []string  `datastore:"eventtype"`
-	RecordID               []string  `datastore:"recordid"`
-	RecordIDNormalized     []string  `datastore:"recordidnormalized"`
-	CreatedAt              time.Time `datastore:"createdat"`
-	Fibers                 []string  `datastore:"fibers"`
-	SALUTATION             []string  `datastore:"salutation"`
-	SALUTATIONNormalized   []string  `datastore:"salutationnormalized"`
-	NICKNAME               []string  `datastore:"nickname"`
-	NICKNAMENormalized     []string  `datastore:"nicknamenormalized"`
-	FNAME                  []string  `datastore:"fname"`
-	FNAMENormalized        []string  `datastore:"fnamenormalized"`
-	FINITIAL               []string  `datastore:"finitial"`
-	FINITIALNormalized     []string  `datastore:"finitialnormalized"`
-	LNAME                  []string  `datastore:"lname"`
-	LNAMENormalized        []string  `datastore:"lnamenormalized"`
-	MNAME                  []string  `datastore:"mname"`
-	MNAMENormalized        []string  `datastore:"mnamenormalized"`
-	AD1                    []string  `datastore:"ad1"`
-	AD1Normalized          []string  `datastore:"ad1normalized"`
-	AD1NO                  []string  `datastore:"ad1no"`
-	AD1NONormalized        []string  `datastore:"ad1nonormalized"`
-	AD2                    []string  `datastore:"ad2"`
-	AD2Normalized          []string  `datastore:"ad2normalized"`
-	AD3                    []string  `datastore:"ad3"`
-	AD3Normalized          []string  `datastore:"ad3normalized"`
-	CITY                   []string  `datastore:"city"`
-	CITYNormalized         []string  `datastore:"citynormalized"`
-	STATE                  []string  `datastore:"state"`
-	STATENormalized        []string  `datastore:"statenormalized"`
-	ZIP                    []string  `datastore:"zip"`
-	ZIPNormalized          []string  `datastore:"zipnormalized"`
-	ZIP5                   []string  `datastore:"zip5"`
-	ZIP5Normalized         []string  `datastore:"zip5normalized"`
-	COUNTRY                []string  `datastore:"country"`
-	COUNTRYNormalized      []string  `datastore:"countrynormalized"`
-	MAILROUTE              []string  `datastore:"mailroute"`
-	MAILROUTENormalized    []string  `datastore:"mailroutenormalized"`
-	ADTYPE                 []string  `datastore:"adtype"`
-	ADTYPENormalized       []string  `datastore:"adtypenormalized"`
-	ADPARSER               []string  `datastore:"adparser"`
-	ADPARSERNormalized     []string  `datastore:"adparsernormalized"`
-	ADCORRECT              []string  `datastore:"adcorrect"`
-	ADCORRECTNormalized    []string  `datastore:"adcorrectnormalized"`
-	EMAIL                  []string  `datastore:"email"`
-	EMAILNormalized        []string  `datastore:"emailnormalized"`
-	PHONE                  []string  `datastore:"phone"`
-	PHONENormalized        []string  `datastore:"phonenormalized"`
-	TRUSTEDID              []string  `datastore:"trustedid"`
-	TRUSTEDIDNormalized    []string  `datastore:"trustedidnormalized"`
-	CLIENTID               []string  `datastore:"clientid"`
-	CLIENTIDNormalized     []string  `datastore:"clientidnormalized"`
-	GENDER                 []string  `datastore:"gender"`
-	GENDERNormalized       []string  `datastore:"gendernormalized"`
-	AGE                    []string  `datastore:"age"`
-	AGENormalized          []string  `datastore:"agenormalized"`
-	DOB                    []string  `datastore:"dob"`
-	DOBNormalized          []string  `datastore:"dobnormalized"`
-	ORGANIZATION           []string  `datastore:"organization"`
-	ORGANIZATIONNormalized []string  `datastore:"organizationnormalized"`
-	TITLE                  []string  `datastore:"title"`
-	TITLENormalized        []string  `datastore:"titlenormalized"`
-	ROLE                   []string  `datastore:"role"`
-	ROLENormalized         []string  `datastore:"rolenormalized"`
-	STATUS                 []string  `datastore:"status"`
-	STATUSNormalized       []string  `datastore:"statusnormalized"`
+	ID                     *datastore.Key `datastore:"__key__"`
+	OwnerID                []string       `datastore:"ownerid"`
+	Source                 []string       `datastore:"source"`
+	EventID                []string       `datastore:"eventid"`
+	EventType              []string       `datastore:"eventtype"`
+	RecordID               []string       `datastore:"recordid"`
+	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
+	CreatedAt              time.Time      `datastore:"createdat"`
+	Fibers                 []string       `datastore:"fibers"`
+	SALUTATION             []string       `datastore:"salutation"`
+	SALUTATIONNormalized   []string       `datastore:"salutationnormalized"`
+	NICKNAME               []string       `datastore:"nickname"`
+	NICKNAMENormalized     []string       `datastore:"nicknamenormalized"`
+	FNAME                  []string       `datastore:"fname"`
+	FNAMENormalized        []string       `datastore:"fnamenormalized"`
+	FINITIAL               []string       `datastore:"finitial"`
+	FINITIALNormalized     []string       `datastore:"finitialnormalized"`
+	LNAME                  []string       `datastore:"lname"`
+	LNAMENormalized        []string       `datastore:"lnamenormalized"`
+	MNAME                  []string       `datastore:"mname"`
+	MNAMENormalized        []string       `datastore:"mnamenormalized"`
+	AD1                    []string       `datastore:"ad1"`
+	AD1Normalized          []string       `datastore:"ad1normalized"`
+	AD1NO                  []string       `datastore:"ad1no"`
+	AD1NONormalized        []string       `datastore:"ad1nonormalized"`
+	AD2                    []string       `datastore:"ad2"`
+	AD2Normalized          []string       `datastore:"ad2normalized"`
+	AD3                    []string       `datastore:"ad3"`
+	AD3Normalized          []string       `datastore:"ad3normalized"`
+	CITY                   []string       `datastore:"city"`
+	CITYNormalized         []string       `datastore:"citynormalized"`
+	STATE                  []string       `datastore:"state"`
+	STATENormalized        []string       `datastore:"statenormalized"`
+	ZIP                    []string       `datastore:"zip"`
+	ZIPNormalized          []string       `datastore:"zipnormalized"`
+	ZIP5                   []string       `datastore:"zip5"`
+	ZIP5Normalized         []string       `datastore:"zip5normalized"`
+	COUNTRY                []string       `datastore:"country"`
+	COUNTRYNormalized      []string       `datastore:"countrynormalized"`
+	MAILROUTE              []string       `datastore:"mailroute"`
+	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
+	ADTYPE                 []string       `datastore:"adtype"`
+	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ADPARSER               []string       `datastore:"adparser"`
+	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
+	ADCORRECT              []string       `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	EMAIL                  []string       `datastore:"email"`
+	EMAILNormalized        []string       `datastore:"emailnormalized"`
+	PHONE                  []string       `datastore:"phone"`
+	PHONENormalized        []string       `datastore:"phonenormalized"`
+	TRUSTEDID              []string       `datastore:"trustedid"`
+	TRUSTEDIDNormalized    []string       `datastore:"trustedidnormalized"`
+	CLIENTID               []string       `datastore:"clientid"`
+	CLIENTIDNormalized     []string       `datastore:"clientidnormalized"`
+	GENDER                 []string       `datastore:"gender"`
+	GENDERNormalized       []string       `datastore:"gendernormalized"`
+	AGE                    []string       `datastore:"age"`
+	AGENormalized          []string       `datastore:"agenormalized"`
+	DOB                    []string       `datastore:"dob"`
+	DOBNormalized          []string       `datastore:"dobnormalized"`
+	ORGANIZATION           []string       `datastore:"organization"`
+	ORGANIZATIONNormalized []string       `datastore:"organizationnormalized"`
+	TITLE                  []string       `datastore:"title"`
+	TITLENormalized        []string       `datastore:"titlenormalized"`
+	ROLE                   []string       `datastore:"role"`
+	ROLENormalized         []string       `datastore:"rolenormalized"`
+	STATUS                 []string       `datastore:"status"`
+	STATUSNormalized       []string       `datastore:"statusnormalized"`
 }
 
 type PeopleGolden struct {
-	ID           string    `datastore:"id"`
-	CreatedAt    time.Time `datastore:"createdat"`
-	SALUTATION   string    `datastore:"salutation"`
-	NICKNAME     string    `datastore:"nickname"`
-	FNAME        string    `datastore:"fname"`
-	FINITIAL     string    `datastore:"finitial"`
-	LNAME        string    `datastore:"lname"`
-	MNAME        string    `datastore:"mname"`
-	AD1          string    `datastore:"ad1"`
-	AD1NO        string    `datastore:"ad1no"`
-	AD2          string    `datastore:"ad2"`
-	AD3          string    `datastore:"ad3"`
-	CITY         string    `datastore:"city"`
-	STATE        string    `datastore:"state"`
-	ZIP          string    `datastore:"zip"`
-	ZIP5         string    `datastore:"zip5"`
-	COUNTRY      string    `datastore:"country"`
-	MAILROUTE    string    `datastore:"mailroute"`
-	ADTYPE       string    `datastore:"adtype"`
-	ADPARSER     string    `datastore:"adparser"`
-	ADCORRECT    string    `datastore:"adcorrect"`
-	EMAIL        string    `datastore:"email"`
-	PHONE        string    `datastore:"phone"`
-	TRUSTEDID    string    `datastore:"trustedid"`
-	CLIENTID     string    `datastore:"clientid"`
-	GENDER       string    `datastore:"gender"`
-	AGE          string    `datastore:"age"`
-	DOB          string    `datastore:"dob"`
-	ORGANIZATION string    `datastore:"organization"`
-	TITLE        string    `datastore:"title"`
-	ROLE         string    `datastore:"role"`
-	STATUS       string    `datastore:"status"`
+	ID           *datastore.Key `datastore:"__key__"`
+	CreatedAt    time.Time      `datastore:"createdat"`
+	SALUTATION   string         `datastore:"salutation"`
+	NICKNAME     string         `datastore:"nickname"`
+	FNAME        string         `datastore:"fname"`
+	FINITIAL     string         `datastore:"finitial"`
+	LNAME        string         `datastore:"lname"`
+	MNAME        string         `datastore:"mname"`
+	AD1          string         `datastore:"ad1"`
+	AD1NO        string         `datastore:"ad1no"`
+	AD2          string         `datastore:"ad2"`
+	AD3          string         `datastore:"ad3"`
+	CITY         string         `datastore:"city"`
+	STATE        string         `datastore:"state"`
+	ZIP          string         `datastore:"zip"`
+	ZIP5         string         `datastore:"zip5"`
+	COUNTRY      string         `datastore:"country"`
+	MAILROUTE    string         `datastore:"mailroute"`
+	ADTYPE       string         `datastore:"adtype"`
+	ADPARSER     string         `datastore:"adparser"`
+	ADCORRECT    string         `datastore:"adcorrect"`
+	EMAIL        string         `datastore:"email"`
+	PHONE        string         `datastore:"phone"`
+	TRUSTEDID    string         `datastore:"trustedid"`
+	CLIENTID     string         `datastore:"clientid"`
+	GENDER       string         `datastore:"gender"`
+	AGE          string         `datastore:"age"`
+	DOB          string         `datastore:"dob"`
+	ORGANIZATION string         `datastore:"organization"`
+	TITLE        string         `datastore:"title"`
+	ROLE         string         `datastore:"role"`
+	STATUS       string         `datastore:"status"`
 }
 
 // ProjectID is the env var of project id
@@ -468,7 +461,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		// get the set ids
 		for _, s := range sets {
-			setIDs = append(setIDs, s.ID)
+			setIDs = append(setIDs, s.ID.Name)
 		}
 
 		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
@@ -496,7 +489,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		MatchKeyNames := structs.Names(&MatchKeys{})
+		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 
 		InternationalCount := 0
 		FreshmenCount := 0
@@ -509,7 +502,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				recordIDs = append(recordIDs, recordID)
 			}
 
-			for _, m := range MatchKeyNames {
+			for _, m := range PeopleMatchKeyNames {
 				mk := GetMatchKeyFieldFromFiberByName(&f, m)
 				columnTarget := []string{m}
 				if len(mk.Source) > 0 {
@@ -525,7 +518,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, g := range golden {
-			for _, m := range MatchKeyNames {
+			for _, m := range PeopleMatchKeyNames {
 				mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
 				if m == "COUNTRY" {
 					country := strings.ToUpper(mkValue)
