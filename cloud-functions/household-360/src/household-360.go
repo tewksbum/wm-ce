@@ -738,7 +738,7 @@ func Left(str string, num int) string {
 }
 
 func PopulateSetOutputMatchKeys(target *HouseHoldSetDS, values []MatchKey360) {
-	KeyList := structs.Names(&PeopleOutput{})
+	KeyList := structs.Names(&HouseHoldOutput{})
 	for _, key := range KeyList {
 		SetHouseHold360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
 		SetHouseHold360SetOutputFieldValues(target, key+"Normalized", GetSetValuesFromMatchKeysNormalized(values, key))
@@ -746,7 +746,7 @@ func PopulateSetOutputMatchKeys(target *HouseHoldSetDS, values []MatchKey360) {
 }
 
 func PopulateGoldenOutputMatchKeys(target *HouseHoldGoldenDS, values []MatchKey360) {
-	KeyList := structs.Names(&PeopleOutput{})
+	KeyList := structs.Names(&HouseHoldOutput{})
 	for _, key := range KeyList {
 		SetHouseHold360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))
 	}
