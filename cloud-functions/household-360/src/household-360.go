@@ -313,63 +313,76 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// locate existing set
-	MatchByKey4A := "ZIP5"
-	MatchByValue4A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", `''`, -1)
-	MatchByKey4B := "LNAME"
-	MatchByValue4B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
+	MatchByValue1 := input.Signature.RecordID
+
+	MatchByKey2A := "ZIP5"
+	MatchByValue2A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", `''`, -1)
+	MatchByKey2B := "LNAME"
+	MatchByValue2B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
+	MatchByKey2C := "AD1NO"
+	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+
+	MatchByKey3A := "CITY"
+	MatchByValue3A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", `''`, -1)
+	MatchByKey3B := "STATE"
+	MatchByValue3B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", `''`, -1)
+	MatchByKey3C := "LNAME"
+	MatchByValue3C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
+	MatchByKey3D := "AD1NO"
+	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+
+	MatchByKey4A := "AD2"
+	MatchByValue4A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
+	MatchByKey4B := "ZIP5"
+	MatchByValue4B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
 	MatchByKey4C := "AD1NO"
 	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
 
-	MatchByKey5A := "CITY"
-	MatchByValue5A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", `''`, -1)
-	MatchByKey5B := "STATE"
-	MatchByValue5B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", `''`, -1)
-	MatchByKey5C := "LNAME"
-	MatchByValue5C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey5D := "AD1NO"
-	MatchByValue5D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
-
-	MatchByKey6A := "AD2"
-	MatchByValue6A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
-	MatchByKey6B := "ZIP5"
-	MatchByValue6B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
-	MatchByKey6C := "AD1NO"
-	MatchByValue6C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
-
 	matchedSets := []HouseHoldSetDS{}
 	queriedSets := []HouseHoldSetDS{}
+	if len(MatchByValue1) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter("recordidnormalized =", Left(MatchByValue1, 36))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
+	if len(MatchByValue2A) > 0 && len(MatchByValue2B) > 0 && len(MatchByValue2C) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter(strings.ToLower(MatchByKey2A)+"normalized =", strings.ToUpper(MatchByValue2A)).
+			Filter(strings.ToLower(MatchByKey2B)+"normalized =", strings.ToUpper(MatchByValue2B)).
+			Filter(strings.ToLower(MatchByKey2C)+"normalized =", strings.ToUpper(MatchByValue2C))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
+	if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 && len(MatchByValue3C) > 0 && len(MatchByValue3D) > 0 {
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
+			Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B)).
+			Filter(strings.ToLower(MatchByKey3C)+"normalized =", strings.ToUpper(MatchByValue3C)).
+			Filter(strings.ToLower(MatchByKey3D)+"normalized =", strings.ToUpper(MatchByValue3D))
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+		}
+	}
 	if len(MatchByValue4A) > 0 && len(MatchByValue4B) > 0 && len(MatchByValue4C) > 0 {
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 			Filter(strings.ToLower(MatchByKey4A)+"normalized =", strings.ToUpper(MatchByValue4A)).
 			Filter(strings.ToLower(MatchByKey4B)+"normalized =", strings.ToUpper(MatchByValue4B)).
 			Filter(strings.ToLower(MatchByKey4C)+"normalized =", strings.ToUpper(MatchByValue4C))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-		}
-	}
-	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-			Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
-			Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
-			Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
-			Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-		}
-	}
-	if len(MatchByValue6A) > 0 && len(MatchByValue6B) > 0 && len(MatchByValue6C) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-			Filter(strings.ToLower(MatchByKey6A)+"normalized =", strings.ToUpper(MatchByValue6A)).
-			Filter(strings.ToLower(MatchByKey6B)+"normalized =", strings.ToUpper(MatchByValue6B)).
-			Filter(strings.ToLower(MatchByKey6C)+"normalized =", strings.ToUpper(MatchByValue6C))
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
