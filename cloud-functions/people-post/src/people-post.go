@@ -48,6 +48,7 @@ type InputColumn struct {
 	MatchKey    string    `json:"MK"`  // model match key
 	MatchKey1   string    `json:"MK1"` // assigned key 1
 	MatchKey2   string    `json:"MK2"` // assigned key 2
+	MatchKey3   string    `json:"MK3"` // assigned key 3
 	IsAttribute bool      `json:"IsAttr"`
 }
 
