@@ -116,55 +116,55 @@ type PeopleOutput struct {
 }
 
 type PeopleERR struct {
-	Address             int `json:"Address"`
-	Address1            int `json:"Address1"`
-	Address2            int `json:"Address2"`
-	Address3            int `json:"Address3"`
-	FullAddress         int `json:"FullAddress"`
-	Age                 int `json:"Age"`
-	Birthday            int `json:"Birthday"`
-	City                int `json:"City"`
-	Country             int `json:"Country"`
-	County              int `json:"County"`
-	Email               int `json:"Email"`
-	FirstName           int `json:"FirstName"`
-	FullName            int `json:"FullName"`
-	Gender              int `json:"Gender"`
-	LastName            int `json:"LastName"`
-	MiddleName          int `json:"MiddleName"`
-	ParentEmail         int `json:"ParentEmail"`
-	ParentFirstName     int `json:"ParentFirstName"`
-	ParentLastName      int `json:"ParentLastName"`
-	ParentName          int `json:"ParentName"`
-	Phone               int `json:"Phone"`
-	State               int `json:"State"`
-	Suffix              int `json:"Suffix"`
-	ZipCode             int `json:"ZipCode"`
-	TrustedID           int `json:"TrustedID"`
-	Title               int `json:"Title"`
-	Role                int `json:"Role"`
-	Dorm                int `json:"Dorm"`
-	Room                int `json:"Room"`
-	Organization        int `json:"Organization"`
+	Address              int `json:"Address"`
+	Address1             int `json:"Address1"`
+	Address2             int `json:"Address2"`
+	Address3             int `json:"Address3"`
+	FullAddress          int `json:"FullAddress"`
+	Age                  int `json:"Age"`
+	Birthday             int `json:"Birthday"`
+	City                 int `json:"City"`
+	Country              int `json:"Country"`
+	County               int `json:"County"`
+	Email                int `json:"Email"`
+	FirstName            int `json:"FirstName"`
+	FullName             int `json:"FullName"`
+	Gender               int `json:"Gender"`
+	LastName             int `json:"LastName"`
+	MiddleName           int `json:"MiddleName"`
+	ParentEmail          int `json:"ParentEmail"`
+	ParentFirstName      int `json:"ParentFirstName"`
+	ParentLastName       int `json:"ParentLastName"`
+	ParentName           int `json:"ParentName"`
+	Phone                int `json:"Phone"`
+	State                int `json:"State"`
+	Suffix               int `json:"Suffix"`
+	ZipCode              int `json:"ZipCode"`
+	TrustedID            int `json:"TrustedID"`
+	Title                int `json:"Title"`
+	Role                 int `json:"Role"`
+	Dorm                 int `json:"Dorm"`
+	Room                 int `json:"Room"`
+	Organization         int `json:"Organization"`
 	AddressTypeResidence int `json:"ATResidence"`
-	AddressTypeCampus   int `json:"ATCampus"`
-	AddressTypeBusiness int `json:"ATBusiness"`
-	AddressBookBill		int `json:"ABBill"`
-	AddressBookShip		int `json:"ABShip"`
-	ContainsFirstName   int `json:"ContainsFirstName"`
-	ContainsName        int `json:"ContainsName"`
-	ContainsLastName    int `json:"ContainsLastName"`
-	ContainsCountry     int `json:"ContainsCountry"`
-	ContainsEmail       int `json:"ContainsEmail"`
-	ContainsAddress     int `json:"ContainsAddress"`
-	ContainsCity        int `json:"ContainsCity"`
-	ContainsState       int `json:"ContainsState"`
-	ContainsZipCode     int `json:"ContainsZipCode"`
-	ContainsPhone       int `json:"ContainsPhone"`
-	ContainsTitle       int `json:"ContainsTitle"`
-	ContainsRole        int `json:"ContainsRole"`
-	ContainsStudentRole int `json:"ContainsStudentRole"`
-	Junk                int `json:"Junk"`
+	AddressTypeCampus    int `json:"ATCampus"`
+	AddressTypeBusiness  int `json:"ATBusiness"`
+	AddressBookBill      int `json:"ABBill"`
+	AddressBookShip      int `json:"ABShip"`
+	ContainsFirstName    int `json:"ContainsFirstName"`
+	ContainsName         int `json:"ContainsName"`
+	ContainsLastName     int `json:"ContainsLastName"`
+	ContainsCountry      int `json:"ContainsCountry"`
+	ContainsEmail        int `json:"ContainsEmail"`
+	ContainsAddress      int `json:"ContainsAddress"`
+	ContainsCity         int `json:"ContainsCity"`
+	ContainsState        int `json:"ContainsState"`
+	ContainsZipCode      int `json:"ContainsZipCode"`
+	ContainsPhone        int `json:"ContainsPhone"`
+	ContainsTitle        int `json:"ContainsTitle"`
+	ContainsRole         int `json:"ContainsRole"`
+	ContainsStudentRole  int `json:"ContainsStudentRole"`
+	Junk                 int `json:"Junk"`
 }
 
 type PeopleVER struct {
@@ -595,7 +595,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput, indexOutput = GetOutputByType(&outputs, "dorm")
 				}
+
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
+				if matchKeyAssigned == "TITLE" {
+					LogDev(fmt.Sprintf("title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
+				}
 				if column.IsAttribute && len(currentValue.Value) > 0 {
 					skipValue = true
 				} else { // skip the MAR if it is an attribute
@@ -665,7 +669,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 
 				if len(column.MatchKey3) > 0 {
-					SetMkField(&(currentOutput.Output), "ADBOOK", AssignAddressBook(&column), column.Name)					
+					SetMkField(&(currentOutput.Output), "ADBOOK", AssignAddressBook(&column), column.Name)
 				}
 				//columnOutput := *currentOutput
 				outputs[indexOutput] = *currentOutput
@@ -685,12 +689,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	indexToSkip := -1
 	for i, v := range outputs {
 		if v.Type == "default" {
-			ad2 := GetMkField (&(v.Output), "AD2")
+			ad2 := GetMkField(&(v.Output), "AD2")
 			if len(ad2.Value) == 0 { // see if we have a MAR with AD1 only
 				for j, o := range outputs {
 					if o.Type == "mar" {
-						populatedKeys := GetPopulatedMatchKeys (&(o.Output))
-						if len(populatedKeys) == 1 && populatedKeys[0] == "AD1"{
+						populatedKeys := GetPopulatedMatchKeys(&(o.Output))
+						if len(populatedKeys) == 1 && populatedKeys[0] == "AD1" {
 							mar := GetMkField(&(o.Output), "AD1")
 							SetMkField(&(v.Output), "AD2", mar.Value, mar.Source)
 							outputs[i] = v
@@ -700,7 +704,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 							LogDev(fmt.Sprintf("mar check returned list of populated keys: %v", populatedKeys))
 						}
 					}
-				}				
+				}
 			}
 		}
 	}
@@ -721,7 +725,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	return nil
 }
 
-func GetPopulatedMatchKeys (a *PeopleOutput) []string {
+func GetPopulatedMatchKeys(a *PeopleOutput) []string {
 	names := structs.Names(&PeopleOutput{})
 	result := []string{}
 	for _, n := range names {
@@ -1054,7 +1058,7 @@ func AssignAddressType(column *InputColumn) string {
 		return "Bill"
 	} else if column.PeopleERR.AddressBookShip == 1 {
 		return "Ship"
-	} 
+	}
 	return ""
 }
 
