@@ -319,6 +319,10 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
 	}
 
+	if len(HouseholdMatchKeys.LNAME.Value) == 0 { // no lname, nothing to do here
+		return nil
+	}
+
 	// locate existing set
 	MatchByValue1 := input.Signature.RecordID
 
