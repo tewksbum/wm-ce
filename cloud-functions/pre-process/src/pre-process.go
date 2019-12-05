@@ -138,10 +138,11 @@ type PeopleERR struct {
 	Dorm                int `json:"Dorm"`
 	Room                int `json:"Room"`
 	Organization        int `json:"Organization"`
+	AddressTypeResidence int `json:"ATResidence"`
 	AddressTypeCampus   int `json:"ATCampus"`
-	AddressTypeHome     int `json:"ATHome"`
-	AddressTypeBilling  int `json:"ATBilling"`
-	AddressTypeShipping int `json:"ATShipping"`
+	AddressTypeBusiness int `json:"ATBusiness"`
+	AddressBookBill		int `json:"ABBill"`
+	AddressBookShip		int `json:"ABShip"`
 	ContainsFirstName   int `json:"ContainsFirstName"`
 	ContainsLastName    int `json:"ContainsLastName"`
 	ContainsName        int `json:"ContainsName"`
@@ -878,16 +879,18 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 0
 	}
 
-	// get some types
-	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
-		// default to home address
-		err.AddressTypeHome = 1
+	// evaluate physical address 
+	err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
+	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.ContainsAddress == 1 || err.FullAddress == 1 {	
+		err.AddressBookBill = 1  // default to home address
+		err.AddressTypeResidence = 1 // TODO: this is a hack... 
 		if strings.Contains(key, "consignment") {
-			err.AddressTypeShipping = 1
+			err.AddressBookShip = 1
 		} else if strings.Contains(key, "order") {
-			err.AddressTypeBilling = 1
+			err.AddressBookBill = 1
 		} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
-			err.AddressTypeHome = 1
+			err.AddressTypeResidence = 1
+			err.AddressBookBill = 1
 		} else if err.Dorm == 1 {
 			err.AddressTypeCampus = 1
 		}

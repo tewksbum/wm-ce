@@ -90,6 +90,7 @@ type PeopleOutput struct {
 	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
 	MAILROUTE    MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE       MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook" bigquery:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
 	DORM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
@@ -144,10 +145,11 @@ type PeopleERR struct {
 	Dorm                int `json:"Dorm"`
 	Room                int `json:"Room"`
 	Organization        int `json:"Organization"`
+	AddressTypeResidence int `json:"ATResidence"`
 	AddressTypeCampus   int `json:"ATCampus"`
-	AddressTypeHome     int `json:"ATHome"`
-	AddressTypeBilling  int `json:"ATBilling"`
-	AddressTypeShipping int `json:"ATShipping"`
+	AddressTypeBusiness int `json:"ATBusiness"`
+	AddressBookBill		int `json:"ABBill"`
+	AddressBookShip		int `json:"ABShip"`
 	ContainsFirstName   int `json:"ContainsFirstName"`
 	ContainsName        int `json:"ContainsName"`
 	ContainsLastName    int `json:"ContainsLastName"`
@@ -565,6 +567,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if column.MatchKey1 == "AD1" || column.MatchKey == "AD1" {
 			column.Type = AssignAddressType(&column)
 			column.MatchKey2 = "ADTYPE"
+			column.MatchKey3 = "ADBOOK"
 		}
 
 		// clear MatchKey if Junk
@@ -640,6 +643,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				case "DORM":
 					SetMkField(&(currentOutput.Output), "AD1", column.Value, column.Name)
 					SetMkField(&(currentOutput.Output), "ADTYPE", "Campus", column.Name)
+					SetMkField(&(currentOutput.Output), "ADBOOK", "Ship", column.Name)
 				case "ROOM":
 					SetMkField(&(currentOutput.Output), "AD2", column.Name+": "+column.Value, column.Name)
 				case "FULLADDRESS":
@@ -656,7 +660,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						SetMkField(&(currentOutput.Output), "STATUS", CalcClassDesig(column.Value), column.Name)
 					case "ADTYPE":
 						SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
-					}
+				}
+
+				if len(column.MatchKey3) > 0 {
+					SetMkField(&(currentOutput.Output), "ADBOOK", AssignAddressBook(&column), column.Name)					
 				}
 				//columnOutput := *currentOutput
 				outputs[indexOutput] = *currentOutput
@@ -1024,15 +1031,38 @@ func ParseAddress(address string) LibPostalParsed {
 	return result
 }
 
+// err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
+// if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
+// 	// default to home address
+// 	err.AddressBookBill = 1
+// 	if strings.Contains(key, "consignment") {
+// 		err.AddressBookShip = 1
+// 	} else if strings.Contains(key, "order") {
+// 		err.AddressBookBill = 1
+// 	} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
+// 		err.AddressTypeResidence = 1
+// 		err.AddressBookBill = 1
+// 	} else if err.Dorm == 1 {
+// 		err.AddressTypeCampus = 1
+// 	}
+// }
+
 func AssignAddressType(column *InputColumn) string {
-	if column.PeopleERR.AddressTypeBilling == 1 {
-		return "Billing"
-	} else if column.PeopleERR.AddressTypeShipping == 1 {
-		return "Shipping"
-	} else if column.PeopleERR.AddressTypeHome == 1 {
-		return "Home"
+	if column.PeopleERR.AddressBookBill == 1 {
+		return "Bill"
+	} else if column.PeopleERR.AddressBookShip == 1 {
+		return "Ship"
+	} 
+	return ""
+}
+
+func AssignAddressBook(column *InputColumn) string {
+	if column.PeopleERR.AddressTypeBusiness == 1 {
+		return "Business"
 	} else if column.PeopleERR.AddressTypeCampus == 1 {
 		return "Campus"
+	} else if column.PeopleERR.AddressTypeResidence == 1 {
+		return "Residence"
 	}
 	return ""
 }
