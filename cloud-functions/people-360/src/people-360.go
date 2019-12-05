@@ -73,6 +73,7 @@ type PeopleFiberDS struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
 	EMAIL        MatchKeyField    `datastore:"email"`
@@ -114,6 +115,7 @@ type PeopleOutput struct {
 	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
 	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADBOOK    MatchKeyField `json:"adbook" bigquery:"adbook"`
 	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
 
@@ -206,6 +208,8 @@ type PeopleSetDS struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ADBOOK                 []string       `datastore:"adbook"`
+	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
@@ -254,6 +258,7 @@ type PeopleGoldenDS struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
 	EMAIL        string         `datastore:"email"`
@@ -410,7 +415,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5D := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
 	MatchByKey5E := "AD1NO"
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
-	// missing address type
+	MatchByKey5F := "ADBOOK"
+	MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
 
 	matchedSets := []PeopleSetDS{}
 	queriedSets := []PeopleSetDS{}
@@ -454,13 +460,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 	}
-	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 			Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
 			Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
 			Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
 			Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
-			Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E))
+			Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E)).
+			Filter(strings.ToLower(MatchByKey5F)+"normalized =", strings.ToUpper(MatchByValue5F))
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {

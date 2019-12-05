@@ -65,6 +65,7 @@ type HouseHoldFiberDS struct {
 	AD1NO       MatchKeyField    `datastore:"ad1no"`
 	AD2         MatchKeyField    `datastore:"ad2"`
 	ADTYPE      MatchKeyField    `datastore:"adtype"`
+	ADBOOK      MatchKeyField    `datastore:"adbook"`
 	Passthrough []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -93,6 +94,7 @@ type PeopleOutput struct {
 	COUNTRY   MatchKeyField `json:"country" bigquery:"country"`
 	MAILROUTE MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE    MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADBOOK    MatchKeyField `json:"adbook" bigquery:"adbook"`
 	ADPARSER  MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
 
@@ -122,7 +124,8 @@ type HouseHoldOutput struct {
 	AD1     MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD1NO   MatchKeyField `json:"ad1no" bigquery:"ad1no"`
 	AD2     MatchKeyField `json:"ad2" bigquery:"ad2"`
-	ADTYPE  MatchKeyField `json:"adType" bigquery:"adtype"`
+	ADTYPE  MatchKeyField `json:"adtype" bigquery:"adtype"`
+	ADBOOK  MatchKeyField `json:"adbook" bigquery:"adbook"`
 }
 
 type Signature360 struct {
@@ -185,6 +188,8 @@ type HouseHoldSetDS struct {
 	AD2Normalized      []string       `datastore:"ad2normalized"`
 	ADTYPE             []string       `datastore:"adtype"`
 	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
+	ADBOOK             []string       `datastore:"adbook"`
+	ADBOOKNormalized   []string       `datastore:"adbooknormalized"`
 }
 
 type HouseHoldGoldenDS struct {
@@ -200,6 +205,7 @@ type HouseHoldGoldenDS struct {
 	AD1NO     string         `datastore:"ad1no"`
 	AD2       string         `datastore:"ad2"`
 	ADTYPE    string         `datastore:"adtype"`
+	ADBOOK    string         `datastore:"adbook"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -286,6 +292,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	HouseholdMatchKeys.AD1NO = input.MatchKeys.AD1NO
 	HouseholdMatchKeys.AD2 = input.MatchKeys.AD2
 	HouseholdMatchKeys.ADTYPE = input.MatchKeys.ADTYPE
+	HouseholdMatchKeys.ADBOOK = input.MatchKeys.ADBOOK
 
 	// store the fiber
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
@@ -321,6 +328,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue2B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
 	MatchByKey2C := "AD1NO"
 	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey2D := "ADTYPE"
+	MatchByValue2D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
 	MatchByKey3A := "CITY"
 	MatchByValue3A := strings.Replace(HouseholdMatchKeys.CITY.Value, "'", `''`, -1)
@@ -330,6 +339,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue3C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
 	MatchByKey3D := "AD1NO"
 	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey3E := "ADTYPE"
+	MatchByValue3E := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
 	MatchByKey4A := "AD2"
 	MatchByValue4A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
@@ -337,6 +348,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue4B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
 	MatchByKey4C := "AD1NO"
 	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey4D := "ADTYPE"
+	MatchByValue4D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
 	matchedSets := []HouseHoldSetDS{}
 	queriedSets := []HouseHoldSetDS{}
@@ -355,7 +368,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 			Filter(strings.ToLower(MatchByKey2A)+"normalized =", strings.ToUpper(MatchByValue2A)).
 			Filter(strings.ToLower(MatchByKey2B)+"normalized =", strings.ToUpper(MatchByValue2B)).
-			Filter(strings.ToLower(MatchByKey2C)+"normalized =", strings.ToUpper(MatchByValue2C))
+			Filter(strings.ToLower(MatchByKey2C)+"normalized =", strings.ToUpper(MatchByValue2C)).
+			Filter(strings.ToLower(MatchByKey2D)+"normalized =", strings.ToUpper(MatchByValue2D))
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
@@ -369,7 +383,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 			Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
 			Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B)).
 			Filter(strings.ToLower(MatchByKey3C)+"normalized =", strings.ToUpper(MatchByValue3C)).
-			Filter(strings.ToLower(MatchByKey3D)+"normalized =", strings.ToUpper(MatchByValue3D))
+			Filter(strings.ToLower(MatchByKey3D)+"normalized =", strings.ToUpper(MatchByValue3D)).
+			Filter(strings.ToLower(MatchByKey3E)+"normalized =", strings.ToUpper(MatchByValue3E))
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
@@ -382,7 +397,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 			Filter(strings.ToLower(MatchByKey4A)+"normalized =", strings.ToUpper(MatchByValue4A)).
 			Filter(strings.ToLower(MatchByKey4B)+"normalized =", strings.ToUpper(MatchByValue4B)).
-			Filter(strings.ToLower(MatchByKey4C)+"normalized =", strings.ToUpper(MatchByValue4C))
+			Filter(strings.ToLower(MatchByKey4C)+"normalized =", strings.ToUpper(MatchByValue4C)).
+			Filter(strings.ToLower(MatchByKey4D)+"normalized =", strings.ToUpper(MatchByValue4D))
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
