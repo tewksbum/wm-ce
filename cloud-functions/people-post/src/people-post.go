@@ -661,6 +661,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						SetMkField(&(currentOutput.Output), "STATUS", CalcClassDesig(column.Value), column.Name)
 					case "ADTYPE":
 						SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
+					}
 				}
 
 				if len(column.MatchKey3) > 0 {
