@@ -17,6 +17,7 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/storage"
 
 	"github.com/fatih/structs"
 )
@@ -274,6 +275,11 @@ type CityStateZip struct {
 	Zip    string   `json:"zip"`
 }
 
+type CityState struct {
+	City  string
+	State string
+}
+
 type LibPostalParsed struct {
 	HOUSE          string
 	CATEGORY       string
@@ -313,8 +319,6 @@ var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
 
-// var PubSubTopic2 = os.Getenv("PSOUTPUT2")  // why would we pub SAME thing twice?
-
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
 var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
 var AddressParserPath = os.Getenv("ADDRESSPATH")
@@ -331,6 +335,7 @@ var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|I
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 
+// JY: this code looks dangerous as it uses contains, think minneapolis
 func reMilityBaseCity(key string) bool {
 	if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
 		return true
@@ -338,12 +343,12 @@ func reMilityBaseCity(key string) bool {
 	return false
 }
 
-// var listCityStateZip []CityStateZip // intended to be part of address correction
-
+var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var ap http.Client
+var sb *storage.Client
 
 var MLLabels map[string]string
 
@@ -351,10 +356,9 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
-	// topic2 = ps.Topic(PubSubTopic2)
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
-	// sClient, _ := storage.NewClient(ctx)
-	// listCityStateZip, _ = readCityStateZip(ctx, sClient, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
+	sb, _ := storage.NewClient(ctx)
+	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
@@ -719,6 +723,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			suffix = "-^-" + strconv.Itoa(v.Sequence)
 			CopyFieldsToMPR(&(defaultOutput.Output), &(v.Output))
 		}
+		if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 { // let's populate city state if we have zip
+			v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+			if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
+				v.Output.CITY.Source = "WM"
+				v.Output.STATE.Source = "WM"
+			}
+		}
 		StandardizeAddress(&(v.Output))
 		PubRecord(ctx, &input, v.Output, suffix)
 	}
@@ -847,7 +858,7 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 }
 
 // intended to be part of address correction
-// func CheckCityStateZip(city string, state string, zip string) bool {
+// func checkCityStateZip(city string, state string, zip string) bool {
 // 	checkZip := zip
 // 	if len(checkZip) > 5 {
 // 		checkZip = checkZip[0:5]
@@ -866,31 +877,58 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 // 	return result
 // }
 
+func populateCityStateFromZip(zip string) (string, string) {
+	checkZip := zip
+	if len(checkZip) > 5 {
+		checkZip = checkZip[0:5]
+	}
+	if cs, ok := zipMap[checkZip]; ok {
+		return cs.City, cs.State
+	} else {
+		return "", ""
+	}
+}
+
+func readZipMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]CityState, error) {
+	result := make(map[string]CityState)
+	cszList, err := readCityStateZip(ctx, client, bucket, object)
+	if err != nil {
+		for _, csz := range cszList {
+			result[csz.Zip] = CityState{
+				City:  (csz.Cities)[0],
+				State: csz.State,
+			}
+		}
+	}
+	return result, nil
+
+}
+
 // intended to be part of address correction
-// func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
-// 	var result []CityStateZip
-// 	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rc.Close()
+func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
+	var result []CityStateZip
+	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
 
-// 	data, err := ioutil.ReadAll(rc)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	json.Unmarshal(data, &result)
-// 	return result, nil
-// }
+	data, err := ioutil.ReadAll(rc)
+	if err != nil {
+		return nil, err
+	}
+	json.Unmarshal(data, &result)
+	return result, nil
+}
 
-// func IndexOf(element string, data []string) int {
-// 	for k, v := range data {
-// 		if element == v {
-// 			return k
-// 		}
-// 	}
-// 	return -1 //not found.
-// }
+func IndexOf(element string, data []string) int {
+	for k, v := range data {
+		if element == v {
+			return k
+		}
+	}
+	return -1 //not found.
+}
 
 func StandardizeAddress(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
