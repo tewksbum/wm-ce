@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	"cloud.google.com/go/bigquery"
@@ -89,8 +90,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				log.Printf("processing request %v", input)
 				w.WriteHeader(http.StatusOK)
 
+				// if level is kind, then must specify TargetSelection
+
 				if strings.EqualFold(input.TargetType, "datastore") {
-					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection)
+					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
 				}
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
@@ -110,31 +113,67 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func purgeDataStore(w http.ResponseWriter, level string, filter string) {
+func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilter string) {
 	switch level {
 	case "namespace":
 		query := datastore.NewQuery("__namespace__").KeysOnly()
-		keys, err := ds.GetAll(ctx, query, nil)
+		namespaces, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "error %v", err)
 			return
 		}
-		fmt.Fprintf(w, "\t%v keys\n", len(keys))
-		for _, k := range keys {
-			fmt.Fprintf(w, "NameSpace: %v\n", k.Name)
-			purgeDataStore(w, "kind", "")
+		fmt.Fprintf(w, "\t%v keys\n", len(namespaces))
+		regex, _ := regexp.Compile("^" + env + filter)
+		for _, n := range namespaces {
+			if regex.MatchString(n.Name) {
+				fmt.Fprintf(w, "NameSpace: %v\n", n.Name)
+				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
+
+				kinds, err := ds.GetAll(ctx, query, nil)
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprintf(w, "error %v", err)
+					return
+				}
+				if len(subfilter) > 0 {
+					regex, _ := regexp.Compile(subfilter)
+					for _, k := range kinds {
+						if regex.MatchString(k.Name) {
+							fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
+							deleteDS(n.Name, k.Name)
+						}
+					}
+				} else {
+					for _, k := range kinds {
+						fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
+						deleteDS(n.Name, k.Name)
+					}
+				}
+			}
 		}
 	case "kind":
-		query := datastore.NewQuery("__kind__").KeysOnly()
+		query := datastore.NewQuery("__kind__").Namespace(filter).KeysOnly()
 		keys, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "error %v", err)
 			return
 		}
-		for _, k := range keys {
-			fmt.Fprintf(w, "\tKind: %v", k.Name)
+		if len(subfilter) > 0 {
+
+			regex, _ := regexp.Compile(subfilter)
+			for _, k := range keys {
+				if regex.MatchString(k.Name) {
+					fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
+					deleteDS(filter, k.Name)
+				}
+			}
+		} else {
+			for _, k := range keys {
+				fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
+				deleteDS(filter, k.Name)
+			}
 		}
 	}
 	return
@@ -142,4 +181,10 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 
 func purgeBigQuery(level string, filter string) {
 
+}
+
+func deleteDS(ns string, kind string) {
+	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
+	keys, err := ds.GetAll(ctx, query, nil)
+	log.Printf("Deleting %v records", len(keys))
 }
