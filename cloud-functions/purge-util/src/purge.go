@@ -32,6 +32,7 @@ var allowedOperations = map[string]map[string]map[string]bool{
 	},
 	"bigquery": map[string]map[string]bool{
 		"dataset": map[string]bool{"delete": true},
+		"table":   map[string]bool{"delete": true},
 	},
 }
 
@@ -46,12 +47,13 @@ func init() {
 // ProcessRequest Receives a http event request
 func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		ClientID        string `json:"clientId"`
-		ClientSecret    string `json:"clientSecret"`
-		TargetType      string `json:"targetType"`  // datastore
-		TargetLevel     string `json:"targetLevel"` // datastore
-		Operation       string `json:"operation"`
-		TargetSelection string `json:"targetSelection"` //regex
+		ClientID           string `json:"clientId"`
+		ClientSecret       string `json:"clientSecret"`
+		TargetType         string `json:"targetType"`  // datastore
+		TargetLevel        string `json:"targetLevel"` // datastore
+		Operation          string `json:"operation"`
+		TargetSelection    string `json:"targetSelection"`    //regex
+		TargetSubSelection string `json:"targetSubSelection"` //regex
 	}
 
 	if r.Method == http.MethodOptions {
@@ -85,6 +87,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if _, ok := operations[strings.ToLower(input.Operation)]; ok { // check op exists
 				// let's do some deletes
 				log.Printf("processing request %v", input)
+				w.WriteHeader(http.StatusOK)
+
 				if strings.EqualFold(input.TargetType, "datastore") {
 					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection)
 				}
@@ -116,10 +120,10 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 			fmt.Fprintf(w, "error %v", err)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "\t%v keys\n", len(keys))
 		for _, k := range keys {
-			fmt.Fprintf(w, "\t%v, %v, %v, %v\n", k.Namespace, k.Name, k.Kind, k.ID)
+			fmt.Fprintf(w, "NameSpace: %v\n", k.Name)
+			purgeDataStore(w, "kind", "")
 		}
 	case "kind":
 		query := datastore.NewQuery("__kind__").KeysOnly()
@@ -129,9 +133,8 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 			fmt.Fprintf(w, "error %v", err)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 		for _, k := range keys {
-			fmt.Fprintf(w, "\t%v", k.Name)
+			fmt.Fprintf(w, "\tKind: %v", k.Name)
 		}
 	}
 	return
