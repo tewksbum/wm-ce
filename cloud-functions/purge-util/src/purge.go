@@ -129,7 +129,7 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 			return
 		}
 		fmt.Fprintf(w, "\t%v keys\n", len(namespaces))
-		rens, _ := regexp.Compile("^" + env + filter)
+		rens, _ := regexp.Compile("^" + env + "-" + filter)
 		for _, n := range namespaces {
 			if rens.MatchString(n.Name) {
 				fmt.Fprintf(w, "NameSpace: %v\n", n.Name)
@@ -156,7 +156,7 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 					}
 				}
 			} else {
-				log.Printf("no match for namespace %v against regex %v", n.Name, "^"+env+filter)
+				log.Printf("no match for namespace %v against regex %v", n.Name, "^"+env+"-"+filter)
 			}
 		}
 	case "kind":
