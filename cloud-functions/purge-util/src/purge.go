@@ -1,4 +1,4 @@
-// Package utils is a CF that performs various functions
+// Package purgeutil is a CF that performs purging on DS/BQ
 package purgeutil
 
 import (
@@ -16,6 +16,7 @@ import (
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var Env = os.Getenv("ENVIRONMENT")
 
 // global vars
 var ctx context.Context
@@ -77,6 +78,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				if strings.EqualFold(input.TargetType, "datastore") {
 					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection)
 				}
+				return
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintf(w, "{\"success\": false, \"message\": \"requested operation on type %v level %v op %v is not allowed\"}", input.TargetType, input.TargetLevel, input.Operation)
@@ -103,9 +105,10 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "error %v", err)
+			return
 		}
+		w.WriteHeader(http.StatusOK)
 		for _, k := range keys {
-			w.WriteHeader(http.StatusBadRequest)
 			fmt.Fprintf(w, "\t%v", k.Namespace)
 		}
 	case "kind":
@@ -114,12 +117,14 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			fmt.Fprintf(w, "error %v", err)
+			return
 		}
+		w.WriteHeader(http.StatusOK)
 		for _, k := range keys {
 			fmt.Fprintf(w, "\t%v", k.Name)
 		}
 	}
-
+	return
 }
 
 func purgeBigQuery(level string, filter string) {
