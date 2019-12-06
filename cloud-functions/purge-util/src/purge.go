@@ -189,8 +189,8 @@ func purgeBigQuery(level string, filter string) {
 }
 
 func deleteDS(ns string, kind string) int {
-	if strings.HasPrefix(kind, "_") { // statistics entities
-		// return
+	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
+		return
 	}
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
 	keys, _ := ds.GetAll(ctx, query, nil)
