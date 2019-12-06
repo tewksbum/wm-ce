@@ -100,7 +100,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				if strings.EqualFold(input.TargetType, "datastore") {
 					n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintf(w, "{\"success\": false, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
 					return
 				}
 			} else {
@@ -189,15 +189,28 @@ func purgeBigQuery(level string, filter string) {
 }
 
 func deleteDS(ns string, kind string) int {
-	if strings.HasPrefix(kind, "_") { // statistics entities
-		// return
+	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
+		return 0
 	}
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
 	keys, _ := ds.GetAll(ctx, query, nil)
-	log.Printf("Deleting %v records from ns %v, kind %v", len(keys), ns, kind)
-	err := ds.DeleteMulti(ctx, keys)
-	if err != nil {
-		log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+
+	l := len(keys) / 500
+	if l%500 == 0 {
+		l++
 	}
+	log.Printf("Deleting %v records from ns %v, kind %v", len(keys), ns, kind)
+	for r := 0; r < l; r++ {
+		s := r * 500
+		e := s + 499
+		if e > len(keys)-1 {
+			e = len(keys) - 1
+		}
+		err := ds.DeleteMulti(ctx, keys[s:e])
+		if err != nil {
+			log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+		}
+	}
+
 	return len(keys)
 }
