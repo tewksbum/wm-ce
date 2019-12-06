@@ -1,0 +1,21 @@
+timeout: 10m
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime","go111", 
+    "--trigger-http", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "540",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: utils-api
+    _ENTRY_POINT: ProcessRequest
+options:
+    substitution_option: 'ALLOW_LOOSE'
