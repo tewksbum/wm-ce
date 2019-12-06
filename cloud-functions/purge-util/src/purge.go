@@ -191,11 +191,14 @@ func purgeBigQuery(level string, filter string) {
 }
 
 func deleteDS(ns string, kind string) {
+	if strings.HasPrefix(kind, "_") { // statistics entities
+		// return
+	}
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
 	keys, _ := ds.GetAll(ctx, query, nil)
 	log.Printf("Deleting %v records from ns %v, kind %v", len(keys), ns, kind)
-	// err := ds.DeleteMulti(ctx, keys)
-	// if err != nil {
-	// 	log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
-	// }
+	err := ds.DeleteMulti(ctx, keys)
+	if err != nil {
+		log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+	}
 }
