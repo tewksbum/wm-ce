@@ -119,7 +119,7 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "\t%v keys\n", len(keys))
 		for _, k := range keys {
-			fmt.Fprintf(w, "\t%v\n", k.Namespace)
+			fmt.Fprintf(w, "\t%v, %v, %v, %v\n", k.Namespace, k.Name, k.Kind, k.ID)
 		}
 	case "kind":
 		query := datastore.NewQuery("__kind__").KeysOnly()
