@@ -68,13 +68,18 @@ type ColumnStat struct {
 }
 
 type TypedCount struct {
-	Person        int
-	Dupe          int
-	Throwaway     int
-	HouseHold     int
-	International int
-	Freshman      int
-	Upperclassmen int
+	Person    int
+	Dupe      int
+	Throwaway int
+	HouseHold int
+	DFS       int
+	DFP       int
+	DUS       int
+	DUP       int
+	IFS       int
+	IFP       int
+	IUS       int
+	IUP       int
 }
 
 type Record struct {
@@ -492,9 +497,15 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 
-		InternationalCount := 0
-		FreshmenCount := 0
-		UpperclassmenCount := 0
+		DFS := 0 // domestic freshmen student
+		DFP := 0 // domestic freshmen parent
+		DUS := 0 // domestic upperclassman student
+		DUP := 0 // domestic upperclassman parent
+		IFS := 0 // international freshmen student
+		IFP := 0 // international freshmen parent
+		IUS := 0 // international upperclassman student
+		IUP := 0 // international upperclassman parent
+
 		recordIDs := []string{}
 		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
@@ -519,28 +530,51 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, g := range golden {
+			isInternational := false
+			isParent := false
+			isUpperClassman := false
+			isFreshmen := false
 			for _, m := range PeopleMatchKeyNames {
 				mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
 				if m == "COUNTRY" {
 					country := strings.ToUpper(mkValue)
 					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
-						InternationalCount++
+						isInternational = true
 					}
 				} else if m == "TITLE" {
 					if IsInt(mkValue) {
 						class, err := strconv.Atoi(mkValue)
 						if err == nil {
 							if class == CurrentYear+4 {
-								FreshmenCount++
+								isFreshmen = true
 							} else if class >= CurrentYear && class < CurrentYear+4 {
-								UpperclassmenCount++
+								isUpperClassman = true
 							}
 						}
 					}
-
+				} else if m == "ROLE" {
+					if mkValue == "Parent" {
+						isParent = true
+					}
 				}
 			}
-
+			if !isInternational && isFreshmen && !isParent {
+				DFS++
+			} else if !isInternational && isFreshmen && isParent {
+				DFP++
+			} else if !isInternational && isUpperClassman && !isParent {
+				DUS++
+			} else if !isInternational && isUpperClassman && isParent {
+				DUP++
+			} else if isInternational && isFreshmen && !isParent {
+				IFS++
+			} else if isInternational && isFreshmen && isParent {
+				IFP++
+			} else if isInternational && isUpperClassman && !isParent {
+				IUS++
+			} else if isInternational && isUpperClassman && isParent {
+				IUP++
+			}
 		}
 		log.Printf("column maps: %v", columnMaps)
 
@@ -592,13 +626,18 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Counts = TypedCount{
-			Person:        len(sets),
-			Dupe:          len(fibers) - len(sets),
-			Throwaway:     len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
-			HouseHold:     0,
-			International: InternationalCount,
-			Freshman:      FreshmenCount,
-			Upperclassmen: UpperclassmenCount,
+			Person:    len(sets),
+			Dupe:      len(fibers) - len(sets),
+			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
+			HouseHold: 0,
+			DFS:       DFS,
+			DFP:       DFP,
+			DUS:       DUS,
+			DUP:       DUP,
+			IFS:       IFS,
+			IFP:       IFP,
+			IUS:       IUS,
+			IUP:       IUP,
 		}
 		output = report
 	} else {
