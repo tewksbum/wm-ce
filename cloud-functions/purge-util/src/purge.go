@@ -88,7 +88,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if _, ok := operations[strings.ToLower(input.Operation)]; ok { // check op exists
 				// let's do some deletes
 				log.Printf("processing request %v", input)
-				w.WriteHeader(http.StatusOK)
 
 				// if level is kind, then must specify TargetSelection
 				if strings.EqualFold(input.TargetLevel, "kind") && len(input.TargetSelection) == 0 {
