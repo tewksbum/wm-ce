@@ -110,6 +110,7 @@ type Fiber struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
 	EMAIL        MatchKeyField    `datastore:"email"`
@@ -140,37 +141,33 @@ type Passthrough360 struct {
 }
 
 type PeopleMatchKeys struct {
-	SALUTATION MatchKeyField
-	NICKNAME   MatchKeyField
-	FNAME      MatchKeyField
-	FINITIAL   MatchKeyField
-	LNAME      MatchKeyField
-	MNAME      MatchKeyField
-
-	AD1       MatchKeyField
-	AD1NO     MatchKeyField
-	AD2       MatchKeyField
-	AD3       MatchKeyField
-	CITY      MatchKeyField
-	STATE     MatchKeyField
-	ZIP       MatchKeyField
-	ZIP5      MatchKeyField
-	COUNTRY   MatchKeyField
-	MAILROUTE MatchKeyField
-	ADTYPE    MatchKeyField
-	ADPARSER  MatchKeyField
-	ADCORRECT MatchKeyField
-
-	EMAIL MatchKeyField
-	PHONE MatchKeyField
-
-	TRUSTEDID MatchKeyField
-	CLIENTID  MatchKeyField
-
-	GENDER MatchKeyField
-	AGE    MatchKeyField
-	DOB    MatchKeyField
-
+	SALUTATION   MatchKeyField
+	NICKNAME     MatchKeyField
+	FNAME        MatchKeyField
+	FINITIAL     MatchKeyField
+	LNAME        MatchKeyField
+	MNAME        MatchKeyField
+	AD1          MatchKeyField
+	AD1NO        MatchKeyField
+	AD2          MatchKeyField
+	AD3          MatchKeyField
+	CITY         MatchKeyField
+	STATE        MatchKeyField
+	ZIP          MatchKeyField
+	ZIP5         MatchKeyField
+	COUNTRY      MatchKeyField
+	MAILROUTE    MatchKeyField
+	ADTYPE       MatchKeyField
+	ADBOOK       MatchKeyField
+	ADPARSER     MatchKeyField
+	ADCORRECT    MatchKeyField
+	EMAIL        MatchKeyField
+	PHONE        MatchKeyField
+	TRUSTEDID    MatchKeyField
+	CLIENTID     MatchKeyField
+	GENDER       MatchKeyField
+	AGE          MatchKeyField
+	DOB          MatchKeyField
 	ORGANIZATION MatchKeyField
 	TITLE        MatchKeyField
 	ROLE         MatchKeyField
@@ -188,6 +185,7 @@ type HouseHoldMatchKeys struct {
 	AD1NO   MatchKeyField
 	AD2     MatchKeyField
 	ADTYPE  MatchKeyField
+	ADBOOK  MatchKeyField
 }
 
 type MatchKeyField struct {
@@ -245,6 +243,8 @@ type PeopleSet struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ADBOOK                 []string       `datastore:"adbook"`
+	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
@@ -293,6 +293,7 @@ type PeopleGolden struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
 	EMAIL        string         `datastore:"email"`
