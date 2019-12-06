@@ -15,8 +15,10 @@ import (
 )
 
 // ProjectID is the env var of project id
-var ProjectID = os.Getenv("PROJECTID")
-var Env = os.Getenv("ENVIRONMENT")
+var pid = os.Getenv("PROJECTID")
+var env = os.Getenv("ENVIRONMENT")
+var uid = os.Getenv("CLIENTID")
+var pwd = os.Getenv("CLIENTSECRET")
 
 // global vars
 var ctx context.Context
@@ -35,8 +37,8 @@ var allowedOperations = map[string]map[string]map[string]bool{
 
 func init() {
 	ctx = context.Background()
-	ds, _ = datastore.NewClient(ctx, ProjectID)
-	bq, _ = bigquery.NewClient(ctx, ProjectID)
+	ds, _ = datastore.NewClient(ctx, pid)
+	bq, _ = bigquery.NewClient(ctx, pid)
 
 	log.Printf("init completed")
 }
@@ -68,6 +70,12 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Error decoding request\"}")
 		log.Fatalf("error decoding request %v", err)
+		return
+	}
+
+	if input.ClientID != uid || input.ClientSecret != pwd {
+		w.WriteHeader(http.StatusUnauthorized)
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"Authentication failed\"}")
 		return
 	}
 
