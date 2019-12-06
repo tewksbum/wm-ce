@@ -5,7 +5,7 @@ steps:
     args: ["functions", 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
-    "--runtime","go113", 
+    "--runtime","go111", 
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
