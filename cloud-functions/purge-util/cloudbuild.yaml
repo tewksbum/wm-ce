@@ -8,9 +8,9 @@ steps:
     "--runtime","go111", 
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "540",
+    "--timeout", "240",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "1"
+    "--max-instances", "2"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
