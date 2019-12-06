@@ -185,6 +185,6 @@ func purgeBigQuery(level string, filter string) {
 
 func deleteDS(ns string, kind string) {
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
-	keys, err := ds.GetAll(ctx, query, nil)
+	keys, _ := ds.GetAll(ctx, query, nil)
 	log.Printf("Deleting %v records", len(keys))
 }
