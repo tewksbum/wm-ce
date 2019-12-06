@@ -11,7 +11,7 @@ steps:
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--ingress-settings", "internal-only",
-    "--max-instances=", "1"
+    "--max-instances", "1"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
