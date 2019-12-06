@@ -76,6 +76,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	if input.ClientID != uid || input.ClientSecret != pwd {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Authentication failed\"}")
+		log.Fatalf("auth failure")
 		return
 	}
 
@@ -83,10 +84,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		if operations, ok := levels[strings.ToLower(input.TargetLevel)]; ok { // check level exists
 			if _, ok := operations[strings.ToLower(input.Operation)]; ok { // check op exists
 				// let's do some deletes
+				log.Printf("processing request %v", input)
 				if strings.EqualFold(input.TargetType, "datastore") {
 					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection)
 				}
-				return
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
 				fmt.Fprintf(w, "{\"success\": false, \"message\": \"requested operation on type %v level %v op %v is not allowed\"}", input.TargetType, input.TargetLevel, input.Operation)
