@@ -100,7 +100,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				if strings.EqualFold(input.TargetType, "datastore") {
 					n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
 					w.WriteHeader(http.StatusOK)
-					fmt.Fprintf(w, "{\"success\": false, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
 					return
 				}
 			} else {
