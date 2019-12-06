@@ -446,19 +446,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			log.Fatalf("Error querying records: %v", err)
 			return
 		}
-		log.Printf("records retrieved: %v", records)
+		log.Printf("records retrieved: %v", len(records))
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
-		log.Printf("fibers retrieved: %v", fibers)
+		log.Printf("fibers retrieved: %v", len(fibers))
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
 			log.Fatalf("Error querying sets: %v", err)
 			return
 		}
-		log.Printf("sets retrieved: %v", sets)
+		log.Printf("sets retrieved: %v", len(sets))
 
 		// get the set ids
 		for _, s := range sets {

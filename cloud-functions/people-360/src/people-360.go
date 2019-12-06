@@ -374,7 +374,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// store in BQ
 	FiberInserter := FiberTable.Inserter()
 	if err := FiberInserter.Put(ctx, fiber); err != nil {
-		log.Fatalf("error insertinng into fiber table %v", err)
+		log.Printf("error insertinng into fiber table %v", err)
 	}
 
 	// store in DS
@@ -607,8 +607,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// store the set
 	SetInserter := SetTable.Inserter()
 	if err := SetInserter.Put(ctx, output); err != nil {
-		log.Fatalf("error insertinng into set table %v", err)
-		return nil
+		log.Printf("error insertinng into set table %v", err)
 	}
 
 	// record the set id in DS
