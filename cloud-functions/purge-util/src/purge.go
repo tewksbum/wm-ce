@@ -91,6 +91,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
 
 				// if level is kind, then must specify TargetSelection
+				if strings.EqualFold(input.TargetLevel, "kind") && len(input.TargetSelection) == 0 {
+					w.WriteHeader(http.StatusBadRequest)
+					fmt.Fprintf(w, "{\"success\": false, \"message\": \"requested operation on type %v level %v op %v is not allowed without targetSelection\"}", input.TargetType, input.TargetLevel, input.Operation)
+					return
+				}
 
 				if strings.EqualFold(input.TargetType, "datastore") {
 					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
@@ -124,9 +129,9 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 			return
 		}
 		fmt.Fprintf(w, "\t%v keys\n", len(namespaces))
-		regex, _ := regexp.Compile("^" + env + filter)
+		rens, _ := regexp.Compile("^" + env + filter)
 		for _, n := range namespaces {
-			if regex.MatchString(n.Name) {
+			if rens.MatchString(n.Name) {
 				fmt.Fprintf(w, "NameSpace: %v\n", n.Name)
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
 
@@ -137,9 +142,9 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 					return
 				}
 				if len(subfilter) > 0 {
-					regex, _ := regexp.Compile(subfilter)
+					rekind, _ := regexp.Compile(subfilter)
 					for _, k := range kinds {
-						if regex.MatchString(k.Name) {
+						if rekind.MatchString(k.Name) {
 							fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
 							deleteDS(n.Name, k.Name)
 						}
@@ -150,6 +155,8 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 						deleteDS(n.Name, k.Name)
 					}
 				}
+			} else {
+				log.Printf("no match for namespace %v against regex %v", n.Name, "^"+env+filter)
 			}
 		}
 	case "kind":
@@ -186,5 +193,9 @@ func purgeBigQuery(level string, filter string) {
 func deleteDS(ns string, kind string) {
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
 	keys, _ := ds.GetAll(ctx, query, nil)
-	log.Printf("Deleting %v records", len(keys))
+	log.Printf("Deleting %v records from ns %v, kind %v", len(keys), ns, kind)
+	// err := ds.DeleteMulti(ctx, keys)
+	// if err != nil {
+	// 	log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+	// }
 }
