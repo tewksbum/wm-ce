@@ -156,8 +156,6 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 					}
 				}
 				countNS++
-			} else {
-				log.Printf("no match for namespace %v against regex %v", n.Name, "^"+env+"-"+filter)
 			}
 		}
 	case "kind":
