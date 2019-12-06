@@ -2,7 +2,7 @@ timeout: 10m
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
-    args: ["functions", "beta",
+    args: ["beta", "functions", 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go113", 
