@@ -7,6 +7,15 @@ import (
 	"testing"
 )
 
+// TestProcessRequest run purge locally
+// complete go. before running
+// "go.testEnvVars": {
+// 	"GOOGLE_APPLICATION_CREDENTIALS": "P:\\work\\wemade\\gcp\\wemade-core-192394ec89ff.json",
+// 	"PROJECTID": "wemade-core",
+// 	"ENVIRONMENT": "dev",
+// 	"CLIENTID": "wemade",
+// 	"CLIENTSECRET": "cool_works"
+// },
 func TestProcessRequest(t *testing.T) {
 	json := `
 	{
