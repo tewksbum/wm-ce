@@ -9,7 +9,7 @@ steps:
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
-    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--ingress-settings", "internal-only",
     "--max-instances=", "1"
     ]
