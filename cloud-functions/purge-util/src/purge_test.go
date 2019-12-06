@@ -8,7 +8,7 @@ import (
 )
 
 // TestProcessRequest run purge locally
-// complete go. before running
+// complete go.testEnvVars in vscode settings before running
 // "go.testEnvVars": {
 // 	"GOOGLE_APPLICATION_CREDENTIALS": "P:\\work\\wemade\\gcp\\wemade-core-192394ec89ff.json",
 // 	"PROJECTID": "wemade-core",
