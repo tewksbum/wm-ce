@@ -98,7 +98,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if strings.EqualFold(input.TargetType, "datastore") {
-					purgeDataStore(w, strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+					n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+					w.WriteHeader(http.StatusOK)
+					fmt.Fprintf(w, "{\"success\": false, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					return
 				}
 			} else {
 				w.WriteHeader(http.StatusBadRequest)
@@ -118,43 +121,41 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilter string) {
+func purgeDataStore(level string, filter string, subfilter string) (int, int, int) {
+	countNS := 0
+	countKind := 0
+	countEntity := 0
 	switch level {
 	case "namespace":
 		query := datastore.NewQuery("__namespace__").KeysOnly()
 		namespaces, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "error %v", err)
-			return
+			return countNS, countKind, countEntity
 		}
-		fmt.Fprintf(w, "\t%v keys\n", len(namespaces))
 		rens, _ := regexp.Compile("^" + env + "-" + filter)
 		for _, n := range namespaces {
 			if rens.MatchString(n.Name) {
-				fmt.Fprintf(w, "NameSpace: %v\n", n.Name)
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
 
 				kinds, err := ds.GetAll(ctx, query, nil)
 				if err != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					fmt.Fprintf(w, "error %v", err)
-					return
+					return countNS, countKind, countEntity
 				}
 				if len(subfilter) > 0 {
 					rekind, _ := regexp.Compile(subfilter)
 					for _, k := range kinds {
 						if rekind.MatchString(k.Name) {
-							fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
-							deleteDS(n.Name, k.Name)
+							countKind++
+							countEntity += deleteDS(n.Name, k.Name)
 						}
 					}
 				} else {
 					for _, k := range kinds {
-						fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
-						deleteDS(n.Name, k.Name)
+						countKind++
+						countEntity += deleteDS(n.Name, k.Name)
 					}
 				}
+				countNS++
 			} else {
 				log.Printf("no match for namespace %v against regex %v", n.Name, "^"+env+"-"+filter)
 			}
@@ -163,34 +164,33 @@ func purgeDataStore(w http.ResponseWriter, level string, filter string, subfilte
 		query := datastore.NewQuery("__kind__").Namespace(filter).KeysOnly()
 		keys, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprintf(w, "error %v", err)
-			return
+			return countNS, countKind, countEntity
 		}
 		if len(subfilter) > 0 {
 
 			regex, _ := regexp.Compile(subfilter)
 			for _, k := range keys {
 				if regex.MatchString(k.Name) {
-					fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
-					deleteDS(filter, k.Name)
+					countKind++
+					countEntity += deleteDS(filter, k.Name)
 				}
 			}
 		} else {
 			for _, k := range keys {
-				fmt.Fprintf(w, "Deleting Kind: %v", k.Name)
-				deleteDS(filter, k.Name)
+				countKind++
+				countEntity += deleteDS(filter, k.Name)
 			}
 		}
+		countNS++
 	}
-	return
+	return countNS, countKind, countEntity
 }
 
 func purgeBigQuery(level string, filter string) {
 
 }
 
-func deleteDS(ns string, kind string) {
+func deleteDS(ns string, kind string) int {
 	if strings.HasPrefix(kind, "_") { // statistics entities
 		// return
 	}
@@ -201,4 +201,5 @@ func deleteDS(ns string, kind string) {
 	if err != nil {
 		log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
 	}
+	return len(keys)
 }
