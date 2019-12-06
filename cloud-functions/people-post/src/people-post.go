@@ -424,7 +424,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.FullAddress == 1 {
 			column.MatchKey1 = "FULLADDRESS"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.FullAddress == 1"))
-		} else if column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1 {
+		} else if column.PeopleERR.ContainsCity == 1 && (column.PeopleERR.ContainsState == 1 || column.PeopleERR.ContainsZipCode == 1) {
 			column.MatchKey1 = "CITYSTATEZIP"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1"))
 		}
