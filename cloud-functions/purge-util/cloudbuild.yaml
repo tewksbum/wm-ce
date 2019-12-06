@@ -15,7 +15,7 @@ steps:
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: utils-api
+    _FUNCTION_NAME: purge-util
     _ENTRY_POINT: ProcessRequest
 options:
     substitution_option: 'ALLOW_LOOSE'
