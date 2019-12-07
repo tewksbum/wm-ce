@@ -16,7 +16,7 @@ import (
 // 	"CLIENTID": "wemade",
 // 	"CLIENTSECRET": "cool_works"
 // },
-func TestProcessRequest(t *testing.T) {
+func TestProcessRequest1(t *testing.T) {
 	json := `
 	{
 		"clientID": "wemade",
@@ -24,7 +24,30 @@ func TestProcessRequest(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "namespace",
 		"operation": "delete",
-		"targetSelection": "a",
+		"targetSelection": "",
+		"targetSubSelection": ""
+	}`
+
+	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	ProcessRequest(rr, req)
+
+	got := rr.Body.String()
+
+	fmt.Println(got)
+}
+
+func TestProcessRequest2(t *testing.T) {
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "[default]",
 		"targetSubSelection": ""
 	}`
 
