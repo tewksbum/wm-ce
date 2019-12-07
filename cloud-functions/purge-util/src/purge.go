@@ -132,10 +132,10 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 			return countNS, countKind, countEntity
 		}
 		rens, _ := regexp.Compile("^" + env + "-" + filter)
+
 		for _, n := range namespaces {
 			if rens.MatchString(n.Name) {
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
-
 				kinds, err := ds.GetAll(ctx, query, nil)
 				if err != nil {
 					return countNS, countKind, countEntity
@@ -159,6 +159,9 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 		}
 	case "kind":
 		query := datastore.NewQuery("__kind__").Namespace(filter).KeysOnly()
+		if filter == "[default]" { // remove the namespace filter if [default]
+			query = datastore.NewQuery("__kind__").KeysOnly()
+		}
 		keys, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
@@ -192,20 +195,25 @@ func deleteDS(ns string, kind string) int {
 		return 0
 	}
 	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
+	if ns == "[default]" {
+		query = datastore.NewQuery(kind).KeysOnly()
+	}
 	keys, _ := ds.GetAll(ctx, query, nil)
 
 	l := len(keys) / 500
-	if l%500 == 0 {
+	if len(keys)%500 > 0 {
 		l++
 	}
-	log.Printf("Deleting %v records from ns %v, kind %v", len(keys), ns, kind)
+	log.Printf("Deleting %v records from ns %v, kind %v, loop counts %v", len(keys), ns, kind, l)
 	for r := 0; r < l; r++ {
 		s := r * 500
 		e := s + 499
-		if e > len(keys)-1 {
-			e = len(keys) - 1
+		if e > len(keys) {
+			e = len(keys)
 		}
+		log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
 		err := ds.DeleteMulti(ctx, keys[s:e])
+
 		if err != nil {
 			log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
 		}
