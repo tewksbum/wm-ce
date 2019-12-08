@@ -207,7 +207,7 @@ func deleteDS(ns string, kind string) int {
 	log.Printf("Deleting %v records from ns %v, kind %v, loop counts %v", len(keys), ns, kind, l)
 	for r := 0; r < l; r++ {
 		s := r * 500
-		e := s + 499
+		e := s + 500
 		if e > len(keys) {
 			e = len(keys)
 		}
