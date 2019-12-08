@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
@@ -284,7 +283,7 @@ var ESUid = os.Getenv("ELASTICUSER")
 var ESPwd = os.Getenv("ELASTICPWD")
 var ESIndex = os.Getenv("ELASTICINDEX")
 var Env = os.Getenv("ENVIRONMENT")
-var dev = os.Getenv("ENVIRONMENT") == "dev"
+var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
@@ -294,10 +293,6 @@ var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
-
-var bq *bigquery.Client
-var bs bigquery.Schema
-var bc bigquery.Schema
 var ds *datastore.Client
 
 // var setSchema bigquery.Schema
@@ -308,11 +303,8 @@ func init() {
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	topic2 = ps.Topic(PubSubTopic2)
-	bq, _ = bigquery.NewClient(ctx, ProjectID)
-	bs, _ = bigquery.InferSchema(People360Output{})
-	bc, _ = bigquery.InferSchema(PeopleFiber{})
 
-	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
+	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
 func People360(ctx context.Context, m PubSubMessage) error {
@@ -335,33 +327,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
-	// locate by key (trusted id)
-	setMeta := &bigquery.TableMetadata{
-		Schema: bs,
-	}
-	fiberMeta := &bigquery.TableMetadata{
-		Schema: bc,
-	}
-	DatasetID := strings.ToLower(reAlphaNumeric.ReplaceAllString(Env+input.Signature.OwnerID, ""))
-	// make sure dataset exists
-	dsmeta := &bigquery.DatasetMetadata{
-		Location: "US", // Create the dataset in the US.
-	}
-	if err := bq.Dataset(DatasetID).Create(ctx, dsmeta); err != nil {
-	}
-	SetTable := bq.Dataset(DatasetID).Table(SetTableName)
-	if err := SetTable.Create(ctx, setMeta); err != nil {
-		if !strings.Contains(err.Error(), "Already Exists") {
-			log.Printf("error creating set table %v", err)
-		}
-	}
-	FiberTable := bq.Dataset(DatasetID).Table(FiberTableName)
-	if err := FiberTable.Create(ctx, fiberMeta); err != nil {
-		if !strings.Contains(err.Error(), "Already Exists") {
-			log.Printf("error creating fiber table %v", err)
-		}
-	}
-
 	// store the fiber
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber PeopleFiber
@@ -370,12 +335,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiber.MatchKeys = input.MatchKeys
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
-
-	// store in BQ
-	FiberInserter := FiberTable.Inserter()
-	if err := FiberInserter.Put(ctx, fiber); err != nil {
-		log.Printf("error insertinng into fiber table %v", err)
-	}
 
 	// store in DS
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
@@ -603,12 +562,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
-
-	// store the set
-	SetInserter := SetTable.Inserter()
-	if err := SetInserter.Put(ctx, output); err != nil {
-		log.Printf("error insertinng into set table %v", err)
-	}
 
 	// record the set id in DS
 	var setDS PeopleSetDS
