@@ -1,0 +1,13 @@
+{
+    "gcp": {
+        "bucket": "oncampusmarketing",
+        "filter": "rhl-1112/",
+        "recursive": false
+    },
+    "local": {
+        "xlsx": {
+            "fileName": "/mnt/p/temp/test.xlsx",
+            "sheetName": "Files"
+        }
+    }
+}
