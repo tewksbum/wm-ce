@@ -82,6 +82,7 @@ func init() {
 
 // ProcessEvent Receives a http event request
 func ProcessEvent(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Invoked by IP %v with headers %v", r.RemoteAddr, r.Header)
 	var input struct {
 		Owner       string            `json:"owner"`
 		Source      string            `json:"source"`
@@ -153,6 +154,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// log the request
+
 	OwnerKey := customer.Key.Name
 	if len(OwnerKey) == 0 {
 		OwnerKey = strconv.FormatInt(customer.Key.ID, 10)
