@@ -46,7 +46,7 @@ type OrderDetailFiber struct {
 	CreatedAt   time.Time         `json:"createdAt"`
 }
 
-type OrderFiberDS struct {
+type OrderDetailFiberDS struct {
 	ID              *datastore.Key   `datastore:"__key__"`
 	CreatedAt       time.Time        `datastore:"createdAt"`
 	OwnerID         string           `datastore:"ownerid"`
@@ -186,7 +186,7 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// if we don't have a matchable key... drop!!
-	if input.MatchKeys.ID.Value == "" {
+	if input.MatchKeys.ORDERDETAILID.Value == "" {
 		return nil
 	}
 
@@ -219,8 +219,8 @@ func OrderDetail360(ctx context.Context, m PubSubMessage) error {
 	MatchByKey1 := "ORDERID"
 	MatchByValue1 := strings.Replace(input.MatchKeys.ORDERID.Value, "'", `''`, -1)
 
-	MatchByKey2 := "ORDERNUMBER"
-	MatchByValue2 := strings.Replace(input.MatchKeys.ORDERNUMBER.Value, "'", `''`, -1)
+	MatchByKey2 := "ORDERDETAILID"
+	MatchByValue2 := strings.Replace(input.MatchKeys.ORDERDETAILID.Value, "'", `''`, -1)
 
 	matchedSets := []OrderDetailSetDS{}
 	queriedSets := []OrderDetailSetDS{}
