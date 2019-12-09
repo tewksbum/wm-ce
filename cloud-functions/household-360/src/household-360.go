@@ -235,7 +235,7 @@ func init() {
 	topic2 = ps.Topic(PubSubTopic2)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 
-	log.Printf("init completed, pubsub topic name: %v, bq client: %v, bq schema: %v, %v", topic, bq, bs, bc)
+	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
 func HouseHold360(ctx context.Context, m PubSubMessage) error {
