@@ -881,7 +881,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 0
 	}
 
-	if err.Junk = 1 {
+	if err.Junk == 1 {
 		err.FirstName = 0
 		err.LastName = 0
 		err.Address1 = 0
