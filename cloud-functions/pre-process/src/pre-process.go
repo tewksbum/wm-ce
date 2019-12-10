@@ -881,6 +881,18 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 0
 	}
 
+	if err.Junk = 1 {
+		err.FirstName = 0
+		err.LastName = 0
+		err.Address1 = 0
+		err.ContainsRole = 0
+		err.ContainsName = 0
+		err.ParentFirstName = 0
+		err.ParentLastName = 0
+		err.ParentName = 0
+		err.FullName = 0
+	}
+
 	// evaluate physical address
 	err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
 	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.ContainsAddress == 1 || err.FullAddress == 1 {
