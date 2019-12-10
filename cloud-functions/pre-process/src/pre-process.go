@@ -108,55 +108,55 @@ type OrderDetailERR struct {
 }
 
 type PeopleERR struct {
-	Address             int `json:"Address"`
-	Address1            int `json:"Address1"`
-	Address2            int `json:"Address2"`
-	Address3            int `json:"Address3"`
-	FullAddress         int `json:"FullAddress"`
-	Age                 int `json:"Age"`
-	Birthday            int `json:"Birthday"`
-	City                int `json:"City"`
-	Country             int `json:"Country"`
-	County              int `json:"County"`
-	Email               int `json:"Email"`
-	FirstName           int `json:"FirstName"`
-	FullName            int `json:"FullName"`
-	Gender              int `json:"Gender"`
-	LastName            int `json:"LastName"`
-	MiddleName          int `json:"MiddleName"`
-	ParentEmail         int `json:"ParentEmail"`
-	ParentFirstName     int `json:"ParentFirstName"`
-	ParentLastName      int `json:"ParentLastName"`
-	ParentName          int `json:"ParentName"`
-	Phone               int `json:"Phone"`
-	State               int `json:"State"`
-	Suffix              int `json:"Suffix"`
-	ZipCode             int `json:"ZipCode"`
-	TrustedID           int `json:"TrustedID"`
-	Title               int `json:"Title"`
-	Role                int `json:"Role"`
-	Dorm                int `json:"Dorm"`
-	Room                int `json:"Room"`
-	Organization        int `json:"Organization"`
+	Address              int `json:"Address"`
+	Address1             int `json:"Address1"`
+	Address2             int `json:"Address2"`
+	Address3             int `json:"Address3"`
+	FullAddress          int `json:"FullAddress"`
+	Age                  int `json:"Age"`
+	Birthday             int `json:"Birthday"`
+	City                 int `json:"City"`
+	Country              int `json:"Country"`
+	County               int `json:"County"`
+	Email                int `json:"Email"`
+	FirstName            int `json:"FirstName"`
+	FullName             int `json:"FullName"`
+	Gender               int `json:"Gender"`
+	LastName             int `json:"LastName"`
+	MiddleName           int `json:"MiddleName"`
+	ParentEmail          int `json:"ParentEmail"`
+	ParentFirstName      int `json:"ParentFirstName"`
+	ParentLastName       int `json:"ParentLastName"`
+	ParentName           int `json:"ParentName"`
+	Phone                int `json:"Phone"`
+	State                int `json:"State"`
+	Suffix               int `json:"Suffix"`
+	ZipCode              int `json:"ZipCode"`
+	TrustedID            int `json:"TrustedID"`
+	Title                int `json:"Title"`
+	Role                 int `json:"Role"`
+	Dorm                 int `json:"Dorm"`
+	Room                 int `json:"Room"`
+	Organization         int `json:"Organization"`
 	AddressTypeResidence int `json:"ATResidence"`
-	AddressTypeCampus   int `json:"ATCampus"`
-	AddressTypeBusiness int `json:"ATBusiness"`
-	AddressBookBill		int `json:"ABBill"`
-	AddressBookShip		int `json:"ABShip"`
-	ContainsFirstName   int `json:"ContainsFirstName"`
-	ContainsLastName    int `json:"ContainsLastName"`
-	ContainsName        int `json:"ContainsName"`
-	ContainsCountry     int `json:"ContainsCountry"`
-	ContainsEmail       int `json:"ContainsEmail"`
-	ContainsAddress     int `json:"ContainsAddress"`
-	ContainsCity        int `json:"ContainsCity"`
-	ContainsState       int `json:"ContainsState"`
-	ContainsZipCode     int `json:"ContainsZipCode"`
-	ContainsPhone       int `json:"ContainsPhone"`
-	ContainsTitle       int `json:"ContainsTitle"`
-	ContainsRole        int `json:"ContainsRole"`
-	ContainsStudentRole int `json:"ContainsStudentRole"`
-	Junk                int `json:"Junk"`
+	AddressTypeCampus    int `json:"ATCampus"`
+	AddressTypeBusiness  int `json:"ATBusiness"`
+	AddressBookBill      int `json:"ABBill"`
+	AddressBookShip      int `json:"ABShip"`
+	ContainsFirstName    int `json:"ContainsFirstName"`
+	ContainsLastName     int `json:"ContainsLastName"`
+	ContainsName         int `json:"ContainsName"`
+	ContainsCountry      int `json:"ContainsCountry"`
+	ContainsEmail        int `json:"ContainsEmail"`
+	ContainsAddress      int `json:"ContainsAddress"`
+	ContainsCity         int `json:"ContainsCity"`
+	ContainsState        int `json:"ContainsState"`
+	ContainsZipCode      int `json:"ContainsZipCode"`
+	ContainsPhone        int `json:"ContainsPhone"`
+	ContainsTitle        int `json:"ContainsTitle"`
+	ContainsRole         int `json:"ContainsRole"`
+	ContainsStudentRole  int `json:"ContainsStudentRole"`
+	Junk                 int `json:"Junk"`
 }
 
 type ProductERR struct {
@@ -815,6 +815,8 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
+	case "To the Parent(s) of:":
+		err.Junk = 1
 	}
 
 	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
@@ -879,11 +881,11 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 0
 	}
 
-	// evaluate physical address 
+	// evaluate physical address
 	err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
-	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.ContainsAddress == 1 || err.FullAddress == 1 {	
-		err.AddressBookBill = 1  // default to home address
-		err.AddressTypeResidence = 1 // TODO: this is a hack... 
+	if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.ContainsAddress == 1 || err.FullAddress == 1 {
+		err.AddressBookBill = 1      // default to home address
+		err.AddressTypeResidence = 1 // TODO: this is a hack...
 		if strings.Contains(key, "consignment") {
 			err.AddressBookShip = 1
 		} else if strings.Contains(key, "order") {
