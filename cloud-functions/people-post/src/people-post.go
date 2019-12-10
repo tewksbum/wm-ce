@@ -362,7 +362,7 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
-	log.Printf("init completed, pubsub topic name: %v", topic)
+	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
 }
 
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
@@ -879,7 +879,7 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 
 func populateCityStateFromZip(zip string) (string, string) {
 	checkZip := zip
-	if len(checkZip) > 5 {
+	if len(checkZip) >= 5 {
 		checkZip = checkZip[0:5]
 	}
 	if cs, ok := zipMap[checkZip]; ok {
