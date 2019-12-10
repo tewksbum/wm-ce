@@ -899,6 +899,8 @@ func readZipMap(ctx context.Context, client *storage.Client, bucket, object stri
 				State: csz.State,
 			}
 		}
+	} else {
+		log.Printf("error loading city state zip list %v", err)
 	}
 	return result, nil
 
