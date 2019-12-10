@@ -893,14 +893,15 @@ func readZipMap(ctx context.Context, client *storage.Client, bucket, object stri
 	result := make(map[string]CityState)
 	cszList, err := readCityStateZip(ctx, client, bucket, object)
 	if err != nil {
+		log.Printf("error loading city state zip list %v", err)
+
+	} else {
 		for _, csz := range cszList {
 			result[csz.Zip] = CityState{
 				City:  (csz.Cities)[0],
 				State: csz.State,
 			}
 		}
-	} else {
-		log.Printf("error loading city state zip list %v", err)
 	}
 	return result, nil
 
