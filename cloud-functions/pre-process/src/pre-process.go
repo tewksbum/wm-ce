@@ -815,7 +815,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "To the Parent(s) of:":
+	case "parent(s) of":
 		err.Junk = 1
 	}
 
@@ -850,7 +850,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "To the Parent(s) of:") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") {
 		err.Junk = 1
 	}
 
