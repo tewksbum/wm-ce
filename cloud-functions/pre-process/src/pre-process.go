@@ -27,6 +27,7 @@ import (
 	"github.com/xojoc/useragent"
 )
 
+// blow
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
@@ -808,14 +809,14 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "grade":
+	case "title", "course year", "grad date", "class", "grade", "admit status":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id":
+	case "studentid", "student id", "id", "applicant":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "To the Parent(s) of:":
+	case "parent(s) of":
 		err.Junk = 1
 	}
 
@@ -850,7 +851,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "To the Parent(s) of:") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") {
 		err.Junk = 1
 	}
 
