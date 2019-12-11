@@ -252,6 +252,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			output.Passthrough = input.Passthrough
 
 			for _, d := range records {
+				// count unique values
+				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
+					continue
+				}
+
 				output.Signature.RecordID = uuid.New().String()
 
 				fields := make(map[string]string)
@@ -297,6 +302,16 @@ func CountSparseArray(inputArray []string) int {
 		}
 	}
 	return counter
+}
+
+func CountUniqueValues(inputArray []string) int {
+	unique := make(map[string]bool)
+	for _, entry := range inputArray {
+		if _, value := unique[entry]; !value {
+			unique[entry] = true
+		}
+	}
+	return len(unique)
 }
 
 // EnsureColumnsHaveNames ensures the columns have a name
