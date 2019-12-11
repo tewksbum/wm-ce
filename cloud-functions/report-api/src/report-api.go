@@ -72,14 +72,22 @@ type TypedCount struct {
 	Dupe      int
 	Throwaway int
 	HouseHold int
-	DFS       int
-	DFP       int
-	DUS       int
-	DUP       int
-	IFS       int
-	IFP       int
-	IUS       int
-	IUP       int
+	NDFS      int
+	NDFP      int
+	NDUS      int
+	NDUP      int
+	NIFS      int
+	NIFP      int
+	NIUS      int
+	NIUP      int
+	EDFS      int
+	EDFP      int
+	EDUS      int
+	EDUP      int
+	EIFS      int
+	EIFP      int
+	EIUS      int
+	EIUP      int
 }
 
 type Record struct {
@@ -445,6 +453,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var fibers []Fiber
 		var sets []PeopleSet
 		var setIDs []string
+		var newSetIDs []string
+		var existingSetIDs []string
 		var golden []PeopleGolden
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
@@ -468,6 +478,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// get the set ids
 		for _, s := range sets {
 			setIDs = append(setIDs, s.ID.Name)
+			if len(s.Fibers) > 1 {
+				existingSetIDs = append(existingSetIDs, s.ID.Name)
+			} else {
+				newSetIDs = append(newSetIDs, s.ID.Name)
+			}
 		}
 
 		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
@@ -497,14 +512,23 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 
-		DFS := 0 // domestic freshmen student
-		DFP := 0 // domestic freshmen parent
-		DUS := 0 // domestic upperclassman student
-		DUP := 0 // domestic upperclassman parent
-		IFS := 0 // international freshmen student
-		IFP := 0 // international freshmen parent
-		IUS := 0 // international upperclassman student
-		IUP := 0 // international upperclassman parent
+		NDFS := 0 // new domestic freshmen student
+		NDFP := 0 // new domestic freshmen parent
+		NDUS := 0 // new domestic upperclassman student
+		NDUP := 0 // new domestic upperclassman parent
+		NIFS := 0 // new international freshmen student
+		NIFP := 0 // new international freshmen parent
+		NIUS := 0 // new international upperclassman student
+		NIUP := 0 // new international upperclassman parent
+
+		EDFS := 0 // existing domestic freshmen student
+		EDFP := 0 // existing domestic freshmen parent
+		EDUS := 0 // existing domestic upperclassman student
+		EDUP := 0 // existing domestic upperclassman parent
+		EIFS := 0 // existing international freshmen student
+		EIFP := 0 // existing international freshmen parent
+		EIUS := 0 // existing international upperclassman student
+		EIUP := 0 // existing international upperclassman parent
 
 		recordIDs := []string{}
 		CurrentYear := time.Now().Year()
@@ -534,6 +558,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isParent := false
 			isUpperClassman := false
 			isFreshmen := false
+			isNew := Contains(newSetIDs, g.ID.Name)
 			for _, m := range PeopleMatchKeyNames {
 				mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
 				if m == "COUNTRY" {
@@ -558,22 +583,38 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-			if !isInternational && isFreshmen && !isParent {
-				DFS++
-			} else if !isInternational && isFreshmen && isParent {
-				DFP++
-			} else if !isInternational && isUpperClassman && !isParent {
-				DUS++
-			} else if !isInternational && isUpperClassman && isParent {
-				DUP++
-			} else if isInternational && isFreshmen && !isParent {
-				IFS++
-			} else if isInternational && isFreshmen && isParent {
-				IFP++
-			} else if isInternational && isUpperClassman && !isParent {
-				IUS++
-			} else if isInternational && isUpperClassman && isParent {
-				IUP++
+			if isNew && !isInternational && isFreshmen && !isParent {
+				NDFS++
+			} else if isNew && !isInternational && isFreshmen && isParent {
+				NDFP++
+			} else if isNew && !isInternational && isUpperClassman && !isParent {
+				NDUS++
+			} else if isNew && !isInternational && isUpperClassman && isParent {
+				NDUP++
+			} else if isNew && isInternational && isFreshmen && !isParent {
+				NIFS++
+			} else if isNew && isInternational && isFreshmen && isParent {
+				NIFP++
+			} else if isNew && isInternational && isUpperClassman && !isParent {
+				NIUS++
+			} else if isNew && isInternational && isUpperClassman && isParent {
+				NIUP++
+			} else if !isNew && !isInternational && isFreshmen && !isParent {
+				EDFS++
+			} else if !isNew && !isInternational && isFreshmen && isParent {
+				EDFP++
+			} else if !isNew && !isInternational && isUpperClassman && !isParent {
+				EDUS++
+			} else if !isNew && !isInternational && isUpperClassman && isParent {
+				EDUP++
+			} else if !isNew && isInternational && isFreshmen && !isParent {
+				EIFS++
+			} else if !isNew && isInternational && isFreshmen && isParent {
+				EIFP++
+			} else if !isNew && isInternational && isUpperClassman && !isParent {
+				EIUS++
+			} else if !isNew && isInternational && isUpperClassman && isParent {
+				EIUP++
 			}
 		}
 		log.Printf("column maps: %v", columnMaps)
@@ -630,14 +671,22 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			Dupe:      len(fibers) - len(sets),
 			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			HouseHold: 0,
-			DFS:       DFS,
-			DFP:       DFP,
-			DUS:       DUS,
-			DUP:       DUP,
-			IFS:       IFS,
-			IFP:       IFP,
-			IUS:       IUS,
-			IUP:       IUP,
+			EDFS:      EDFS,
+			EDFP:      EDFP,
+			EDUS:      EDUS,
+			EDUP:      EDUP,
+			EIFS:      EIFS,
+			EIFP:      EIFP,
+			EIUS:      EIUS,
+			EIUP:      EIUP,
+			NDFS:      NDFS,
+			NDFP:      NDFP,
+			NDUS:      NDUS,
+			NDUP:      NDUP,
+			NIFS:      NIFS,
+			NIFP:      NIFP,
+			NIUS:      NIUS,
+			NIUP:      NIUP,
 		}
 		output = report
 	} else {
