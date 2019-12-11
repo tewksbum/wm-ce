@@ -27,6 +27,7 @@ import (
 	"github.com/xojoc/useragent"
 )
 
+// blow
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
