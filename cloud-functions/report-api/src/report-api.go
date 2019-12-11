@@ -502,7 +502,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			dsGoldenKey := datastore.NameKey(DSKGolden, s, nil)
 			dsGoldenKey.Namespace = OwnerNamespace
 			goldenKeys = append(goldenKeys, dsGoldenKey)
-			// golden = append(golden, PeopleGolden{})
+			golden = append(golden, PeopleGolden{})
 		}
 		if len(goldenKeys) > 0 { // pull by batch of 1000
 			l := len(goldenKeys) / 1000
