@@ -812,7 +812,7 @@ func GetPeopleERR(column string) PeopleERR {
 	case "title", "course year", "grad date", "class", "grade", "admit status":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
@@ -851,7 +851,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") {
 		err.Junk = 1
 	}
 
