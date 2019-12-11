@@ -808,10 +808,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "grade":
+	case "title", "course year", "grad date", "class", "grade", "admit status":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id":
+	case "studentid", "student id", "id", "applicant":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
