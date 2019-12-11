@@ -502,11 +502,28 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			dsGoldenKey := datastore.NameKey(DSKGolden, s, nil)
 			dsGoldenKey.Namespace = OwnerNamespace
 			goldenKeys = append(goldenKeys, dsGoldenKey)
-			golden = append(golden, PeopleGolden{})
+			// golden = append(golden, PeopleGolden{})
 		}
-		if len(goldenKeys) > 0 {
-			if err := ds.GetMulti(ctx, goldenKeys, golden); err != nil && err != datastore.ErrNoSuchEntity {
-				log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", OwnerNamespace, DSKGolden, goldenKeys, err)
+		if len(goldenKeys) > 0 { // pull by batch of 1000
+			l := len(goldenKeys) / 1000
+			if len(goldenKeys)%1000 > 0 {
+				l++
+			}
+			for r := 0; r < l; r++ {
+				s := r * 1000
+				e := s + 1000
+
+				if e > len(goldenKeys) {
+					e = len(goldenKeys)
+				}
+
+				gk := goldenKeys[s:e]
+				gd := golden[s:e]
+
+				if err := ds.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+					log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", OwnerNamespace, DSKGolden, goldenKeys, err)
+				}
+
 			}
 		}
 
