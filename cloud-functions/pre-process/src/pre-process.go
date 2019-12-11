@@ -509,7 +509,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// update entity flags
 	flags.Event = true // every record = event
 
-	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && (columnFlags.PeopleZip || columnFlags.PeopleAddress) {
+	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
 		flags.People = true
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
