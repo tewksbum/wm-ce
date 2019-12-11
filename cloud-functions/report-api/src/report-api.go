@@ -521,7 +521,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				gd := golden[s:e]
 
 				if err := ds.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Fatalf("Error fetching fibers ns %v kind %v, key count %v: %v,", OwnerNamespace, DSKGolden, len(goldenKeys), err)
+					log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", OwnerNamespace, DSKGolden, len(goldenKeys), err)
 				}
 
 			}
