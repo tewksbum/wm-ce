@@ -850,7 +850,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "To the Parent(s) of:") {
 		err.Junk = 1
 	}
 
