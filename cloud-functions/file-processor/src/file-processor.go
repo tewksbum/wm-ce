@@ -218,7 +218,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 
 			// let's back track a little and see if we have just one extra column
-			for i := maxColumnRowAt - 1; i >= 0; i++ {
+			for i := maxColumnRowAt - 1; i >= 0; i-- {
 				cellCount := CountSparseArray(allrows[i])
 				if maxColumns-cellCount == 1 {
 					maxColumnRowAt = i
