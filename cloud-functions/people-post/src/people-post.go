@@ -348,10 +348,14 @@ var StateList = map[string]string{
 }
 
 // JY: this code looks dangerous as it uses contains, think minneapolis
-func reMilityBaseCity(key string) bool {
-	if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
+func reMilityBaseCity(val string) bool {
+	city := strings.ToUpper(val)
+	if city == "AFB" || city == "APO" || city == "DPO" || city == "FPO" {
 		return true
 	}
+	// if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
+	// 	return true
+	// }
 	return false
 }
 
@@ -952,6 +956,8 @@ func IndexOf(element string, data []string) int {
 }
 
 func StandardizeAddress(mkOutput *PeopleOutput) {
+	STATEValue := mkOutput.STATE.Value
+	CITYValue := mkOutput.CITY.Value
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 0 {
@@ -989,6 +995,11 @@ func StandardizeAddress(mkOutput *PeopleOutput) {
 				LogDev(fmt.Sprintf("overriding country by state value: &v", a.STATE))
 				mkOutput.COUNTRY.Value = "US"
 				mkOutput.COUNTRY.Source = "WM"
+			}
+
+			if (len(mkOutput.STATE.Value) == 0 && len(STATEValue) > 0) || (len(mkOutput.CITY.Value) == 0 && len(CITYValue) > 0) {
+				mkOutput.STATE.Value = strings.ToUpper(STATEValue)
+				mkOutput.CITY.Value = strings.ToUpper(CITYValue)
 			}
 		}
 	}
