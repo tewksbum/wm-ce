@@ -574,59 +574,62 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if f.Disposition == "dupe" {
 				DUPE++
 			} else {
-				isNew = true
-			}
+				if f.Disposition == "new" {
+					isNew = true
+				}
 
-			country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
-			if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
-				isInternational = true
-			}
-			class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
-			if err == nil {
-				if class == CurrentYear+4 {
-					isFreshmen = true
-				} else if class >= CurrentYear && class < CurrentYear+4 {
-					isUpperClassman = true
+				country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
+				if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+					isInternational = true
+				}
+				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
+				if err == nil {
+					if class == CurrentYear+4 {
+						isFreshmen = true
+					} else if class >= CurrentYear && class < CurrentYear+4 {
+						isUpperClassman = true
+					}
+				}
+				role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
+				if role == "Parent" {
+					isParent = true
+				}
+
+				if isNew && !isInternational && isFreshmen && !isParent {
+					NDFS++
+				} else if isNew && !isInternational && isFreshmen && isParent {
+					NDFP++
+				} else if isNew && !isInternational && isUpperClassman && !isParent {
+					NDUS++
+				} else if isNew && !isInternational && isUpperClassman && isParent {
+					NDUP++
+				} else if isNew && isInternational && isFreshmen && !isParent {
+					NIFS++
+				} else if isNew && isInternational && isFreshmen && isParent {
+					NIFP++
+				} else if isNew && isInternational && isUpperClassman && !isParent {
+					NIUS++
+				} else if isNew && isInternational && isUpperClassman && isParent {
+					NIUP++
+				} else if !isNew && !isInternational && isFreshmen && !isParent {
+					EDFS++
+				} else if !isNew && !isInternational && isFreshmen && isParent {
+					EDFP++
+				} else if !isNew && !isInternational && isUpperClassman && !isParent {
+					EDUS++
+				} else if !isNew && !isInternational && isUpperClassman && isParent {
+					EDUP++
+				} else if !isNew && isInternational && isFreshmen && !isParent {
+					EIFS++
+				} else if !isNew && isInternational && isFreshmen && isParent {
+					EIFP++
+				} else if !isNew && isInternational && isUpperClassman && !isParent {
+					EIUS++
+				} else if !isNew && isInternational && isUpperClassman && isParent {
+					EIUP++
 				}
 			}
-			role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
-			if role == "Parent" {
-				isParent = true
-			}
 
-			if isNew && !isInternational && isFreshmen && !isParent {
-				NDFS++
-			} else if isNew && !isInternational && isFreshmen && isParent {
-				NDFP++
-			} else if isNew && !isInternational && isUpperClassman && !isParent {
-				NDUS++
-			} else if isNew && !isInternational && isUpperClassman && isParent {
-				NDUP++
-			} else if isNew && isInternational && isFreshmen && !isParent {
-				NIFS++
-			} else if isNew && isInternational && isFreshmen && isParent {
-				NIFP++
-			} else if isNew && isInternational && isUpperClassman && !isParent {
-				NIUS++
-			} else if isNew && isInternational && isUpperClassman && isParent {
-				NIUP++
-			} else if !isNew && !isInternational && isFreshmen && !isParent {
-				EDFS++
-			} else if !isNew && !isInternational && isFreshmen && isParent {
-				EDFP++
-			} else if !isNew && !isInternational && isUpperClassman && !isParent {
-				EDUS++
-			} else if !isNew && !isInternational && isUpperClassman && isParent {
-				EDUP++
-			} else if !isNew && isInternational && isFreshmen && !isParent {
-				EIFS++
-			} else if !isNew && isInternational && isFreshmen && isParent {
-				EIFP++
-			} else if !isNew && isInternational && isUpperClassman && !isParent {
-				EIUS++
-			} else if !isNew && isInternational && isUpperClassman && isParent {
-				EIUP++
-			}
 		}
 
 		// for _, g := range golden {
