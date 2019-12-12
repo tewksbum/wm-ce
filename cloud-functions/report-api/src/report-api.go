@@ -550,9 +550,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if !Contains(recordIDs, recordID) {
 				recordIDs = append(recordIDs, recordID)
 			}
-			if len(f.RecordID) > 36 { // skip mar
-				continue
-			}
 
 			for _, m := range PeopleMatchKeyNames {
 				mk := GetMatchKeyFieldFromFiberByName(&f, m)
@@ -569,6 +566,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			}
 
 			isInternational := false
+			isDomestic := false
 			isParent := false
 			isUpperClassman := false
 			isFreshmen := false
@@ -584,6 +582,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
 				if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
 					isInternational = true
+				} else if country == "US" && country == "USA" && country == "UNITED STATES" && country == "UNITED STATES OF AMERICA" {
+					isDomestic = true
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
 				if err == nil {
@@ -598,13 +598,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					isParent = true
 				}
 
-				if isNew && !isInternational && isFreshmen && !isParent {
+				if isNew && isDomestic && isFreshmen && !isParent {
 					NDFS++
-				} else if isNew && !isInternational && isFreshmen && isParent {
+				} else if isNew && isDomestic && isFreshmen && isParent {
 					NDFP++
-				} else if isNew && !isInternational && isUpperClassman && !isParent {
+				} else if isNew && isDomestic && isUpperClassman && !isParent {
 					NDUS++
-				} else if isNew && !isInternational && isUpperClassman && isParent {
+				} else if isNew && isDomestic && isUpperClassman && isParent {
 					NDUP++
 				} else if isNew && isInternational && isFreshmen && !isParent {
 					NIFS++
@@ -614,13 +614,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					NIUS++
 				} else if isNew && isInternational && isUpperClassman && isParent {
 					NIUP++
-				} else if !isNew && !isInternational && isFreshmen && !isParent {
+				} else if !isNew && isDomestic && isFreshmen && !isParent {
 					EDFS++
-				} else if !isNew && !isInternational && isFreshmen && isParent {
+				} else if !isNew && isDomestic && isFreshmen && isParent {
 					EDFP++
-				} else if !isNew && !isInternational && isUpperClassman && !isParent {
+				} else if !isNew && isDomestic && isUpperClassman && !isParent {
 					EDUS++
-				} else if !isNew && !isInternational && isUpperClassman && isParent {
+				} else if !isNew && isDomestic && isUpperClassman && isParent {
 					EDUP++
 				} else if !isNew && isInternational && isFreshmen && !isParent {
 					EIFS++
