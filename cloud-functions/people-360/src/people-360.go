@@ -516,7 +516,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if !Contains(mk360.Values, newValue) {
 				LogDev(fmt.Sprintf("new values found %v, %v", mk360.Values, newValue))
 				HasNewValues = true
-				break
 			}
 		}
 
