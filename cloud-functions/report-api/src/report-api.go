@@ -49,7 +49,7 @@ type FileReport struct {
 	Columns     []ColumnStat
 	ProcessedOn time.Time
 	PcocessTime string
-	Counts      TypedCount
+	Fibers      TypedCount
 }
 
 type OwnerReport struct {
@@ -738,7 +738,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
 		report.ProcessedOn = minTime
 
-		report.Counts = TypedCount{
+		report.Fibers = TypedCount{
 			Person:    len(fibers),
 			Dupe:      DUPE,
 			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
