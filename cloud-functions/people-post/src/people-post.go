@@ -857,7 +857,7 @@ func GetMkField(v *PeopleOutput, field string) MatchKeyField {
 func SetMkField(v *PeopleOutput, field string, value string, source string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
-	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source}))
+	f.Set(reflect.ValueOf(MatchKeyField{Value: strings.TrimSpace(value), Source: source}))
 	if dev {
 		log.Printf("SetMkField: %v %v %v", field, value, source)
 		log.Printf("MkField %v", GetMkField(v, field))
@@ -868,7 +868,7 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 
-	f.Set(reflect.ValueOf(MatchKeyField{Value: value, Source: source, Type: t}))
+	f.Set(reflect.ValueOf(MatchKeyField{Value: strings.TrimSpace(value), Source: source, Type: t}))
 	if dev {
 		log.Printf("SetMkField: %v %v %v %v", field, value, source, t)
 		log.Printf("MkField %v", GetMkField(v, field))
