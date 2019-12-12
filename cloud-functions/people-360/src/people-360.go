@@ -384,6 +384,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		for _, s := range queriedSets {
 			matchedSets = append(matchedSets, s)
 		}
+		LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
 	}
 	if len(MatchByValue1) > 0 {
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
@@ -393,6 +394,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			for _, s := range queriedSets {
 				matchedSets = append(matchedSets, s)
 			}
+			LogDev(fmt.Sprintf("Matched %v sets with condition 2", len(queriedSets)))
 		}
 	}
 	if len(MatchByValue2) > 0 {
@@ -403,6 +405,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			for _, s := range queriedSets {
 				matchedSets = append(matchedSets, s)
 			}
+			LogDev(fmt.Sprintf("Matched %v sets with condition 3", len(queriedSets)))
 		}
 	}
 	if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
@@ -415,6 +418,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			for _, s := range queriedSets {
 				matchedSets = append(matchedSets, s)
 			}
+			LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
 		}
 	}
 	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
@@ -431,6 +435,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			for _, s := range queriedSets {
 				matchedSets = append(matchedSets, s)
 			}
+			LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
 		}
 	}
 
