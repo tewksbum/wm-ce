@@ -521,7 +521,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		newValue := GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
 		if len(newValue) > 0 {
 			if !Contains(mk360.Values, newValue) {
-				LogDev(fmt.Sprintf("new values found %v, %v for key %v, len is %v", mk360.Values, newValue, name, len(newValue)))
+				LogDev(fmt.Sprintf("new values found %v, %v for key %v, chars are %v", mk360.Values, newValue, name, ToAsciiArray(newValue)))
 				HasNewValues = true
 			}
 		}
@@ -830,4 +830,15 @@ func Left(str string, num int) string {
 		num = len(str)
 	}
 	return str[:num]
+}
+
+func ToAsciiArray(s string) []int {
+	runes := []rune(s)
+
+	var result []int
+
+	for i := 0; i < len(runes); i++ {
+		result = append(result, int(runes[i]))
+	}
+	return result
 }
