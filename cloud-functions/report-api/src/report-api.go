@@ -582,7 +582,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
 				if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
 					isInternational = true
-				} else if country == "US" && country == "USA" && country == "UNITED STATES" && country == "UNITED STATES OF AMERICA" {
+				} else if country == "US" || country == "USA" || country == "UNITED STATES" || country == "UNITED STATES OF AMERICA" {
 					isDomestic = true
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
