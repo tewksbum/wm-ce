@@ -747,6 +747,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if sa, ok := StateList[stateUpper]; ok {
 			v.Output.STATE.Value = sa
 		}
+
 		StandardizeAddress(&(v.Output))
 		PubRecord(ctx, &input, v.Output, suffix)
 	}
