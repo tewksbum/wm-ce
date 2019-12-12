@@ -438,7 +438,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
 		}
 	} else {
-		LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E, MatchByValue5F))
+		LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E, MatchByValue5F))
 	}
 
 	var matchedFibers []string
@@ -521,7 +521,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		newValue := GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
 		if len(newValue) > 0 {
 			if !Contains(mk360.Values, newValue) {
-				LogDev(fmt.Sprintf("new values found %v, %v", mk360.Values, newValue))
+				LogDev(fmt.Sprintf("new values found %v, %v for key %v", mk360.Values, newValue, name))
 				HasNewValues = true
 			}
 		}
