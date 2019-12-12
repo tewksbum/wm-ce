@@ -521,7 +521,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		newValue := GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
 		if len(newValue) > 0 {
 			if !Contains(mk360.Values, newValue) {
-				LogDev(fmt.Sprintf("new values found %v, %v for key %v", mk360.Values, newValue, name))
+				LogDev(fmt.Sprintf("new values found %v, %v for key %v, len is %v", mk360.Values, newValue, name, len(newValue)))
 				HasNewValues = true
 			}
 		}
