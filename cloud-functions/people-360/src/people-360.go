@@ -518,9 +518,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		mk := GetMatchKey360ByName(output.MatchKeys, name)
 		mk.Value = GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
-		if !Contains(mk.Values, mk.Value) {
-			HasNewValues = true
-			break
+		if len(mk.Value) > 0 {
+			if !Contains(mk.Values, mk.Value) {
+				HasNewValues = true
+				break
+			}
 		}
 	}
 
