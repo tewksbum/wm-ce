@@ -452,8 +452,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		var records []Record
 		var fibers []Fiber
-		var sets []PeopleSet
-		var setIDs []string
+		// var sets []PeopleSet
+		// var setIDs []string
 		// var golden []PeopleGolden
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
@@ -489,7 +489,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// 		setIDs = append(setIDs, v.SetID)
 		// 	}
 		// }
-		log.Printf("set id retrieved: %v", setIDs)
+		// log.Printf("set id retrieved: %v", setIDs)
 
 		// var goldenKeys []*datastore.Key
 		// for _, s := range setIDs {
@@ -739,7 +739,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Counts = TypedCount{
-			Person:    len(sets),
+			Person:    len(fibers),
 			Dupe:      DUPE,
 			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			HouseHold: 0,
