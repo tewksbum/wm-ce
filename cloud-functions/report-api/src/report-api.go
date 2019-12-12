@@ -550,6 +550,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if !Contains(recordIDs, recordID) {
 				recordIDs = append(recordIDs, recordID)
 			}
+			if len(f.RecordID) > 36 { // skip mar
+				continue
+			}
 
 			for _, m := range PeopleMatchKeyNames {
 				mk := GetMatchKeyFieldFromFiberByName(&f, m)
