@@ -55,6 +55,7 @@ type PeopleFiberDS struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
+	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
 	FNAME        MatchKeyField    `datastore:"fname"`
@@ -336,15 +337,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	fiber.Passthrough = OutputPassthrough
 	fiber.Signature = input.Signature
 
-	// store in DS
+	// fiber in DS
+	dsFiber := GetFiberDS(&fiber)
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
 	dsKey := datastore.NameKey(DSKindFiber, fiber.ID, nil)
 	dsKey.Namespace = dsNameSpace
-	dsFiber := GetFiberDS(&fiber)
 	dsFiber.ID = dsKey
-	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
-		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
-	}
 
 	// locate existing set
 	if len(input.Signature.RecordID) == 0 {
@@ -485,7 +483,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		FiberMatchKeys[name] = []string{}
 	}
-	//var SetMembers []PeopleSetMember
 	for i, fiber := range Fibers {
 		LogDev(fmt.Sprintf("loaded fiber %v of %v: %v", i, len(Fibers), fiber))
 		FiberSignatures = append(FiberSignatures, Signature{
@@ -525,6 +522,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			HasNewValues = true
 			break
 		}
+	}
+
+	if len(matchedFibers) == 0 {
+		dsFiber.Disposition = "new"
+	} else if !HasNewValues {
+		dsFiber.Disposition = "dupe"
+	} else {
+		dsFiber.Disposition = "update"
+	}
+
+	// store the fiber
+	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
+		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
 	}
 
 	// stop processing if no new values
