@@ -106,6 +106,7 @@ type Fiber struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
+	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
 	FNAME        MatchKeyField    `datastore:"fname"`
@@ -453,9 +454,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var fibers []Fiber
 		var sets []PeopleSet
 		var setIDs []string
-		var newSetIDs []string
-		var existingSetIDs []string
-		var golden []PeopleGolden
+		// var golden []PeopleGolden
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
@@ -469,21 +468,16 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("fibers retrieved: %v", len(fibers))
 
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
-			log.Fatalf("Error querying sets: %v", err)
-			return
-		}
-		log.Printf("sets retrieved: %v", len(sets))
+		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+		// 	log.Fatalf("Error querying sets: %v", err)
+		// 	return
+		// }
+		// log.Printf("sets retrieved: %v", len(sets))
 
-		// get the set ids
-		for _, s := range sets {
-			setIDs = append(setIDs, s.ID.Name)
-			if len(s.Fibers) > 1 {
-				existingSetIDs = append(existingSetIDs, s.ID.Name)
-			} else {
-				newSetIDs = append(newSetIDs, s.ID.Name)
-			}
-		}
+		// // get the set ids
+		// for _, s := range sets {
+		// 	setIDs = append(setIDs, s.ID.Name)
+		// }
 
 		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
 		// 	log.Fatalf("Error querying set members: %v", err)
@@ -497,35 +491,35 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// }
 		log.Printf("set id retrieved: %v", setIDs)
 
-		var goldenKeys []*datastore.Key
-		for _, s := range setIDs {
-			dsGoldenKey := datastore.NameKey(DSKGolden, s, nil)
-			dsGoldenKey.Namespace = OwnerNamespace
-			goldenKeys = append(goldenKeys, dsGoldenKey)
-			golden = append(golden, PeopleGolden{})
-		}
-		if len(goldenKeys) > 0 { // pull by batch of 1000
-			l := len(goldenKeys) / 1000
-			if len(goldenKeys)%1000 > 0 {
-				l++
-			}
-			for r := 0; r < l; r++ {
-				s := r * 1000
-				e := s + 1000
+		// var goldenKeys []*datastore.Key
+		// for _, s := range setIDs {
+		// 	dsGoldenKey := datastore.NameKey(DSKGolden, s, nil)
+		// 	dsGoldenKey.Namespace = OwnerNamespace
+		// 	goldenKeys = append(goldenKeys, dsGoldenKey)
+		// 	golden = append(golden, PeopleGolden{})
+		// }
+		// if len(goldenKeys) > 0 { // pull by batch of 1000
+		// 	l := len(goldenKeys) / 1000
+		// 	if len(goldenKeys)%1000 > 0 {
+		// 		l++
+		// 	}
+		// 	for r := 0; r < l; r++ {
+		// 		s := r * 1000
+		// 		e := s + 1000
 
-				if e > len(goldenKeys) {
-					e = len(goldenKeys)
-				}
+		// 		if e > len(goldenKeys) {
+		// 			e = len(goldenKeys)
+		// 		}
 
-				gk := goldenKeys[s:e]
-				gd := golden[s:e]
+		// 		gk := goldenKeys[s:e]
+		// 		gd := golden[s:e]
 
-				if err := ds.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", OwnerNamespace, DSKGolden, len(goldenKeys), err)
-				}
+		// 		if err := ds.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+		// 			log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", OwnerNamespace, DSKGolden, len(goldenKeys), err)
+		// 		}
 
-			}
-		}
+		// 	}
+		// }
 
 		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 
@@ -548,6 +542,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		EIUP := 0 // existing international upperclassman parent
 
 		recordIDs := []string{}
+
+		DUPE := 0
 		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
 			recordID := Left(f.RecordID, 36)
@@ -568,38 +564,36 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
 				}
 			}
-		}
 
-		for _, g := range golden {
 			isInternational := false
 			isParent := false
 			isUpperClassman := false
 			isFreshmen := false
-			isNew := Contains(newSetIDs, g.ID.Name)
-			for _, m := range PeopleMatchKeyNames {
-				mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
-				if m == "COUNTRY" {
-					country := strings.ToUpper(mkValue)
-					if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
-						isInternational = true
-					}
-				} else if m == "TITLE" {
-					if IsInt(mkValue) {
-						class, err := strconv.Atoi(mkValue)
-						if err == nil {
-							if class == CurrentYear+4 {
-								isFreshmen = true
-							} else if class >= CurrentYear && class < CurrentYear+4 {
-								isUpperClassman = true
-							}
-						}
-					}
-				} else if m == "ROLE" {
-					if mkValue == "Parent" {
-						isParent = true
-					}
+			isNew := false
+
+			if f.Disposition == "dupe" {
+				DUPE++
+			} else {
+				isNew = true
+			}
+
+			country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
+			if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+				isInternational = true
+			}
+			class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
+			if err == nil {
+				if class == CurrentYear+4 {
+					isFreshmen = true
+				} else if class >= CurrentYear && class < CurrentYear+4 {
+					isUpperClassman = true
 				}
 			}
+			role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
+			if role == "Parent" {
+				isParent = true
+			}
+
 			if isNew && !isInternational && isFreshmen && !isParent {
 				NDFS++
 			} else if isNew && !isInternational && isFreshmen && isParent {
@@ -634,6 +628,67 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				EIUP++
 			}
 		}
+
+		// for _, g := range golden {
+
+		// 	for _, m := range PeopleMatchKeyNames {
+		// 		mkValue := GetMatchKeyFieldFromFGoldenByName(&g, m)
+		// 		if m == "COUNTRY" {
+		// 			country := strings.ToUpper(mkValue)
+		// 			if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+		// 				isInternational = true
+		// 			}
+		// 		} else if m == "TITLE" {
+		// 			if IsInt(mkValue) {
+		// 				class, err := strconv.Atoi(mkValue)
+		// 				if err == nil {
+		// 					if class == CurrentYear+4 {
+		// 						isFreshmen = true
+		// 					} else if class >= CurrentYear && class < CurrentYear+4 {
+		// 						isUpperClassman = true
+		// 					}
+		// 				}
+		// 			}
+		// 		} else if m == "ROLE" {
+		// 			if mkValue == "Parent" {
+		// 				isParent = true
+		// 			}
+		// 		}
+		// 	}
+		// 	if isNew && !isInternational && isFreshmen && !isParent {
+		// 		NDFS++
+		// 	} else if isNew && !isInternational && isFreshmen && isParent {
+		// 		NDFP++
+		// 	} else if isNew && !isInternational && isUpperClassman && !isParent {
+		// 		NDUS++
+		// 	} else if isNew && !isInternational && isUpperClassman && isParent {
+		// 		NDUP++
+		// 	} else if isNew && isInternational && isFreshmen && !isParent {
+		// 		NIFS++
+		// 	} else if isNew && isInternational && isFreshmen && isParent {
+		// 		NIFP++
+		// 	} else if isNew && isInternational && isUpperClassman && !isParent {
+		// 		NIUS++
+		// 	} else if isNew && isInternational && isUpperClassman && isParent {
+		// 		NIUP++
+		// 	} else if !isNew && !isInternational && isFreshmen && !isParent {
+		// 		EDFS++
+		// 	} else if !isNew && !isInternational && isFreshmen && isParent {
+		// 		EDFP++
+		// 	} else if !isNew && !isInternational && isUpperClassman && !isParent {
+		// 		EDUS++
+		// 	} else if !isNew && !isInternational && isUpperClassman && isParent {
+		// 		EDUP++
+		// 	} else if !isNew && isInternational && isFreshmen && !isParent {
+		// 		EIFS++
+		// 	} else if !isNew && isInternational && isFreshmen && isParent {
+		// 		EIFP++
+		// 	} else if !isNew && isInternational && isUpperClassman && !isParent {
+		// 		EIUS++
+		// 	} else if !isNew && isInternational && isUpperClassman && isParent {
+		// 		EIUP++
+		// 	}
+		// }
 		log.Printf("column maps: %v", columnMaps)
 
 		report.RowCount = len(records)
@@ -685,7 +740,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		report.Counts = TypedCount{
 			Person:    len(sets),
-			Dupe:      len(fibers) - len(sets),
+			Dupe:      DUPE,
 			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			HouseHold: 0,
 			EDFS:      EDFS,
