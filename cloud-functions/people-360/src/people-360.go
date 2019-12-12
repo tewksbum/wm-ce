@@ -502,30 +502,29 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		LogDev(fmt.Sprintf("FiberMatchKey values %v", FiberMatchKeys))
 	}
 	var MatchKeysFromFiber []MatchKey360
+
+	HasNewValues := false
+	// check to see if there are any new values
 	for _, name := range MatchKeyList {
 		mk360 := MatchKey360{
 			Key:    name,
 			Values: FiberMatchKeys[name],
 		}
+
+		newValue := GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
+		if len(newValue) > 0 {
+			if !Contains(mk360.Values, newValue) {
+				LogDev(fmt.Sprintf("new values found %v, %v", mk360.Values, newValue))
+				HasNewValues = true
+				break
+			}
+		}
+
 		MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
 		LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
 	}
 
 	output.MatchKeys = MatchKeysFromFiber
-
-	HasNewValues := false
-	// check to see if there are any new values
-	for _, name := range MatchKeyList {
-		mk := GetMatchKey360ByName(output.MatchKeys, name)
-		mk.Value = GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
-		if len(mk.Value) > 0 {
-			if !Contains(mk.Values, mk.Value) {
-				LogDev(fmt.Sprintf("new values found %v, %v", mk.Values, mk.Value))
-				HasNewValues = true
-				break
-			}
-		}
-	}
 
 	if len(matchedFibers) == 0 {
 		dsFiber.Disposition = "new"
