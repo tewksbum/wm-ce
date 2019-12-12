@@ -518,7 +518,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			Values: FiberMatchKeys[name],
 		}
 
-		newValue := GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value
+		newValue := strings.TrimSpace(GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value)
 		if len(newValue) > 0 {
 			if !Contains(mk360.Values, newValue) {
 				LogDev(fmt.Sprintf("new values found %v, %v for key %v, chars are %v", mk360.Values, newValue, name, ToAsciiArray(newValue)))
