@@ -586,7 +586,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			}
 
 			if f.Disposition == "dupe" {
-				DUPE++
+				if f.RecordType == "default" {
+					DUPE++
+				}
 			} else {
 				if f.Disposition == "new" {
 					isNew = true
@@ -600,17 +602,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
 				if err == nil {
-					// if class == CurrentYear+4 {
-					// 	isFreshmen = true
-					// } else
-					if class >= CurrentYear && class < CurrentYear+4 {
-						isUpperClassman = true
-					} else {
+					if class == CurrentYear+4 {
 						isFreshmen = true
+					} else if class >= CurrentYear && class < CurrentYear+4 {
+						isUpperClassman = true
 					}
-
-				} else {
-					isFreshmen = true
 				}
 				// role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
 				// if role == "Parent" {
