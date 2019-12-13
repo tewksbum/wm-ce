@@ -24,11 +24,12 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   string `json:"ownerId"`
-	Source    string `json:"source"`
-	EventID   string `json:"eventId"`
-	EventType string `json:"eventType"`
-	RecordID  string `json:"recordId"`
+	OwnerID    string `json:"ownerId"`
+	Source     string `json:"source"`
+	EventID    string `json:"eventId"`
+	EventType  string `json:"eventType"`
+	RecordType string `json:"recordType"`
+	RecordID   string `json:"recordId"`
 }
 
 type PeopleInput struct {

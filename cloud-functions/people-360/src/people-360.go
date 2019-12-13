@@ -24,11 +24,12 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   string `json:"ownerId"`
-	Source    string `json:"source"`
-	EventID   string `json:"eventId"`
-	EventType string `json:"eventType"`
-	RecordID  string `json:"recordId"`
+	OwnerID    string `json:"ownerId"`
+	Source     string `json:"source"`
+	EventID    string `json:"eventId"`
+	EventType  string `json:"eventType"`
+	RecordType string `json:"recordType"`
+	RecordID   string `json:"recordId"`
 }
 
 type PeopleInput struct {
@@ -55,6 +56,7 @@ type PeopleFiberDS struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
+	RecordType   string           `datastore:"recordtype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -703,6 +705,7 @@ func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 		EventType:   v.Signature.EventType,
 		EventID:     v.Signature.EventID,
 		RecordID:    v.Signature.RecordID,
+		RecordType:  v.Signature.RecordType,
 		Passthrough: v.Passthrough,
 		CreatedAt:   v.CreatedAt,
 	}

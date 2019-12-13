@@ -28,11 +28,12 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID   string `json:"ownerId"`
-	Source    string `json:"source"`
-	EventID   string `json:"eventId"`
-	EventType string `json:"eventType"`
-	RecordID  string `json:"recordId"`
+	OwnerID    string `json:"ownerId"`
+	Source     string `json:"source"`
+	EventID    string `json:"eventId"`
+	EventType  string `json:"eventType"`
+	RecordType string `json:"recordType"`
+	RecordID   string `json:"recordId"`
 }
 
 type Prediction struct {
@@ -753,7 +754,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		StandardizeAddress(&(v.Output))
-		PubRecord(ctx, &input, v.Output, suffix)
+		PubRecord(ctx, &input, v.Output, suffix, v.Type)
 	}
 	return nil
 }
@@ -1157,9 +1158,10 @@ func ExtractMPRCounter(columnName string) int {
 	return 0
 }
 
-func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string) {
+func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
 	var output Output
 	output.Signature = input.Signature
+	output.Signature.RecordType = recordType
 	if len(suffix) > 0 {
 		output.Signature.RecordID += suffix
 	}
