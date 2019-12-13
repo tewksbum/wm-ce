@@ -39,6 +39,7 @@ type Event struct {
 	Endpoint    string
 	Passthrough []KVP
 	Attributes  []KVP
+	Detail      string
 }
 
 type Signature struct {
@@ -169,6 +170,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		EventID:     uuid.New().String(),
 		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
+		Detail:      input.FileURL,
 	}
 
 	eventKey := datastore.IncompleteKey("Event", nil)

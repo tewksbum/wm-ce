@@ -39,6 +39,7 @@ type Event struct {
 	Endpoint    string
 	Passthrough []KVP
 	Attributes  []KVP
+	Detail      string
 }
 
 type Signature struct {
