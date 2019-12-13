@@ -748,7 +748,7 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.ToLower(column)
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name":
+	case "fname", "f name", "f_name", "first name", "name first", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name":
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "name_last", "last", "surname", "student last name":
 		err.LastName = 1
@@ -756,9 +756,9 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
@@ -816,7 +816,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of":
+	case "parent(s) of", "v-lookup", "vlookup", "unique":
 		err.Junk = 1
 	}
 
@@ -829,14 +829,14 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "name") {
 		err.ContainsName = 1
 	}
-	if strings.Contains(key, "country") {
-		err.ContainsCountry = 1
-	}
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
 		err.ContainsAddress = 1
+	}
+	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") {
+		err.Address2 = 1
 	}
 	if strings.Contains(key, "city") {
 		err.ContainsCity = 1
@@ -848,10 +848,13 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ContainsZipCode = 1
 		err.ZipCode = 1
 	}
+	if strings.Contains(key, "country") {
+		err.ContainsCountry = 1
+	}
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the " || strings.HasPrefix(key, "v-lookup") {
 		err.Junk = 1
 	}
 
