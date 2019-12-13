@@ -11,14 +11,14 @@ function toColumnName(num) {
 (async () => {
   const reportURL =
     "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-report-api";
+  let inputFilename = "input.xlsx";
   if (process.argv.length === 2) {
-    const inputFilename = "input.xlsx";
     console.error(`Using default input file ${inputFilename}`);
   } else {
-    const inputFilename = process.argv[2];
+    inputFilename = process.argv[2];
   }
   var workBook = new Excel.Workbook();
-  workBook = await workBook.xlsx.readFile("input.xlsx");
+  workBook = await workBook.xlsx.readFile(inputFilename);
   var ACDSheet = workBook.addWorksheet("ACD");
   ACDSheet.addRow([]);
   var ACDHeaderColumns = [
@@ -39,7 +39,7 @@ function toColumnName(num) {
   let lastRCC = 0;
   let maxCol = 0;
 
-  var MergeSheet = workBook.addWorksheet("Merge pull");
+  var MergeSheet = workBook.addWorksheet("Merge purge");
   var emptyHeader = ["", "", "", "", "", "", "", ""];
 
   var f = emptyHeader

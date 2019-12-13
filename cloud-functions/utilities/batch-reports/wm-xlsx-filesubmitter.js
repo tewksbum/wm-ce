@@ -30,8 +30,14 @@ console.log(`Logging results in ${logFile}`);
 var sep = "";
 var skippedSchoolCodes = [];
 (async () => {
+  let inputFilename = "input.xlsx";
+  if (process.argv.length === 2) {
+    console.error(`Using default input file ${inputFilename}`);
+  } else {
+    inputFilename = process.argv[2];
+  }
   var workbook = new Excel.Workbook();
-  workbook = await workbook.xlsx.readFile("input.xlsx");
+  workbook = await workbook.xlsx.readFile(inputFilename);
   var worksheet = workbook.getWorksheet("Files");
   var header = worksheet.getRow(1);
   header.hidden = false;
@@ -132,9 +138,8 @@ async function sendRequest(row) {
     });
 
   const bucketName = "oncampusmarketing";
-  // These options will allow temporary read access to the file
   const options = {
-    version: "v2", // defaults to 'v2' if missing.
+    version: "v2",
     action: "read",
     expires: Date.now() + 1000 * 60 * 60 // one hour
   };
@@ -146,7 +151,8 @@ async function sendRequest(row) {
     .getSignedUrl(options);
 
   console.log(`The signed url for ${file} is ${url}.`);
-  // return;
+
+  // This is what we send
   var streamerData = {
     accessKey: `${accessKey}`,
     fileUrl: url,
@@ -182,7 +188,6 @@ async function sendRequest(row) {
     row.getCell(7).value = streamerData.accessKey;
     row.getCell(8).value = responseObject.id;
     row.getCell(9).value = url;
-    
     stream.write(sep + streamLog);
     sep = sep === "" ? ",\n" : sep;
   } catch (error) {
