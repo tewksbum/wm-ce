@@ -316,6 +316,12 @@ type PostRecord struct {
 	Output   PeopleOutput
 }
 
+type PubQueue struct {
+	Output PeopleOutput
+	Suffix string
+	Type   string
+}
+
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
@@ -730,6 +736,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	pubQueue := []PubQueue{}
+	toPubOrNotToPub := false
 	for i, v := range outputs {
 		if i == indexToSkip {
 			continue
@@ -754,7 +762,25 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		StandardizeAddress(&(v.Output))
-		PubRecord(ctx, &input, v.Output, suffix, v.Type)
+
+		if v.Type == "default" {
+			if len(v.Output.EMAIL.Value) > 0 ||
+				(len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0) ||
+				(len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1NO.Value) > 0 && len(v.Output.ADBOOK.Value) > 0) {
+				toPubOrNotToPub = true
+			}
+		}
+		pubQueue = append(pubQueue, PubQueue{
+			Output: v.Output,
+			Suffix: suffix,
+			Type:   v.Type,
+		})
+	}
+
+	if toPubOrNotToPub {
+		for _, p := range pubQueue {
+			PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
+		}
 	}
 	return nil
 }
