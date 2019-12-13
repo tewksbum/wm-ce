@@ -371,8 +371,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", `''`, -1)
 	MatchByKey5C := "LNAME"
 	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey5D := "FINITIAL"
-	MatchByValue5D := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
+	MatchByKey5D := "FNAME"
+	MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
 	MatchByKey5E := "AD1NO"
 	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
 	MatchByKey5F := "ADBOOK"
