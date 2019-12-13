@@ -55,8 +55,8 @@ func TestSignatures(t *testing.T) {
 		input    Signature
 		expected string
 	}{
-		{Signature{123, "Source", "EventType", "EventId", "RecordId"}, "4dd32b1e279dbb92b338c08ef612956e"},
-		{Signature{1234, "Source2", "EventType2", "EventId2", "RecordId2"}, "8a86193885f5bfac8046597384a0bbb1"},
+		{Signature{"fake-sponsor", "Source", "EventType", "EventId", "RecordId"}, "cafd0d43416df66933400673cf25a6cc"},
+		{Signature{"fake-sponsor", "Source2", "EventType2", "EventId2", "RecordId2"}, "5d949f9d5513d70187587746b2c8be4e"},
 	}
 	for _, test := range tests {
 		hash := getSignatureHash(test.input)
@@ -66,7 +66,7 @@ func TestSignatures(t *testing.T) {
 	}
 }
 func Test360Unmarshalling(t *testing.T) {
-	jsonstr := []byte(`{"id": "ae8fbaa1-cef5-4567-839a-8e3afa62bd3a","signature": {"ownerId": 2,"source": "Testing","eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf","eventType": "UPLOAD"},"signatures": [{"ownerId": 2,"source": "Testing","eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf","eventType": "UPLOAD","recordId": "ca82e9c7-9975-4a23-a52e-de9c466e3f77"}],"createdAt": "2019-11-11T20:43:07.697112481Z","timestamp": "2019-11-11T20:43:07.697111353Z","fibers": ["ca82e9c7-9975-4a23-a52e-de9c466e3f77"],"passthroughs": null,"matchKeys": [{"key": "ID","type": "","value": "","values": null}]}`)
+	jsonstr := []byte(`{"id": "ae8fbaa1-cef5-4567-839a-8e3afa62bd3a","signature": {"ownerId": "2","source": "Testing","eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf","eventType": "UPLOAD"},"signatures": [{"ownerId": "2","source": "Testing","eventId": "fdbca3e9-7e2e-4884-960a-7ecea5ee2aaf","eventType": "UPLOAD","recordId": "ca82e9c7-9975-4a23-a52e-de9c466e3f77"}],"createdAt": "2019-11-11T20:43:07.697112481Z","timestamp": "2019-11-11T20:43:07.697111353Z","fibers": ["ca82e9c7-9975-4a23-a52e-de9c466e3f77"],"passthroughs": null,"matchKeys": [{"key": "ID","type": "","value": "","values": null}]}`)
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
 		fmt.Printf("There was an issue decoding the message %v", string(jsonstr))
@@ -76,7 +76,7 @@ func Test360Unmarshalling(t *testing.T) {
 }
 
 func Test360PeopleOutput(t *testing.T) {
-	jsonstr := []byte(`{"id":"36a1d43b-0777-486e-b470-d8b19781e0e2","signature":{"ownerId":2,"source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD"},"signatures":[{"ownerId":2,"source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD","recordId":"5083a82f-0c01-465d-86ab-b1550518cd77"}],"createdAt":"2019-11-15T17:07:33.621655336Z","timestamp":"2019-11-15T17:07:33.621653425Z","fibers":["5083a82f-0c01-465d-86ab-b1550518cd77"],"passthroughs":[{"name":"BAAAAA","value":"1/2/1029"},{"name":"ABBB","value":"12323232"}],"matchKeys":[{"key":"FNAME","type":"","value":"Caitlin","values":["Caitlin"]},{"key":"FINITIAL","type":"","value":"C","values":["C"]},{"key":"LNAME","type":"","value":"Apacible","values":["Apacible"]},{"key":"CITY","type":"","value":"Cerritos","values":["Cerritos"]},{"key":"STATE","type":"","value":"CA","values":["CA"]},{"key":"ZIP","type":"","value":"90703","values":["90703"]},{"key":"ZIP5","type":"","value":"90703","values":["90703"]},{"key":"COUNTRY","type":"","value":"","values":null},{"key":"EMAIL","type":"work","value":"me@me.me","values":null},{"key":"PHONE","type":"personal","value":"123456","values":null},{"key":"AD1","type":"","value":"19131 Appletree Ct","values":["19131 Appletree Ct"]},{"key":"AD2","type":"","value":"","values":null},{"key":"ADTYPE","type":"","value":"","values":null},{"key":"TRUSTEDID","type":"","value":"","values":null},{"key":"CLIENTID","type":"","value":"","values":null},{"key":"SALUTATION","type":"","value":"","values":null},{"key":"NICKNAME","type":"","value":"","values":null},{"key":"GENDER","type":"","value":"","values":null},{"key":"AGE","type":"","value":"","values":null},{"key":"DOB","type":"","value":"","values":null},{"key":"MAILROUTE","type":"","value":"","values":null},{"key":"ORGANIZATION","type":"","value":"MARCUS","values":["MARCUS"]},{"key":"TITLE","type":"","value":"2023","values":["2023"]},{"key":"ROLE","type":"","value":"","values":null},{"key":"STATUS","type":"","value":"","values":null}]}`)
+	jsonstr := []byte(`{"id":"36a1d43b-0777-486e-b470-d8b19781e0e2","signature":{"ownerId":"2","source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD"},"signatures":[{"ownerId":"2","source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD","recordId":"5083a82f-0c01-465d-86ab-b1550518cd77"}],"createdAt":"2019-11-15T17:07:33.621655336Z","timestamp":"2019-11-15T17:07:33.621653425Z","fibers":["5083a82f-0c01-465d-86ab-b1550518cd77"],"passthroughs":[{"name":"BAAAAA","value":"1/2/1029"},{"name":"ABBB","value":"12323232"}],"matchKeys":[{"key":"FNAME","type":"","value":"Caitlin","values":["Caitlin"]},{"key":"FINITIAL","type":"","value":"C","values":["C"]},{"key":"LNAME","type":"","value":"Apacible","values":["Apacible"]},{"key":"CITY","type":"","value":"Cerritos","values":["Cerritos"]},{"key":"STATE","type":"","value":"CA","values":["CA"]},{"key":"ZIP","type":"","value":"90703","values":["90703"]},{"key":"ZIP5","type":"","value":"90703","values":["90703"]},{"key":"COUNTRY","type":"","value":"","values":null},{"key":"EMAIL","type":"work","value":"me@me.me","values":null},{"key":"PHONE","type":"personal","value":"123456","values":null},{"key":"AD1","type":"","value":"19131 Appletree Ct","values":["19131 Appletree Ct"]},{"key":"AD2","type":"","value":"","values":null},{"key":"ADTYPE","type":"","value":"","values":null},{"key":"TRUSTEDID","type":"","value":"","values":null},{"key":"CLIENTID","type":"","value":"","values":null},{"key":"SALUTATION","type":"","value":"","values":null},{"key":"NICKNAME","type":"","value":"","values":null},{"key":"GENDER","type":"","value":"","values":null},{"key":"AGE","type":"","value":"","values":null},{"key":"DOB","type":"","value":"","values":null},{"key":"MAILROUTE","type":"","value":"","values":null},{"key":"ORGANIZATION","type":"","value":"MARCUS","values":["MARCUS"]},{"key":"TITLE","type":"","value":"2023","values":["2023"]},{"key":"ROLE","type":"","value":"","values":null},{"key":"STATUS","type":"","value":"","values":null}]}`)
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
 		fmt.Printf("There was an issue decoding the message %v %v", string(jsonstr), err)
@@ -126,7 +126,6 @@ func Test360PeopleOutput(t *testing.T) {
 			Type:  getFrom360Slice("PHONE", request360.MatchKeys).Type,
 		},
 	}
-	fmt.Printf("%v", getFrom360Slice("PHONE", request360.MatchKeys).Value)
 	output.People.Emails = []EmailSt{
 		EmailSt{
 			Email: getFrom360Slice("EMAIL", request360.MatchKeys).Value,
@@ -137,8 +136,18 @@ func Test360PeopleOutput(t *testing.T) {
 	output.Common.Signatures = getSignaturesHash(request360.Signatures)
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
-		fmt.Printf("Couldn't parse it")
+		fmt.Printf("Couldn't parse %v", jsonStrOutput)
 	}
+}
+func TestParsing(t *testing.T) {
+	jsonstr := []byte(`{"id": "10bd2c2c-fc43-4bd8-ae0b-a3e739e4a744","signature":{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD"},"signatures":[{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD","recordId":"6623dc60-6fc3-4d58-a464-88e86c592322"}],"createdAt":"2019-12-02T13:29:30.703799715Z","fibers":["3cb35469-56c1-4a52-bc25-61d19f51a301"],"passthroughs":null,"matchKeys":[{"key":"SALUTATION","type":"","value":"","values":[]},{"key":"NICKNAME","type":"","value":"","values":[]},{"key":"FNAME","type":"","value":"Torres,Delilah","values":["Torres,Delilah"]},{"key":"FINITIAL","type":"","value":"T","values":["T"]},{"key":"LNAME","type":"","value":"","values":[]},{"key":"MNAME","type":"","value":"","values":[]},{"key":"AD1","type":"","value":"2450 N. LINDER AVE","values":["2450 N. LINDER AVE"]},{"key":"AD1NO","type":"","value":"2450","values":["2450"]},{"key":"AD2","type":"","value":"","values":[]},{"key":"AD3","type":"","value":"","values":[]},{"key":"CITY","type":"","value":"CHICAGO","values":["CHICAGO"]},{"key":"STATE","type":"","value":"IL","values":["IL"]},{"key":"ZIP","type":"","value":"60639","values":["60639"]},{"key":"ZIP5","type":"","value":"60639","values":["60639"]},{"key":"COUNTRY","type":"","value":"US","values":["US"]},{"key":"MAILROUTE","type":"","value":"","values":[]},{"key":"ADTYPE","type":"","value":"Home","values":["Home"]},{"key":"ADPARSER","type":"","value":"libpostal","values":["libpostal"]},{"key":"ADCORRECT","type":"","value":"","values":[]},{"key":"EMAIL","type":"","value":"","values":[]},{"key":"PHONE","type":"","value":"","values":[]},{"key":"TRUSTEDID","type":"","value":"","values":[]},{"key":"CLIENTID","type":"","value":"","values":[]},{"key":"GENDER","type":"","value":"","values":[]},{"key":"AGE","type":"","value":"","values":[]},{"key":"DOB","type":"","value":"","values":[]},{"key":"ORGANIZATION","type":"","value":"BUV","values":["BUV"]},{"key":"TITLE","type":"","value":"","values":[]},{"key":"ROLE","type":"","value":"","values":[]},{"key":"STATUS","type":"","value":"","values":[]}]}`)
+	var request360 Request360
+	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
+		fmt.Printf("There was an issue decoding the message %v %v", string(jsonstr), err)
+		return
+	}
+}
 
-	fmt.Printf("%v", string(jsonStrOutput))
+func TestEnvs(t *testing.T) {
+	logDebug("Debug enabled")
 }

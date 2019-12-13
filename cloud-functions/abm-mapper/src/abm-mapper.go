@@ -1,5 +1,4 @@
-// Package abmMapper
-package abmMapper
+package abmmapper
 
 import (
 	"bytes"
@@ -20,9 +19,10 @@ var ProjectID = os.Getenv("PROJECTID")
 // KindTemplate is the kind to write the original records to
 var KindTemplate = os.Getenv("KINDTEMPLATTE")
 
-// KindRecordTemplate is the kind to write the original records to
+// Namespace is the kind to write the original records to
 var Namespace = os.Getenv("NAMESPACE")
 
+//Signature standard wm signature
 type Signature struct {
 	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
@@ -31,13 +31,15 @@ type Signature struct {
 	RecordID  string `json:"recordId"`
 }
 
+//MatchKeyField value source type map to check where they come from
 type MatchKeyField struct {
 	Value  string `json:"value" bigquery:"value"`
 	Source string `json:"source" bigquery:"source"`
 	Type   string `json:"type" bigquery:"type"`
 }
 
-// Owner     When we receive messages for this owner, we will evaluate
+//PubSubMapping is the pre360 message
+// Signature When we receive messages for this owner, we will evaluate
 // Source    The source system to which we want to push data
 // Mapping   For every matchKey… listing of mapped sourceKey
 type PubSubMapping struct {
@@ -46,6 +48,7 @@ type PubSubMapping struct {
 	MatchKeys   map[string]MatchKeyField `json:"matchkeys"`
 }
 
+//MatchKeyValue source match key value
 type MatchKeyValue struct {
 	MatchKey   string
 	Source     string
@@ -66,15 +69,13 @@ func getOutputHash(m MatchKeyValue) string {
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
 }
+
+// Main abm mapper cloud function, takes the source field and maps it to the 360 field
 func Main(ctx context.Context, m PubSubMessage) error {
 	var input PubSubMapping
 	if err := json.NewDecoder(bytes.NewBuffer(m.Data)).Decode(&input); err != nil {
 		log.Printf("There was an issue decoding the message %v", m.Data)
 		return err
-	}
-	if input.Signature.OwnerID == 0 {
-		log.Fatalf("Empty owner, discarding message %v", input.Signature)
-		return nil
 	}
 
 	inputType := m.Attributes["type"]
