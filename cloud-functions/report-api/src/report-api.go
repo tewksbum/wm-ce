@@ -553,11 +553,22 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			// if !Contains(recordIDs, recordID) {
 			// 	recordIDs = append(recordIDs, recordID)
 			// }
+			isInternational := false
+			isDomestic := false
+			isParent := false
+			isUpperClassman := false
+			isFreshmen := false
+			isNew := false
 
 			if f.RecordType == "mar" {
+				if f.Disposition == "new" {
+					isNew = true
+				}
 				continue
 			} else if f.RecordType == "default" {
 				recordIDs = append(recordIDs, f.RecordID)
+			} else if f.RecordType == "mpr" {
+				isParent = true
 			}
 
 			for _, m := range PeopleMatchKeyNames {
@@ -573,13 +584,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
 				}
 			}
-
-			isInternational := false
-			isDomestic := false
-			isParent := false
-			isUpperClassman := false
-			isFreshmen := false
-			isNew := false
 
 			if f.Disposition == "dupe" {
 				DUPE++
@@ -602,10 +606,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						isUpperClassman = true
 					}
 				}
-				role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
-				if role == "Parent" {
-					isParent = true
-				}
+				// role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
+				// if role == "Parent" {
+				// 	isParent = true
+				// }
 
 				if isNew && isDomestic && isFreshmen && !isParent {
 					NDFS++
