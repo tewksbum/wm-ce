@@ -8,15 +8,6 @@ function toColumnName(num) {
   }
   return ret;
 }
-
-const reportURL =
-  "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-report-api";
-const rawdata = fs.readFileSync("report-input.json");
-const uploadLog = JSON.parse(rawdata);
-// const reportRawData = fs.readFileSync(
-//   "report-log-2019-12-11T17:37:49.016Z.json"
-// );
-// const reportStatic = JSON.parse(reportRawData);
 var workBook = new Excel.Workbook();
 
 var ACDSheet = workBook.addWorksheet("ACD");
@@ -125,12 +116,123 @@ MergeSheet.getCell("H1").value = "";
 
 //report logging
 const today = new Date();
-const logFile = `./report-log-${today.toISOString()}.json`;
+const logFile = `./logs/report-log-${today.toISOString()}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 let sep = "";
 console.log(`Logging reports on ${logFile}`);
 
+const reportURL =
+  "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-report-api";
+// const rawdata = fs.readFileSync("report-input.json");
+// const uploadLog = JSON.parse(rawdata);
+const uploadLog = [
+  {
+    file: "RHL-ABR1R8LQQQNewResAdditionalAldersonBroaddusUniv.xlsx",
+    fileURL: "replace with your file url",
+    owner: "abr-sa",
+    schoolcode: "ABR",
+    accessKey: "9acdb71706185155366ed2fd3d7700a31aabfe1c",
+    streamerResponse: {
+      success: true,
+      message: "Request queued",
+      id: "7b3e9850-2949-41aa-b9d2-49804911be67"
+    }
+  }
+];
+// const reportRawData = fs.readFileSync(
+//   "report-log-2019-12-11T17:37:49.016Z.json"
+// );
+const reportStatic = [
+  {
+    RequestID: "7b3e9850-2949-41aa-b9d2-49804911be67",
+    RowCount: 226,
+    ColumnCount: 8,
+    Columns: [
+      {
+        Name: "ZIP",
+        Min: "11575",
+        Max: "95376",
+        Sparsity: 226,
+        Mapped: ["ZIP", "ZIP5"]
+      },
+      {
+        Name: "Fake",
+        Min: "11575",
+        Max: "95376",
+        Sparsity: 226,
+        Mapped: []
+      },
+      { Name: "STATE", Min: "AZ", Max: "WV", Sparsity: 226, Mapped: ["STATE"] },
+      {
+        Name: "PREFERRED  EMAIL  ADDRESS",
+        Min: "abrilja@battlers.ab.edu",
+        Max: "zirklekn@battlers.ab.edu",
+        Sparsity: 226,
+        Mapped: ["EMAIL"]
+      },
+      {
+        Name: "LAST  NAME",
+        Min: "Abril",
+        Max: "Zirkle",
+        Sparsity: 226,
+        Mapped: ["LNAME"]
+      },
+      {
+        Name: "FIRST  NAME",
+        Min: "Abdullah",
+        Max: "William",
+        Sparsity: 226,
+        Mapped: ["FNAME", "FINITIAL"]
+      },
+      {
+        Name: "CITY",
+        Min: "Accident",
+        Max: "Zanesville",
+        Sparsity: 226,
+        Mapped: ["CITY"]
+      },
+      {
+        Name: "ADDRESS  LINE 2",
+        Min: "220 Vireo Ln",
+        Max: "PO Box 8009",
+        Sparsity: 2,
+        Mapped: ["AD1", "ADTYPE", "ADBOOK", "AD2"]
+      },
+      {
+        Name: "ADDRESS  LINE 1",
+        Min: "1 Steuben Dr",
+        Max: "Urb Surena 85 Via Delsol St",
+        Sparsity: 226,
+        Mapped: ["AD1", "ADTYPE", "ADBOOK", "AD2"]
+      }
+    ],
+    ProcessedOn: "2019-12-13T13:01:34.464633Z",
+    PcocessTime: "33.642174 s",
+    Fibers: {
+      Person: 226,
+      Dupe: 226,
+      Throwaway: 0,
+      HouseHold: 0,
+      NDFS: 0,
+      NDFP: 0,
+      NDUS: 0,
+      NDUP: 0,
+      NIFS: 0,
+      NIFP: 0,
+      NIUS: 0,
+      NIUP: 0,
+      EDFS: 0,
+      EDFP: 0,
+      EDUS: 0,
+      EDUP: 0,
+      EIFS: 0,
+      EIFP: 0,
+      EIUS: 0,
+      EIUP: 0
+    }
+  }
+];
 for (let index = 0; index < uploadLog.length; index++) {
   let currentUL = uploadLog[index];
   if (currentUL.error != undefined) {
@@ -148,15 +250,19 @@ for (let index = 0; index < uploadLog.length; index++) {
   );
   // continue;
   // get the report data
-  try {
-    var res = request("POST", reportURL, { json: reportRequest });
-    var report = JSON.parse(res.getBody("utf8"));
-  } catch (error) {
-    console.log(reportRequest);
-    continue;
+  if (reportStatic !== undefined) {
+    var report = reportStatic[index];
+  } else {
+    try {
+      var res = request("POST", reportURL, { json: reportRequest });
+      var report = JSON.parse(res.getBody("utf8"));
+      stream.write(sep + res.getBody("utf8"));
+    } catch (error) {
+      console.log(reportRequest);
+      continue;
+    }
   }
 
-  stream.write(sep + res.getBody("utf8"));
   // For debugging purposes sometimes is better to pull from a local variable instead of
   // requesting the reports
   // report = reportStatic[index];
@@ -282,6 +388,7 @@ ACDSheet.getColumn(4).eachCell(cell => {
 for (let index = 7; index < (maxCol + 2) * 5; index += 5) {
   ACDSheet.getColumn(index).eachCell(cell => {
     if (cell.value === "Mapped" || cell.value == null || cell.row === 1) {
+      cell.fill = undefined;
       return;
     }
     //Paint the cell red if mapped has more than one element ignoring the blacklist
@@ -290,13 +397,9 @@ for (let index = 7; index < (maxCol + 2) * 5; index += 5) {
     });
     if (mapped.length > 1) {
       cell.fill = {
-        type: "gradient",
-        gradient: "path",
-        center: { left: 0.5, top: 0.5 },
-        stops: [
-          { position: 0, color: { argb: "FFFF0000" } },
-          { position: 1, color: { argb: "FFFF0000" } }
-        ]
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF0000" }
       };
       return;
     }
@@ -304,29 +407,23 @@ for (let index = 7; index < (maxCol + 2) * 5; index += 5) {
     const name = cell._row.getCell(cell.col - 1).value;
     const inBlackList = PinkBlacklist.indexOf(name) > 0;
     // Check if name is in the cell
-    const matches = cell.value.match(new RegExp(name, "g"));
+    const NameMappedmatches = cell.value.match(new RegExp(name, "g"));
+    const MappedNamematches = name.match(new RegExp(cell.value, "g"));
     // If the name is not in the cell paint it yellow
-    if (matches === null) {
+    if (NameMappedmatches === null && MappedNamematches === null) {
       cell.fill = {
-        type: "gradient",
-        gradient: "path",
-        center: { left: 0.5, top: 0.5 },
-        stops: [
-          { position: 0, color: { argb: "FFFFFF99" } },
-          { position: 1, color: { argb: "FFFFFF99" } }
-        ]
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFF99" }
       };
       return;
     }
-    if (matches.length > 1 && inBlackList) {
+    //pink
+    if ((NameMappedmatches || MappedNamematches) && inBlackList) {
       cell.fill = {
-        type: "gradient",
-        gradient: "path",
-        center: { left: 0.5, top: 0.5 },
-        stops: [
-          { position: 0, color: { argb: "FFFF9999" } },
-          { position: 1, color: { argb: "FFFF9999" } }
-        ]
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF9999" }
       };
     }
   });
@@ -341,13 +438,9 @@ for (let index = 10; index < (maxCol + 2) * 5; index += 5) {
     const curSparsity = cell.value;
     if (curSparsity < 70) {
       cell.fill = {
-        type: "gradient",
-        gradient: "path",
-        center: { left: 0.5, top: 0.5 },
-        stops: [
-          { position: 0, color: { argb: "FFFF9999" } },
-          { position: 1, color: { argb: "FFFF9999" } }
-        ]
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF9999" }
       };
     }
   });
