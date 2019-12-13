@@ -1,0 +1,8 @@
+node_modules
+log.txt
+npm-debug.log
+wm-file-submitter-log.json
+input/*
+oncampusmarketing/*
+input2/*
+*log*
