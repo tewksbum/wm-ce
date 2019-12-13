@@ -549,9 +549,15 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		DUPE := 0
 		CurrentYear := time.Now().Year()
 		for _, f := range fibers {
-			recordID := Left(f.RecordID, 36)
-			if !Contains(recordIDs, recordID) {
-				recordIDs = append(recordIDs, recordID)
+			// recordID := Left(f.RecordID, 36)
+			// if !Contains(recordIDs, recordID) {
+			// 	recordIDs = append(recordIDs, recordID)
+			// }
+
+			if f.RecordType == "mar" {
+				continue
+			} else if f.RecordType == "default" {
+				recordIDs = append(recordIDs, f.RecordID)
 			}
 
 			for _, m := range PeopleMatchKeyNames {

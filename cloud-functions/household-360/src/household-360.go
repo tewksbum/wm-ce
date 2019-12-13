@@ -164,6 +164,7 @@ type HouseHoldSetDS struct {
 	Source             []string       `datastore:"source"`
 	EventID            []string       `datastore:"eventid"`
 	EventType          []string       `datastore:"eventtype"`
+	RecordType         []string       `datastore:"recordtype"`
 	RecordID           []string       `datastore:"recordid"`
 	RecordIDNormalized []string       `datastore:"recordidnormalized"`
 	CreatedAt          time.Time      `datastore:"createdat"`
