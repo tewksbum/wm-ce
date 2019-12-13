@@ -560,12 +560,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isFreshmen := false
 			isNew := false
 
-			if f.RecordType == "mar" {
-				if f.Disposition == "new" {
-					isNew = true
-				}
+			if f.RecordType == "mar" { // skip mar
 				continue
-			} else if f.RecordType == "default" {
+			} else if f.RecordType == "default" { //same record id processed twice?
 				if Contains(recordIDs, f.RecordID) {
 					continue
 				}
@@ -603,11 +600,17 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
 				if err == nil {
-					if class == CurrentYear+4 {
-						isFreshmen = true
-					} else if class >= CurrentYear && class < CurrentYear+4 {
+					// if class == CurrentYear+4 {
+					// 	isFreshmen = true
+					// } else
+					if class >= CurrentYear && class < CurrentYear+4 {
 						isUpperClassman = true
+					} else {
+						isFreshmen = true
 					}
+
+				} else {
+					isFreshmen = true
 				}
 				// role := GetMatchKeyFieldFromFiberByName(&f, "ROLE").Value
 				// if role == "Parent" {
