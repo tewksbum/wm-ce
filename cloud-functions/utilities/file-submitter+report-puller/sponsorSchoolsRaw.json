@@ -1,0 +1,5099 @@
+{
+"sponsorSchools": [
+	{
+		"tag" : "abc-sl",
+		"school_code" : "ABC"
+	},
+	{
+		"tag" : "abc-hou",
+		"school_code" : "ABC"
+	},
+	{
+		"tag" : "abr-sa",
+		"school_code" : "ABR"
+	},
+	{
+		"tag" : "aca-opec",
+		"school_code" : "ACA"
+	},
+	{
+		"tag" : "acv-cv",
+		"school_code" : "ACV"
+	},
+	{
+		"tag" : "adc-rl",
+		"school_code" : "ADC"
+	},
+	{
+		"tag" : "ade-rsa",
+		"school_code" : "ADE"
+	},
+	{
+		"tag" : "ads-as",
+		"school_code" : "ADS"
+	},
+	{
+		"tag" : "ads-cec",
+		"school_code" : "ADS"
+	},
+	{
+		"tag" : "afu-rl",
+		"school_code" : "AFU"
+	},
+	{
+		"tag" : "afu-rhc",
+		"school_code" : "AFU"
+	},
+	{
+		"tag" : "agc-cl",
+		"school_code" : "AGC"
+	},
+	{
+		"tag" : "ala-hrl",
+		"school_code" : "ALA"
+	},
+	{
+		"tag" : "alb-rha",
+		"school_code" : "ALB"
+	},
+	{
+		"tag" : "alb-bcb",
+		"school_code" : "ALB"
+	},
+	{
+		"tag" : "alb-rl",
+		"school_code" : "ALB"
+	},
+	{
+		"tag" : "alc-bacb",
+		"school_code" : "ALC"
+	},
+	{
+		"tag" : "alf-aces",
+		"school_code" : "ALF"
+	},
+	{
+		"tag" : "alm-afe",
+		"school_code" : "ALM"
+	},
+	{
+		"tag" : "als-fheg",
+		"school_code" : "ALS"
+	},
+	{
+		"tag" : "alv-rl",
+		"school_code" : "ALV"
+	},
+	{
+		"tag" : "amu-fheg",
+		"school_code" : "AMU"
+	},
+	{
+		"tag" : "ang-hrp",
+		"school_code" : "ANG"
+	},
+	{
+		"tag" : "anw-enac",
+		"school_code" : "ANW"
+	},
+	{
+		"tag" : "aph-rha",
+		"school_code" : "APH"
+	},
+	{
+		"tag" : "app-rha",
+		"school_code" : "APP"
+	},
+	{
+		"tag" : "app-aaa",
+		"school_code" : "APP"
+	},
+	{
+		"tag" : "apu-saa",
+		"school_code" : "APU"
+	},
+	{
+		"tag" : "aqu-rha",
+		"school_code" : "AQU"
+	},
+	{
+		"tag" : "arf-hrl",
+		"school_code" : "ARF"
+	},
+	{
+		"tag" : "ark-rha",
+		"school_code" : "ARK"
+	},
+	{
+		"tag" : "arl-cl",
+		"school_code" : "ARL"
+	},
+	{
+		"tag" : "asb-rl",
+		"school_code" : "ASB"
+	},
+	{
+		"tag" : "ash-aub",
+		"school_code" : "ASH"
+	},
+	{
+		"tag" : "asp-hlds",
+		"school_code" : "ASP"
+	},
+	{
+		"tag" : "ast-harl",
+		"school_code" : "AST"
+	},
+	{
+		"tag" : "asu-rha",
+		"school_code" : "ASU"
+	},
+	{
+		"tag" : "asy-rl",
+		"school_code" : "ASY"
+	},
+	{
+		"tag" : "asy-jc",
+		"school_code" : "ASY"
+	},
+	{
+		"tag" : "atu-rha",
+		"school_code" : "ATU"
+	},
+	{
+		"tag" : "atu-bn",
+		"school_code" : "ATU"
+	},
+	{
+		"tag" : "atx-urha",
+		"school_code" : "ATX"
+	},
+	{
+		"tag" : "aub-ab",
+		"school_code" : "AUB"
+	},
+	{
+		"tag" : "aub-hrl",
+		"school_code" : "AUB"
+	},
+	{
+		"tag" : "aug-rha",
+		"school_code" : "AUG"
+	},
+	{
+		"tag" : "aum-hrl",
+		"school_code" : "AUM"
+	},
+	{
+		"tag" : "aus-seed",
+		"school_code" : "AUS"
+	},
+	{
+		"tag" : "avc-sl",
+		"school_code" : "AVC"
+	},
+	{
+		"tag" : "avo-rl",
+		"school_code" : "AVO"
+	},
+	{
+		"tag" : "azo-och",
+		"school_code" : "AZO"
+	},
+	{
+		"tag" : "azp-hs",
+		"school_code" : "AZP"
+	},
+	{
+		"tag" : "azu-rha",
+		"school_code" : "AZU"
+	},
+	{
+		"tag" : "azw-rha",
+		"school_code" : "AZW"
+	},
+	{
+		"tag" : "bac-rl",
+		"school_code" : "BAC"
+	},
+	{
+		"tag" : "bal-rha",
+		"school_code" : "BAL"
+	},
+	{
+		"tag" : "bar-hrl",
+		"school_code" : "BAR"
+	},
+	{
+		"tag" : "bay-cll",
+		"school_code" : "BAY"
+	},
+	{
+		"tag" : "bcc-rha",
+		"school_code" : "BCC"
+	},
+	{
+		"tag" : "bck-drl",
+		"school_code" : "BCK"
+	},
+	{
+		"tag" : "bcl-rha",
+		"school_code" : "BCL"
+	},
+	{
+		"tag" : "bcm-hrl",
+		"school_code" : "BCM"
+	},
+	{
+		"tag" : "bco-rha",
+		"school_code" : "BCO"
+	},
+	{
+		"tag" : "bdc-rlh",
+		"school_code" : "BDC"
+	},
+	{
+		"tag" : "bdw-rl",
+		"school_code" : "BDW"
+	},
+	{
+		"tag" : "bec-rl",
+		"school_code" : "BEC"
+	},
+	{
+		"tag" : "bel-rl",
+		"school_code" : "BEL"
+	},
+	{
+		"tag" : "bel-bn",
+		"school_code" : "BEL"
+	},
+	{
+		"tag" : "bem-drl",
+		"school_code" : "BEM"
+	},
+	{
+		"tag" : "ben-bn",
+		"school_code" : "BEN"
+	},
+	{
+		"tag" : "ber-rl",
+		"school_code" : "BER"
+	},
+	{
+		"tag" : "bfc-hou",
+		"school_code" : "BFC"
+	},
+	{
+		"tag" : "bga-bn",
+		"school_code" : "BGA"
+	},
+	{
+		"tag" : "bgs-rsa",
+		"school_code" : "BGS"
+	},
+	{
+		"tag" : "bgs-nrhh",
+		"school_code" : "BGS"
+	},
+	{
+		"tag" : "bgs-sp",
+		"school_code" : "BGS"
+	},
+	{
+		"tag" : "bhs-rha",
+		"school_code" : "BHS"
+	},
+	{
+		"tag" : "bhs-rlo",
+		"school_code" : "BHS"
+	},
+	{
+		"tag" : "bku-rl",
+		"school_code" : "BKU"
+	},
+	{
+		"tag" : "bku-rl",
+		"school_code" : null
+	},
+	{
+		"tag" : "blf-rl",
+		"school_code" : "BLF"
+	},
+	{
+		"tag" : "blm-rha",
+		"school_code" : "BLM"
+	},
+	{
+		"tag" : "blm-dsp",
+		"school_code" : "BLM"
+	},
+	{
+		"tag" : "blu-us",
+		"school_code" : "BLU"
+	},
+	{
+		"tag" : "bmc-bmcb",
+		"school_code" : "BMC"
+	},
+	{
+		"tag" : "bng-bn",
+		"school_code" : "BNG"
+	},
+	{
+		"tag" : "bou-bn",
+		"school_code" : "BOU"
+	},
+	{
+		"tag" : "bow-fheg",
+		"school_code" : "BOW"
+	},
+	{
+		"tag" : "bpt-rl",
+		"school_code" : "BPT"
+	},
+	{
+		"tag" : "brc-hrl",
+		"school_code" : "BRC"
+	},
+	{
+		"tag" : "brd-rha",
+		"school_code" : "BRD"
+	},
+	{
+		"tag" : "brd-apo",
+		"school_code" : "BRD"
+	},
+	{
+		"tag" : "brn-bsa",
+		"school_code" : "BRN"
+	},
+	{
+		"tag" : "brn-bsa",
+		"school_code" : null
+	},
+	{
+		"tag" : "bru-ssb",
+		"school_code" : "BRU"
+	},
+	{
+		"tag" : "bru-dar",
+		"school_code" : "BRU"
+	},
+	{
+		"tag" : "bry-fheg",
+		"school_code" : "BRY"
+	},
+	{
+		"tag" : "bsc-rha",
+		"school_code" : "BSC"
+	},
+	{
+		"tag" : "bsu-rha",
+		"school_code" : "BSU"
+	},
+	{
+		"tag" : "bsu-hsa",
+		"school_code" : "BSU"
+	},
+	{
+		"tag" : "btc-sab",
+		"school_code" : "BTC"
+	},
+	{
+		"tag" : "btu-rl",
+		"school_code" : "BTU"
+	},
+	{
+		"tag" : "bui-oo",
+		"school_code" : "BUI"
+	},
+	{
+		"tag" : "but-rha",
+		"school_code" : "BUT"
+	},
+	{
+		"tag" : "but-rl",
+		"school_code" : "BUT"
+	},
+	{
+		"tag" : "buv-bn",
+		"school_code" : "BUV"
+	},
+	{
+		"tag" : "bwu-sl",
+		"school_code" : "BWU"
+	},
+	{
+		"tag" : "bys-sa",
+		"school_code" : "BYS"
+	},
+	{
+		"tag" : "byu-bs",
+		"school_code" : "BYU"
+	},
+	{
+		"tag" : "byu-ds",
+		"school_code" : "BYU"
+	},
+	{
+		"tag" : "caa-ihc",
+		"school_code" : "CAA"
+	},
+	{
+		"tag" : "caa-ar",
+		"school_code" : "CAA"
+	},
+	{
+		"tag" : "cab-fheg",
+		"school_code" : "CAB"
+	},
+	{
+		"tag" : "cam-rha",
+		"school_code" : "CAM"
+	},
+	{
+		"tag" : "can-sl",
+		"school_code" : "CAN"
+	},
+	{
+		"tag" : "car-rlp",
+		"school_code" : "CAR"
+	},
+	{
+		"tag" : "cat-rl",
+		"school_code" : "CAT"
+	},
+	{
+		"tag" : "cat-miht",
+		"school_code" : "CAT"
+	},
+	{
+		"tag" : "cau-drl",
+		"school_code" : "CAU"
+	},
+	{
+		"tag" : "caz-rl",
+		"school_code" : "CAZ"
+	},
+	{
+		"tag" : "cba-rha",
+		"school_code" : "CBA"
+	},
+	{
+		"tag" : "cbs-csrl",
+		"school_code" : "CBS"
+	},
+	{
+		"tag" : "cbu-rhlo",
+		"school_code" : "CBU"
+	},
+	{
+		"tag" : "ccf-aa",
+		"school_code" : "CCF"
+	},
+	{
+		"tag" : "cch-rha",
+		"school_code" : "CCH"
+	},
+	{
+		"tag" : "cci-rha",
+		"school_code" : "CCI"
+	},
+	{
+		"tag" : "ccm-cl",
+		"school_code" : "CCM"
+	},
+	{
+		"tag" : "ccn-saa",
+		"school_code" : "CCN"
+	},
+	{
+		"tag" : "cco-rha",
+		"school_code" : "CCO"
+	},
+	{
+		"tag" : "cct-bn",
+		"school_code" : "CCT"
+	},
+	{
+		"tag" : "ccu-rha",
+		"school_code" : "CCU"
+	},
+	{
+		"tag" : "ccu-saa",
+		"school_code" : "CCU"
+	},
+	{
+		"tag" : "cde-rha",
+		"school_code" : "CDE"
+	},
+	{
+		"tag" : "cdh-uh",
+		"school_code" : "CDH"
+	},
+	{
+		"tag" : "cec-rl",
+		"school_code" : "CEC"
+	},
+	{
+		"tag" : "cec-drl",
+		"school_code" : "CEC"
+	},
+	{
+		"tag" : "cen-slo",
+		"school_code" : "CEN"
+	},
+	{
+		"tag" : "cen-afe",
+		"school_code" : "CEN"
+	},
+	{
+		"tag" : "cfc-rl",
+		"school_code" : "CFC"
+	},
+	{
+		"tag" : "cfu-hre",
+		"school_code" : "CFU"
+	},
+	{
+		"tag" : "cgb-rl",
+		"school_code" : "CGB"
+	},
+	{
+		"tag" : "cha-rla",
+		"school_code" : "CHA"
+	},
+	{
+		"tag" : "chc-rl",
+		"school_code" : "CHC"
+	},
+	{
+		"tag" : "chc-aa",
+		"school_code" : "CHC"
+	},
+	{
+		"tag" : "chl-rl",
+		"school_code" : "CHL"
+	},
+	{
+		"tag" : "chm-rl",
+		"school_code" : "CHM"
+	},
+	{
+		"tag" : "cho-ch",
+		"school_code" : "CHO"
+	},
+	{
+		"tag" : "chs-bn",
+		"school_code" : "CHS"
+	},
+	{
+		"tag" : "chs-wb",
+		"school_code" : "CHS"
+	},
+	{
+		"tag" : "cht-rl",
+		"school_code" : "CHT"
+	},
+	{
+		"tag" : "chu-rha",
+		"school_code" : "CHU"
+	},
+	{
+		"tag" : "chw-rl",
+		"school_code" : "CHW"
+	},
+	{
+		"tag" : "chw-rl",
+		"school_code" : null
+	},
+	{
+		"tag" : "cia-rl",
+		"school_code" : "CIA"
+	},
+	{
+		"tag" : "cke-cs",
+		"school_code" : "CKE"
+	},
+	{
+		"tag" : "cla-hrl",
+		"school_code" : "CLA"
+	},
+	{
+		"tag" : "clb-rha",
+		"school_code" : "CLB"
+	},
+	{
+		"tag" : "cld-rl",
+		"school_code" : "CLD"
+	},
+	{
+		"tag" : "clk-clrl",
+		"school_code" : "CLK"
+	},
+	{
+		"tag" : "cls-rl",
+		"school_code" : "CLS"
+	},
+	{
+		"tag" : "clt-rlo",
+		"school_code" : "CLT"
+	},
+	{
+		"tag" : "clu-rha",
+		"school_code" : "CLU"
+	},
+	{
+		"tag" : "clu-stfp",
+		"school_code" : "CLU"
+	},
+	{
+		"tag" : "clu-twcc",
+		"school_code" : "CLU"
+	},
+	{
+		"tag" : "clv-fheg",
+		"school_code" : "CLV"
+	},
+	{
+		"tag" : "cly-ls",
+		"school_code" : "CLY"
+	},
+	{
+		"tag" : "cly-hrl",
+		"school_code" : "CLY"
+	},
+	{
+		"tag" : "cmb-rha",
+		"school_code" : "CMB"
+	},
+	{
+		"tag" : "cmd-rl",
+		"school_code" : "CMD"
+	},
+	{
+		"tag" : "cmi-rha",
+		"school_code" : "CMI"
+	},
+	{
+		"tag" : "cmi-rl",
+		"school_code" : "CMI"
+	},
+	{
+		"tag" : "cmi-ar",
+		"school_code" : "CMI"
+	},
+	{
+		"tag" : "cmj-rhc",
+		"school_code" : "CMJ"
+	},
+	{
+		"tag" : "cms-hlt",
+		"school_code" : "CMS"
+	},
+	{
+		"tag" : "cms-usha",
+		"school_code" : "CMS"
+	},
+	{
+		"tag" : "cmu-hfh",
+		"school_code" : "CMU"
+	},
+	{
+		"tag" : "cnd-sa",
+		"school_code" : "CND"
+	},
+	{
+		"tag" : "cnj-ct",
+		"school_code" : "CNJ"
+	},
+	{
+		"tag" : "cnl-rl",
+		"school_code" : "CNL"
+	},
+	{
+		"tag" : "cnm-rlo",
+		"school_code" : "CNM"
+	},
+	{
+		"tag" : "cnp-rha",
+		"school_code" : "CNP"
+	},
+	{
+		"tag" : "cnp-rl",
+		"school_code" : "CNP"
+	},
+	{
+		"tag" : "cnu-cm",
+		"school_code" : "CNU"
+	},
+	{
+		"tag" : "cnu-bcm",
+		"school_code" : "CNU"
+	},
+	{
+		"tag" : "cnw-rha",
+		"school_code" : "CNW"
+	},
+	{
+		"tag" : "cob-rha",
+		"school_code" : "COB"
+	},
+	{
+		"tag" : "coc-bn",
+		"school_code" : "COC"
+	},
+	{
+		"tag" : "cod-srl",
+		"school_code" : "COD"
+	},
+	{
+		"tag" : "coe-drl",
+		"school_code" : "COE"
+	},
+	{
+		"tag" : "cok-bn",
+		"school_code" : "COK"
+	},
+	{
+		"tag" : "cok-hac",
+		"school_code" : "COK"
+	},
+	{
+		"tag" : "cok-nrhh",
+		"school_code" : "COK"
+	},
+	{
+		"tag" : "col-cb",
+		"school_code" : "COL"
+	},
+	{
+		"tag" : "cov-pc",
+		"school_code" : "COV"
+	},
+	{
+		"tag" : "cpa-ho",
+		"school_code" : "CPA"
+	},
+	{
+		"tag" : "cpp-hs",
+		"school_code" : "CPP"
+	},
+	{
+		"tag" : "cpp-ww",
+		"school_code" : "CPP"
+	},
+	{
+		"tag" : "cpp-uhs",
+		"school_code" : "CPP"
+	},
+	{
+		"tag" : "crd-sl",
+		"school_code" : "CRD"
+	},
+	{
+		"tag" : "crl-rl",
+		"school_code" : "CRL"
+	},
+	{
+		"tag" : "crl-cab",
+		"school_code" : "CRL"
+	},
+	{
+		"tag" : "crt-rl",
+		"school_code" : "CRT"
+	},
+	{
+		"tag" : "cru-irhg",
+		"school_code" : "CRU"
+	},
+	{
+		"tag" : "csa-rha",
+		"school_code" : "CSA"
+	},
+	{
+		"tag" : "csc-rha",
+		"school_code" : "CSC"
+	},
+	{
+		"tag" : "csf-fssh",
+		"school_code" : "CSF"
+	},
+	{
+		"tag" : "csf-uc",
+		"school_code" : "CSF"
+	},
+	{
+		"tag" : "csh-rha",
+		"school_code" : "CSH"
+	},
+	{
+		"tag" : "csl-uh",
+		"school_code" : "CSL"
+	},
+	{
+		"tag" : "csn-rha",
+		"school_code" : "CSN"
+	},
+	{
+		"tag" : "csp-rha",
+		"school_code" : "CSP"
+	},
+	{
+		"tag" : "css-rha",
+		"school_code" : "CSS"
+	},
+	{
+		"tag" : "css-hre",
+		"school_code" : "CSS"
+	},
+	{
+		"tag" : "csu-rha",
+		"school_code" : "CSU"
+	},
+	{
+		"tag" : "csu-aa",
+		"school_code" : "CSU"
+	},
+	{
+		"tag" : "ctc-rel",
+		"school_code" : "CTC"
+	},
+	{
+		"tag" : "ctl-rla",
+		"school_code" : "CTL"
+	},
+	{
+		"tag" : "ctl-rha",
+		"school_code" : "CTL"
+	},
+	{
+		"tag" : "ctw-fheg",
+		"school_code" : "CTW"
+	},
+	{
+		"tag" : "cty-rl",
+		"school_code" : "CTY"
+	},
+	{
+		"tag" : "cua-hs",
+		"school_code" : "CUA"
+	},
+	{
+		"tag" : "cui-rl",
+		"school_code" : "CUI"
+	},
+	{
+		"tag" : "cuo-ck",
+		"school_code" : "CUO"
+	},
+	{
+		"tag" : "cup-ic",
+		"school_code" : "CUP"
+	},
+	{
+		"tag" : "cuq-sar",
+		"school_code" : "CUQ"
+	},
+	{
+		"tag" : "cur-rl",
+		"school_code" : "CUR"
+	},
+	{
+		"tag" : "cur-sga",
+		"school_code" : "CUR"
+	},
+	{
+		"tag" : "cwc-rl",
+		"school_code" : "CWC"
+	},
+	{
+		"tag" : "cwm-aa",
+		"school_code" : "CWM"
+	},
+	{
+		"tag" : "cwr-nrhh",
+		"school_code" : "CWR"
+	},
+	{
+		"tag" : "cwu-hnsp",
+		"school_code" : "CWU"
+	},
+	{
+		"tag" : "cwu-rha",
+		"school_code" : "CWU"
+	},
+	{
+		"tag" : "czt-rl",
+		"school_code" : "CZT"
+	},
+	{
+		"tag" : "czt-char",
+		"school_code" : "CZT"
+	},
+	{
+		"tag" : "dcm-rsa",
+		"school_code" : "DCM"
+	},
+	{
+		"tag" : "dco-rl",
+		"school_code" : "DCO"
+	},
+	{
+		"tag" : "del-hre",
+		"school_code" : "DEL"
+	},
+	{
+		"tag" : "dic-dcb",
+		"school_code" : "DIC"
+	},
+	{
+		"tag" : "dku-wa",
+		"school_code" : "DKU"
+	},
+	{
+		"tag" : "dku-ck",
+		"school_code" : "DKU"
+	},
+	{
+		"tag" : "dmc-nstc",
+		"school_code" : "DMC"
+	},
+	{
+		"tag" : "dny-rl",
+		"school_code" : "DNY"
+	},
+	{
+		"tag" : "dny-dpm",
+		"school_code" : "DNY"
+	},
+	{
+		"tag" : "dpl-rhc",
+		"school_code" : "DPL"
+	},
+	{
+		"tag" : "drk-rha",
+		"school_code" : "DRK"
+	},
+	{
+		"tag" : "drk-saa",
+		"school_code" : "DRK"
+	},
+	{
+		"tag" : "drk-duna",
+		"school_code" : "DRK"
+	},
+	{
+		"tag" : "dru-rl",
+		"school_code" : "DRU"
+	},
+	{
+		"tag" : "drw-rl",
+		"school_code" : "DRW"
+	},
+	{
+		"tag" : "dsl-rl",
+		"school_code" : "DSL"
+	},
+	{
+		"tag" : "dst-hrl",
+		"school_code" : "DST"
+	},
+	{
+		"tag" : "dst-aa",
+		"school_code" : "DST"
+	},
+	{
+		"tag" : "dtc-rl",
+		"school_code" : "DTC"
+	},
+	{
+		"tag" : "dtc-sdt",
+		"school_code" : "DTC"
+	},
+	{
+		"tag" : "dtu-rl",
+		"school_code" : "DTU"
+	},
+	{
+		"tag" : "duq-bn",
+		"school_code" : "DUQ"
+	},
+	{
+		"tag" : "dvu-rl",
+		"school_code" : "DVU"
+	},
+	{
+		"tag" : "dvu-nama",
+		"school_code" : "DVU"
+	},
+	{
+		"tag" : "dwu-rl",
+		"school_code" : "DWU"
+	},
+	{
+		"tag" : "dxu-bn",
+		"school_code" : "DXU"
+	},
+	{
+		"tag" : "eas-sd",
+		"school_code" : "EAS"
+	},
+	{
+		"tag" : "eca-ehc",
+		"school_code" : "ECA"
+	},
+	{
+		"tag" : "eck-rlo",
+		"school_code" : "ECK"
+	},
+	{
+		"tag" : "ecn-bk",
+		"school_code" : "ECN"
+	},
+	{
+		"tag" : "ecs-bn",
+		"school_code" : "ECS"
+	},
+	{
+		"tag" : "ecs-sc",
+		"school_code" : "ECS"
+	},
+	{
+		"tag" : "ecu-rha",
+		"school_code" : "ECU"
+	},
+	{
+		"tag" : "edb-rha",
+		"school_code" : "EDB"
+	},
+	{
+		"tag" : "edm-ho",
+		"school_code" : "EDM"
+	},
+	{
+		"tag" : "ehu-rha",
+		"school_code" : "EHU"
+	},
+	{
+		"tag" : "eiu-rha",
+		"school_code" : "EIU"
+	},
+	{
+		"tag" : "eiu-nrhh",
+		"school_code" : "EIU"
+	},
+	{
+		"tag" : "eku-rha",
+		"school_code" : "EKU"
+	},
+	{
+		"tag" : "eku-saa",
+		"school_code" : "EKU"
+	},
+	{
+		"tag" : "elc-ic",
+		"school_code" : "ELC"
+	},
+	{
+		"tag" : "elm-rl",
+		"school_code" : "ELM"
+	},
+	{
+		"tag" : "ema-fheg",
+		"school_code" : "EMA"
+	},
+	{
+		"tag" : "emc-rha",
+		"school_code" : "EMC"
+	},
+	{
+		"tag" : "eme-rl",
+		"school_code" : "EME"
+	},
+	{
+		"tag" : "emi-rha",
+		"school_code" : "EMI"
+	},
+	{
+		"tag" : "emu-rha",
+		"school_code" : "EMU"
+	},
+	{
+		"tag" : "enm-bn",
+		"school_code" : "ENM"
+	},
+	{
+		"tag" : "eou-rl",
+		"school_code" : "EOU"
+	},
+	{
+		"tag" : "era-rha",
+		"school_code" : "ERA"
+	},
+	{
+		"tag" : "eru-rsa",
+		"school_code" : "ERU"
+	},
+	{
+		"tag" : "esm-bn",
+		"school_code" : "ESM"
+	},
+	{
+		"tag" : "est-rha",
+		"school_code" : "EST"
+	},
+	{
+		"tag" : "est-pa",
+		"school_code" : "EST"
+	},
+	{
+		"tag" : "esu-rl",
+		"school_code" : "ESU"
+	},
+	{
+		"tag" : "etc-cs",
+		"school_code" : "ETC"
+	},
+	{
+		"tag" : "etn-nrhh",
+		"school_code" : "ETN"
+	},
+	{
+		"tag" : "etn-rha",
+		"school_code" : "ETN"
+	},
+	{
+		"tag" : "evc-ho",
+		"school_code" : "EVC"
+	},
+	{
+		"tag" : "fah-mrs",
+		"school_code" : "FAH"
+	},
+	{
+		"tag" : "fai-rhcc",
+		"school_code" : "FAI"
+	},
+	{
+		"tag" : "fam-rha",
+		"school_code" : "FAM"
+	},
+	{
+		"tag" : "fau-hre",
+		"school_code" : "FAU"
+	},
+	{
+		"tag" : "fau-rsa",
+		"school_code" : "FAU"
+	},
+	{
+		"tag" : "fch-hrs",
+		"school_code" : "FCH"
+	},
+	{
+		"tag" : "fch-hrs",
+		"school_code" : null
+	},
+	{
+		"tag" : "fch-asbt",
+		"school_code" : "FCH"
+	},
+	{
+		"tag" : "fdk-ho",
+		"school_code" : "FDK"
+	},
+	{
+		"tag" : "fdm-rl",
+		"school_code" : "FDM"
+	},
+	{
+		"tag" : "fdu-rha",
+		"school_code" : "FDU"
+	},
+	{
+		"tag" : "fel-rl",
+		"school_code" : "FEL"
+	},
+	{
+		"tag" : "fer-rlh",
+		"school_code" : "FER"
+	},
+	{
+		"tag" : "ffu-fheg",
+		"school_code" : "FFU"
+	},
+	{
+		"tag" : "fgc-rha",
+		"school_code" : "FGC"
+	},
+	{
+		"tag" : "fgh-ad",
+		"school_code" : "FGH"
+	},
+	{
+		"tag" : "fhs-rha",
+		"school_code" : "FHS"
+	},
+	{
+		"tag" : "fit-cs",
+		"school_code" : "FIT"
+	},
+	{
+		"tag" : "fiu-nrhh",
+		"school_code" : "FIU"
+	},
+	{
+		"tag" : "fiu-oapp",
+		"school_code" : "FIU"
+	},
+	{
+		"tag" : "fla-men",
+		"school_code" : "FLA"
+	},
+	{
+		"tag" : "flc-rha",
+		"school_code" : "FLC"
+	},
+	{
+		"tag" : "fld-rha",
+		"school_code" : "FLD"
+	},
+	{
+		"tag" : "fls-bn",
+		"school_code" : "FLS"
+	},
+	{
+		"tag" : "flt-rl",
+		"school_code" : "FLT"
+	},
+	{
+		"tag" : "flu-irhc",
+		"school_code" : "FLU"
+	},
+	{
+		"tag" : "flu-nrhh",
+		"school_code" : "FLU"
+	},
+	{
+		"tag" : "fmg-rlo",
+		"school_code" : "FMG"
+	},
+	{
+		"tag" : "fms-rl",
+		"school_code" : "FMS"
+	},
+	{
+		"tag" : "fmu-rsa",
+		"school_code" : "FMU"
+	},
+	{
+		"tag" : "fnc-hrl",
+		"school_code" : "FNC"
+	},
+	{
+		"tag" : "fnm-bn",
+		"school_code" : "FNM"
+	},
+	{
+		"tag" : "frn-nrhh",
+		"school_code" : "FRN"
+	},
+	{
+		"tag" : "frn-rha",
+		"school_code" : "FRN"
+	},
+	{
+		"tag" : "frp-stdi",
+		"school_code" : "FRP"
+	},
+	{
+		"tag" : "fru-fub",
+		"school_code" : "FRU"
+	},
+	{
+		"tag" : "fst-nrhh",
+		"school_code" : "FST"
+	},
+	{
+		"tag" : "fur-hrl",
+		"school_code" : "FUR"
+	},
+	{
+		"tag" : "fur-rlc",
+		"school_code" : "FUR"
+	},
+	{
+		"tag" : "fvc-fheg",
+		"school_code" : "FVC"
+	},
+	{
+		"tag" : "fyu-rha",
+		"school_code" : "FYU"
+	},
+	{
+		"tag" : "gan-rha",
+		"school_code" : "GAN"
+	},
+	{
+		"tag" : "gat-rha",
+		"school_code" : "GAT"
+	},
+	{
+		"tag" : "gat-aa",
+		"school_code" : "GAT"
+	},
+	{
+		"tag" : "gaw-hre",
+		"school_code" : "GAW"
+	},
+	{
+		"tag" : "gcc-mab",
+		"school_code" : "GCC"
+	},
+	{
+		"tag" : "gcp-rl",
+		"school_code" : "GCP"
+	},
+	{
+		"tag" : "gcu-ho",
+		"school_code" : "GCU"
+	},
+	{
+		"tag" : "gdc-cb",
+		"school_code" : "GDC"
+	},
+	{
+		"tag" : "geo-rl",
+		"school_code" : "GEO"
+	},
+	{
+		"tag" : "gfu-sl",
+		"school_code" : "GFU"
+	},
+	{
+		"tag" : "ggs-saa",
+		"school_code" : "GGS"
+	},
+	{
+		"tag" : "ggw-bn",
+		"school_code" : "GGW"
+	},
+	{
+		"tag" : "glc-reh",
+		"school_code" : "GLC"
+	},
+	{
+		"tag" : "gld-rlh",
+		"school_code" : "GLD"
+	},
+	{
+		"tag" : "gld-ca",
+		"school_code" : "GLD"
+	},
+	{
+		"tag" : "gma-fheg",
+		"school_code" : "GMA"
+	},
+	{
+		"tag" : "gmu-aa",
+		"school_code" : "GMU"
+	},
+	{
+		"tag" : "gnc-bn",
+		"school_code" : "GNC"
+	},
+	{
+		"tag" : "gon-rha",
+		"school_code" : "GON"
+	},
+	{
+		"tag" : "gou-rl",
+		"school_code" : "GOU"
+	},
+	{
+		"tag" : "gpc-cct",
+		"school_code" : "GPC"
+	},
+	{
+		"tag" : "gra-rlo",
+		"school_code" : "GRA"
+	},
+	{
+		"tag" : "gsa-uh",
+		"school_code" : "GSA"
+	},
+	{
+		"tag" : "gsu-rha",
+		"school_code" : "GSU"
+	},
+	{
+		"tag" : "gsw-rha",
+		"school_code" : "GSW"
+	},
+	{
+		"tag" : "gtu-ic",
+		"school_code" : "GTU"
+	},
+	{
+		"tag" : "gvs-rha",
+		"school_code" : "GVS"
+	},
+	{
+		"tag" : "gwu-fheg",
+		"school_code" : "GWU"
+	},
+	{
+		"tag" : "gwu-wg",
+		"school_code" : "GWU"
+	},
+	{
+		"tag" : "gwy-rha",
+		"school_code" : "GWY"
+	},
+	{
+		"tag" : "ham-rha",
+		"school_code" : "HAM"
+	},
+	{
+		"tag" : "hbp-rl",
+		"school_code" : "HBP"
+	},
+	{
+		"tag" : "hbt-haa",
+		"school_code" : "HBT"
+	},
+	{
+		"tag" : "hbt-aa",
+		"school_code" : "HBT"
+	},
+	{
+		"tag" : "hci-bn",
+		"school_code" : "HCI"
+	},
+	{
+		"tag" : "hei-rl",
+		"school_code" : "HEI"
+	},
+	{
+		"tag" : "hen-rb",
+		"school_code" : "HEN"
+	},
+	{
+		"tag" : "hen-rha",
+		"school_code" : "HEN"
+	},
+	{
+		"tag" : "hfu-bn",
+		"school_code" : "HFU"
+	},
+	{
+		"tag" : "hhc-cs",
+		"school_code" : "HHC"
+	},
+	{
+		"tag" : "hir-reo",
+		"school_code" : "HIR"
+	},
+	{
+		"tag" : "hlg-sl",
+		"school_code" : "HLG"
+	},
+	{
+		"tag" : "hmc-mmad",
+		"school_code" : "HMC"
+	},
+	{
+		"tag" : "hml-rl",
+		"school_code" : "HML"
+	},
+	{
+		"tag" : "hmp-fs",
+		"school_code" : "HMP"
+	},
+	{
+		"tag" : "hnu-hrl",
+		"school_code" : "HNU"
+	},
+	{
+		"tag" : "hof-rp",
+		"school_code" : "HOF"
+	},
+	{
+		"tag" : "hof-sle",
+		"school_code" : "HOF"
+	},
+	{
+		"tag" : "hop-hcb",
+		"school_code" : "HOP"
+	},
+	{
+		"tag" : "how-rl",
+		"school_code" : "HOW"
+	},
+	{
+		"tag" : "how-ss",
+		"school_code" : "HOW"
+	},
+	{
+		"tag" : "hrk-bhc",
+		"school_code" : "HRK"
+	},
+	{
+		"tag" : "hsn-fheg",
+		"school_code" : "HSN"
+	},
+	{
+		"tag" : "hsu-fheg",
+		"school_code" : "HSU"
+	},
+	{
+		"tag" : "hua-hnbs",
+		"school_code" : "HUA"
+	},
+	{
+		"tag" : "hvc-sc",
+		"school_code" : "HVC"
+	},
+	{
+		"tag" : "hwc-rlh",
+		"school_code" : "HWC"
+	},
+	{
+		"tag" : "hwc-bn",
+		"school_code" : "HWC"
+	},
+	{
+		"tag" : "hws-re",
+		"school_code" : "HWS"
+	},
+	{
+		"tag" : "ias-adm",
+		"school_code" : "IAS"
+	},
+	{
+		"tag" : "iat-ar",
+		"school_code" : "IAT"
+	},
+	{
+		"tag" : "ihu-gc",
+		"school_code" : "IHU"
+	},
+	{
+		"tag" : "iit-rgl",
+		"school_code" : "IIT"
+	},
+	{
+		"tag" : "ilu-arh",
+		"school_code" : "ILU"
+	},
+	{
+		"tag" : "ilw-rha",
+		"school_code" : "ILW"
+	},
+	{
+		"tag" : "img-sa",
+		"school_code" : "IMG"
+	},
+	{
+		"tag" : "imm-rlh",
+		"school_code" : "IMM"
+	},
+	{
+		"tag" : "ind-rha",
+		"school_code" : "IND"
+	},
+	{
+		"tag" : "ion-rl",
+		"school_code" : "ION"
+	},
+	{
+		"tag" : "ipx-rl",
+		"school_code" : "IPX"
+	},
+	{
+		"tag" : "isu-rha",
+		"school_code" : "ISU"
+	},
+	{
+		"tag" : "itc-es",
+		"school_code" : "ITC"
+	},
+	{
+		"tag" : "ith-rha",
+		"school_code" : "ITH"
+	},
+	{
+		"tag" : "iup-rha",
+		"school_code" : "IUP"
+	},
+	{
+		"tag" : "iup-npc",
+		"school_code" : "IUP"
+	},
+	{
+		"tag" : "iwu-ub",
+		"school_code" : "IWU"
+	},
+	{
+		"tag" : "jau-rlh",
+		"school_code" : "JAU"
+	},
+	{
+		"tag" : "jau-rha",
+		"school_code" : "JAU"
+	},
+	{
+		"tag" : "jaw-fheg",
+		"school_code" : "JAW"
+	},
+	{
+		"tag" : "jcs-rlo",
+		"school_code" : "JCS"
+	},
+	{
+		"tag" : "jcu-rha",
+		"school_code" : "JCU"
+	},
+	{
+		"tag" : "jef-rl",
+		"school_code" : "JEF"
+	},
+	{
+		"tag" : "jhu-bn",
+		"school_code" : "JHU"
+	},
+	{
+		"tag" : "jhu-tjaa",
+		"school_code" : "JHU"
+	},
+	{
+		"tag" : "jmu-cspa",
+		"school_code" : "JMU"
+	},
+	{
+		"tag" : "jmu-sh",
+		"school_code" : "JMU"
+	},
+	{
+		"tag" : "joh-rl",
+		"school_code" : "JOH"
+	},
+	{
+		"tag" : "joh-bab",
+		"school_code" : "JOH"
+	},
+	{
+		"tag" : "jpo-nc",
+		"school_code" : "JPO"
+	},
+	{
+		"tag" : "jsu-ar",
+		"school_code" : "JSU"
+	},
+	{
+		"tag" : "jul-rl",
+		"school_code" : "JUL"
+	},
+	{
+		"tag" : "jul-rl",
+		"school_code" : null
+	},
+	{
+		"tag" : "jun-spa",
+		"school_code" : "JUN"
+	},
+	{
+		"tag" : "jwc-fheg",
+		"school_code" : "JWC"
+	},
+	{
+		"tag" : "jwc-rl",
+		"school_code" : "JWC"
+	},
+	{
+		"tag" : "jwd-rha",
+		"school_code" : "JWD"
+	},
+	{
+		"tag" : "jwh-fheg",
+		"school_code" : "JWH"
+	},
+	{
+		"tag" : "jwu-fheg",
+		"school_code" : "JWU"
+	},
+	{
+		"tag" : "kca-ds",
+		"school_code" : "KCA"
+	},
+	{
+		"tag" : "kcn-rss",
+		"school_code" : "KCN"
+	},
+	{
+		"tag" : "ken-nrhh",
+		"school_code" : "KEN"
+	},
+	{
+		"tag" : "ken-kic",
+		"school_code" : "KEN"
+	},
+	{
+		"tag" : "ken-ar",
+		"school_code" : "KEN"
+	},
+	{
+		"tag" : "ket-rl",
+		"school_code" : "KET"
+	},
+	{
+		"tag" : "ket-rha",
+		"school_code" : "KET"
+	},
+	{
+		"tag" : "kin-rl",
+		"school_code" : "KIN"
+	},
+	{
+		"tag" : "kkc-sap",
+		"school_code" : "KKC"
+	},
+	{
+		"tag" : "kns-rha",
+		"school_code" : "KNS"
+	},
+	{
+		"tag" : "krs-rl",
+		"school_code" : "KRS"
+	},
+	{
+		"tag" : "krs-chrs",
+		"school_code" : "KRS"
+	},
+	{
+		"tag" : "ksc-rho",
+		"school_code" : "KSC"
+	},
+	{
+		"tag" : "ksc-bn",
+		"school_code" : "KSC"
+	},
+	{
+		"tag" : "kst-arh",
+		"school_code" : "KST"
+	},
+	{
+		"tag" : "kst-nrhh",
+		"school_code" : "KST"
+	},
+	{
+		"tag" : "ktz-ssi",
+		"school_code" : "KTZ"
+	},
+	{
+		"tag" : "ktz-rha",
+		"school_code" : "KTZ"
+	},
+	{
+		"tag" : "kwc-rl",
+		"school_code" : "KWC"
+	},
+	{
+		"tag" : "kyc-cac",
+		"school_code" : "KYC"
+	},
+	{
+		"tag" : "laf-rhc",
+		"school_code" : "LAF"
+	},
+	{
+		"tag" : "laf-aa",
+		"school_code" : "LAF"
+	},
+	{
+		"tag" : "las-rsa",
+		"school_code" : "LAS"
+	},
+	{
+		"tag" : "lat-ckc",
+		"school_code" : "LAT"
+	},
+	{
+		"tag" : "lat-dbaa",
+		"school_code" : "LAT"
+	},
+	{
+		"tag" : "law-lucc",
+		"school_code" : "LAW"
+	},
+	{
+		"tag" : "lcm-rha",
+		"school_code" : "LCM"
+	},
+	{
+		"tag" : "lcn-rl",
+		"school_code" : "LCN"
+	},
+	{
+		"tag" : "lcn-hrl",
+		"school_code" : "LCN"
+	},
+	{
+		"tag" : "ldi-rs",
+		"school_code" : "LDI"
+	},
+	{
+		"tag" : "ldi-rs",
+		"school_code" : null
+	},
+	{
+		"tag" : "lec-rl",
+		"school_code" : "LEC"
+	},
+	{
+		"tag" : "lec-mb",
+		"school_code" : "LEC"
+	},
+	{
+		"tag" : "lee-rlh",
+		"school_code" : "LEE"
+	},
+	{
+		"tag" : "lfc-rl",
+		"school_code" : "LFC"
+	},
+	{
+		"tag" : "lgu-fheg",
+		"school_code" : "LGU"
+	},
+	{
+		"tag" : "lgw-rclm",
+		"school_code" : "LGW"
+	},
+	{
+		"tag" : "lhi-rs",
+		"school_code" : "LHI"
+	},
+	{
+		"tag" : "lhi-bn",
+		"school_code" : "LHI"
+	},
+	{
+		"tag" : "lhu-rha",
+		"school_code" : "LHU"
+	},
+	{
+		"tag" : "lib-rlh",
+		"school_code" : "LIB"
+	},
+	{
+		"tag" : "lip-ho",
+		"school_code" : "LIP"
+	},
+	{
+		"tag" : "lip-pp",
+		"school_code" : "LIP"
+	},
+	{
+		"tag" : "liu-cl",
+		"school_code" : "LIU"
+	},
+	{
+		"tag" : "lmc-cll",
+		"school_code" : "LMC"
+	},
+	{
+		"tag" : "lmr-sdo",
+		"school_code" : "LMR"
+	},
+	{
+		"tag" : "lmu-sho",
+		"school_code" : "LMU"
+	},
+	{
+		"tag" : "loc-drl",
+		"school_code" : "LOC"
+	},
+	{
+		"tag" : "lom-rha",
+		"school_code" : "LOM"
+	},
+	{
+		"tag" : "lon-rha",
+		"school_code" : "LON"
+	},
+	{
+		"tag" : "lor-rl",
+		"school_code" : "LOR"
+	},
+	{
+		"tag" : "lrh-hrl",
+		"school_code" : "LRH"
+	},
+	{
+		"tag" : "lrm-rl",
+		"school_code" : "LRM"
+	},
+	{
+		"tag" : "lru-rl",
+		"school_code" : "LRU"
+	},
+	{
+		"tag" : "lsc-lab",
+		"school_code" : "LSC"
+	},
+	{
+		"tag" : "lsc-sl",
+		"school_code" : "LSC"
+	},
+	{
+		"tag" : "lse-bn",
+		"school_code" : "LSE"
+	},
+	{
+		"tag" : "lss-ho",
+		"school_code" : "LSS"
+	},
+	{
+		"tag" : "lss-bn",
+		"school_code" : "LSS"
+	},
+	{
+		"tag" : "lsu-rha",
+		"school_code" : "LSU"
+	},
+	{
+		"tag" : "ltu-pa",
+		"school_code" : "LTU"
+	},
+	{
+		"tag" : "luc-rl",
+		"school_code" : "LUC"
+	},
+	{
+		"tag" : "lui-rl",
+		"school_code" : "LUI"
+	},
+	{
+		"tag" : "luv-bn",
+		"school_code" : "LUV"
+	},
+	{
+		"tag" : "lwu-uh",
+		"school_code" : "LWU"
+	},
+	{
+		"tag" : "lyc-rlo",
+		"school_code" : "LYC"
+	},
+	{
+		"tag" : "lyd-raab",
+		"school_code" : "LYD"
+	},
+	{
+		"tag" : "lyd-lsci",
+		"school_code" : "LYD"
+	},
+	{
+		"tag" : "lyn-hrl",
+		"school_code" : "LYN"
+	},
+	{
+		"tag" : "maa-rha",
+		"school_code" : "MAA"
+	},
+	{
+		"tag" : "maa-sga",
+		"school_code" : "MAA"
+	},
+	{
+		"tag" : "mab-hrl",
+		"school_code" : "MAB"
+	},
+	{
+		"tag" : "mad-rsa",
+		"school_code" : "MAD"
+	},
+	{
+		"tag" : "man-rha",
+		"school_code" : "MAN"
+	},
+	{
+		"tag" : "mar-rhc",
+		"school_code" : "MAR"
+	},
+	{
+		"tag" : "mar-hrl",
+		"school_code" : "MAR"
+	},
+	{
+		"tag" : "mar-nd",
+		"school_code" : "MAR"
+	},
+	{
+		"tag" : "mat-rl",
+		"school_code" : "MAT"
+	},
+	{
+		"tag" : "mca-rha",
+		"school_code" : "MCA"
+	},
+	{
+		"tag" : "mca-rlo",
+		"school_code" : "MCA"
+	},
+	{
+		"tag" : "mcd-rha",
+		"school_code" : "MCD"
+	},
+	{
+		"tag" : "mcm-rl",
+		"school_code" : "MCM"
+	},
+	{
+		"tag" : "mco-kkgm",
+		"school_code" : "MCO"
+	},
+	{
+		"tag" : "mcy-rl",
+		"school_code" : "MCY"
+	},
+	{
+		"tag" : "mcy-sc",
+		"school_code" : "MCY"
+	},
+	{
+		"tag" : "mdl-cb",
+		"school_code" : "MDL"
+	},
+	{
+		"tag" : "mdm-cs",
+		"school_code" : "MDM"
+	},
+	{
+		"tag" : "mdn-rl",
+		"school_code" : "MDN"
+	},
+	{
+		"tag" : "mdu-bn",
+		"school_code" : "MDU"
+	},
+	{
+		"tag" : "mec-rl",
+		"school_code" : "MEC"
+	},
+	{
+		"tag" : "mer-rl",
+		"school_code" : "MER"
+	},
+	{
+		"tag" : "mer-nrhh",
+		"school_code" : "MER"
+	},
+	{
+		"tag" : "mer-nrhh",
+		"school_code" : null
+	},
+	{
+		"tag" : "mes-st",
+		"school_code" : "MES"
+	},
+	{
+		"tag" : "mfl-hrl",
+		"school_code" : "MFL"
+	},
+	{
+		"tag" : "mgc-cs",
+		"school_code" : "MGC"
+	},
+	{
+		"tag" : "mge-cs",
+		"school_code" : "MGE"
+	},
+	{
+		"tag" : "mgr-rl",
+		"school_code" : "MGR"
+	},
+	{
+		"tag" : "mhd-saa",
+		"school_code" : "MHD"
+	},
+	{
+		"tag" : "mhe-rha",
+		"school_code" : "MHE"
+	},
+	{
+		"tag" : "mhu-rl",
+		"school_code" : "MHU"
+	},
+	{
+		"tag" : "mia-tbs",
+		"school_code" : "MIA"
+	},
+	{
+		"tag" : "mia-mmgc",
+		"school_code" : "MIA"
+	},
+	{
+		"tag" : "mia-nrhh",
+		"school_code" : "MIA"
+	},
+	{
+		"tag" : "mic-apr",
+		"school_code" : "MIC"
+	},
+	{
+		"tag" : "mic-apr",
+		"school_code" : null
+	},
+	{
+		"tag" : "mid-rha",
+		"school_code" : "MID"
+	},
+	{
+		"tag" : "mil-shc",
+		"school_code" : "MIL"
+	},
+	{
+		"tag" : "min-sl",
+		"school_code" : "MIN"
+	},
+	{
+		"tag" : "mit-pa",
+		"school_code" : "MIT"
+	},
+	{
+		"tag" : "miw-drl",
+		"school_code" : "MIW"
+	},
+	{
+		"tag" : "mkc-cans",
+		"school_code" : "MKC"
+	},
+	{
+		"tag" : "mkn-rl",
+		"school_code" : "MKN"
+	},
+	{
+		"tag" : "mkn-apo",
+		"school_code" : "MKN"
+	},
+	{
+		"tag" : "mlg-vt",
+		"school_code" : "MLG"
+	},
+	{
+		"tag" : "mlo-rl",
+		"school_code" : "MLO"
+	},
+	{
+		"tag" : "mlr-hrp",
+		"school_code" : "MLR"
+	},
+	{
+		"tag" : "mlr-pcs",
+		"school_code" : "MLR"
+	},
+	{
+		"tag" : "mlr-aa",
+		"school_code" : "MLR"
+	},
+	{
+		"tag" : "mls-fheg",
+		"school_code" : "MLS"
+	},
+	{
+		"tag" : "mmc-mcb",
+		"school_code" : "MMC"
+	},
+	{
+		"tag" : "mmu-rha",
+		"school_code" : "MMU"
+	},
+	{
+		"tag" : "mmy-rl",
+		"school_code" : "MMY"
+	},
+	{
+		"tag" : "mnc-cs",
+		"school_code" : "MNC"
+	},
+	{
+		"tag" : "mnr-rl",
+		"school_code" : "MNR"
+	},
+	{
+		"tag" : "mns-rl",
+		"school_code" : "MNS"
+	},
+	{
+		"tag" : "mnv-rl",
+		"school_code" : "MNV"
+	},
+	{
+		"tag" : "mob-rha",
+		"school_code" : "MOB"
+	},
+	{
+		"tag" : "moc-rha",
+		"school_code" : "MOC"
+	},
+	{
+		"tag" : "moc-nrhh",
+		"school_code" : "MOC"
+	},
+	{
+		"tag" : "mol-sa",
+		"school_code" : "MOL"
+	},
+	{
+		"tag" : "mol-rlc",
+		"school_code" : "MOL"
+	},
+	{
+		"tag" : "mon-rha",
+		"school_code" : "MON"
+	},
+	{
+		"tag" : "moo-rha",
+		"school_code" : "MOO"
+	},
+	{
+		"tag" : "mor-rha",
+		"school_code" : "MOR"
+	},
+	{
+		"tag" : "mpc-mvt",
+		"school_code" : "MPC"
+	},
+	{
+		"tag" : "mqu-rha",
+		"school_code" : "MQU"
+	},
+	{
+		"tag" : "mrt-mmcb",
+		"school_code" : "MRT"
+	},
+	{
+		"tag" : "mrt-rl",
+		"school_code" : "MRT"
+	},
+	{
+		"tag" : "mru-hrl",
+		"school_code" : "MRU"
+	},
+	{
+		"tag" : "mru-rha",
+		"school_code" : "MRU"
+	},
+	{
+		"tag" : "mrv-mcb",
+		"school_code" : "MRV"
+	},
+	{
+		"tag" : "msa-rha",
+		"school_code" : "MSA"
+	},
+	{
+		"tag" : "mse-rha",
+		"school_code" : "MSE"
+	},
+	{
+		"tag" : "mse-sl",
+		"school_code" : "MSE"
+	},
+	{
+		"tag" : "msm-rl",
+		"school_code" : "MSM"
+	},
+	{
+		"tag" : "msn-sl",
+		"school_code" : "MSN"
+	},
+	{
+		"tag" : "mso-rha",
+		"school_code" : "MSO"
+	},
+	{
+		"tag" : "mss-saa",
+		"school_code" : "MSS"
+	},
+	{
+		"tag" : "mst-uab",
+		"school_code" : "MST"
+	},
+	{
+		"tag" : "msv-dsa",
+		"school_code" : "MSV"
+	},
+	{
+		"tag" : "mtd-rha",
+		"school_code" : "MTD"
+	},
+	{
+		"tag" : "mth-hrl",
+		"school_code" : "MTH"
+	},
+	{
+		"tag" : "mth-cki",
+		"school_code" : "MTH"
+	},
+	{
+		"tag" : "mth-hfh",
+		"school_code" : "MTH"
+	},
+	{
+		"tag" : "mtl-rl",
+		"school_code" : "MTL"
+	},
+	{
+		"tag" : "mts-pfa",
+		"school_code" : "MTS"
+	},
+	{
+		"tag" : "mtu-rl",
+		"school_code" : "MTU"
+	},
+	{
+		"tag" : "muw-bn",
+		"school_code" : "MUW"
+	},
+	{
+		"tag" : "mvl-cs",
+		"school_code" : "MVL"
+	},
+	{
+		"tag" : "mvl-rl",
+		"school_code" : "MVL"
+	},
+	{
+		"tag" : "myc-dso",
+		"school_code" : "MYC"
+	},
+	{
+		"tag" : "myp-hrl",
+		"school_code" : "MYP"
+	},
+	{
+		"tag" : "nas-rps",
+		"school_code" : "NAS"
+	},
+	{
+		"tag" : "nat-sd",
+		"school_code" : "NAT"
+	},
+	{
+		"tag" : "nav-aa",
+		"school_code" : "NAV"
+	},
+	{
+		"tag" : "ncb-rld",
+		"school_code" : "NCB"
+	},
+	{
+		"tag" : "ncc-rl",
+		"school_code" : "NCC"
+	},
+	{
+		"tag" : "ncg-asb",
+		"school_code" : "NCG"
+	},
+	{
+		"tag" : "ncg-aa",
+		"school_code" : "NCG"
+	},
+	{
+		"tag" : "nch-rha",
+		"school_code" : "NCH"
+	},
+	{
+		"tag" : "nch-obt",
+		"school_code" : "NCH"
+	},
+	{
+		"tag" : "ncp-hrl",
+		"school_code" : "NCP"
+	},
+	{
+		"tag" : "ncr-bn",
+		"school_code" : "NCR"
+	},
+	{
+		"tag" : "ncs-ic",
+		"school_code" : "NCS"
+	},
+	{
+		"tag" : "nct-rsa",
+		"school_code" : "NCT"
+	},
+	{
+		"tag" : "nct-bn",
+		"school_code" : "NCT"
+	},
+	{
+		"tag" : "ncu-nsfp",
+		"school_code" : "NCU"
+	},
+	{
+		"tag" : "ndc-drl",
+		"school_code" : "NDC"
+	},
+	{
+		"tag" : "ndo-rlo",
+		"school_code" : "NDO"
+	},
+	{
+		"tag" : "nds-rha",
+		"school_code" : "NDS"
+	},
+	{
+		"tag" : "neu-rsa",
+		"school_code" : "NEU"
+	},
+	{
+		"tag" : "neu-saa",
+		"school_code" : "NEU"
+	},
+	{
+		"tag" : "nfi-nfui",
+		"school_code" : "NFI"
+	},
+	{
+		"tag" : "nfk-rha",
+		"school_code" : "NFK"
+	},
+	{
+		"tag" : "ngc-ngus",
+		"school_code" : "NGC"
+	},
+	{
+		"tag" : "nic-bn",
+		"school_code" : "NIC"
+	},
+	{
+		"tag" : "niu-rha",
+		"school_code" : "NIU"
+	},
+	{
+		"tag" : "nji-rha",
+		"school_code" : "NJI"
+	},
+	{
+		"tag" : "nku-rha",
+		"school_code" : "NKU"
+	},
+	{
+		"tag" : "nma-rl",
+		"school_code" : "NMA"
+	},
+	{
+		"tag" : "nma-bn",
+		"school_code" : "NMA"
+	},
+	{
+		"tag" : "nms-rha",
+		"school_code" : "NMS"
+	},
+	{
+		"tag" : "nmu-bn",
+		"school_code" : "NMU"
+	},
+	{
+		"tag" : "nny-rl",
+		"school_code" : "NNY"
+	},
+	{
+		"tag" : "nor-cfce",
+		"school_code" : "NOR"
+	},
+	{
+		"tag" : "npc-rlh",
+		"school_code" : "NPC"
+	},
+	{
+		"tag" : "nrs-rl",
+		"school_code" : "NRS"
+	},
+	{
+		"tag" : "nst-rasa",
+		"school_code" : "NST"
+	},
+	{
+		"tag" : "nsu-bn",
+		"school_code" : "NSU"
+	},
+	{
+		"tag" : "nsu-aa",
+		"school_code" : "NSU"
+	},
+	{
+		"tag" : "nta-rl",
+		"school_code" : "NTA"
+	},
+	{
+		"tag" : "ntd-bn",
+		"school_code" : "NTD"
+	},
+	{
+		"tag" : "nuv-hrl",
+		"school_code" : "NUV"
+	},
+	{
+		"tag" : "nvu-rlh",
+		"school_code" : "NVU"
+	},
+	{
+		"tag" : "nwm-nrhh",
+		"school_code" : "NWM"
+	},
+	{
+		"tag" : "nwn-cs",
+		"school_code" : "NWN"
+	},
+	{
+		"tag" : "nwo-nss",
+		"school_code" : "NWO"
+	},
+	{
+		"tag" : "nwu-rs",
+		"school_code" : "NWU"
+	},
+	{
+		"tag" : "nyc-rl",
+		"school_code" : "NYC"
+	},
+	{
+		"tag" : "nyo-rl",
+		"school_code" : "NYO"
+	},
+	{
+		"tag" : "nyu-irhc",
+		"school_code" : "NYU"
+	},
+	{
+		"tag" : "nzu-rha",
+		"school_code" : "NZU"
+	},
+	{
+		"tag" : "oak-rha",
+		"school_code" : "OAK"
+	},
+	{
+		"tag" : "obe-aa",
+		"school_code" : "OBE"
+	},
+	{
+		"tag" : "ocs-rl",
+		"school_code" : "OCS"
+	},
+	{
+		"tag" : "ocu-si",
+		"school_code" : "OCU"
+	},
+	{
+		"tag" : "odu-rha",
+		"school_code" : "ODU"
+	},
+	{
+		"tag" : "ohd-bn",
+		"school_code" : "OHD"
+	},
+	{
+		"tag" : "ohu-trac",
+		"school_code" : "OHU"
+	},
+	{
+		"tag" : "ohu-aa",
+		"school_code" : "OHU"
+	},
+	{
+		"tag" : "oit-rha",
+		"school_code" : "OIT"
+	},
+	{
+		"tag" : "oke-rl",
+		"school_code" : "OKE"
+	},
+	{
+		"tag" : "oke-chrs",
+		"school_code" : "OKE"
+	},
+	{
+		"tag" : "oku-rha",
+		"school_code" : "OKU"
+	},
+	{
+		"tag" : "oli-rl",
+		"school_code" : "OLI"
+	},
+	{
+		"tag" : "oll-rl",
+		"school_code" : "OLL"
+	},
+	{
+		"tag" : "oln-onuc",
+		"school_code" : "OLN"
+	},
+	{
+		"tag" : "ono-bn",
+		"school_code" : "ONO"
+	},
+	{
+		"tag" : "onu-bn",
+		"school_code" : "ONU"
+	},
+	{
+		"tag" : "rl-fheg",
+		"school_code" : "ORL"
+	},
+	{
+		"tag" : "ors-rha",
+		"school_code" : "ORS"
+	},
+	{
+		"tag" : "osu-rhac",
+		"school_code" : "OSU"
+	},
+	{
+		"tag" : "osw-cs",
+		"school_code" : "OSW"
+	},
+	{
+		"tag" : "ota-rl",
+		"school_code" : "OTA"
+	},
+	{
+		"tag" : "ott-rsa",
+		"school_code" : "OTT"
+	},
+	{
+		"tag" : "owu-nrhh",
+		"school_code" : "OWU"
+	},
+	{
+		"tag" : "oxf-res",
+		"school_code" : "OXF"
+	},
+	{
+		"tag" : "oxy-rha",
+		"school_code" : "OXY"
+	},
+	{
+		"tag" : "oxy-ocb",
+		"school_code" : "OXY"
+	},
+	{
+		"tag" : "pac-rha",
+		"school_code" : "PAC"
+	},
+	{
+		"tag" : "pap-rha",
+		"school_code" : "PAP"
+	},
+	{
+		"tag" : "pau-hrl",
+		"school_code" : "PAU"
+	},
+	{
+		"tag" : "pba-fheg",
+		"school_code" : "PBA"
+	},
+	{
+		"tag" : "pcn-sl",
+		"school_code" : "PCN"
+	},
+	{
+		"tag" : "pcs-si",
+		"school_code" : "PCS"
+	},
+	{
+		"tag" : "pdm-bn",
+		"school_code" : "PDM"
+	},
+	{
+		"tag" : "pdu-hfh",
+		"school_code" : "PDU"
+	},
+	{
+		"tag" : "per-ho",
+		"school_code" : "PER"
+	},
+	{
+		"tag" : "pfw-re",
+		"school_code" : "PFW"
+	},
+	{
+		"tag" : "pkv-fc",
+		"school_code" : "PKV"
+	},
+	{
+		"tag" : "plc-bn",
+		"school_code" : "PLC"
+	},
+	{
+		"tag" : "pls-rl",
+		"school_code" : "PLS"
+	},
+	{
+		"tag" : "plu-rha",
+		"school_code" : "PLU"
+	},
+	{
+		"tag" : "pnt-rl",
+		"school_code" : "PNT"
+	},
+	{
+		"tag" : "pnw-rha",
+		"school_code" : "PNW"
+	},
+	{
+		"tag" : "pos-hrl",
+		"school_code" : "POS"
+	},
+	{
+		"tag" : "pot-cs",
+		"school_code" : "POT"
+	},
+	{
+		"tag" : "pou-rha",
+		"school_code" : "POU"
+	},
+	{
+		"tag" : "ppc-bn",
+		"school_code" : "PPC"
+	},
+	{
+		"tag" : "ppc-uhp",
+		"school_code" : "PPC"
+	},
+	{
+		"tag" : "ppu-rhl",
+		"school_code" : "PPU"
+	},
+	{
+		"tag" : "prt-rlh",
+		"school_code" : "PRT"
+	},
+	{
+		"tag" : "pru-df",
+		"school_code" : "PRU"
+	},
+	{
+		"tag" : "prv-rl",
+		"school_code" : "PRV"
+	},
+	{
+		"tag" : "psa-rha",
+		"school_code" : "PSA"
+	},
+	{
+		"tag" : "psc-rl",
+		"school_code" : "PSC"
+	},
+	{
+		"tag" : "psc-bk",
+		"school_code" : "PSC"
+	},
+	{
+		"tag" : "pse-bn",
+		"school_code" : "PSE"
+	},
+	{
+		"tag" : "psh-rha",
+		"school_code" : "PSH"
+	},
+	{
+		"tag" : "psu-arhs",
+		"school_code" : "PSU"
+	},
+	{
+		"tag" : "psu-nrhh",
+		"school_code" : "PSU"
+	},
+	{
+		"tag" : "pur-fheg",
+		"school_code" : "PUR"
+	},
+	{
+		"tag" : "qpc-rl",
+		"school_code" : "QPC"
+	},
+	{
+		"tag" : "rad-rha",
+		"school_code" : "RAD"
+	},
+	{
+		"tag" : "rad-amb",
+		"school_code" : "RAD"
+	},
+	{
+		"tag" : "rcc-rl",
+		"school_code" : "RCC"
+	},
+	{
+		"tag" : "rch-rl",
+		"school_code" : "RCH"
+	},
+	{
+		"tag" : "rcn-fheg",
+		"school_code" : "RCN"
+	},
+	{
+		"tag" : "rdc-rcb",
+		"school_code" : "RDC"
+	},
+	{
+		"tag" : "rdr-rl",
+		"school_code" : "RDR"
+	},
+	{
+		"tag" : "rdr-rlo",
+		"school_code" : "RDR"
+	},
+	{
+		"tag" : "rdr-rha",
+		"school_code" : "RDR"
+	},
+	{
+		"tag" : "reg-as",
+		"school_code" : "REG"
+	},
+	{
+		"tag" : "reg-rlh",
+		"school_code" : "REG"
+	},
+	{
+		"tag" : "rgc-sc",
+		"school_code" : "RGC"
+	},
+	{
+		"tag" : "rhr-rl",
+		"school_code" : "RHR"
+	},
+	{
+		"tag" : "rhr-chrs",
+		"school_code" : "RHR"
+	},
+	{
+		"tag" : "ric-fyp",
+		"school_code" : "RIC"
+	},
+	{
+		"tag" : "rid-rlo",
+		"school_code" : "RID"
+	},
+	{
+		"tag" : "rin-rl",
+		"school_code" : "RIN"
+	},
+	{
+		"tag" : "rip-bt",
+		"school_code" : "RIP"
+	},
+	{
+		"tag" : "rit-bn",
+		"school_code" : "RIT"
+	},
+	{
+		"tag" : "riv-rls",
+		"school_code" : "RIV"
+	},
+	{
+		"tag" : "rkc-us",
+		"school_code" : "RKC"
+	},
+	{
+		"tag" : "rmc-rl",
+		"school_code" : "RMC"
+	},
+	{
+		"tag" : "rmc-ras",
+		"school_code" : "RMC"
+	},
+	{
+		"tag" : "rmt-hrl",
+		"school_code" : "RMT"
+	},
+	{
+		"tag" : "rmt-pafr",
+		"school_code" : "RMT"
+	},
+	{
+		"tag" : "roa-ra",
+		"school_code" : "ROA"
+	},
+	{
+		"tag" : "rol-rl",
+		"school_code" : "ROL"
+	},
+	{
+		"tag" : "roo-rl",
+		"school_code" : "ROO"
+	},
+	{
+		"tag" : "row-bn",
+		"school_code" : "ROW"
+	},
+	{
+		"tag" : "row-rl",
+		"school_code" : "ROW"
+	},
+	{
+		"tag" : "rpi-sll",
+		"school_code" : "RPI"
+	},
+	{
+		"tag" : "rpi-rsa",
+		"school_code" : "RPI"
+	},
+	{
+		"tag" : "rss-rha",
+		"school_code" : "RSS"
+	},
+	{
+		"tag" : "rsu-bn",
+		"school_code" : "RSU"
+	},
+	{
+		"tag" : "run-hrl",
+		"school_code" : "RUN"
+	},
+	{
+		"tag" : "rut-nrhh",
+		"school_code" : "RUT"
+	},
+	{
+		"tag" : "rut-rha",
+		"school_code" : "RUT"
+	},
+	{
+		"tag" : "rut-sa",
+		"school_code" : "RUT"
+	},
+	{
+		"tag" : "rwu-drlh",
+		"school_code" : "RWU"
+	},
+	{
+		"tag" : "rwu-irha",
+		"school_code" : "RWU"
+	},
+	{
+		"tag" : "saa-rha",
+		"school_code" : "SAA"
+	},
+	{
+		"tag" : "sac-rha",
+		"school_code" : "SAC"
+	},
+	{
+		"tag" : "sag-rlo",
+		"school_code" : "SAG"
+	},
+	{
+		"tag" : "sal-bk",
+		"school_code" : "SAL"
+	},
+	{
+		"tag" : "sal-rha",
+		"school_code" : "SAL"
+	},
+	{
+		"tag" : "san-fheg",
+		"school_code" : "SAN"
+	},
+	{
+		"tag" : "saq-rl",
+		"school_code" : "SAQ"
+	},
+	{
+		"tag" : "sar-sds",
+		"school_code" : "SAR"
+	},
+	{
+		"tag" : "sas-ss",
+		"school_code" : "SAS"
+	},
+	{
+		"tag" : "sat-rl",
+		"school_code" : "SAT"
+	},
+	{
+		"tag" : "sau-hrha",
+		"school_code" : "SAU"
+	},
+	{
+		"tag" : "sav-drlh",
+		"school_code" : "SAV"
+	},
+	{
+		"tag" : "sbc-rha",
+		"school_code" : "SBC"
+	},
+	{
+		"tag" : "sbc-ss",
+		"school_code" : "SBC"
+	},
+	{
+		"tag" : "sbd-rha",
+		"school_code" : "SBD"
+	},
+	{
+		"tag" : "sbu-ad",
+		"school_code" : "SBU"
+	},
+	{
+		"tag" : "sbu-da",
+		"school_code" : "SBU"
+	},
+	{
+		"tag" : "sca-rsg",
+		"school_code" : "SCA"
+	},
+	{
+		"tag" : "sca-rha",
+		"school_code" : "SCA"
+	},
+	{
+		"tag" : "sch-ss",
+		"school_code" : "SCH"
+	},
+	{
+		"tag" : "sci-rl",
+		"school_code" : "SCI"
+	},
+	{
+		"tag" : "sci-odk",
+		"school_code" : "SCI"
+	},
+	{
+		"tag" : "scl-rha",
+		"school_code" : "SCL"
+	},
+	{
+		"tag" : "scl-rha",
+		"school_code" : null
+	},
+	{
+		"tag" : "sco-rlh",
+		"school_code" : "SCO"
+	},
+	{
+		"tag" : "scp-rha",
+		"school_code" : "SCP"
+	},
+	{
+		"tag" : "scr-rl",
+		"school_code" : "SCR"
+	},
+	{
+		"tag" : "scr-chrs",
+		"school_code" : "SCR"
+	},
+	{
+		"tag" : "scs-ar",
+		"school_code" : "SCS"
+	},
+	{
+		"tag" : "sct-rl",
+		"school_code" : "SCT"
+	},
+	{
+		"tag" : "sct-sild",
+		"school_code" : "SCT"
+	},
+	{
+		"tag" : "sdg-ts",
+		"school_code" : "SDG"
+	},
+	{
+		"tag" : "sdl-rhsa",
+		"school_code" : "SDL"
+	},
+	{
+		"tag" : "sdt-rl",
+		"school_code" : "SDT"
+	},
+	{
+		"tag" : "seg-ca",
+		"school_code" : "SEG"
+	},
+	{
+		"tag" : "sel-uh",
+		"school_code" : "SEL"
+	},
+	{
+		"tag" : "sem-rha",
+		"school_code" : "SEM"
+	},
+	{
+		"tag" : "seo-rac",
+		"school_code" : "SEO"
+	},
+	{
+		"tag" : "sep-spe",
+		"school_code" : "SEP"
+	},
+	{
+		"tag" : "set-rsa",
+		"school_code" : "SET"
+	},
+	{
+		"tag" : "sfa-nrhh",
+		"school_code" : "SFA"
+	},
+	{
+		"tag" : "sfa-rha",
+		"school_code" : "SFA"
+	},
+	{
+		"tag" : "sfl-hre",
+		"school_code" : "SFL"
+	},
+	{
+		"tag" : "sfp-rha",
+		"school_code" : "SFP"
+	},
+	{
+		"tag" : "sfs-rha",
+		"school_code" : "SFS"
+	},
+	{
+		"tag" : "sfs-aa",
+		"school_code" : "SFS"
+	},
+	{
+		"tag" : "sgc-rlo",
+		"school_code" : "SGC"
+	},
+	{
+		"tag" : "shc-rl",
+		"school_code" : "SHC"
+	},
+	{
+		"tag" : "shd-reh",
+		"school_code" : "SHD"
+	},
+	{
+		"tag" : "shr-pa",
+		"school_code" : "SHR"
+	},
+	{
+		"tag" : "shu-irc",
+		"school_code" : "SHU"
+	},
+	{
+		"tag" : "sia-cl",
+		"school_code" : "SIA"
+	},
+	{
+		"tag" : "sia-sald",
+		"school_code" : "SIA"
+	},
+	{
+		"tag" : "sie-rha",
+		"school_code" : "SIE"
+	},
+	{
+		"tag" : "sie-ar",
+		"school_code" : "SIE"
+	},
+	{
+		"tag" : "sim-fht",
+		"school_code" : "SIM"
+	},
+	{
+		"tag" : "sit-rl",
+		"school_code" : "SIT"
+	},
+	{
+		"tag" : "sjj-fheg",
+		"school_code" : "SJJ"
+	},
+	{
+		"tag" : "sjo-rl",
+		"school_code" : "SJO"
+	},
+	{
+		"tag" : "sjo-ama",
+		"school_code" : "SJO"
+	},
+	{
+		"tag" : "sjs-rha",
+		"school_code" : "SJS"
+	},
+	{
+		"tag" : "sju-rlh",
+		"school_code" : "SJU"
+	},
+	{
+		"tag" : "skd-ss",
+		"school_code" : "SKD"
+	},
+	{
+		"tag" : "sla-bn",
+		"school_code" : "SLA"
+	},
+	{
+		"tag" : "slo-ihc",
+		"school_code" : "SLO"
+	},
+	{
+		"tag" : "slp-tt",
+		"school_code" : "SLP"
+	},
+	{
+		"tag" : "slp-aa",
+		"school_code" : "SLP"
+	},
+	{
+		"tag" : "slu-pd",
+		"school_code" : "SLU"
+	},
+	{
+		"tag" : "slu-ck",
+		"school_code" : "SLU"
+	},
+	{
+		"tag" : "sma-fheg",
+		"school_code" : "SMA"
+	},
+	{
+		"tag" : "smc-rha",
+		"school_code" : "SMC"
+	},
+	{
+		"tag" : "smi-ose",
+		"school_code" : "SMI"
+	},
+	{
+		"tag" : "smm-rl",
+		"school_code" : "SMM"
+	},
+	{
+		"tag" : "smm-rl",
+		"school_code" : null
+	},
+	{
+		"tag" : "smm-sc",
+		"school_code" : "SMM"
+	},
+	{
+		"tag" : "smt-nrhh",
+		"school_code" : "SMT"
+	},
+	{
+		"tag" : "smu-hub",
+		"school_code" : "SMU"
+	},
+	{
+		"tag" : "smu-nrhh",
+		"school_code" : "SMU"
+	},
+	{
+		"tag" : "smw-bn",
+		"school_code" : "SMW"
+	},
+	{
+		"tag" : "snc-wtt",
+		"school_code" : "SNC"
+	},
+	{
+		"tag" : "snc-wbt",
+		"school_code" : "SNC"
+	},
+	{
+		"tag" : "snc-mbt",
+		"school_code" : "SNC"
+	},
+	{
+		"tag" : "snc-ad",
+		"school_code" : "SNC"
+	},
+	{
+		"tag" : "snh-rl",
+		"school_code" : "SNH"
+	},
+	{
+		"tag" : "snu-us",
+		"school_code" : "SNU"
+	},
+	{
+		"tag" : "soc-rl",
+		"school_code" : "SOC"
+	},
+	{
+		"tag" : "sod-rha",
+		"school_code" : "SOD"
+	},
+	{
+		"tag" : "sod-hero",
+		"school_code" : "SOD"
+	},
+	{
+		"tag" : "som-sh",
+		"school_code" : "SOM"
+	},
+	{
+		"tag" : "son-rsa",
+		"school_code" : "SON"
+	},
+	{
+		"tag" : "sor-sh",
+		"school_code" : "SOR"
+	},
+	{
+		"tag" : "sos-rh",
+		"school_code" : "SOS"
+	},
+	{
+		"tag" : "sos-rha",
+		"school_code" : "SOS"
+	},
+	{
+		"tag" : "sow-rl",
+		"school_code" : "SOW"
+	},
+	{
+		"tag" : "spc-rl",
+		"school_code" : "SPC"
+	},
+	{
+		"tag" : "spd-rl",
+		"school_code" : "SPD"
+	},
+	{
+		"tag" : "spi-bn",
+		"school_code" : "SPI"
+	},
+	{
+		"tag" : "sqh-sa",
+		"school_code" : "SQH"
+	},
+	{
+		"tag" : "sre-rl",
+		"school_code" : "SRE"
+	},
+	{
+		"tag" : "sre-saa",
+		"school_code" : "SRE"
+	},
+	{
+		"tag" : "srs-rl",
+		"school_code" : "SRS"
+	},
+	{
+		"tag" : "sru-nrhh",
+		"school_code" : "SRU"
+	},
+	{
+		"tag" : "sru-nrhh",
+		"school_code" : null
+	},
+	{
+		"tag" : "ssb-rha",
+		"school_code" : "SSB"
+	},
+	{
+		"tag" : "ssc-rsc",
+		"school_code" : "SSC"
+	},
+	{
+		"tag" : "ssu-rha",
+		"school_code" : "SSU"
+	},
+	{
+		"tag" : "sta-rl",
+		"school_code" : "STA"
+	},
+	{
+		"tag" : "stc-rha",
+		"school_code" : "STC"
+	},
+	{
+		"tag" : "ste-rl",
+		"school_code" : "STE"
+	},
+	{
+		"tag" : "stf-sse",
+		"school_code" : "STF"
+	},
+	{
+		"tag" : "sth-rl",
+		"school_code" : "STH"
+	},
+	{
+		"tag" : "stl-rha",
+		"school_code" : "STL"
+	},
+	{
+		"tag" : "stl-saa",
+		"school_code" : "STL"
+	},
+	{
+		"tag" : "stm-cho",
+		"school_code" : "STM"
+	},
+	{
+		"tag" : "stn-reh",
+		"school_code" : "STN"
+	},
+	{
+		"tag" : "stn-rha",
+		"school_code" : "STN"
+	},
+	{
+		"tag" : "stu-rll",
+		"school_code" : "STU"
+	},
+	{
+		"tag" : "stx-rha",
+		"school_code" : "STX"
+	},
+	{
+		"tag" : "sua-rl",
+		"school_code" : "SUA"
+	},
+	{
+		"tag" : "sut-ia",
+		"school_code" : "SUT"
+	},
+	{
+		"tag" : "sva-rld",
+		"school_code" : "SVA"
+	},
+	{
+		"tag" : "sve-rha",
+		"school_code" : "SVE"
+	},
+	{
+		"tag" : "svg-rl",
+		"school_code" : "SVG"
+	},
+	{
+		"tag" : "svs-nrhh",
+		"school_code" : "SVS"
+	},
+	{
+		"tag" : "swb-rld",
+		"school_code" : "SWB"
+	},
+	{
+		"tag" : "swc-rla",
+		"school_code" : "SWC"
+	},
+	{
+		"tag" : "swo-apa",
+		"school_code" : "SWO"
+	},
+	{
+		"tag" : "swu-rlc",
+		"school_code" : "SWU"
+	},
+	{
+		"tag" : "swu-hrl",
+		"school_code" : "SWU"
+	},
+	{
+		"tag" : "swy-rl",
+		"school_code" : "SWY"
+	},
+	{
+		"tag" : "sya-uas",
+		"school_code" : "SYA"
+	},
+	{
+		"tag" : "syb-rha",
+		"school_code" : "SYB"
+	},
+	{
+		"tag" : "syg-nrhh",
+		"school_code" : "SYG"
+	},
+	{
+		"tag" : "syg-irc",
+		"school_code" : "SYG"
+	},
+	{
+		"tag" : "syn-rhsa",
+		"school_code" : "SYN"
+	},
+	{
+		"tag" : "syo-rso",
+		"school_code" : "SYO"
+	},
+	{
+		"tag" : "syo-ad",
+		"school_code" : "SYO"
+	},
+	{
+		"tag" : "syp-cs",
+		"school_code" : "SYP"
+	},
+	{
+		"tag" : "syr-ub",
+		"school_code" : "SYR"
+	},
+	{
+		"tag" : "tac-bn",
+		"school_code" : "TAC"
+	},
+	{
+		"tag" : "tak-rha",
+		"school_code" : "TAK"
+	},
+	{
+		"tag" : "tam-rhsc",
+		"school_code" : "TAM"
+	},
+	{
+		"tag" : "tam-rha",
+		"school_code" : "TAM"
+	},
+	{
+		"tag" : "tar-rl",
+		"school_code" : "TAR"
+	},
+	{
+		"tag" : "tcb-rs",
+		"school_code" : "TCB"
+	},
+	{
+		"tag" : "tcm-rll",
+		"school_code" : "TCM"
+	},
+	{
+		"tag" : "tcn-bn",
+		"school_code" : "TCN"
+	},
+	{
+		"tag" : "tcn-rha",
+		"school_code" : "TCN"
+	},
+	{
+		"tag" : "tcu-hrl",
+		"school_code" : "TCU"
+	},
+	{
+		"tag" : "tcw-trhl",
+		"school_code" : "TCW"
+	},
+	{
+		"tag" : "tem-hrl",
+		"school_code" : "TEM"
+	},
+	{
+		"tag" : "tex-rl",
+		"school_code" : "TEX"
+	},
+	{
+		"tag" : "tga-rha",
+		"school_code" : "TGA"
+	},
+	{
+		"tag" : "tga-cll",
+		"school_code" : "TGA"
+	},
+	{
+		"tag" : "thi-rl",
+		"school_code" : "THI"
+	},
+	{
+		"tag" : "tiu-rl",
+		"school_code" : "TIU"
+	},
+	{
+		"tag" : "tjc-rha",
+		"school_code" : "TJC"
+	},
+	{
+		"tag" : "tln-hrl",
+		"school_code" : "TLN"
+	},
+	{
+		"tag" : "tlu-akp",
+		"school_code" : "TLU"
+	},
+	{
+		"tag" : "tmp-rl",
+		"school_code" : "TMP"
+	},
+	{
+		"tag" : "tmp-rha",
+		"school_code" : "TMP"
+	},
+	{
+		"tag" : "tns-fys",
+		"school_code" : "TNS"
+	},
+	{
+		"tag" : "tnt-rha",
+		"school_code" : "TNT"
+	},
+	{
+		"tag" : "tnw-rl",
+		"school_code" : "TNW"
+	},
+	{
+		"tag" : "tou-rg",
+		"school_code" : "TOU"
+	},
+	{
+		"tag" : "tou-nrhh",
+		"school_code" : "TOU"
+	},
+	{
+		"tag" : "tph-pha",
+		"school_code" : "TPH"
+	},
+	{
+		"tag" : "tri-fheg",
+		"school_code" : "TRI"
+	},
+	{
+		"tag" : "trs-bn",
+		"school_code" : "TRS"
+	},
+	{
+		"tag" : "tru-nrhh",
+		"school_code" : "TRU"
+	},
+	{
+		"tag" : "tru-rha",
+		"school_code" : "TRU"
+	},
+	{
+		"tag" : "tsk-rac",
+		"school_code" : "TSK"
+	},
+	{
+		"tag" : "tsm-tsrh",
+		"school_code" : "TSM"
+	},
+	{
+		"tag" : "tsv-sga",
+		"school_code" : "TSV"
+	},
+	{
+		"tag" : "ttu-rha",
+		"school_code" : "TTU"
+	},
+	{
+		"tag" : "ttu-rho",
+		"school_code" : "TTU"
+	},
+	{
+		"tag" : "ttu-aa",
+		"school_code" : "TTU"
+	},
+	{
+		"tag" : "tul-rha",
+		"school_code" : "TUL"
+	},
+	{
+		"tag" : "tul-pfa",
+		"school_code" : "TUL"
+	},
+	{
+		"tag" : "twu-hrl",
+		"school_code" : "TWU"
+	},
+	{
+		"tag" : "txa-rhad",
+		"school_code" : "TXA"
+	},
+	{
+		"tag" : "txw-rl",
+		"school_code" : "TXW"
+	},
+	{
+		"tag" : "tyc-hfh",
+		"school_code" : "TYC"
+	},
+	{
+		"tag" : "tyc-csce",
+		"school_code" : "TYC"
+	},
+	{
+		"tag" : "uaa-rha",
+		"school_code" : "UAA"
+	},
+	{
+		"tag" : "uab-rha",
+		"school_code" : "UAB"
+	},
+	{
+		"tag" : "uaf-rl",
+		"school_code" : "UAF"
+	},
+	{
+		"tag" : "uah-rha",
+		"school_code" : "UAH"
+	},
+	{
+		"tag" : "uah-ra",
+		"school_code" : "UAH"
+	},
+	{
+		"tag" : "uak-bn",
+		"school_code" : "UAK"
+	},
+	{
+		"tag" : "uam-rha",
+		"school_code" : "UAM"
+	},
+	{
+		"tag" : "uam-rl",
+		"school_code" : "UAM"
+	},
+	{
+		"tag" : "uas-sl",
+		"school_code" : "UAS"
+	},
+	{
+		"tag" : "uat-hrc",
+		"school_code" : "UAT"
+	},
+	{
+		"tag" : "uat-naa",
+		"school_code" : "UAT"
+	},
+	{
+		"tag" : "uaz-rha",
+		"school_code" : "UAZ"
+	},
+	{
+		"tag" : "uaz-us",
+		"school_code" : "UAZ"
+	},
+	{
+		"tag" : "ubr-rlsc",
+		"school_code" : "UBR"
+	},
+	{
+		"tag" : "ubr-drl",
+		"school_code" : "UBR"
+	},
+	{
+		"tag" : "uca-rha",
+		"school_code" : "UCA"
+	},
+	{
+		"tag" : "ucb-rha",
+		"school_code" : "UCB"
+	},
+	{
+		"tag" : "ucb-rssp",
+		"school_code" : "UCB"
+	},
+	{
+		"tag" : "ucc-rl",
+		"school_code" : "UCC"
+	},
+	{
+		"tag" : "ucc-chrs",
+		"school_code" : "UCC"
+	},
+	{
+		"tag" : "ucd-sh",
+		"school_code" : "UCD"
+	},
+	{
+		"tag" : "ucd-apfa",
+		"school_code" : "UCD"
+	},
+	{
+		"tag" : "ucf-hrl",
+		"school_code" : "UCF"
+	},
+	{
+		"tag" : "ucf-alu",
+		"school_code" : "UCF"
+	},
+	{
+		"tag" : "ucg-rl",
+		"school_code" : "UCG"
+	},
+	{
+		"tag" : "uch-bn",
+		"school_code" : "UCH"
+	},
+	{
+		"tag" : "uci-rha",
+		"school_code" : "UCI"
+	},
+	{
+		"tag" : "ucl-us",
+		"school_code" : "UCL"
+	},
+	{
+		"tag" : "ucl-ochc",
+		"school_code" : "UCL"
+	},
+	{
+		"tag" : "ucm-rl",
+		"school_code" : "UCM"
+	},
+	{
+		"tag" : "ucm-chrs",
+		"school_code" : "UCM"
+	},
+	{
+		"tag" : "ucn-hfs",
+		"school_code" : "UCN"
+	},
+	{
+		"tag" : "ucn-pfa",
+		"school_code" : "UCN"
+	},
+	{
+		"tag" : "uco-rl",
+		"school_code" : "UCO"
+	},
+	{
+		"tag" : "uco-chrs",
+		"school_code" : "UCO"
+	},
+	{
+		"tag" : "ucp-rl",
+		"school_code" : "UCP"
+	},
+	{
+		"tag" : "ucp-chrs",
+		"school_code" : "UCP"
+	},
+	{
+		"tag" : "ucr-saa",
+		"school_code" : "UCR"
+	},
+	{
+		"tag" : "ucs-rl",
+		"school_code" : "UCS"
+	},
+	{
+		"tag" : "ucs-chrs",
+		"school_code" : "UCS"
+	},
+	{
+		"tag" : "uct-uf",
+		"school_code" : "UCT"
+	},
+	{
+		"tag" : "ucu-bn",
+		"school_code" : "UCU"
+	},
+	{
+		"tag" : "uda-sga",
+		"school_code" : "UDA"
+	},
+	{
+		"tag" : "uda-fr",
+		"school_code" : "UDA"
+	},
+	{
+		"tag" : "udb-rha",
+		"school_code" : "UDB"
+	},
+	{
+		"tag" : "ude-rsa",
+		"school_code" : "UDE"
+	},
+	{
+		"tag" : "udt-rl",
+		"school_code" : "UDT"
+	},
+	{
+		"tag" : "udu-pkpf",
+		"school_code" : "UDU"
+	},
+	{
+		"tag" : "uev-rsa",
+		"school_code" : "UEV"
+	},
+	{
+		"tag" : "ufl-irha",
+		"school_code" : "UFL"
+	},
+	{
+		"tag" : "ufl-pfa",
+		"school_code" : "UFL"
+	},
+	{
+		"tag" : "uga-hero",
+		"school_code" : "UGA"
+	},
+	{
+		"tag" : "uga-aa",
+		"school_code" : "UGA"
+	},
+	{
+		"tag" : "uha-rl",
+		"school_code" : "UHA"
+	},
+	{
+		"tag" : "uha-rha",
+		"school_code" : "UHA"
+	},
+	{
+		"tag" : "uhm-shs",
+		"school_code" : "UHM"
+	},
+	{
+		"tag" : "uho-rha",
+		"school_code" : "UHO"
+	},
+	{
+		"tag" : "uhv-rl",
+		"school_code" : "UHV"
+	},
+	{
+		"tag" : "uia-arh",
+		"school_code" : "UIA"
+	},
+	{
+		"tag" : "uic-rha",
+		"school_code" : "UIC"
+	},
+	{
+		"tag" : "uid-rha",
+		"school_code" : "UID"
+	},
+	{
+		"tag" : "uil-hslc",
+		"school_code" : "UIL"
+	},
+	{
+		"tag" : "uis-rha",
+		"school_code" : "UIS"
+	},
+	{
+		"tag" : "uis-nso",
+		"school_code" : "UIS"
+	},
+	{
+		"tag" : "uiu-arh",
+		"school_code" : "UIU"
+	},
+	{
+		"tag" : "ujt-rl",
+		"school_code" : "UJT"
+	},
+	{
+		"tag" : "ukc-nrhh",
+		"school_code" : "UKC"
+	},
+	{
+		"tag" : "uks-nrhh",
+		"school_code" : "UKS"
+	},
+	{
+		"tag" : "uky-rsa",
+		"school_code" : "UKY"
+	},
+	{
+		"tag" : "uky-aa",
+		"school_code" : "UKY"
+	},
+	{
+		"tag" : "ulb-rl",
+		"school_code" : "ULB"
+	},
+	{
+		"tag" : "ulb-sa",
+		"school_code" : "ULB"
+	},
+	{
+		"tag" : "ull-rha",
+		"school_code" : "ULL"
+	},
+	{
+		"tag" : "ulm-ae",
+		"school_code" : "ULM"
+	},
+	{
+		"tag" : "ulo-rsa",
+		"school_code" : "ULO"
+	},
+	{
+		"tag" : "uma-rlo",
+		"school_code" : "UMA"
+	},
+	{
+		"tag" : "umb-rsa",
+		"school_code" : "UMB"
+	},
+	{
+		"tag" : "umb-psa",
+		"school_code" : "UMB"
+	},
+	{
+		"tag" : "umd-rha",
+		"school_code" : "UMD"
+	},
+	{
+		"tag" : "umd-drf",
+		"school_code" : "UMD"
+	},
+	{
+		"tag" : "umd-aa",
+		"school_code" : "UMD"
+	},
+	{
+		"tag" : "ume-sshs",
+		"school_code" : "UME"
+	},
+	{
+		"tag" : "umi-rha",
+		"school_code" : "UMI"
+	},
+	{
+		"tag" : "uml-rl",
+		"school_code" : "UML"
+	},
+	{
+		"tag" : "umm-drh",
+		"school_code" : "UMM"
+	},
+	{
+		"tag" : "umm-ab",
+		"school_code" : "UMM"
+	},
+	{
+		"tag" : "umn-hrl",
+		"school_code" : "UMN"
+	},
+	{
+		"tag" : "ump-fheg",
+		"school_code" : "UMP"
+	},
+	{
+		"tag" : "umr-bt",
+		"school_code" : "UMR"
+	},
+	{
+		"tag" : "ums-bn",
+		"school_code" : "UMS"
+	},
+	{
+		"tag" : "ums-rha",
+		"school_code" : "UMS"
+	},
+	{
+		"tag" : "ums-aa",
+		"school_code" : "UMS"
+	},
+	{
+		"tag" : "umu-rl",
+		"school_code" : "UMU"
+	},
+	{
+		"tag" : "umu-apo",
+		"school_code" : "UMU"
+	},
+	{
+		"tag" : "umw-bk",
+		"school_code" : "UMW"
+	},
+	{
+		"tag" : "una-fheg",
+		"school_code" : "UNA"
+	},
+	{
+		"tag" : "unb-hrl",
+		"school_code" : "UNB"
+	},
+	{
+		"tag" : "unc-rha",
+		"school_code" : "UNC"
+	},
+	{
+		"tag" : "unc-nrhh",
+		"school_code" : "UNC"
+	},
+	{
+		"tag" : "und-ho",
+		"school_code" : "UND"
+	},
+	{
+		"tag" : "und-int",
+		"school_code" : "UND"
+	},
+	{
+		"tag" : "und-nrhh",
+		"school_code" : "UND"
+	},
+	{
+		"tag" : "une-hrl",
+		"school_code" : "UNE"
+	},
+	{
+		"tag" : "unf-rha",
+		"school_code" : "UNF"
+	},
+	{
+		"tag" : "ung-rha",
+		"school_code" : "UNG"
+	},
+	{
+		"tag" : "unh-musa",
+		"school_code" : "UNH"
+	},
+	{
+		"tag" : "unh-cla",
+		"school_code" : "UNH"
+	},
+	{
+		"tag" : "uni-rha",
+		"school_code" : "UNI"
+	},
+	{
+		"tag" : "uni-cfme",
+		"school_code" : "UNI"
+	},
+	{
+		"tag" : "unk-rha",
+		"school_code" : "UNK"
+	},
+	{
+		"tag" : "unl-rha",
+		"school_code" : "UNL"
+	},
+	{
+		"tag" : "unl-nrhh",
+		"school_code" : "UNL"
+	},
+	{
+		"tag" : "unm-rha",
+		"school_code" : "UNM"
+	},
+	{
+		"tag" : "unn-rl",
+		"school_code" : "UNN"
+	},
+	{
+		"tag" : "uno-rl",
+		"school_code" : "UNO"
+	},
+	{
+		"tag" : "unr-nws",
+		"school_code" : "UNR"
+	},
+	{
+		"tag" : "unt-rha",
+		"school_code" : "UNT"
+	},
+	{
+		"tag" : "uoc-rl",
+		"school_code" : "UOC"
+	},
+	{
+		"tag" : "uoc-sab",
+		"school_code" : "UOC"
+	},
+	{
+		"tag" : "uof-rl",
+		"school_code" : "UOF"
+	},
+	{
+		"tag" : "uok-hfs",
+		"school_code" : "UOK"
+	},
+	{
+		"tag" : "uok-hcsa",
+		"school_code" : "UOK"
+	},
+	{
+		"tag" : "uor-rha",
+		"school_code" : "UOR"
+	},
+	{
+		"tag" : "upa-psa",
+		"school_code" : "UPA"
+	},
+	{
+		"tag" : "upb-rlh",
+		"school_code" : "UPB"
+	},
+	{
+		"tag" : "upd-sa",
+		"school_code" : "UPD"
+	},
+	{
+		"tag" : "upg-rsc",
+		"school_code" : "UPG"
+	},
+	{
+		"tag" : "upj-hrl",
+		"school_code" : "UPJ"
+	},
+	{
+		"tag" : "ups-rsa",
+		"school_code" : "UPS"
+	},
+	{
+		"tag" : "upt-rsa",
+		"school_code" : "UPT"
+	},
+	{
+		"tag" : "upt-nrhh",
+		"school_code" : "UPT"
+	},
+	{
+		"tag" : "ura-ura",
+		"school_code" : "URA"
+	},
+	{
+		"tag" : "uri-cs",
+		"school_code" : "URI"
+	},
+	{
+		"tag" : "url-drlh",
+		"school_code" : "URL"
+	},
+	{
+		"tag" : "url-mb",
+		"school_code" : "URL"
+	},
+	{
+		"tag" : "uro-bn",
+		"school_code" : "URO"
+	},
+	{
+		"tag" : "uro-nrhh",
+		"school_code" : "URO"
+	},
+	{
+		"tag" : "uro-qb",
+		"school_code" : "URO"
+	},
+	{
+		"tag" : "usa-rha",
+		"school_code" : "USA"
+	},
+	{
+		"tag" : "usc-rha",
+		"school_code" : "USC"
+	},
+	{
+		"tag" : "use-bk",
+		"school_code" : "USE"
+	},
+	{
+		"tag" : "usf-rha",
+		"school_code" : "USF"
+	},
+	{
+		"tag" : "usi-pfa",
+		"school_code" : "USI"
+	},
+	{
+		"tag" : "usi-saa",
+		"school_code" : "USI"
+	},
+	{
+		"tag" : "usm-rha",
+		"school_code" : "USM"
+	},
+	{
+		"tag" : "usm-aa",
+		"school_code" : "USM"
+	},
+	{
+		"tag" : "usp-rl",
+		"school_code" : "USP"
+	},
+	{
+		"tag" : "usr-rha",
+		"school_code" : "USR"
+	},
+	{
+		"tag" : "ust-rl",
+		"school_code" : "UST"
+	},
+	{
+		"tag" : "ust-rha",
+		"school_code" : "UST"
+	},
+	{
+		"tag" : "usu-rha",
+		"school_code" : "USU"
+	},
+	{
+		"tag" : "uta-rha",
+		"school_code" : "UTA"
+	},
+	{
+		"tag" : "utc-sac",
+		"school_code" : "UTC"
+	},
+	{
+		"tag" : "uti-rha",
+		"school_code" : "UTI"
+	},
+	{
+		"tag" : "utk-urhc",
+		"school_code" : "UTK"
+	},
+	{
+		"tag" : "utm-rha",
+		"school_code" : "UTM"
+	},
+	{
+		"tag" : "uto-rha",
+		"school_code" : "UTO"
+	},
+	{
+		"tag" : "uto-aa",
+		"school_code" : "UTO"
+	},
+	{
+		"tag" : "utp-rha",
+		"school_code" : "UTP"
+	},
+	{
+		"tag" : "utt-prc",
+		"school_code" : "UTT"
+	},
+	{
+		"tag" : "uut-rha",
+		"school_code" : "UUT"
+	},
+	{
+		"tag" : "uva-bk",
+		"school_code" : "UVA"
+	},
+	{
+		"tag" : "uva-sc",
+		"school_code" : "UVA"
+	},
+	{
+		"tag" : "uvm-vc",
+		"school_code" : "UVM"
+	},
+	{
+		"tag" : "uvw-rha",
+		"school_code" : "UVW"
+	},
+	{
+		"tag" : "uwa-rcsa",
+		"school_code" : "UWA"
+	},
+	{
+		"tag" : "uwg-rha",
+		"school_code" : "UWG"
+	},
+	{
+		"tag" : "uws-nrhh",
+		"school_code" : "UWS"
+	},
+	{
+		"tag" : "uwy-rha",
+		"school_code" : "UWY"
+	},
+	{
+		"tag" : "val-ho",
+		"school_code" : "VAL"
+	},
+	{
+		"tag" : "vas-vcs",
+		"school_code" : "VAS"
+	},
+	{
+		"tag" : "vat-rhf",
+		"school_code" : "VAT"
+	},
+	{
+		"tag" : "vcu-rha",
+		"school_code" : "VCU"
+	},
+	{
+		"tag" : "vcu-nsp",
+		"school_code" : "VCU"
+	},
+	{
+		"tag" : "vil-rl",
+		"school_code" : "VIL"
+	},
+	{
+		"tag" : "vit-rl",
+		"school_code" : "VIT"
+	},
+	{
+		"tag" : "vld-rha",
+		"school_code" : "VLD"
+	},
+	{
+		"tag" : "vnu-rha",
+		"school_code" : "VNU"
+	},
+	{
+		"tag" : "vnu-sga",
+		"school_code" : "VNU"
+	},
+	{
+		"tag" : "vnu-bc",
+		"school_code" : "VNU"
+	},
+	{
+		"tag" : "vsa-rl",
+		"school_code" : "VSA"
+	},
+	{
+		"tag" : "vtc-fheg",
+		"school_code" : "VTC"
+	},
+	{
+		"tag" : "vuu-rlh",
+		"school_code" : "VUU"
+	},
+	{
+		"tag" : "vwu-rl",
+		"school_code" : "VWU"
+	},
+	{
+		"tag" : "wag-re",
+		"school_code" : "WAG"
+	},
+	{
+		"tag" : "wal-rha",
+		"school_code" : "WAL"
+	},
+	{
+		"tag" : "wal-rl",
+		"school_code" : "WAL"
+	},
+	{
+		"tag" : "was-bn",
+		"school_code" : "WAS"
+	},
+	{
+		"tag" : "wau-con",
+		"school_code" : "WAU"
+	},
+	{
+		"tag" : "way-rha",
+		"school_code" : "WAY"
+	},
+	{
+		"tag" : "wbg-bn",
+		"school_code" : "WBG"
+	},
+	{
+		"tag" : "wcc-bn",
+		"school_code" : "WCC"
+	},
+	{
+		"tag" : "wcg-rl",
+		"school_code" : "WCG"
+	},
+	{
+		"tag" : "wch-rlhs",
+		"school_code" : "WCH"
+	},
+	{
+		"tag" : "wch-rha",
+		"school_code" : "WCH"
+	},
+	{
+		"tag" : "wch-aa",
+		"school_code" : "WCH"
+	},
+	{
+		"tag" : "wcm-fheg",
+		"school_code" : "WCM"
+	},
+	{
+		"tag" : "wcn-wo",
+		"school_code" : "WCN"
+	},
+	{
+		"tag" : "wcs-hrl",
+		"school_code" : "WCS"
+	},
+	{
+		"tag" : "wct-hrl",
+		"school_code" : "WCT"
+	},
+	{
+		"tag" : "wct-fheg",
+		"school_code" : "WCT"
+	},
+	{
+		"tag" : "wcu-rsa",
+		"school_code" : "WCU"
+	},
+	{
+		"tag" : "wdc-rl",
+		"school_code" : "WDC"
+	},
+	{
+		"tag" : "wdn-se",
+		"school_code" : "WDN"
+	},
+	{
+		"tag" : "wdn-ae",
+		"school_code" : "WDN"
+	},
+	{
+		"tag" : "wec-rha",
+		"school_code" : "WEC"
+	},
+	{
+		"tag" : "wec-nrhh",
+		"school_code" : "WEC"
+	},
+	{
+		"tag" : "wec-amb",
+		"school_code" : "WEC"
+	},
+	{
+		"tag" : "wec-aa",
+		"school_code" : "WEC"
+	},
+	{
+		"tag" : "wfu-rsa",
+		"school_code" : "WFU"
+	},
+	{
+		"tag" : "wgb-rhaa",
+		"school_code" : "WGB"
+	},
+	{
+		"tag" : "whc-rlo",
+		"school_code" : "WHC"
+	},
+	{
+		"tag" : "wic-hrl",
+		"school_code" : "WIC"
+	},
+	{
+		"tag" : "wic-psp",
+		"school_code" : "WIC"
+	},
+	{
+		"tag" : "win-nrhh",
+		"school_code" : "WIN"
+	},
+	{
+		"tag" : "win-rsa",
+		"school_code" : "WIN"
+	},
+	{
+		"tag" : "wis-hrl",
+		"school_code" : "WIS"
+	},
+	{
+		"tag" : "wit-rlh",
+		"school_code" : "WIT"
+	},
+	{
+		"tag" : "wiu-ihc",
+		"school_code" : "WIU"
+	},
+	{
+		"tag" : "wiu-nrhh",
+		"school_code" : "WIU"
+	},
+	{
+		"tag" : "wiu-saa",
+		"school_code" : "WIU"
+	},
+	{
+		"tag" : "wje-rl",
+		"school_code" : "WJE"
+	},
+	{
+		"tag" : "wju-rl",
+		"school_code" : "WJU"
+	},
+	{
+		"tag" : "wku-wkus",
+		"school_code" : "WKU"
+	},
+	{
+		"tag" : "wku-rsa",
+		"school_code" : "WKU"
+	},
+	{
+		"tag" : "wlb-bn",
+		"school_code" : "WLB"
+	},
+	{
+		"tag" : "wlc-rhac",
+		"school_code" : "WLC"
+	},
+	{
+		"tag" : "wlc-cki",
+		"school_code" : "WLC"
+	},
+	{
+		"tag" : "wlc-nrhh",
+		"school_code" : "WLC"
+	},
+	{
+		"tag" : "wlh-bn",
+		"school_code" : "WLH"
+	},
+	{
+		"tag" : "wlm-rsa",
+		"school_code" : "WLM"
+	},
+	{
+		"tag" : "wlm-ic",
+		"school_code" : "WLM"
+	},
+	{
+		"tag" : "wlu-rl",
+		"school_code" : "WLU"
+	},
+	{
+		"tag" : "wlu-ivcf",
+		"school_code" : "WLU"
+	},
+	{
+		"tag" : "wmc-saa",
+		"school_code" : "WMC"
+	},
+	{
+		"tag" : "wmd-uh",
+		"school_code" : "WMD"
+	},
+	{
+		"tag" : "wmd-apo",
+		"school_code" : "WMD"
+	},
+	{
+		"tag" : "wmd-wasb",
+		"school_code" : "WMD"
+	},
+	{
+		"tag" : "wml-shac",
+		"school_code" : "WML"
+	},
+	{
+		"tag" : "wmu-rha",
+		"school_code" : "WMU"
+	},
+	{
+		"tag" : "wmu-rl",
+		"school_code" : "WMU"
+	},
+	{
+		"tag" : "wne-sa",
+		"school_code" : "WNE"
+	},
+	{
+		"tag" : "wof-rl",
+		"school_code" : "WOF"
+	},
+	{
+		"tag" : "wok-usrh",
+		"school_code" : "WOK"
+	},
+	{
+		"tag" : "wok-nrhh",
+		"school_code" : "WOK"
+	},
+	{
+		"tag" : "woo-rl",
+		"school_code" : "WOO"
+	},
+	{
+		"tag" : "wos-rha",
+		"school_code" : "WOS"
+	},
+	{
+		"tag" : "wpc-fheg",
+		"school_code" : "WPC"
+	},
+	{
+		"tag" : "wpc-rl",
+		"school_code" : "WPC"
+	},
+	{
+		"tag" : "wpi-rs",
+		"school_code" : "WPI"
+	},
+	{
+		"tag" : "wpi-bn",
+		"school_code" : "WPI"
+	},
+	{
+		"tag" : "wpk-rha",
+		"school_code" : "WPK"
+	},
+	{
+		"tag" : "wpl-rha",
+		"school_code" : "WPL"
+	},
+	{
+		"tag" : "wpl-uaa",
+		"school_code" : "WPL"
+	},
+	{
+		"tag" : "wrf-nrhh",
+		"school_code" : "WRF"
+	},
+	{
+		"tag" : "wri-rlh",
+		"school_code" : "WRI"
+	},
+	{
+		"tag" : "wri-bn",
+		"school_code" : "WRI"
+	},
+	{
+		"tag" : "wri-ar",
+		"school_code" : "WRI"
+	},
+	{
+		"tag" : "wrt-cst",
+		"school_code" : "WRT"
+	},
+	{
+		"tag" : "wsc-rlh",
+		"school_code" : "WSC"
+	},
+	{
+		"tag" : "wsh-wrc",
+		"school_code" : "WSH"
+	},
+	{
+		"tag" : "wsl-drl",
+		"school_code" : "WSL"
+	},
+	{
+		"tag" : "wsn-rl",
+		"school_code" : "WSN"
+	},
+	{
+		"tag" : "wsp-rha",
+		"school_code" : "WSP"
+	},
+	{
+		"tag" : "wsr-rl",
+		"school_code" : "WSR"
+	},
+	{
+		"tag" : "wsr-rha",
+		"school_code" : "WSR"
+	},
+	{
+		"tag" : "wss-rha",
+		"school_code" : "WSS"
+	},
+	{
+		"tag" : "wst-nsop",
+		"school_code" : "WST"
+	},
+	{
+		"tag" : "wst-rha",
+		"school_code" : "WST"
+	},
+	{
+		"tag" : "wsu-rha",
+		"school_code" : "WSU"
+	},
+	{
+		"tag" : "wsy-rha",
+		"school_code" : "WSY"
+	},
+	{
+		"tag" : "wtt-rl",
+		"school_code" : "WTT"
+	},
+	{
+		"tag" : "wtx-rha",
+		"school_code" : "WTX"
+	},
+	{
+		"tag" : "wum-rha",
+		"school_code" : "WUM"
+	},
+	{
+		"tag" : "wvu-rha",
+		"school_code" : "WVU"
+	},
+	{
+		"tag" : "wvu-hfh",
+		"school_code" : "WVU"
+	},
+	{
+		"tag" : "wvw-clo",
+		"school_code" : "WVW"
+	},
+	{
+		"tag" : "wwa-apr",
+		"school_code" : "WWA"
+	},
+	{
+		"tag" : "wwh-nrhh",
+		"school_code" : "WWH"
+	},
+	{
+		"tag" : "wwh-rha",
+		"school_code" : "WWH"
+	},
+	{
+		"tag" : "wwu-ur",
+		"school_code" : "WWU"
+	},
+	{
+		"tag" : "wwu-aa",
+		"school_code" : "WWU"
+	},
+	{
+		"tag" : "wyc-fheg",
+		"school_code" : "WYC"
+	},
+	{
+		"tag" : "wyn-rl",
+		"school_code" : "WYN"
+	},
+	{
+		"tag" : "wyo-hd",
+		"school_code" : "WYO"
+	},
+	{
+		"tag" : "xav-rsa",
+		"school_code" : "XAV"
+	},
+	{
+		"tag" : "xav-rl",
+		"school_code" : "XAV"
+	},
+	{
+		"tag" : "xla-rl",
+		"school_code" : "XLA"
+	},
+	{
+		"tag" : "ycp-rlh",
+		"school_code" : "YCP"
+	},
+	{
+		"tag" : "ycp-ycb",
+		"school_code" : "YCP"
+	},
+	{
+		"tag" : "ycp-sna",
+		"school_code" : "YCP"
+	},
+	{
+		"tag" : "yes-hrl",
+		"school_code" : "YES"
+	},
+	{
+		"tag" : "ylu-yasa",
+		"school_code" : "YLU"
+	},
+	{
+		"tag" : "ylu-ycca",
+		"school_code" : "YLU"
+	},
+	{
+		"tag" : "ysu-rha",
+		"school_code" : "YSU"
+	},
+	{
+		"tag" : "yvp-cl",
+		"school_code" : "YVP"
+	},
+	{
+		"tag" : "aam-rlh",
+		"school_code" : "AAM"
+	},
+	{
+		"tag" : "amc-rl",
+		"school_code" : "AMC"
+	},
+	{
+		"tag" : "bln-cbk",
+		"school_code" : "BLN"
+	},
+	{
+		"tag" : "bso-rl",
+		"school_code" : "BSO"
+	},
+	{
+		"tag" : "cor-cs",
+		"school_code" : "COR"
+	},
+	{
+		"tag" : "cyi-rl",
+		"school_code" : "CYI"
+	},
+	{
+		"tag" : "dyo-dos",
+		"school_code" : "DYO"
+	},
+	{
+		"tag" : "eok-bk",
+		"school_code" : "EOK"
+	},
+	{
+		"tag" : "goc-fheg",
+		"school_code" : "GOC"
+	},
+	{
+		"tag" : "grm-clh",
+		"school_code" : "GRM"
+	},
+	{
+		"tag" : "lan-rhc",
+		"school_code" : "LAN"
+	},
+	{
+		"tag" : "lup-sld",
+		"school_code" : "LUP"
+	},
+	{
+		"tag" : "mvc-rha",
+		"school_code" : "MVC"
+	},
+	{
+		"tag" : "new-wb",
+		"school_code" : "NEW"
+	},
+	{
+		"tag" : "okc-hrl",
+		"school_code" : "OKC"
+	},
+	{
+		"tag" : "qui-sd",
+		"school_code" : "QUI"
+	},
+	{
+		"tag" : "sao-bk",
+		"school_code" : "SAO"
+	},
+	{
+		"tag" : "stk-sa",
+		"school_code" : "STK"
+	},
+	{
+		"tag" : "swf-rl",
+		"school_code" : "SWF"
+	},
+	{
+		"tag" : "syi-raab",
+		"school_code" : "SYI"
+	},
+	{
+		"tag" : "tuf-rll",
+		"school_code" : "TUF"
+	},
+	{
+		"tag" : "txu-bk",
+		"school_code" : "TXU"
+	},
+	{
+		"tag" : "uiw-rl",
+		"school_code" : "UIW"
+	},
+	{
+		"tag" : "urs-cbk",
+		"school_code" : "URS"
+	},
+	{
+		"tag" : "utd-fheg",
+		"school_code" : "UTD"
+	},
+	{
+		"tag" : "vsu-rlh",
+		"school_code" : "VSU"
+	},
+	{
+		"tag" : "wil-fheg",
+		"school_code" : "WIL"
+	},
+	{
+		"tag" : "wtr-cs",
+		"school_code" : "WTR"
+	},
+	{
+		"tag" : "amu-hrl",
+		"school_code" : "AMU"
+	},
+	{
+		"tag" : "bcl-fheg",
+		"school_code" : "BCL"
+	},
+	{
+		"tag" : "cwm-rl",
+		"school_code" : "CWM"
+	},
+	{
+		"tag" : "fai-rha",
+		"school_code" : "FAI"
+	},
+	{
+		"tag" : "law-sa",
+		"school_code" : "LAW"
+	},
+	{
+		"tag" : "ncc-rha",
+		"school_code" : "NCC"
+	},
+	{
+		"tag" : "prv-rha",
+		"school_code" : "PRV"
+	},
+	{
+		"tag" : "rcn-rha",
+		"school_code" : "RCN"
+	},
+	{
+		"tag" : "uia-nrhh",
+		"school_code" : "UIA"
+	},
+	{
+		"tag" : "uof-rha",
+		"school_code" : "UOF"
+	},
+	{
+		"tag" : "utc-rha",
+		"school_code" : "UTC"
+	},
+	{
+		"tag" : "CBP-APR",
+		"school_code" : "CBP"
+	},
+	{
+		"tag" : "SLC-SA",
+		"school_code" : "SLC"
+	},
+	{
+		"tag" : "CTL-CAB",
+		"school_code" : "CTL"
+	},
+	{
+		"tag" : "TAC-FHEG",
+		"school_code" : "TAC"
+	},
+	{
+		"tag" : "ARK-RL",
+		"school_code" : "ARK"
+	},
+	{
+		"tag" : "FST-RHA",
+		"school_code" : "FST"
+	},
+	{
+		"tag" : "TMP-BN",
+		"school_code" : "TMP"
+	},
+	{
+		"tag" : "UTC-RL",
+		"school_code" : "UTC"
+	},
+	{
+		"tag" : "VWU-US",
+		"school_code" : "VWU"
+	},
+	{
+		"tag" : "CCH-RL",
+		"school_code" : "CCH"
+	}
+]}
