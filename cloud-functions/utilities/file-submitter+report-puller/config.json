@@ -1,0 +1,10 @@
+{
+    "mssql": {
+        "server": "localhost",
+        "port": 1433,
+        "database": "OCM",
+        "user": "ocm",
+        "password": "ocm",
+        "requestTimeout": 2400000
+    }
+}

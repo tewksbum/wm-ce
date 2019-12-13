@@ -41,6 +41,10 @@ var CustomerNamespace = os.Getenv("CUSTOMERNAMESPACE")
 // DefaultEndpoint self explanatory, default output endpoint
 var DefaultEndpoint = os.Getenv("DEFAULTENDPOINT")
 
+// Debug if set will log extra inputs
+var Debug = os.Getenv("DEBUG")
+
+// Household data
 type Household struct {
 	HouseholdID string `json:"householdId,omitempty"`
 	Address1    string `json:"address1,omitempty"`
@@ -106,10 +110,13 @@ type OrderDetail struct {
 	UnitPrice     string `json:"unitPrice,omitempty"`
 }
 
+// EmailSt people's email structure
 type EmailSt struct {
 	Email string `json:"email,omitempty"`
 	Type  string `json:"type,omitempty"`
 }
+
+// PhoneSt people's email structure
 type PhoneSt struct {
 	Phone string `json:"phone,omitempty"`
 	Type  string `json:"type,omitempty"`
@@ -129,14 +136,15 @@ type People struct {
 	Emails       []EmailSt `json:"emails,omitempty"`
 }
 
-// SegmentInput input for the API
-//Entity type events, order, product  old//event, product, campaign, orderHeader, orderConsignment, orderDetail, people
+// OutputHeader input for the API
 type OutputHeader struct {
-	AccessKey  string   `json:"accessKey"` //Access key presumes owner info on segment side
-	EntityType string   `json:"entityType"`
-	OwnerID    int64    `json:"ownerId"`
-	Signatures []string `json:"signatures,omitempty"`
+	AccessKey  string `json:"accessKey"`
+	EntityType string `json:"entityType"`
+	OwnerID    int64  `json:"ownerId"`
 }
+
+// Common allows us to merge structs with similar fields, these fields
+// relate to other structs which will get merge before sending
 type Common struct {
 	OrderID       string   `json:"orderId,omitempty"`
 	SurrogateID   string   `json:"surrogateId,omitempty"`
@@ -145,6 +153,8 @@ type Common struct {
 	LastName      string   `json:"lastName,omitempty"`
 	ProductID     string   `json:"productId,omitempty"`
 }
+
+// Output merge struct
 type Output struct {
 	OutputHeader
 	Common
@@ -158,7 +168,8 @@ type Output struct {
 	*Household
 }
 
-type SegmentResponse struct {
+// APIResponse struct to parse the output message response
+type APIResponse struct {
 	Success bool   `json:"success"`
 	Message string `json:"message"`
 }
@@ -169,7 +180,7 @@ type PubSubMessage struct {
 	Attributes map[string]string `json:"attributes"`
 }
 
-// ABM mapper structure
+// MatchKeyMap ABM mapper structure
 type MatchKeyMap struct {
 	MatchKey   string
 	Source     string
@@ -178,6 +189,8 @@ type MatchKeyMap struct {
 	Key        *datastore.Key `datastore:"__key__"`
 }
 
+// CustomerInfo is the struct for the customer database that we get
+// with the Owner from the signature
 type CustomerInfo struct {
 	AccessKey   string         `datastore:"AccessKey"`
 	Enabled     bool           `datastore:"Enabled"`
@@ -188,6 +201,8 @@ type CustomerInfo struct {
 	Key         *datastore.Key `datastore:"__key__"`
 }
 
+// SORSETUP is the entry of the source of record datastore table
+// which defines what gets sent or not to the output
 type SORSETUP struct {
 	Hook      string         `json:"Hook"`
 	Type      string         `json:"Type"`
@@ -197,14 +212,17 @@ type SORSETUP struct {
 	MatchKeys []string       `json:"MatchKeys"`
 	Key       *datastore.Key `datastore:"__key__"`
 }
+
+// Signature the identifyier for every request
 type Signature struct {
-	OwnerID   int64  `json:"ownerId"`
+	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
 	EventType string `json:"eventType"`
-	EventId   string `json:"eventId"`
-	RecordId  string `json:"recordId"`
+	EventID   string `json:"eventId"`
+	RecordID  string `json:"recordId"`
 }
 
+// MatchKey360 360 and source field map struct
 type MatchKey360 struct {
 	Key    string   `json:"key" bigquery:"key"`
 	Type   string   `json:"type" bigquery:"type"`
@@ -212,15 +230,17 @@ type MatchKey360 struct {
 	Values []string `json:"values" bigquery:"values"`
 }
 
+// Passthrough360 is the data that comes from the source and should be passed to the sor
 type Passthrough360 struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
+// Request360 trigger message from every 360 cloud-function
 type Request360 struct {
 	ID          string           `json:"id"`
-	Signature   Signature        `json:"signature"`  // event
-	Signatures  []Signature      `json:"signatures"` // people,order check how to get owner and source
+	Signature   Signature        `json:"signature"`
+	Signatures  []Signature      `json:"signatures"`
 	Fibers      []string         `json:"fibers"`
 	Passthrough []Passthrough360 `json:"passthrough"`
 	MatchKeys   []MatchKey360    `json:"matchKeys"`
@@ -228,6 +248,13 @@ type Request360 struct {
 	TimeStamp   time.Time        `json:"timestamp"`
 }
 
+func logDebug(message string) {
+	if Debug == "true" {
+		log.Print(message)
+	}
+}
+
+// Main ABM processor, takes the 360 outputs and sends them to the stored source url
 func Main(ctx context.Context, m PubSubMessage) error {
 	dsClient, err := datastore.NewClient(ctx, ProjectID)
 
@@ -238,8 +265,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	}
 	inputType := m.Attributes["type"]
 	inputSource := m.Attributes["source"]
-
-	log.Printf("Input message decoded %v from %v pubsub message %v", string(inputType), string(inputSource), string(m.Data))
+	logDebug(fmt.Sprintf("Input message decoded %v from %v pubsub message %v", string(inputType), string(inputSource), string(m.Data)))
 	var rSignature = request360.Signature
 	var rSignatures = request360.Signatures
 	//Get SOR setup
@@ -260,14 +286,14 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	}
 	var sorSetups []SORSETUP
 	var sorSetup SORSETUP
-	log.Printf("Getting source setup %v %v", SORNamespace, sskind.String())
+	logDebug(fmt.Sprintf("Getting source setup %v %v", SORNamespace, sskind.String()))
 	sorSetupQuery := datastore.NewQuery(sskind.String()).Namespace(SORNamespace)
 	if _, err := dsClient.GetAll(ctx, sorSetupQuery, &sorSetups); err != nil {
 		log.Printf("<%v>-<%v> Error querying SORSETUP: %v", rSignature.OwnerID, rSignature.Source, err)
 		return err
 	}
 	if len(sorSetups) == 0 {
-		log.Printf("<%v>-<%v> No SORSETUP, sending all fields to default endpoint <%v>", rSignature.OwnerID, rSignature.Source, inputType)
+		logDebug(fmt.Sprintf("<%v>-<%v> No SORSETUP, sending all fields to default endpoint <%v>", rSignature.OwnerID, rSignature.Source, inputType))
 		sorSetup.Endpoint = DefaultEndpoint
 	}
 	for i, ss := range sorSetups {
@@ -284,7 +310,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	var centities []CustomerInfo
 	k := datastore.Key{
 		Kind:      "Customer",
-		ID:        rSignature.OwnerID,
+		Name:      rSignature.OwnerID,
 		Namespace: "wemade-dev",
 	}
 	cquery := datastore.NewQuery("Customer").Namespace(CustomerNamespace)
@@ -394,7 +420,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.ConsignmentID = getFrom360Slice("ConsignmentID", r360filteredmk).Value //Check if valid
 		output.Common.SurrogateID = request360.ID
 		output.OrderConsignment = &orderConsignment
-		output.OutputHeader.Signatures = getSignaturesHash(rSignatures)
 
 	case "orderdetail":
 		orderDetail := OrderDetail{
@@ -499,10 +524,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	// 	log.Printf("<%v>-<%v> There was a problem preparing the complete output %v ", rSignature.OwnerID, rSignature.Source, err)
 	// 	return err
 	// }
-
-	log.Printf("<%v>-<%v> ABM pushing to Endpoint: %v", rSignature.OwnerID, rSignature.Source, sorSetup.Endpoint)
-	log.Printf("<%v>-<%v> Outbound message: %v", rSignature.OwnerID, rSignature.Source, string(jsonStrOutput))
-
+	logDebug(fmt.Sprintf("<%v>-<%v> ABM pushing to Endpoint: %v", rSignature.OwnerID, rSignature.Source, sorSetup.Endpoint))
+	logDebug(fmt.Sprintf("<%v>-<%v> Outbound message: %v", rSignature.OwnerID, rSignature.Source, string(jsonStrOutput)))
 	req, err := http.NewRequest("POST", sorSetup.Endpoint,
 		bytes.NewBuffer(jsonStrOutput))
 	req.Header.Set("Content-Type", "application/json")
@@ -514,7 +537,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	}
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
-	var sr SegmentResponse
+	var sr APIResponse
 	err = decoder.Decode(&sr)
 	if err != nil {
 		log.Printf("<%v>-<%v> There was a problem decoding the response %v", rSignature.OwnerID, rSignature.Source, sr.Message)
@@ -523,7 +546,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	if sr.Success != true {
 		return fmt.Errorf("<%v>-<%v> response not succesfull %v", rSignature.OwnerID, rSignature.Source, sr.Message)
 	}
-	log.Printf("<%v>-<%v> Succesfull response: Status <%v> Message <%v>", rSignature.OwnerID, rSignature.Source, sr.Success, sr.Message)
+	logDebug(fmt.Sprintf("<%v>-<%v> Succesfull response: Status <%v> Message <%v>", rSignature.OwnerID, rSignature.Source, sr.Success, sr.Message))
+	log.Printf("<%v>-<%v> Succesfull response: Status <%v>, 360id %v", rSignature.OwnerID, rSignature.Source, sr.Success, request360.ID)
 
 	return nil
 }
@@ -538,7 +562,7 @@ func getSignaturesHash(ss []Signature) []string {
 
 func getSignatureHash(s Signature) string {
 	var text string
-	text = string(s.OwnerID) + s.Source + s.EventType + s.EventId + s.RecordId
+	text = string(s.OwnerID) + s.Source + s.EventType + s.EventID + s.RecordID
 	hasher := md5.New()
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
