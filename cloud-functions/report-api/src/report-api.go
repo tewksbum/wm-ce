@@ -106,6 +106,7 @@ type Fiber struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
+	RecordType   string           `datastore:"recordtype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -142,11 +143,12 @@ type Fiber struct {
 }
 
 type Signature struct {
-	OwnerID   string
-	Source    string
-	EventID   string
-	EventType string
-	RecordID  string
+	OwnerID    string
+	Source     string
+	EventID    string
+	EventType  string
+	RecordID   string
+	RecordType string
 }
 
 type Passthrough360 struct {
@@ -220,6 +222,7 @@ type PeopleSet struct {
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
 	RecordID               []string       `datastore:"recordid"`
+	RecordType             []string       `datastore:"recordtype"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
