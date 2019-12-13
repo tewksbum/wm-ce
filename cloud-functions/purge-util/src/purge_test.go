@@ -232,3 +232,26 @@ func TestProcessRequestA(t *testing.T) {
 
 	fmt.Println(got)
 }
+
+func TestProcessRequestB(t *testing.T) {
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "dev-bou-bn",
+		"targetSubSelection": ""
+	}`
+
+	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	ProcessRequest(rr, req)
+
+	got := rr.Body.String()
+
+	fmt.Println(got)
+}
