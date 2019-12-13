@@ -49,14 +49,14 @@ type FileReport struct {
 	Columns     []ColumnStat
 	ProcessedOn time.Time
 	PcocessTime string
-	Fibers      TypedCount
+	Fibers      FiberCount
 }
 
 type OwnerReport struct {
 	FileCount int
 	Requests  []Event
 	Columns   []ColumnStat
-	Counts    TypedCount
+	Counts    FiberCount
 }
 
 type ColumnStat struct {
@@ -67,11 +67,10 @@ type ColumnStat struct {
 	Mapped   []string
 }
 
-type TypedCount struct {
+type FiberCount struct {
 	Person    int
 	Dupe      int
 	Throwaway int
-	HouseHold int
 	NDFS      int
 	NDFP      int
 	NDUS      int
@@ -88,6 +87,9 @@ type TypedCount struct {
 	EIFP      int
 	EIUS      int
 	EIUP      int
+}
+type SetCount struct {
+	HouseHold int
 }
 
 type Record struct {
@@ -549,6 +551,15 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		DUPE := 0
 		CurrentYear := time.Now().Year()
+
+		for _, f := range fibers {
+			if f.RecordType == "mar" || f.RecordType == "default" {
+				if f.Disposition == "new" {
+					newIDs = append(newIDs, f.RecordID)
+				}
+			}
+		}
+
 		for _, f := range fibers {
 			// recordID := Left(f.RecordID, 36)
 			// if !Contains(recordIDs, recordID) {
@@ -562,9 +573,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isNew := false
 
 			if f.RecordType == "mar" { // skip mar
-				if f.Disposition == "new" {
-					newIDs = append(newIDs, f.RecordID)
-				}
 				continue
 			} else if f.RecordType == "default" { //same record id processed twice?
 				if Contains(recordIDs, f.RecordID) {
@@ -765,11 +773,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.PcocessTime = fmt.Sprintf("%v s", maxTime.Sub(minTime).Seconds())
 		report.ProcessedOn = minTime
 
-		report.Fibers = TypedCount{
+		report.Fibers = FiberCount{
 			Person:    len(fibers),
 			Dupe:      DUPE,
 			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
-			HouseHold: 0,
 			EDFS:      EDFS,
 			EDFP:      EDFP,
 			EDUS:      EDUS,
