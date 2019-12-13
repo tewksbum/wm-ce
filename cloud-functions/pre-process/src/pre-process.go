@@ -751,7 +751,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name":
 		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name":
+	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
@@ -779,7 +779,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FullAddress = 1
 	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender":
