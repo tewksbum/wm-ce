@@ -27,7 +27,6 @@ import (
 	"github.com/xojoc/useragent"
 )
 
-// blow
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
@@ -854,7 +853,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the " || strings.HasPrefix(key, "v-lookup") {
+	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
 		err.Junk = 1
 	}
 
