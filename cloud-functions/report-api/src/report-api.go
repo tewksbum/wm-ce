@@ -561,6 +561,20 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, f := range fibers {
+			for _, m := range PeopleMatchKeyNames {
+				mk := GetMatchKeyFieldFromFiberByName(&f, m)
+				columnTarget := []string{m}
+				if len(mk.Source) > 0 {
+					if val, ok := columnMaps[mk.Source]; ok {
+						columnTarget = val
+						if !Contains(columnTarget, m) {
+							columnTarget = append(columnTarget, m)
+						}
+					}
+					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
+				}
+			}
+
 			// recordID := Left(f.RecordID, 36)
 			// if !Contains(recordIDs, recordID) {
 			// 	recordIDs = append(recordIDs, recordID)
@@ -581,20 +595,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				recordIDs = append(recordIDs, f.RecordID)
 			} else if f.RecordType == "mpr" {
 				isParent = true
-			}
-
-			for _, m := range PeopleMatchKeyNames {
-				mk := GetMatchKeyFieldFromFiberByName(&f, m)
-				columnTarget := []string{m}
-				if len(mk.Source) > 0 {
-					if val, ok := columnMaps[mk.Source]; ok {
-						columnTarget = val
-						if !Contains(columnTarget, m) {
-							columnTarget = append(columnTarget, m)
-						}
-					}
-					columnMaps[strings.ToUpper(mk.Source)] = columnTarget
-				}
 			}
 
 			if f.Disposition == "dupe" {
