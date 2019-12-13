@@ -585,8 +585,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			if f.Disposition == "dupe" && f.RecordType == "default" {
-				DUPE++
+			if f.Disposition == "dupe" {
+				if f.RecordType == "default" {
+					DUPE++
+				}
 			} else {
 				if f.Disposition == "new" {
 					isNew = true
