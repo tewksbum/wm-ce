@@ -545,6 +545,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		EIUP := 0 // existing international upperclassman parent
 
 		recordIDs := []string{}
+		newIDs := []string{}
 
 		DUPE := 0
 		CurrentYear := time.Now().Year()
@@ -561,6 +562,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isNew := false
 
 			if f.RecordType == "mar" { // skip mar
+				if f.Disposition == "new" {
+					newIDs = append(newIDs, f.RecordID)
+				}
 				continue
 			} else if f.RecordType == "default" { //same record id processed twice?
 				if Contains(recordIDs, f.RecordID) {
@@ -591,6 +595,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				if f.Disposition == "new" {
+					isNew = true
+				} else if Contains(newIDs, f.RecordID) {
 					isNew = true
 				}
 
