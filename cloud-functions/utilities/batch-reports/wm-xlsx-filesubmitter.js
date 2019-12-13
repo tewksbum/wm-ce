@@ -19,7 +19,7 @@ const bucket = "ocm_school_raw_files";
 const today = new Date();
 const streamerURL =
   "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-file-api";
-const logFile = `./xsubmitter-log-${today.toISOString()}.json`;
+const logFile = `./logs/xsubmitter-log-${today.toISOString()}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
@@ -44,14 +44,15 @@ var skippedSchoolCodes = [];
     { header: "School code", id: "Min", width: 10 },
     { header: "Owner", id: "Min", width: 10 },
     { header: "AccessKey", id: "Min", width: 25 },
-    { header: "RequestId", id: "Min", width: 10 }
+    { header: "RequestId", id: "Min", width: 10 },
+    { header: "fileUrl", id: "Min", width: 10 }
   ];
   var lfiles = worksheet.rowCount;
   for (let index = 2; index < lfiles; index++) {
     await sendRequest(worksheet.getRow(index));
   }
 
-  await workbook.xlsx.writeFile("input2.xlsx");
+  await workbook.xlsx.writeFile("input.xlsx");
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
     stream.end();
@@ -180,6 +181,8 @@ async function sendRequest(row) {
     row.getCell(6).value = streamerData.owner;
     row.getCell(7).value = streamerData.accessKey;
     row.getCell(8).value = responseObject.id;
+    row.getCell(9).value = url;
+    
     stream.write(sep + streamLog);
     sep = sep === "" ? ",\n" : sep;
   } catch (error) {
