@@ -566,6 +566,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 				continue
 			} else if f.RecordType == "default" {
+				if Contains(recordIDs, f.RecordID) {
+					continue
+				}
 				recordIDs = append(recordIDs, f.RecordID)
 			} else if f.RecordType == "mpr" {
 				isParent = true
