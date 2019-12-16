@@ -190,6 +190,7 @@ async function sendRequest(row) {
     row.getCell(9).value = url;
     stream.write(sep + streamLog);
     sep = sep === "" ? ",\n" : sep;
+    sleep(20000);
   } catch (error) {
     row.getCell(4).value = "false";
     console.log(error);
@@ -207,4 +208,11 @@ async function sendRequest(row) {
   }
   row.commit();
   return;
+}
+
+function sleep(time) {
+  var stop = new Date().getTime();
+  while(new Date().getTime() < stop + time) {
+      ;
+  }
 }
