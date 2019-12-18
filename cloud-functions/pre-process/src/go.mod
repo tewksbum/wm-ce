@@ -2,6 +2,7 @@ module preprocess
 
 require (
 	cloud.google.com/go v0.45.1
+	cloud.google.com/go/datastore v1.0.0
 	cloud.google.com/go/pubsub v1.0.1
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/gomodule/redigo v2.0.0+incompatible
