@@ -495,7 +495,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_EMAIL"))
 			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
 				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
-				if column.PeopleERR.isPHONE && (len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1"))) { // only handle US phone format
+				if column.PeopleERR.Phone && (len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1"))) { // only handle US phone format
 					column.MatchKey1 = "PHONE"
 					LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_PHONE && len(column.Value) >= 10"))
 				}
