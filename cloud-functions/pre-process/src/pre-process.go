@@ -61,13 +61,13 @@ type RecordDS struct {
 	RecordID      string    `datastore:"RecordID"`
 	Fields        []KVP     `datastore:"Fields,noindex"`
 	TimeStamp     time.Time `datastore:"Created"`
-	IsPeople      bool      `datastore:"ispeople"`
-	IsProduct     bool      `datastore:"isproduct"`
-	IsCampaign    bool      `datastore:"iscampaign"`
-	IsOrder       bool      `datastore:"isorder"`
-	IsConsignment bool      `datastore:"isconsignment"`
-	IsOrderDetail bool      `datastore:"isorderdetail"`
-	IsEvent       bool      `datastore:"isevent"`
+	IsPeople      bool      `datastore:"IsPeople"`
+	IsProduct     bool      `datastore:"IsProduct"`
+	IsCampaign    bool      `datastore:"IsCampaign"`
+	IsOrder       bool      `datastore:"IsOrder"`
+	IsConsignment bool      `datastore:"IsConsignment"`
+	IsOrderDetail bool      `datastore:"IsOrderDetail"`
+	IsEvent       bool      `datastore:"IsEvent"`
 }
 
 type KVP struct {
