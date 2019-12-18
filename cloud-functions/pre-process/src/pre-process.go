@@ -16,6 +16,7 @@ import (
 	"time"
 	"unicode"
 
+	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"golang.org/x/text/transform"
@@ -52,6 +53,26 @@ type Prediction struct {
 
 type MLInput struct {
 	Instances [][]float64 `json:"instances"`
+}
+
+type RecordDS struct {
+	EventType     string    `datastore:"Type"`
+	EventID       string    `datastore:"EventID"`
+	RecordID      string    `datastore:"RecordID"`
+	Fields        []KVP     `datastore:"Fields,noindex"`
+	TimeStamp     time.Time `datastore:"Created"`
+	IsPeople      bool      `datastore:"ispeople"`
+	IsProduct     bool      `datastore:"isproduct"`
+	IsCampaign    bool      `datastore:"iscampaign"`
+	IsOrder       bool      `datastore:"isorder"`
+	IsConsignment bool      `datastore:"isconsignment"`
+	IsOrderDetail bool      `datastore:"isorderdetail"`
+	IsEvent       bool      `datastore:"isevent"`
+}
+
+type KVP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value string `json:"v" datastore:"v"`
 }
 
 type CampaignERR struct {
@@ -302,7 +323,9 @@ var PSCampaign = os.Getenv("PSOUTPUTCAMPAIGN")
 var PSOrder = os.Getenv("PSOUTPUTORDER")
 var PSConsignment = os.Getenv("PSOUTPUTCONSIGNMENT")
 var PSOrderDetail = os.Getenv("PSOUTPUTORDERDETAIL")
+var Env = os.Getenv("ENVIRONMENT")
 var dev = os.Getenv("ENVIRONMENT") == "dev"
+var DSKind = os.Getenv("DSKIND")
 
 var MLUrl = os.Getenv("PREDICTION")
 
@@ -322,6 +345,7 @@ var topicOrderDetail *pubsub.Topic
 var ai *ml.Service
 var cs *storage.Client
 var msPool *redis.Pool
+var ds *datastore.Client
 
 var listCities map[string]bool
 var listStates map[string]bool
@@ -358,6 +382,7 @@ func init() {
 
 	ai, _ := ml.NewService(ctx)
 	cs, _ = storage.NewClient(ctx)
+	ds, _ = datastore.NewClient(ctx, ProjectID)
 
 	msPool = NewPool(RedisAddress)
 
@@ -415,6 +440,60 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
+
+	if len(input.Fields) > 0 {
+		for k, v := range input.Fields {
+			input.Fields[k] = strings.TrimSpace(v)
+			if strings.EqualFold(input.Fields[k], "NULL") {
+				input.Fields[k] = ""
+			}
+		}
+	} else {
+		// empty field list
+		return nil
+	}
+
+	// NERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
+	// NER := FindNER(NERKey)
+	// if len(NER.Columns) > 0 {
+	// 	// found ner
+	// 	if NER.Source == "FILE" {
+	// 		// no need to recompute
+	// 	} else if NER.ApplyCounter > NERThreshold {
+	// 		// need to recompute NER
+	// 		var entities []Immutable
+	// 		query := datastore.NewQuery(DSKind).Namespace(DSNameSpace)
+	// 		query.Order("-created").Limit(100)
+
+	// 		if _, err := ds.GetAll(ctx, query, &entities); err != nil {
+	// 			// TODO: address field fluctuations
+	// 			NERInput := make(map[string][]string)
+	// 			for _, e := range entities {
+	// 				for k, v := range e.Fields {
+	// 					if len(v) > 0 {
+	// 						NERInput[k] = append(NERInput[k], v)
+	// 					}
+	// 				}
+	// 			}
+
+	// 			// Call NER API
+	// 			NerRequest := NERrequest{
+	// 				Owner:  fmt.Sprintf("%v", input.Signature.OwnerID),
+	// 				Source: "wemade",
+	// 				Data:   NERInput,
+	// 			}
+	// 			log.Printf("%v Getting NER responses", input.Signature.EventID)
+	// 			NerResponse := GetNERresponse(NerRequest)
+
+	// 			// Store NER in Redis if we have a NER
+	// 			NerKey := GetNERKey(input.Signature, GetMapKeysFromSlice(NERInput))
+	// 			if len(NerResponse.Owner) > 0 {
+	// 				PersistNER(NerKey, NerResponse)
+	// 			}
+	// 		}
+
+	// 	}
+	// }
 
 	columns := GetColumnsFromInput(input)
 
@@ -643,6 +722,28 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
 		}
 		log.Printf("ML result is %v", string(r.Data))
+	}
+
+	// store RECORD in DS
+	immutableDS := RecordDS{
+		EventID:       input.Signature.EventID,
+		EventType:     input.Signature.EventType,
+		RecordID:      input.Signature.RecordID,
+		Fields:        ToKVPSlice(&input.Fields),
+		TimeStamp:     time.Now(),
+		IsPeople:      flags.People,
+		IsProduct:     flags.Product,
+		IsCampaign:    flags.Campaign,
+		IsOrder:       flags.Order,
+		IsConsignment: flags.Consignment,
+		IsOrderDetail: flags.OrderDetail,
+		IsEvent:       flags.Event,
+	}
+
+	dsKey := datastore.IncompleteKey(DSKind, nil)
+	dsKey.Namespace = strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
+		log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
 	}
 
 	// pub
@@ -1374,4 +1475,15 @@ func NewPool(addr string) *redis.Pool {
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
 	}
+}
+
+func ToKVPSlice(v *map[string]string) []KVP {
+	var result []KVP
+	for k, v := range *v {
+		result = append(result, KVP{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return result
 }

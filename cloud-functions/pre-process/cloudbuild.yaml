@@ -18,7 +18,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: pre-process
-    _TRIGGER_TOPIC: record-received
+    _TRIGGER_TOPIC: eventrecord
     _ENTRY_POINT: PreProcess
     _VPC_CONNECTOR: cf-connector-4
     
