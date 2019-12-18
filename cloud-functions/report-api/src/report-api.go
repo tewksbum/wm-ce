@@ -563,6 +563,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PURGE1 := 0
 		PURGE2 := 0
+		PERSON := 0
+
 		for _, r := range records {
 			if !r.IsPeople {
 				PURGE1++
@@ -574,6 +576,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				if f.Disposition == "new" {
 					newIDs = append(newIDs, f.RecordID)
 				}
+			}
+			if f.RecordType == "mpr" || f.RecordType == "default" {
+				PERSON++
 			}
 		}
 
@@ -798,7 +803,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Fibers = FiberCount{
-			Person:    len(fibers),
+			Person:    PERSON,
 			Dupe:      DUPE,
 			PurgePre:  PURGE1,
 			Purge360:  PURGE2,
