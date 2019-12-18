@@ -73,6 +73,9 @@ type FiberCount struct {
 	Throwaway int
 	PurgePre  int
 	Purge360  int
+	Default   int
+	MAR       int
+	MPR       int
 	NDFS      int
 	NDFP      int
 	NDUS      int
@@ -563,7 +566,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PURGE1 := 0
 		PURGE2 := 0
-		PERSON := 0
+		DEFAULT := 0
+		MAR := 0
+		MPR := 0
 
 		for _, r := range records {
 			if !r.IsPeople {
@@ -577,8 +582,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					newIDs = append(newIDs, f.RecordID)
 				}
 			}
-			if f.RecordType == "mpr" || f.RecordType == "default" {
-				PERSON++
+			switch f.RecordType {
+			case "mpr":
+				MPR++
+			case "mar":
+				MAR++
+			case "default":
+				DEFAULT++
 			}
 		}
 
@@ -803,11 +813,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Fibers = FiberCount{
-			Person:    PERSON,
+			Person:    DEFAULT + MPR,
 			Dupe:      DUPE,
 			PurgePre:  PURGE1,
 			Purge360:  PURGE2,
 			Throwaway: PURGE1 + PURGE2, //len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
+			Default:   DEFAULT,
+			MAR:       MAR,
+			MPR:       MPR,
 			EDFS:      EDFS,
 			EDFP:      EDFP,
 			EDUS:      EDUS,
