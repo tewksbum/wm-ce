@@ -484,7 +484,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		LogDev(fmt.Sprintf("Fiber Collection: %v", matchedFibers))
+		LogDev(fmt.Sprintf("Fiber Collection: %v, Matched Set Collection: %v", matchedFibers, matchedSets))
+		LogDev(fmt.Sprintf("Expired Sets: %v", expiredSetCollection))
 
 		// get all the Fibers
 		var FiberKeys []*datastore.Key
@@ -544,7 +545,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 
 			MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
-			LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
+			// LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
 		}
 
 		output.MatchKeys = MatchKeysFromFiber
@@ -562,11 +563,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// store the fiber
 	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
-		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
+		log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
 	}
 
 	// stop processing if no new values
 	if !HasNewValues {
+		return nil
+	}
+	if !matchable {
 		return nil
 	}
 
@@ -611,7 +615,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	PopulateSetOutputSignatures(&setDS, output.Signatures)
 	PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
 	if _, err := ds.Put(ctx, setKey, &setDS); err != nil {
-		log.Fatalf("Exception storing set with sig %v, error %v", input.Signature, err)
+		log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 	}
 
 	var goldenDS PeopleGoldenDS
@@ -621,7 +625,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	goldenDS.CreatedAt = output.CreatedAt
 	PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 	if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
-		log.Fatalf("Exception storing golden record with sig %v, error %v", input.Signature, err)
+		log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 	}
 
 	// remove expired sets and setmembers from DS
@@ -637,11 +641,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenKey.Namespace = dsNameSpace
 		GoldenKeys = append(GoldenKeys, goldenKey)
 	}
+	LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
-		log.Fatalf("Error deleting sets: %v", err)
+		log.Printf("Error: deleting expired sets: %v", err)
 	}
 	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
-		log.Fatalf("Error deleting golden records: %v", err)
+		log.Printf("Error: deleting expired golden records: %v", err)
 	}
 
 	// push into pubsub
@@ -656,7 +661,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
 	if err != nil {
-		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
 		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
@@ -757,21 +762,21 @@ func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []stri
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
 func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 }
 
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
