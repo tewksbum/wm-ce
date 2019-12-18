@@ -601,6 +601,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// clear MatchKey if Junk
 		if column.PeopleERR.Junk == 1 {
 			column.MatchKey = ""
+			column.MatchKey1 = ""
+			column.MatchKey2 = ""
+			column.MatchKey3 = ""
 		}
 
 		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
