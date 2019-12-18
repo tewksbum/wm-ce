@@ -71,6 +71,8 @@ type FiberCount struct {
 	Person    int
 	Dupe      int
 	Throwaway int
+	PurgePre  int
+	Purge360  int
 	NDFS      int
 	NDFP      int
 	NDUS      int
@@ -93,11 +95,18 @@ type SetCount struct {
 }
 
 type Record struct {
-	EventType string    `datastore:"Type"`
-	EventID   string    `datastore:"EventID"`
-	RecordID  string    `datastore:"RecordID"`
-	Fields    []KVP     `datastore:"Fields,noindex"`
-	TimeStamp time.Time `datastore:"Created"`
+	EventType     string    `datastore:"Type"`
+	EventID       string    `datastore:"EventID"`
+	RecordID      string    `datastore:"RecordID"`
+	Fields        []KVP     `datastore:"Fields,noindex"`
+	TimeStamp     time.Time `datastore:"Created"`
+	IsPeople      bool      `datastore:"IsPeople"`
+	IsProduct     bool      `datastore:"IsProduct"`
+	IsCampaign    bool      `datastore:"IsCampaign"`
+	IsOrder       bool      `datastore:"IsOrder"`
+	IsConsignment bool      `datastore:"IsConsignment"`
+	IsOrderDetail bool      `datastore:"IsOrderDetail"`
+	IsEvent       bool      `datastore:"IsEvent"`
 }
 
 type Fiber struct {
@@ -552,6 +561,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		DUPE := 0
 		CurrentYear := time.Now().Year()
 
+		PURGE1 := 0
+		PURGE2 := 0
+		for _, r := range records {
+			if !r.IsPeople {
+				PURGE1++
+			}
+		}
+
 		for _, f := range fibers {
 			if f.RecordType == "mar" || f.RecordType == "default" {
 				if f.Disposition == "new" {
@@ -598,7 +615,12 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				isParent = true
 			}
 
-			if f.Disposition == "dupe" {
+			if f.Disposition == "purge" {
+				if f.RecordType == "default" {
+					PURGE2++
+				}
+
+			} else if f.Disposition == "dupe" {
 				if f.RecordType == "default" {
 					DUPE++
 				}
@@ -778,7 +800,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.Fibers = FiberCount{
 			Person:    len(fibers),
 			Dupe:      DUPE,
-			Throwaway: len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
+			PurgePre:  PURGE1,
+			Purge360:  PURGE2,
+			Throwaway: PURGE1 + PURGE2, //len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			EDFS:      EDFS,
 			EDFP:      EDFP,
 			EDUS:      EDUS,
