@@ -866,7 +866,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.City = 1
 	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
 		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip":
+	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
@@ -874,7 +874,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)":
+	case "country", "country (blank for us)", "home_country":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -916,7 +916,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr":
 		err.Junk = 1
 	}
 
@@ -951,7 +951,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "country") {
 		err.ContainsCountry = 1
 	}
-	if strings.Contains(key, "phone") {
+	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
 		err.ContainsPhone = 1
 	}
 	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
