@@ -737,7 +737,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	pubQueue := []PubQueue{}
-	toPubOrNotToPub := false
 	for i, v := range outputs {
 		if i == indexToSkip {
 			continue
@@ -763,13 +762,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		StandardizeAddress(&(v.Output))
 
-		if v.Type == "default" {
-			if len(v.Output.EMAIL.Value) > 0 ||
-				(len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0) ||
-				(len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1NO.Value) > 0 && len(v.Output.ADBOOK.Value) > 0) {
-				toPubOrNotToPub = true
-			}
-		}
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
 			Suffix: suffix,
@@ -777,10 +769,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
-	if toPubOrNotToPub {
-		for _, p := range pubQueue {
-			PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
-		}
+	for _, p := range pubQueue {
+		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
 	}
 	return nil
 }
