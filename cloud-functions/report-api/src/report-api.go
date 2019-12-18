@@ -818,7 +818,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			PurgePre:  PURGE1,
 			Purge360:  PURGE2,
 			Throwaway: PURGE1 + PURGE2, //len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
-			Default:   DEFAULT,
+			Default:   len(recordIDs),
 			MAR:       MAR,
 			MPR:       MPR,
 			EDFS:      EDFS,
