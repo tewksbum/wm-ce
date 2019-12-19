@@ -261,7 +261,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				fields := make(map[string]string)
 				for j, y := range d {
-					fields[headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
+					if len(headers) > j {
+						fields[headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
+					}
 				}
 
 				// // do not append attributes until after record processor, otherwise interferes with NER lookup
