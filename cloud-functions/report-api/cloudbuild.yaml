@@ -4,6 +4,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--allow-unauthenticated",
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
     "--trigger-http", 
