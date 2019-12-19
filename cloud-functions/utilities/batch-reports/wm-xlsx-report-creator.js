@@ -1,7 +1,6 @@
 const request = require("sync-request");
 const fs = require("fs");
 const Excel = require("exceljs");
-// TODO
 function toColumnName(num) {
   for (var ret = "", a = 1, b = 26; (num -= a) >= 0; a = b, b *= 26) {
     ret = String.fromCharCode(parseInt((num % b) / a) + 65) + ret;
@@ -136,7 +135,10 @@ function toColumnName(num) {
   stream.write("[\n");
   let sep = "";
   console.log(`Logging reports on ${logFile}`);
-
+  // const rawData = fs.readFileSync(
+  //   "./logs/xreport-log-2019-12-17T02:53:18.753Z.json"
+  // );
+  // const reportStatic = JSON.parse(rawData);
   // Here we start going through each row
   const worksheet = workBook.getWorksheet(1);
   for (let index = 2; index < worksheet.rowCount; index++) {
@@ -164,7 +166,6 @@ function toColumnName(num) {
     console.log(
       `Getting report for ${currentUL.owner} id ${currentUL.requestId}`
     );
-    // continue;
     // get the report data
     try {
       var res = request("POST", reportURL, { json: reportRequest });
@@ -175,6 +176,13 @@ function toColumnName(num) {
       continue;
     }
 
+    // Debug only
+    // const reportIndex = index - 2;
+    // if (reportIndex < reportStatic.length) {
+    //   var report = reportStatic[reportIndex];
+    // } else {
+    //   continue;
+    // }
     sep = sep === "" ? ",\n" : sep;
     if (report == undefined || report.Columns === null) {
       console.log(`Skipping Empty report for ${currentUL.requestId}`);
@@ -259,6 +267,8 @@ function toColumnName(num) {
   stream.write("\n]", () => {
     stream.end();
   });
+  // interesting empty mapped should be purple
+  // interesting https://docs.google.com/spreadsheets/d/1HsmSh-bWnlQc0S6PXaGsmN0oZvKIsQvORD6VGptcbJA/edit?folder=1bj5glGr_Il1kb6kVRyuRCthlvQDjuk3j#gid=0
   const MapBlacklist = ["FINITIAL", "ADTYPE", "ADBOOK", "ZIP5"];
   const whiteList = [
     "ZIP,ZIP5",
@@ -267,7 +277,9 @@ function toColumnName(num) {
     "FNAME,FINITIAL",
     "TITLE,STATUS"
   ];
-  console.log(`Ignoring ${MapBlacklist} for the mapped coloring`);
+  const commonMatch = {
+    LNAME: ["last name", "name last", "lastname", "last"]
+  };
   ACDSheet.getRow(1).values = [];
   //Set ACD merge columns logic
   let columncounter = 1;
@@ -306,6 +318,12 @@ function toColumnName(num) {
         cell.fill = undefined;
         return;
       }
+      const inWhiteList = whiteList.indexOf(cell.value) > -1;
+      // Make it white if its on the whitelist list.
+      if (inWhiteList) {
+        cell.fill = undefined;
+        return;
+      }
       //Paint the cell red if mapped has more than one element ignoring the blacklist
       mapped = cell.value.split(",").filter(function(el) {
         return MapBlacklist.indexOf(el) < 0;
@@ -324,6 +342,12 @@ function toColumnName(num) {
       const NameMappedmatches = cell.value.match(new RegExp(name, "g"));
       const MappedNamematches = name.match(new RegExp(cell.value, "g"));
       // If the name is not in the cell paint it yellow
+      if (commonMatch[cell.value]) {
+        const allowed = commonMatch[cell.value].indexOf(name.toLowerCase());
+        if (allowed > -1) {
+          return;
+        }
+      }
       if (NameMappedmatches === null && MappedNamematches === null) {
         cell.fill = {
           type: "pattern",
@@ -331,11 +355,6 @@ function toColumnName(num) {
           fgColor: { argb: "FFFF99" }
         };
         return;
-      }
-      const inWhiteList = whiteList.indexOf(cell.value) > -1;
-      //white
-      if (inWhiteList) {
-        cell.fill = undefined;
       }
     });
   }
