@@ -392,42 +392,42 @@ func init() {
 	listChannels = map[string]bool{"tablet": true, "mobile": true, "desktop": true}
 	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCities), "data/cities.json")
 	}
 
 	listStates, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/states.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/states.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/states.json")
 	} else {
 		log.Printf("read %v values from %v", len(listStates), "data/states.json")
 	}
 
 	listCountries, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/countries.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCountries), "data/countries.json")
 	}
 
 	listFirstNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/first_names.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listFirstNames), "data/first_names.json")
 	}
 
 	listLastNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/last_names.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
 	}
 
 	listCityStateZip, err = ReadCityStateZip(ctx, cs, AIDataBucket, "data/zip_city_state.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/zip_city_state.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/zip_city_state.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip_city_state.json")
 	}
@@ -862,6 +862,8 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
+	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
+		err.Address1 = 1
 	case "city", "city ", "street city":
 		err.City = 1
 	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
