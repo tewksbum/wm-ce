@@ -868,7 +868,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.City = 1
 	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
 		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip":
+	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
@@ -901,7 +901,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name":
+	case "fullname", "full name", "student name", "students name", "application: applicant":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -914,7 +914,7 @@ func GetPeopleERR(column string) PeopleERR {
 	case "title", "course year", "grad date", "class", "grade", "admit status", "student type", "studenttype", "yr_cde":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
