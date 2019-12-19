@@ -4,11 +4,12 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--allow-unauthenticated", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "30",
+    "--timeout", "120",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
