@@ -868,7 +868,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.City = 1
 	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
 		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode":
+	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
