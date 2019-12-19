@@ -347,143 +347,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	dsKey.Namespace = dsNameSpace
 	dsFiber.ID = dsKey
 
-	// locate existing set
-	if len(input.Signature.RecordID) == 0 {
-		// ensure record id is not blank or we'll have problem
-		input.Signature.RecordID = uuid.New().String()
-	}
-	MatchByValue0 := input.Signature.RecordID
-
-	MatchByKey1 := "TRUSTEDID"
-	MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", `''`, -1)
-
-	MatchByKey2 := "EMAIL"
-	MatchByValue2 := strings.Replace(input.MatchKeys.EMAIL.Value, "'", `''`, -1)
-
-	MatchByKey3A := "PHONE"
-	MatchByValue3A := strings.Replace(input.MatchKeys.PHONE.Value, "'", `''`, -1)
-	MatchByKey3B := "FINITIAL"
-	MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
-
-	MatchByKey5A := "CITY"
-	MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", `''`, -1)
-	MatchByKey5B := "STATE"
-	MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", `''`, -1)
-	MatchByKey5C := "LNAME"
-	MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey5D := "FNAME"
-	MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
-	MatchByKey5E := "AD1NO"
-	MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
-	MatchByKey5F := "ADBOOK"
-	MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
-
-	matchedSets := []PeopleSetDS{}
-	queriedSets := []PeopleSetDS{}
-	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
-	if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-		log.Fatalf("Error querying sets query 1: %v", err)
-	} else {
-		for _, s := range queriedSets {
-			matchedSets = append(matchedSets, s)
-		}
-		LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
-	}
-	if len(MatchByValue1) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-			LogDev(fmt.Sprintf("Matched %v sets with condition 2", len(queriedSets)))
-		}
-	}
-	if len(MatchByValue2) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-			LogDev(fmt.Sprintf("Matched %v sets with condition 3", len(queriedSets)))
-		}
-	}
-	if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-			Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
-			Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-			LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
-		}
-	}
-	if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
-		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-			Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
-			Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
-			Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
-			Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
-			Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E)).
-			Filter(strings.ToLower(MatchByKey5F)+"normalized =", strings.ToUpper(MatchByValue5F))
-		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
-			log.Fatalf("Error querying sets query 1: %v", err)
-		} else {
-			for _, s := range queriedSets {
-				matchedSets = append(matchedSets, s)
-			}
-			LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
+	matchable := false
+	if input.Signature.RecordType == "default" {
+		if len(input.MatchKeys.EMAIL.Value) > 0 ||
+			(len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0) ||
+			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADBOOK.Value) > 0) {
+			matchable = true
 		}
 	} else {
-		LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E, MatchByValue5F))
+		// MAR and MPR are matchable always
+		matchable = true
 	}
 
-	var matchedFibers []string
-	var expiredSetCollection []string
-	for _, s := range matchedSets {
-		if !Contains(expiredSetCollection, s.ID.Name) {
-			expiredSetCollection = append(expiredSetCollection, s.ID.Name)
-		}
-		if len(s.Fibers) > 0 {
-			for _, f := range s.Fibers {
-				if !Contains(matchedFibers, f) {
-					matchedFibers = append(matchedFibers, f)
-				}
-			}
-		}
-	}
-
-	LogDev(fmt.Sprintf("Fiber Collection: %v", matchedFibers))
-
-	// get all the Fibers
-
-	var FiberKeys []*datastore.Key
-	var Fibers []PeopleFiberDS
-	for _, fiber := range matchedFibers {
-		dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
-		dsFiberGetKey.Namespace = dsNameSpace
-		FiberKeys = append(FiberKeys, dsFiberGetKey)
-		Fibers = append(Fibers, PeopleFiberDS{})
-	}
-	if len(FiberKeys) > 0 {
-		if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
-			log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
-		}
-	}
-
-	// sort by createdAt desc
-	sort.Slice(Fibers, func(i, j int) bool {
-		return Fibers[i].CreatedAt.After(Fibers[j].CreatedAt)
-	})
-
-	LogDev(fmt.Sprintf("Fibers: %v", Fibers))
-
+	HasNewValues := false
 	var output People360Output
 	var FiberSignatures []Signature
 	output.ID = uuid.New().String()
@@ -493,49 +369,191 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	for _, name := range MatchKeyList {
 		FiberMatchKeys[name] = []string{}
 	}
-	for i, fiber := range Fibers {
-		LogDev(fmt.Sprintf("loaded fiber %v of %v: %v", i, len(Fibers), fiber))
-		FiberSignatures = append(FiberSignatures, Signature{
-			OwnerID:   fiber.OwnerID,
-			Source:    fiber.Source,
-			EventType: fiber.EventType,
-			EventID:   fiber.EventID,
-			RecordID:  fiber.RecordID,
+	var matchedFibers []string
+	var expiredSetCollection []string
+
+	if matchable {
+		// locate existing set
+		if len(input.Signature.RecordID) == 0 {
+			// ensure record id is not blank or we'll have problem
+			input.Signature.RecordID = uuid.New().String()
+		}
+		MatchByValue0 := input.Signature.RecordID
+
+		MatchByKey1 := "TRUSTEDID"
+		MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", `''`, -1)
+
+		MatchByKey2 := "EMAIL"
+		MatchByValue2 := strings.Replace(input.MatchKeys.EMAIL.Value, "'", `''`, -1)
+
+		MatchByKey3A := "PHONE"
+		MatchByValue3A := strings.Replace(input.MatchKeys.PHONE.Value, "'", `''`, -1)
+		MatchByKey3B := "FINITIAL"
+		MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
+
+		MatchByKey5A := "CITY"
+		MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", `''`, -1)
+		MatchByKey5B := "STATE"
+		MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", `''`, -1)
+		MatchByKey5C := "LNAME"
+		MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
+		MatchByKey5D := "FNAME"
+		MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
+		MatchByKey5E := "AD1NO"
+		MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
+		MatchByKey5F := "ADBOOK"
+		MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
+
+		matchedSets := []PeopleSetDS{}
+		queriedSets := []PeopleSetDS{}
+
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
+		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			log.Fatalf("Error querying sets query 1: %v", err)
+		} else {
+			for _, s := range queriedSets {
+				matchedSets = append(matchedSets, s)
+			}
+			LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
+		}
+		if len(MatchByValue1) > 0 {
+			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
+			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				log.Fatalf("Error querying sets query 1: %v", err)
+			} else {
+				for _, s := range queriedSets {
+					matchedSets = append(matchedSets, s)
+				}
+				LogDev(fmt.Sprintf("Matched %v sets with condition 2", len(queriedSets)))
+			}
+		}
+		if len(MatchByValue2) > 0 {
+			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
+			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				log.Fatalf("Error querying sets query 1: %v", err)
+			} else {
+				for _, s := range queriedSets {
+					matchedSets = append(matchedSets, s)
+				}
+				LogDev(fmt.Sprintf("Matched %v sets with condition 3", len(queriedSets)))
+			}
+		}
+		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+				Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
+				Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
+			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				log.Fatalf("Error querying sets query 1: %v", err)
+			} else {
+				for _, s := range queriedSets {
+					matchedSets = append(matchedSets, s)
+				}
+				LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
+			}
+		}
+		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
+			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+				Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
+				Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
+				Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
+				Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
+				Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E)).
+				Filter(strings.ToLower(MatchByKey5F)+"normalized =", strings.ToUpper(MatchByValue5F))
+			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				log.Fatalf("Error querying sets query 1: %v", err)
+			} else {
+				for _, s := range queriedSets {
+					matchedSets = append(matchedSets, s)
+				}
+				LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
+			}
+		} else {
+			LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E, MatchByValue5F))
+		}
+
+		for _, s := range matchedSets {
+			if !Contains(expiredSetCollection, s.ID.Name) {
+				expiredSetCollection = append(expiredSetCollection, s.ID.Name)
+			}
+			if len(s.Fibers) > 0 {
+				for _, f := range s.Fibers {
+					if !Contains(matchedFibers, f) {
+						matchedFibers = append(matchedFibers, f)
+					}
+				}
+			}
+		}
+
+		LogDev(fmt.Sprintf("Fiber Collection: %v, Matched Set Collection: %v", matchedFibers, matchedSets))
+		LogDev(fmt.Sprintf("Expired Sets: %v", expiredSetCollection))
+
+		// get all the Fibers
+		var FiberKeys []*datastore.Key
+		var Fibers []PeopleFiberDS
+		for _, fiber := range matchedFibers {
+			dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
+			dsFiberGetKey.Namespace = dsNameSpace
+			FiberKeys = append(FiberKeys, dsFiberGetKey)
+			Fibers = append(Fibers, PeopleFiberDS{})
+		}
+		if len(FiberKeys) > 0 {
+			if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
+				log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
+			}
+		}
+
+		// sort by createdAt desc
+		sort.Slice(Fibers, func(i, j int) bool {
+			return Fibers[i].CreatedAt.After(Fibers[j].CreatedAt)
 		})
 
+		LogDev(fmt.Sprintf("Fibers: %v", Fibers))
+
+		for i, fiber := range Fibers {
+			LogDev(fmt.Sprintf("loaded fiber %v of %v: %v", i, len(Fibers), fiber))
+			FiberSignatures = append(FiberSignatures, Signature{
+				OwnerID:   fiber.OwnerID,
+				Source:    fiber.Source,
+				EventType: fiber.EventType,
+				EventID:   fiber.EventID,
+				RecordID:  fiber.RecordID,
+			})
+
+			for _, name := range MatchKeyList {
+				value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
+				if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
+					FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
+				}
+			}
+			LogDev(fmt.Sprintf("FiberMatchKey values %v", FiberMatchKeys))
+		}
+		var MatchKeysFromFiber []MatchKey360
+
+		// check to see if there are any new values
 		for _, name := range MatchKeyList {
-			value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
-			if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
-				FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
+			mk360 := MatchKey360{
+				Key:    name,
+				Values: FiberMatchKeys[name],
 			}
-		}
-		LogDev(fmt.Sprintf("FiberMatchKey values %v", FiberMatchKeys))
-	}
-	var MatchKeysFromFiber []MatchKey360
 
-	HasNewValues := false
-	// check to see if there are any new values
-	for _, name := range MatchKeyList {
-		mk360 := MatchKey360{
-			Key:    name,
-			Values: FiberMatchKeys[name],
-		}
-
-		newValue := strings.TrimSpace(GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value)
-		if len(newValue) > 0 {
-			if !Contains(mk360.Values, newValue) {
-				LogDev(fmt.Sprintf("new values found %v, %v for key %v, chars are %v", mk360.Values, newValue, name, ToAsciiArray(newValue)))
-				HasNewValues = true
+			newValue := strings.TrimSpace(GetMatchKeyFieldFromStruct(&input.MatchKeys, name).Value)
+			if len(newValue) > 0 {
+				if !Contains(mk360.Values, newValue) {
+					LogDev(fmt.Sprintf("new values found %v, %v for key %v, chars are %v", mk360.Values, newValue, name, ToAsciiArray(newValue)))
+					HasNewValues = true
+				}
 			}
+
+			MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
+			// LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
 		}
 
-		MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
-		LogDev(fmt.Sprintf("mk.Values %v: %v", name, FiberMatchKeys[name]))
+		output.MatchKeys = MatchKeysFromFiber
+
 	}
-
-	output.MatchKeys = MatchKeysFromFiber
-
-	if len(matchedFibers) == 0 {
+	if !matchable {
+		dsFiber.Disposition = "purge"
+	} else if len(matchedFibers) == 0 {
 		dsFiber.Disposition = "new"
 	} else if !HasNewValues {
 		dsFiber.Disposition = "dupe"
@@ -545,11 +563,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	// store the fiber
 	if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
-		log.Fatalf("Exception storing Fiber sig %v, error %v", input.Signature, err)
+		log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
 	}
 
 	// stop processing if no new values
 	if !HasNewValues {
+		return nil
+	}
+	if !matchable {
 		return nil
 	}
 
@@ -594,7 +615,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	PopulateSetOutputSignatures(&setDS, output.Signatures)
 	PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
 	if _, err := ds.Put(ctx, setKey, &setDS); err != nil {
-		log.Fatalf("Exception storing set with sig %v, error %v", input.Signature, err)
+		log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 	}
 
 	var goldenDS PeopleGoldenDS
@@ -604,7 +625,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	goldenDS.CreatedAt = output.CreatedAt
 	PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 	if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
-		log.Fatalf("Exception storing golden record with sig %v, error %v", input.Signature, err)
+		log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 	}
 
 	// remove expired sets and setmembers from DS
@@ -620,11 +641,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenKey.Namespace = dsNameSpace
 		GoldenKeys = append(GoldenKeys, goldenKey)
 	}
+	LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
 	if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
-		log.Fatalf("Error deleting sets: %v", err)
+		log.Printf("Error: deleting expired sets: %v", err)
 	}
 	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
-		log.Fatalf("Error deleting golden records: %v", err)
+		log.Printf("Error: deleting expired golden records: %v", err)
 	}
 
 	// push into pubsub
@@ -639,7 +661,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	psid, err := psresult.Get(ctx)
 	_, err = psresult.Get(ctx)
 	if err != nil {
-		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
 		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
@@ -740,21 +762,21 @@ func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []stri
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
 func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 }
 
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {

@@ -495,7 +495,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_EMAIL"))
 			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
 				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
-				if len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1")) { // only handle US phone format
+				if column.PeopleERR.Phone == 1 && (len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1"))) { // only handle US phone format
 					column.MatchKey1 = "PHONE"
 					LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_PHONE && len(column.Value) >= 10"))
 				}
@@ -601,6 +601,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// clear MatchKey if Junk
 		if column.PeopleERR.Junk == 1 {
 			column.MatchKey = ""
+			column.MatchKey1 = ""
+			column.MatchKey2 = ""
+			column.MatchKey3 = ""
 		}
 
 		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
@@ -737,7 +740,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	pubQueue := []PubQueue{}
-	toPubOrNotToPub := false
 	for i, v := range outputs {
 		if i == indexToSkip {
 			continue
@@ -763,13 +765,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		StandardizeAddress(&(v.Output))
 
-		if v.Type == "default" {
-			if len(v.Output.EMAIL.Value) > 0 ||
-				(len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0) ||
-				(len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1NO.Value) > 0 && len(v.Output.ADBOOK.Value) > 0) {
-				toPubOrNotToPub = true
-			}
-		}
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
 			Suffix: suffix,
@@ -777,10 +772,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
-	if toPubOrNotToPub {
-		for _, p := range pubQueue {
-			PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
-		}
+	for _, p := range pubQueue {
+		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
 	}
 	return nil
 }
