@@ -22,6 +22,7 @@ import (
 	"github.com/fatih/structs"
 )
 
+// foo
 // PubSubMessage is the payload of a pubsub event
 type PubSubMessage struct {
 	Data []byte `json:"data"`
