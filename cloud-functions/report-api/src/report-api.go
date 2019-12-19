@@ -813,7 +813,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.ProcessedOn = minTime
 
 		report.Fibers = FiberCount{
-			Person:    DEFAULT + MPR,
+			Person:    len(recordIDs) + MPR,
 			Dupe:      DUPE,
 			PurgePre:  PURGE1,
 			Purge360:  PURGE2,
