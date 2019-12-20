@@ -326,7 +326,7 @@ var PSOrder = os.Getenv("PSOUTPUTORDER")
 var PSConsignment = os.Getenv("PSOUTPUTCONSIGNMENT")
 var PSOrderDetail = os.Getenv("PSOUTPUTORDERDETAIL")
 var Env = os.Getenv("ENVIRONMENT")
-var dev = os.Getenv("ENVIRONMENT") == "dev"
+var dev = Env == "dev"
 var DSKind = os.Getenv("DSKIND")
 
 var MLUrl = os.Getenv("PREDICTION")
@@ -440,9 +440,10 @@ func init() {
 func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
 	if len(input.Fields) > 0 {
 		for k, v := range input.Fields {
 			input.Fields[k] = strings.TrimSpace(v)
@@ -1491,4 +1492,10 @@ func ToKVPSlice(v *map[string]string) []KVP {
 		})
 	}
 	return result
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }
