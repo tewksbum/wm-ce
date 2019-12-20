@@ -494,7 +494,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var output interface{}
 	columns := make(map[string]ColumnStat)
 	columnMaps := make(map[string][]string)
-
+	PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 	if strings.EqualFold(input.ReportType, "file") {
 		report := FileReport{
 			RequestID: input.RequestID,
@@ -569,8 +569,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		// 	}
 		// }
-
-		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 
 		NDFS := 0 // new domestic freshmen student
 		NDFP := 0 // new domestic freshmen parent
@@ -937,6 +935,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fiberCount := 0
 			marFiberCount := 0
 			mprFiberCount := 0
+
+			columnMaps := make(map[string][]string)
 			if _, ok := fibermap[r.RecordID]; ok {
 				fiberCount = len(fibermap[r.RecordID])
 				for _, f := range fibermap[r.RecordID] {
@@ -946,45 +946,72 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					case "mpr":
 						mprFiberCount++
 					}
+
+					for _, m := range PeopleMatchKeyNames {
+						mk := GetMatchKeyFieldFromFiberByName(&f, m)
+						columnTarget := []string{m}
+						source := mk.Source
+						if len(mk.Source) > 0 {
+							if val, ok := columnMaps[source]; ok {
+								columnTarget = val
+								if !Contains(columnTarget, m) {
+									target := m
+									if f.RecordType == "mar" || f.RecordType == "mpr" {
+										target = f.RecordType + " " + m
+									}
+									columnTarget = append(columnTarget, target)
+
+								}
+							}
+							columnMaps[source] = columnTarget
+						}
+					}
 				}
+
 			}
 			row = append(row, fiberCount)
 			row = append(row, marFiberCount)
 			row = append(row, mprFiberCount)
 
+			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
 				for _, f := range r.Fields {
-					report.GridHeader = append(report.GridHeader, "R."+f.Key)
+					headers = append(headers, "R."+f.Key)
 				}
-				sort.Strings(report.GridHeader)
+				sort.Strings(headers)
+			}
+			for _, h := range headers {
+				report.GridHeader = append(report.GridHeader, h)
+				report.GridHeader = append(report.GridHeader, "MappedTo")
 			}
 			values := make(map[string]string)
+			mapped := make(map[string]string)
+
 			for _, f := range r.Fields {
 				values["R."+f.Key] = f.Value
-				name := strings.ToUpper(f.Key)
-				value := strings.TrimSpace(f.Value)
-				stat := ColumnStat{Name: name}
-				if val, ok := columns[name]; ok {
-					stat = val
+				if val, ok := columnMaps[f.Key]; ok {
+					mapped["R."+f.Key] = strings.Join(val, ", ")
+				} else {
+					mapped["R."+f.Key] = ""
 				}
-				if len(value) > 0 {
-					stat.Sparsity++
-					if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
-						stat.Min = value
-					}
-					if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
-						stat.Max = value
-					}
-				}
-
-				columns[name] = stat
 			}
-			for _, f := range report.GridHeader {
+			for c, f := range report.GridHeader {
+				if c < 8 { // skip first 8 columns
+					continue
+				}
 				if val, ok := values[f]; ok {
 					row = append(row, val)
 				} else {
 					row = append(row, "")
 				}
+
+				// append mapped
+				if val, ok := mapped[f]; ok {
+					row = append(row, val)
+				} else {
+					row = append(row, "")
+				}
+
 			}
 			grid = append(grid, row)
 		}
