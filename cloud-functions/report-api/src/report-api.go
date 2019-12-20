@@ -919,7 +919,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "MARFiberCount", "MPRFiberCount"}
+		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
 
 		var grid [][]interface{}
 		summary.RowCount = len(records)
@@ -935,6 +935,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fiberCount := 0
 			marFiberCount := 0
 			mprFiberCount := 0
+			defaultFiberCount := 0
 
 			columnMaps := make(map[string][]string)
 			if _, ok := fibermap[r.RecordID]; ok {
@@ -945,6 +946,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						marFiberCount++
 					case "mpr":
 						mprFiberCount++
+					case "default":
+						defaultFiberCount++
 					}
 
 					for _, m := range PeopleMatchKeyNames {
@@ -972,6 +975,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			row = append(row, fiberCount)
 			row = append(row, marFiberCount)
 			row = append(row, mprFiberCount)
+			row = append(row, defaultFiberCount)
 
 			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
@@ -996,7 +1000,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			for c, f := range report.GridHeader {
-				if c < 8 { // skip first 8 columns
+				if c < 9 { // skip first 8 columns
 					continue
 				}
 				if val, ok := values[f]; ok {
