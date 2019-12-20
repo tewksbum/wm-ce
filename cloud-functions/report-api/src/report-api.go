@@ -952,14 +952,17 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			row = append(row, marFiberCount)
 			row = append(row, mprFiberCount)
 
-			for _, f := range r.Fields {
-				if i == 0 {
-					// append the header
+			if len(r.Fields) > 0 && i == 0 {
+				for _, f := range r.Fields {
 					report.GridHeader = append(report.GridHeader, "R."+f.Key)
 				}
+				sort.Strings(report.GridHeader)
+			}
+			values := make(map[string]string)
+			for _, f := range r.Fields {
+				values["R."+f.Key] = f.Value
 				name := strings.ToUpper(f.Key)
 				value := strings.TrimSpace(f.Value)
-				row = append(row, f.Value)
 				stat := ColumnStat{Name: name}
 				if val, ok := columns[name]; ok {
 					stat = val
@@ -975,6 +978,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 				columns[name] = stat
+			}
+			for _, f := range report.GridHeader {
+				if val, ok := values[f]; ok {
+					row = append(row, val)
+				} else {
+					row = append(row, "")
+				}
+
 			}
 			grid = append(grid, row)
 		}
