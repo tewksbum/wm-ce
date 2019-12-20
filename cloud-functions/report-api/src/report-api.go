@@ -882,7 +882,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		var summary DetailSummary
 		report.Summary = summary
-		if _, err := ds.GetAll(ctx, datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1), &requests); err != nil {
+
+		query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
+
+		if _, err := ds.GetAll(ctx, query, &requests); err != nil {
 			log.Fatalf("Error querying event: %v", err)
 			return
 		} else if len(requests) > 0 {
@@ -895,9 +898,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			summary.Attributes = ToMap(request.Attributes)
 		}
 
-		// var sets []PeopleSet
-		// var setIDs []string
-		// var golden []PeopleGolden
+		log.Printf("Found %v matching events", len(requests))
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
