@@ -985,7 +985,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				} else {
 					row = append(row, "")
 				}
-
 			}
 			grid = append(grid, row)
 		}
