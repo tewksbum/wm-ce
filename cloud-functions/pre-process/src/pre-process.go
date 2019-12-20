@@ -731,6 +731,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		EventID:       input.Signature.EventID,
 		EventType:     input.Signature.EventType,
 		RecordID:      input.Signature.RecordID,
+		RowNumber:     input.Signature.RowNumber,
 		Fields:        ToKVPSlice(&input.Fields),
 		TimeStamp:     time.Now(),
 		IsPeople:      flags.People,
