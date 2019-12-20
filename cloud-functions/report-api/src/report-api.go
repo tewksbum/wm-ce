@@ -33,13 +33,17 @@ type Customer struct {
 }
 
 type Event struct {
-	CustomerID string
-	Owner      string
-	EventID    string
-	EventType  string
-	Status     string
-	Created    time.Time
-	Endpoint   string
+	CustomerID  string
+	Owner       string
+	EventID     string
+	EventType   string
+	Source      string
+	Status      string
+	Created     time.Time
+	Endpoint    string
+	Passthrough []KVP
+	Attributes  []KVP
+	Detail      string
 }
 
 type FileReport struct {
@@ -50,6 +54,35 @@ type FileReport struct {
 	ProcessedOn time.Time
 	PcocessTime string
 	Fibers      FiberCount
+}
+
+type DetailReport struct {
+	Summary     DetailSummary
+	GridHeader  []string
+	GridRecords [][]interface{}
+}
+
+type DetailSummary struct {
+	EventType   string
+	EventID     string
+	Owner       string
+	Source      string
+	Attributes  map[string]string
+	FileURL     string
+	RowCount    int
+	ColumnCount int
+}
+
+type DetailRecord struct {
+	RecordID  string
+	RowNumber int
+	TimeStamp time.Time
+	IsPeople  bool
+	Record    []interface{}
+	Fibers    [][]interface{}
+}
+
+type RecordField struct {
 }
 
 type OwnerReport struct {
@@ -101,6 +134,7 @@ type Record struct {
 	EventType     string    `datastore:"Type"`
 	EventID       string    `datastore:"EventID"`
 	RecordID      string    `datastore:"RecordID"`
+	RowNumber     int       `datastore:"RowNo"`
 	Fields        []KVP     `datastore:"Fields,noindex"`
 	TimeStamp     time.Time `datastore:"Created"`
 	IsPeople      bool      `datastore:"IsPeople"`
@@ -839,6 +873,103 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			NIUP:      NIUP,
 		}
 		output = report
+	} else if strings.EqualFold(input.ReportType, "detail") {
+		report := DetailReport{}
+		var records []Record
+		var fibers []Fiber
+		var requests []Event
+		var request Event
+
+		var summary DetailSummary
+		report.Summary = summary
+		if _, err := ds.GetAll(ctx, datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1), &requests); err != nil {
+			log.Fatalf("Error querying event: %v", err)
+			return
+		} else if len(requests) > 0 {
+			request = requests[0]
+			summary.EventType = request.EventType
+			summary.EventID = request.EventID
+			summary.Owner = request.Owner
+			summary.Source = request.Source
+			summary.FileURL = request.Detail
+			summary.Attributes = ToMap(request.Attributes)
+		}
+
+		// var sets []PeopleSet
+		// var setIDs []string
+		// var golden []PeopleGolden
+
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
+			log.Fatalf("Error querying records: %v", err)
+			return
+		}
+		log.Printf("records retrieved: %v", len(records))
+
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+
+		// organize fibers by record
+		fibermap := make(map[string][]Fiber)
+
+		for _, f := range fibers {
+			recordID := Left(f.RecordID, 36)
+			if _, ok := fibermap[recordID]; ok {
+
+			} else {
+				fibermap[recordID] = []Fiber{}
+			}
+			fibermap[recordID] = append(fibermap[recordID], f)
+		}
+
+		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "FiberCount"}
+
+		var grid [][]interface{}
+		summary.RowCount = len(records)
+		columns := make(map[string]ColumnStat)
+		for i, r := range records {
+
+			var row []interface{}
+			row = append(row, r.RecordID)
+			row = append(row, r.RowNumber)
+			row = append(row, r.TimeStamp)
+			row = append(row, r.IsPeople)
+			fiberCount := 0
+			if _, ok := fibermap[r.RecordID]; ok {
+				fiberCount = len(fibermap[r.RecordID])
+			}
+			row = append(row, fiberCount)
+
+			for _, f := range r.Fields {
+				if i == 0 {
+					// append the header
+					report.GridHeader = append(report.GridHeader, "R."+f.Key)
+				}
+				name := strings.ToUpper(f.Key)
+				value := strings.TrimSpace(f.Value)
+				row = append(row, f.Value)
+				stat := ColumnStat{Name: name}
+				if val, ok := columns[name]; ok {
+					stat = val
+				}
+				if len(value) > 0 {
+					stat.Sparsity++
+					if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+						stat.Min = value
+					}
+					if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+						stat.Max = value
+					}
+				}
+
+				columns[name] = stat
+			}
+			grid = append(grid, row)
+		}
+		summary.ColumnCount = len(columns)
+		report.GridRecords = grid
+		output = report
 	} else {
 		report := OwnerReport{}
 
@@ -846,6 +977,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	outputJSON, _ := json.Marshal(output)
 	fmt.Fprintf(w, string(outputJSON))
+}
+
+func ToMap(v []KVP) map[string]string {
+	result := make(map[string]string)
+	for _, kvp := range v {
+		result[kvp.Key] = kvp.Value
+	}
+	return result
 }
 
 func GetMatchKeyFieldFromFiberByName(v *Fiber, field string) MatchKeyField {
