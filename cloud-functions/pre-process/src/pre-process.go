@@ -60,6 +60,7 @@ type RecordDS struct {
 	EventType     string    `datastore:"Type"`
 	EventID       string    `datastore:"EventID"`
 	RecordID      string    `datastore:"RecordID"`
+	RowNumber     int       `datastore:"RowNo"`
 	Fields        []KVP     `datastore:"Fields,noindex"`
 	TimeStamp     time.Time `datastore:"Created"`
 	IsPeople      bool      `datastore:"IsPeople"`
