@@ -1066,7 +1066,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		output = report
 	}
-	outputJSON, _ := json.Marshal(output)
+	outputJSON, err := json.Marshal(output)
+	if err != nil {
+		log.Fatalf("Error writing json %v", err)
+	}
 	fmt.Fprintf(w, string(outputJSON))
 }
 
