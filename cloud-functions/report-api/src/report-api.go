@@ -58,8 +58,8 @@ type FileReport struct {
 
 type DetailReport struct {
 	Summary     DetailSummary
-	GridHeader  []string
 	GridRecords [][]interface{}
+	GridFibers  [][]interface{}
 }
 
 type DetailSummary struct {
@@ -900,6 +900,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Printf("records retrieved: %v", len(records))
+		// sort records
+		sort.Slice(records, func(i, j int) bool {
+			return records[i].RowNumber < records[j].RowNumber
+		})
 
 		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
@@ -919,19 +923,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
-
-		var grid [][]interface{}
+		recordHeader := []interface{}{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
+		fiberHeader := []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"}
+		for _, k := range PeopleMatchKeyNames {
+			fiberHeader = append(fiberHeader, k)
+		}
+		var gridRecord [][]interface{}
+		var gridFiber [][]interface{}
 		summary.RowCount = len(records)
 		columns := make(map[string]ColumnStat)
-		for i, r := range records {
 
-			var row []interface{}
-			row = append(row, r.RecordID)
-			row = append(row, r.RowNumber)
-			row = append(row, r.TimeStamp)
-			row = append(row, r.IsPeople)
-			row = append(row, r.MLError)
+		for i, r := range records {
+			var rowRecord []interface{}
+			rowRecord = append(rowRecord, r.RecordID)
+			rowRecord = append(rowRecord, r.RowNumber)
+			rowRecord = append(rowRecord, r.TimeStamp)
+			rowRecord = append(rowRecord, r.IsPeople)
+			rowRecord = append(rowRecord, r.MLError)
+
 			fiberCount := 0
 			marFiberCount := 0
 			mprFiberCount := 0
@@ -940,7 +949,29 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			columnMaps := make(map[string][]string)
 			if _, ok := fibermap[r.RecordID]; ok {
 				fiberCount = len(fibermap[r.RecordID])
-				for _, f := range fibermap[r.RecordID] {
+				sort.Slice(fibermap[r.RecordID], func(i int, j int) bool {
+					return strings.Compare(fibermap[r.RecordID][i].RecordType, fibermap[r.RecordID][j].RecordType) > 0
+				})
+				for j, f := range fibermap[r.RecordID] {
+					var rowFiber []interface{}
+					if j == 0 {
+						rowFiber = append(rowFiber, r.RecordID)
+						rowFiber = append(rowFiber, r.RowNumber)
+
+					} else {
+						rowFiber = append(rowFiber, "")
+						rowFiber = append(rowFiber, "")
+					}
+					rowFiber = append(rowFiber, j+1)
+					rowFiber = append(rowFiber, f.ID)
+					rowFiber = append(rowFiber, f.CreatedAt)
+					rowFiber = append(rowFiber, f.RecordType)
+					rowFiber = append(rowFiber, f.Disposition)
+
+					for _, k := range PeopleMatchKeyNames {
+						rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k))
+					}
+					gridFiber = append(gridFiber, rowFiber)
 					switch f.RecordType {
 					case "mar":
 						marFiberCount++
@@ -972,56 +1003,63 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
-			row = append(row, fiberCount)
-			row = append(row, marFiberCount)
-			row = append(row, mprFiberCount)
-			row = append(row, defaultFiberCount)
-
+			rowRecord = append(rowRecord, fiberCount)
+			rowRecord = append(rowRecord, marFiberCount)
+			rowRecord = append(rowRecord, mprFiberCount)
+			rowRecord = append(rowRecord, defaultFiberCount)
 			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
 				for _, f := range r.Fields {
-					headers = append(headers, "R."+f.Key)
+					headers = append(headers, f.Key)
 				}
 				sort.Strings(headers)
 			}
 			for _, h := range headers {
-				report.GridHeader = append(report.GridHeader, h)
-				report.GridHeader = append(report.GridHeader, "MappedTo")
+				recordHeader = append(recordHeader, h)
+				recordHeader = append(recordHeader, "MappedTo")
 			}
 			values := make(map[string]string)
 			mapped := make(map[string]string)
 
 			for _, f := range r.Fields {
-				values["R."+f.Key] = f.Value
+				values[f.Key] = f.Value
 				if val, ok := columnMaps[f.Key]; ok {
-					mapped["R."+f.Key] = strings.Join(val, ", ")
+					mapped[f.Key] = strings.Join(val, ", ")
 				} else {
-					mapped["R."+f.Key] = ""
+					mapped[f.Key] = ""
 				}
 			}
-			for c, f := range report.GridHeader {
+			for c, f := range recordHeader {
 				if c < 9 { // skip first 8 columns
 					continue
 				}
-				if val, ok := values[f]; ok {
-					row = append(row, val)
+				if val, ok := values[f.(string)]; ok {
+					rowRecord = append(rowRecord, val)
 				} else {
-					row = append(row, "")
+					rowRecord = append(rowRecord, "")
 				}
 
 				// append mapped
-				if val, ok := mapped[f]; ok {
-					row = append(row, val)
+				if val, ok := mapped[f.(string)]; ok {
+					rowRecord = append(rowRecord, val)
 				} else {
-					row = append(row, "")
+					rowRecord = append(rowRecord, "")
 				}
 
 			}
-			grid = append(grid, row)
+			gridRecord = append(gridRecord, rowRecord)
 		}
 		summary.ColumnCount = len(columns)
 		report.Summary = summary
-		report.GridRecords = grid
+		report.GridRecords = append(report.GridRecords, recordHeader)
+		report.GridFibers = append(report.GridFibers, fiberHeader)
+		for _, r := range gridRecord {
+			report.GridRecords = append(report.GridRecords, r)
+		}
+
+		for _, r := range gridFiber {
+			report.GridFibers = append(report.GridFibers, r)
+		}
 		output = report
 	} else {
 		report := OwnerReport{}
