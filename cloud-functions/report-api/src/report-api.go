@@ -881,7 +881,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var request Event
 
 		var summary DetailSummary
-		report.Summary = summary
 
 		query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
 
@@ -969,6 +968,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			grid = append(grid, row)
 		}
 		summary.ColumnCount = len(columns)
+		report.Summary = summary
 		report.GridRecords = grid
 		output = report
 	} else {
