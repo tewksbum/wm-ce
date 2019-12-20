@@ -41,6 +41,7 @@ type Signature struct {
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
 	RecordID  string `json:"recordId"`
+	RowNumber int    `json:"rowNum"`
 }
 
 type Input struct {
@@ -251,13 +252,14 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			output.Attributes = input.Attributes
 			output.Passthrough = input.Passthrough
 
-			for _, d := range records {
+			for r, d := range records {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					continue
 				}
 
 				output.Signature.RecordID = uuid.New().String()
+				output.Signature.RowNumber = r + 1
 
 				fields := make(map[string]string)
 				for j, y := range d {
