@@ -1,1 +1,5 @@
 .settings/
+cloud-functions/purge-util/src/debug.test
+cloud-functions/utilities/input.xlsx
+cloud-functions/utilities/batch-reports/input.xlsx
+cloud-functions/utilities/batch-reports/report.xlsx

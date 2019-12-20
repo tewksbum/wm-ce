@@ -38,6 +38,7 @@ type Signature struct {
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
 	RecordID  string `json:"recordId"`
+	RowNumber int    `json:"rowNum"`
 }
 
 type Input struct {
