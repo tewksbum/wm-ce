@@ -82,9 +82,6 @@ type DetailRecord struct {
 	Fibers    [][]interface{}
 }
 
-type RecordField struct {
-}
-
 type OwnerReport struct {
 	FileCount int
 	Requests  []Event
@@ -144,6 +141,7 @@ type Record struct {
 	IsConsignment bool      `datastore:"IsConsignment"`
 	IsOrderDetail bool      `datastore:"IsOrderDetail"`
 	IsEvent       bool      `datastore:"IsEvent"`
+	MLError       bool      `datastore:"MLError"`
 }
 
 type Fiber struct {
@@ -923,7 +921,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "FiberCount"}
+		report.GridHeader = []string{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "MARFiberCount", "MPRFiberCount"}
 
 		var grid [][]interface{}
 		summary.RowCount = len(records)
@@ -935,11 +933,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			row = append(row, r.RowNumber)
 			row = append(row, r.TimeStamp)
 			row = append(row, r.IsPeople)
+			row = append(row, r.MLError)
 			fiberCount := 0
+			marFiberCount := 0
+			mprFiberCount := 0
 			if _, ok := fibermap[r.RecordID]; ok {
 				fiberCount = len(fibermap[r.RecordID])
+				for _, f := range fibermap[r.RecordID] {
+					switch f.RecordType {
+					case "mar":
+						marFiberCount++
+					case "mpr":
+						mprFiberCount++
+					}
+				}
 			}
 			row = append(row, fiberCount)
+			row = append(row, marFiberCount)
+			row = append(row, mprFiberCount)
 
 			for _, f := range r.Fields {
 				if i == 0 {
