@@ -150,8 +150,6 @@ async function sendRequest(row) {
     .file(`${source}/${file}`)
     .getSignedUrl(options);
 
-  console.log(`The signed url for ${file} is ${url}.`);
-
   // This is what we send
   var streamerData = {
     accessKey: `${accessKey}`,
