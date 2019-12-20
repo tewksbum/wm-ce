@@ -70,6 +70,7 @@ type RecordDS struct {
 	IsConsignment bool      `datastore:"IsConsignment"`
 	IsOrderDetail bool      `datastore:"IsOrderDetail"`
 	IsEvent       bool      `datastore:"IsEvent"`
+	MLError       bool      `datastore:"MLError"`
 }
 
 type KVP struct {
@@ -672,6 +673,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// look up NER and call ML if People
 	var prediction Prediction
 
+	PeopleError := false
 	if flags.People {
 		log.Printf("Have people flag %v", input.Signature.EventID)
 		PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
@@ -713,18 +715,18 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		r, err := mlPredict.Context(ctx).Do()
 		if err != nil {
 			log.Fatalf("error calling mlService, %v", err)
-			return nil
-		}
-
-		if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
-			if _, ok := err.(*json.SyntaxError); ok {
-				log.Fatalf("error decoding json, %v", string(r.Data))
+			PeopleError = true
+		} else {
+			if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
+				if _, ok := err.(*json.SyntaxError); ok {
+					log.Fatalf("error decoding json, %v", string(r.Data))
+				}
 			}
+			if len(prediction.Predictions) == 0 {
+				log.Fatalf("unexpected prediction returned, %v", string(r.Data))
+			}
+			log.Printf("ML result is %v", string(r.Data))
 		}
-		if len(prediction.Predictions) == 0 {
-			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
-		}
-		log.Printf("ML result is %v", string(r.Data))
 	}
 
 	// store RECORD in DS
@@ -742,6 +744,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		IsConsignment: flags.Consignment,
 		IsOrderDetail: flags.OrderDetail,
 		IsEvent:       flags.Event,
+		MLError:       PeopleError,
 	}
 
 	dsKey := datastore.IncompleteKey(DSKind, nil)
