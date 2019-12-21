@@ -1005,9 +1005,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 			}
 			rowRecord = append(rowRecord, fiberCount)
+			rowRecord = append(rowRecord, defaultFiberCount)
 			rowRecord = append(rowRecord, marFiberCount)
 			rowRecord = append(rowRecord, mprFiberCount)
-			rowRecord = append(rowRecord, defaultFiberCount)
+
 			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
 				for _, f := range r.Fields {
