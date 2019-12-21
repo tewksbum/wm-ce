@@ -923,7 +923,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"})
+		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp"})
+		diagnostics := []string {"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
 		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"})
 
 		for _, k := range PeopleMatchKeyNames {
@@ -940,9 +941,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			rowRecord = append(rowRecord, r.RecordID)
 			rowRecord = append(rowRecord, r.RowNumber)
 			rowRecord = append(rowRecord, r.TimeStamp)
-			rowRecord = append(rowRecord, r.IsPeople)
-			rowRecord = append(rowRecord, r.MLError)
-
+			
 			fiberCount := 0
 			marFiberCount := 0
 			mprFiberCount := 0
@@ -1002,10 +1001,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
-			rowRecord = append(rowRecord, fiberCount)
-			rowRecord = append(rowRecord, defaultFiberCount)
-			rowRecord = append(rowRecord, marFiberCount)
-			rowRecord = append(rowRecord, mprFiberCount)
 
 			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
@@ -1030,7 +1025,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			for c, f := range report.GridRecords[0] {
-				if c < 9 { // skip first 8 columns
+				if c < 3 { // skip first 8 columns
 					continue
 				}
 				if val, ok := values[f.(string)]; ok {
@@ -1047,8 +1042,22 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
+
+			rowRecord = append(rowRecord, r.IsPeople)
+			rowRecord = append(rowRecord, r.MLError)
+
+			rowRecord = append(rowRecord, fiberCount)
+			rowRecord = append(rowRecord, defaultFiberCount)
+			rowRecord = append(rowRecord, marFiberCount)
+			rowRecord = append(rowRecord, mprFiberCount)
+
 			report.GridRecords = append(report.GridRecords, rowRecord)
 		}
+
+		for _, d := range diagnostics {
+			report.GridRecords[0] = append(report.GridRecords[0], d)
+		}
+
 		summary.ColumnCount = len(columns)
 		report.Summary = summary
 
