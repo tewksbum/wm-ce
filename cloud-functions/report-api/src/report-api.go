@@ -1051,7 +1051,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 			for c, f := range report.GridRecords[0] {
-				if c < 3 { // skip first 8 columns
+				if c < 4 { // skip first 8 columns
 					continue
 				}
 				if val, ok := values[f.(string)]; ok {
