@@ -954,25 +954,25 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					return strings.Compare(fibermap[r.RecordID][i].RecordType, fibermap[r.RecordID][j].RecordType) > 0
 				})
 				for j, f := range fibermap[r.RecordID] {
-					// var rowFiber []interface{}
+					var rowFiber []interface{}
 					if j == 0 {
-						// 	rowFiber = append(rowFiber, r.RecordID)
-						// 	rowFiber = append(rowFiber, r.RowNumber)
+						rowFiber = append(rowFiber, r.RecordID)
+						rowFiber = append(rowFiber, r.RowNumber)
 
-						// } else {
-						// 	rowFiber = append(rowFiber, "")
-						// 	rowFiber = append(rowFiber, "")
-						// }
-						// rowFiber = append(rowFiber, j+1)
-						// rowFiber = append(rowFiber, f.ID)
-						// rowFiber = append(rowFiber, f.CreatedAt)
-						// rowFiber = append(rowFiber, f.RecordType)
-						// rowFiber = append(rowFiber, f.Disposition)
-
-						// for _, k := range PeopleMatchKeyNames {
-						// 	rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k))
+					} else {
+						rowFiber = append(rowFiber, "")
+						rowFiber = append(rowFiber, "")
 					}
-					// gridFiber = append(gridFiber, rowFiber)
+					rowFiber = append(rowFiber, j+1)
+					rowFiber = append(rowFiber, f.ID)
+					rowFiber = append(rowFiber, f.CreatedAt)
+					rowFiber = append(rowFiber, f.RecordType)
+					rowFiber = append(rowFiber, f.Disposition)
+
+					for _, k := range PeopleMatchKeyNames {
+						rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k))
+					}
+					report.GridFibers = append(report.GridFibers, rowFiber)
 					switch f.RecordType {
 					case "mar":
 						marFiberCount++
@@ -1053,9 +1053,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		summary.ColumnCount = len(columns)
 		report.Summary = summary
 
-		// for _, r := range gridFiber {
-		// 	report.GridFibers = append(report.GridFibers, r)
-		// }
 		output = report
 	} else {
 		report := OwnerReport{}
