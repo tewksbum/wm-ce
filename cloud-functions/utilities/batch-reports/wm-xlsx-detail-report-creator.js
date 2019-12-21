@@ -12,7 +12,8 @@ const Excel = require("exceljs");
   }
   var workBook = new Excel.Workbook();
   workBook = await workBook.xlsx.readFile(inputFilename);
-  var DetailSheet = workBook.addWorksheet("Detail");
+  var DetailSheet1 = workBook.addWorksheet("Records");
+  var DetailSheet2 = workBook.addWorksheet("Fibers");
   //report logging
   const today = new Date();
   const logFile = `./logs/xdetailreport-log-${today.toISOString()}.json`;
@@ -72,9 +73,10 @@ const Excel = require("exceljs");
       console.log(`Skipping Empty report for ${currentUL.requestId}`);
       continue;
     }
-    DetailSheet.getRow(1).values = report.GridHeader;
+    //DetailSheet.getRow(1).values = report.GridHeader;
     // console.log(report.GridRecords);
-    report.GridRecords.forEach(r => DetailSheet.addRow(r));
+    report.GridRecords.forEach(r => DetailSheet1.addRow(r));
+    report.GridFibers.forEach(r => DetailSheet2.addRow(r));
   }
   //close log stream
   stream.write("\n]", () => {
