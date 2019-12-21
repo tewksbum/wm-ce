@@ -923,7 +923,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp"})
+		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "Disposition"})
 		diagnostics := []string {"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
 		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"})
 
@@ -948,6 +948,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			defaultFiberCount := 0
 
 			columnMaps := make(map[string][]string)
+			recordDisposition := "update"
+			anyFiberIsNew := false
+			allFibersAreDupe := true
+			allFibersArePurged := true
+
 			if _, ok := fibermap[r.RecordID]; ok {
 				fiberCount = len(fibermap[r.RecordID])
 				sort.Slice(fibermap[r.RecordID], func(i int, j int) bool {
@@ -979,6 +984,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						defaultFiberCount++
 					}
 
+					if f.RecordType == "default" || f.RecordType == "mar" {
+						if f.Disposition == "new" {
+							anyFiberIsNew = true
+						} 
+						if f.Disposition != "dupe" {
+							allFibersAreDupe = false
+						}
+						if f.Disposition != "purge" {
+							allFibersArePurged = false
+						}
+
+					}
+
 					for _, m := range PeopleMatchKeyNames {
 						mk := GetMatchKeyFieldFromFiberByName(&f, m)
 						columnTarget := []string{m}
@@ -1001,6 +1019,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
+			if anyFiberIsNew {
+				recordDisposition = "new"
+			} else if allFibersAreDupe {
+				recordDisposition = "dupe"
+			} else if allFibersArePurged {
+				recordDisposition = "purge"
+			}
+			rowRecord = append(rowRecord, recordDisposition)
 
 			headers := []string{}
 			if len(r.Fields) > 0 && i == 0 {
