@@ -964,7 +964,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						rowFiber = append(rowFiber, "")
 					}
 					rowFiber = append(rowFiber, j+1)
-					rowFiber = append(rowFiber, f.ID)
+					rowFiber = append(rowFiber, f.ID.Name)
 					rowFiber = append(rowFiber, f.CreatedAt)
 					rowFiber = append(rowFiber, f.RecordType)
 					rowFiber = append(rowFiber, f.Disposition)
