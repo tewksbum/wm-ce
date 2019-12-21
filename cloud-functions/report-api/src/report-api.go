@@ -970,7 +970,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					rowFiber = append(rowFiber, f.Disposition)
 
 					for _, k := range PeopleMatchKeyNames {
-						rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k))
+						rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k).Value)
 					}
 					report.GridFibers = append(report.GridFibers, rowFiber)
 					switch f.RecordType {
