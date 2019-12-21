@@ -951,7 +951,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if _, ok := fibermap[r.RecordID]; ok {
 				fiberCount = len(fibermap[r.RecordID])
 				sort.Slice(fibermap[r.RecordID], func(i int, j int) bool {
-					return strings.Compare(fibermap[r.RecordID][i].RecordType, fibermap[r.RecordID][j].RecordType) > 0
+					return fibermap[r.RecordID][i].CreatedAt.Before(fibermap[r.RecordID][j].CreatedAt)
 				})
 				for j, f := range fibermap[r.RecordID] {
 					var rowFiber []interface{}
