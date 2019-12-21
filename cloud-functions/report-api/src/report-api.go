@@ -1054,6 +1054,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				if c < 4 { // skip first 8 columns
 					continue
 				}
+				if f.(string) == "MappedTo" {
+					continue
+				}
 				if val, ok := values[f.(string)]; ok {
 					rowRecord = append(rowRecord, val)
 				} else {
