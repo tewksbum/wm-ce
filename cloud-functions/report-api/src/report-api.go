@@ -923,12 +923,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			fibermap[recordID] = append(fibermap[recordID], f)
 		}
 
-		recordHeader := []interface{}{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
-		// fiberHeader := []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"}
-		// for _, k := range PeopleMatchKeyNames {
-		// 	fiberHeader = append(fiberHeader, k)
-		// }
-		var gridRecord [][]interface{}
+		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"})
+		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"})
+
+		for _, k := range PeopleMatchKeyNames {
+			report.GridFibers[0] = append(report.GridFibers[0], k)
+		}
+
 		// var gridFiber [][]interface{}
 		summary.RowCount = len(records)
 		columns := make(map[string]ColumnStat)
@@ -1015,8 +1016,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				sort.Strings(headers)
 			}
 			for _, h := range headers {
-				recordHeader = append(recordHeader, h)
-				recordHeader = append(recordHeader, "MappedTo")
+				report.GridRecords[0] = append(report.GridRecords[0], h)
+				report.GridRecords[0] = append(report.GridRecords[0], "MappedTo")
 			}
 			values := make(map[string]string)
 			mapped := make(map[string]string)
@@ -1029,7 +1030,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					mapped[f.Key] = ""
 				}
 			}
-			for c, f := range recordHeader {
+			for c, f := range report.GridRecords[0] {
 				if c < 9 { // skip first 8 columns
 					continue
 				}
@@ -1047,15 +1048,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
-			gridRecord = append(gridRecord, rowRecord)
+			report.GridRecords = append(report.GridRecords, rowRecord)
 		}
 		summary.ColumnCount = len(columns)
 		report.Summary = summary
-		report.GridRecords = append(report.GridRecords, recordHeader)
-		// report.GridFibers = append(report.GridFibers, fiberHeader)
-		for _, r := range gridRecord {
-			report.GridRecords = append(report.GridRecords, r)
-		}
 
 		// for _, r := range gridFiber {
 		// 	report.GridFibers = append(report.GridFibers, r)
