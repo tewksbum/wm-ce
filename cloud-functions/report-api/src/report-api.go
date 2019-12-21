@@ -928,6 +928,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		for _, k := range PeopleMatchKeyNames {
 			report.GridFibers[0] = append(report.GridFibers[0], k)
+			report.GridFibers[0] = append(report.GridFibers[0], "Source")
 		}
 
 		// var gridFiber [][]interface{}
@@ -955,14 +956,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				})
 				for j, f := range fibermap[r.RecordID] {
 					var rowFiber []interface{}
-					if j == 0 {
-						rowFiber = append(rowFiber, r.RecordID)
-						rowFiber = append(rowFiber, r.RowNumber)
 
-					} else {
-						rowFiber = append(rowFiber, "")
-						rowFiber = append(rowFiber, "")
-					}
+					rowFiber = append(rowFiber, r.RecordID)
+					rowFiber = append(rowFiber, r.RowNumber)
 					rowFiber = append(rowFiber, j+1)
 					rowFiber = append(rowFiber, f.ID.Name)
 					rowFiber = append(rowFiber, f.CreatedAt)
@@ -970,7 +966,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					rowFiber = append(rowFiber, f.Disposition)
 
 					for _, k := range PeopleMatchKeyNames {
-						rowFiber = append(rowFiber, GetMatchKeyFieldFromFiberByName(&f, k).Value)
+						mk := GetMatchKeyFieldFromFiberByName(&f, k)
+						rowFiber = append(rowFiber, mk.Value)
+						rowFiber = append(rowFiber, mk.Source)
 					}
 					report.GridFibers = append(report.GridFibers, rowFiber)
 					switch f.RecordType {
