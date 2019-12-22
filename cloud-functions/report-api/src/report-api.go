@@ -171,6 +171,8 @@ type Fiber struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ZIPTYPE      MatchKeyField    `datastore:"ziptype"`
+	RECORDTYPE   MatchKeyField    `datastore:"recordtype"`
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
@@ -220,6 +222,8 @@ type PeopleMatchKeys struct {
 	COUNTRY      MatchKeyField
 	MAILROUTE    MatchKeyField
 	ADTYPE       MatchKeyField
+	ZIPTYPE      MatchKeyField
+	RECORDTYPE   MatchKeyField
 	ADBOOK       MatchKeyField
 	ADPARSER     MatchKeyField
 	ADCORRECT    MatchKeyField
@@ -306,6 +310,10 @@ type PeopleSet struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ZIPTYPE                []string       `datastore:"ziptype"`
+	ZIPTYPENormalized      []string       `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string       `datastore:"recordtype"`
+	RECORDTYPENormalized   []string       `datastore:"recordtypenormalized"`
 	ADBOOK                 []string       `datastore:"adbook"`
 	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
@@ -356,6 +364,8 @@ type PeopleGolden struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
@@ -924,7 +934,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "Disposition"})
-		diagnostics := []string {"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
+		diagnostics := []string{"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
 		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"})
 
 		for _, k := range PeopleMatchKeyNames {
@@ -941,7 +951,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			rowRecord = append(rowRecord, r.RecordID)
 			rowRecord = append(rowRecord, r.RowNumber)
 			rowRecord = append(rowRecord, r.TimeStamp)
-			
+
 			fiberCount := 0
 			marFiberCount := 0
 			mprFiberCount := 0
@@ -987,7 +997,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					if f.RecordType == "default" || f.RecordType == "mar" {
 						if f.Disposition == "new" {
 							anyFiberIsNew = true
-						} 
+						}
 						if f.Disposition != "dupe" {
 							allFibersAreDupe = false
 						}
