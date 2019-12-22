@@ -94,6 +94,7 @@ type PeopleOutput struct {
 	MAILROUTE    MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE       MatchKeyField `json:"adtype" bigquery:"adtype"`
 	ZIPTYPE       MatchKeyField `json:"ziptype" bigquery:"ziptype"`
+	RECORDTYPE MatchKeyField `json:"recordtype" bigquery:"recordtype"`
 	ADBOOK       MatchKeyField `json:"adbook" bigquery:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
@@ -101,6 +102,7 @@ type PeopleOutput struct {
 	ROOM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 	FULLADDRESS  MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 	CITYSTATEZIP MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
+
 	EMAIL MatchKeyField `json:"email" bigquery:"email"`
 	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
 	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
@@ -762,7 +764,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// StandardizeAddressLP(&(v.Output))
 		StandardizeAddressSS(&(v.Output))
-		
+
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
 			Suffix: suffix,
@@ -828,6 +830,7 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			SetMkField(mkOutput, "ADPARSER", "smartystreet", "SS") // if libpostal can parse it, it is an US address
 			SetMkField(mkOutput, "ADTYPE", a[0].Metadata.Rdi)
 			SetMkField(mkOutput, "ZIPTYPE", a[0].Metadata.ZipType)
+			SetMkField(mkOutput, "RECORDTYPE", a[0].Metadata.RecordType)
 		}
 	}
 }
