@@ -213,6 +213,10 @@ type PeopleSetDS struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ZIPTYPE                []string       `datastore:"ziptype"`
+	ZIPTYPENormalized      []string       `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string       `datastore:"recordtype"`
+	RECORDTYPENormalized   []string       `datastore:"recordtypenormalized"`
 	ADBOOK                 []string       `datastore:"adbook"`
 	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
@@ -263,6 +267,8 @@ type PeopleGoldenDS struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
