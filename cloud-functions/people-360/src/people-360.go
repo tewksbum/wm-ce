@@ -106,20 +106,22 @@ type PeopleOutput struct {
 	LNAME      MatchKeyField `json:"lname"`
 	MNAME      MatchKeyField `json:"mname"`
 
-	AD1       MatchKeyField `json:"ad1"`
-	AD1NO     MatchKeyField `json:"ad1no"`
-	AD2       MatchKeyField `json:"ad2"`
-	AD3       MatchKeyField `json:"ad3"`
-	CITY      MatchKeyField `json:"city"`
-	STATE     MatchKeyField `json:"state"`
-	ZIP       MatchKeyField `json:"zip"`
-	ZIP5      MatchKeyField `json:"zip5"`
-	COUNTRY   MatchKeyField `json:"country"`
-	MAILROUTE MatchKeyField `json:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adtype"`
-	ADBOOK    MatchKeyField `json:"adbook"`
-	ADPARSER  MatchKeyField `json:"adparser"`
-	ADCORRECT MatchKeyField `json:"adcorrect"`
+	AD1        MatchKeyField `json:"ad1"`
+	AD1NO      MatchKeyField `json:"ad1no"`
+	AD2        MatchKeyField `json:"ad2"`
+	AD3        MatchKeyField `json:"ad3"`
+	CITY       MatchKeyField `json:"city"`
+	STATE      MatchKeyField `json:"state"`
+	ZIP        MatchKeyField `json:"zip"`
+	ZIP5       MatchKeyField `json:"zip5"`
+	COUNTRY    MatchKeyField `json:"country"`
+	MAILROUTE  MatchKeyField `json:"mailroute"`
+	ADTYPE     MatchKeyField `json:"adtype"`
+	ADBOOK     MatchKeyField `json:"adbook"`
+	ADPARSER   MatchKeyField `json:"adparser"`
+	ADCORRECT  MatchKeyField `json:"adcorrect"`
+	ZIPTYPE    MatchKeyField `json:"ziptype"`
+	RECORDTYPE MatchKeyField `json:"recordtype"`
 
 	EMAIL MatchKeyField `json:"email"`
 	PHONE MatchKeyField `json:"phone"`

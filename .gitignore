@@ -6,3 +6,4 @@ cloud-functions/utilities/batch-reports/report.xlsx
 cloud-functions/utilities/batch-reports/detail-report.xlsx
 .DS_Store
 cloud-functions/utilities/batch-reports/~$detail-report.xlsx
+.vscode/settings.json
