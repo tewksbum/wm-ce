@@ -75,6 +75,8 @@ type PeopleFiberDS struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ZIPTYPE      MatchKeyField    `datastore:"ziptype"`
+	RECORDTYPE   MatchKeyField    `datastore:"recordtype"`
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
