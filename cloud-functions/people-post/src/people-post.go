@@ -799,7 +799,7 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	e := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		name := e.Field(i).Name
-		if name != "EMAIL" && name != "PHONE" { // do not copy email and phone
+		if name != "EMAIL" && name != "PHONE" && name != "FNAME" { // do not copy email and phone and fname
 			s := v.FieldByName(name).Interface().(MatchKeyField)
 			t := z.FieldByName(name).Interface().(MatchKeyField)
 			if len(t.Value) == 0 {
@@ -809,53 +809,55 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	}
 }
 
-// func CorrectAddress(in string) SmartyStreetResponse {
-// 	var smartyStreetResponse SmartyStreetResponse
-// 	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
-// 	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
-// 	response, err := http.Get(smartyStreetRequestURL)
-// 	if err != nil {
-// 		log.Fatalf("smartystreet request failed: %v", err)
-// 	} else {
-// 		if response.StatusCode != 200 {
-// 			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
-// 		}
-// 		data, err := ioutil.ReadAll(response.Body)
-// 		if err != nil {
-// 			log.Fatalf("Couldn't read the smartystreet response: %v", err)
-// 		}
-// 		log.Printf("smartystreet response %v", string(data))
-// 		json.Unmarshal(data, &smartyStreetResponse)
+func CorrectAddress(in string) SmartyStreetResponse {
+	var smartyStreetResponse SmartyStreetResponse
+	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
+	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
+	response, err := http.Get(smartyStreetRequestURL)
+	if err != nil {
+		log.Fatalf("smartystreet request failed: %v", err)
+	} else {
+		if response.StatusCode != 200 {
+			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
+		}
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatalf("Couldn't read the smartystreet response: %v", err)
+		}
+		log.Printf("smartystreet response %v", string(data))
+		json.Unmarshal(data, &smartyStreetResponse)
 
-// 		if len(smartyStreetResponse) > 0 {
-// 			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
-// 			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
-// 			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
-// 			// 	correctedAddress.Add2 = ""
-// 			// }
-// 			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
-// 			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
-// 			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
-// 			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
-// 			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
-// 			// }
-// 			// correctedAddress.CityStateZipMatch = true
-// 			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
-// 			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
-// 			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
-// 			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
-// 			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
-// 			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
+		if len(smartyStreetResponse) > 0 {
+			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
+			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
+			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
+			// 	correctedAddress.Add2 = ""
+			// }
+			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
+			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
+			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
+			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
+			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
+			// }
+			// correctedAddress.CityStateZipMatch = true
+			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
+			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
+			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
+			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
+			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
+			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
 
-// 			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
-// 			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
+			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
+			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
 
-// 			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
-// 			return smartyStreetResponse
-// 		}
-// 	}
-// 	return nil
-// }
+			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
+			// correctedAddress.AddressType = smartyStreetResponse[0].Metadata.Rdi
+
+			return smartyStreetResponse
+		}
+	}
+	return nil
+}
 
 func IsInt(s string) bool {
 	for _, c := range s {
