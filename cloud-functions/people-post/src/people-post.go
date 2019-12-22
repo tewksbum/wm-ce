@@ -809,7 +809,6 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 }
 
 func StandardizeAddressSS(mkOutput *PeopleOutput) {
-
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 0 {
@@ -817,6 +816,7 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
 			SetMkField(mkOutput, "AD1", a[0].DeliveryLine1, "SS")
+			SetMkField(mkOutput, "AD1NO", a[0].Components.PrimaryNumber, "SS")
 			SetMkField(mkOutput, "CITY", a[0].Components.CityName, "SS")
 			SetMkField(mkOutput, "STATE", a[0].Components.StateAbbreviation, "SS")
 			Zip := a[0].Components.Zipcode
