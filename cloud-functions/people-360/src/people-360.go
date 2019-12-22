@@ -775,10 +775,11 @@ func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value s
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
+	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	// LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
+
 }
 
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
