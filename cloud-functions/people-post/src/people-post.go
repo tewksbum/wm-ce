@@ -75,13 +75,13 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
-	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
-	MNAME      MatchKeyField `json:"mname" bigquery:"mname"`
-	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
-	FULLNAME   MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
+	SALUTATION   MatchKeyField `json:"salutation" bigquery:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname" bigquery:"nickname"`
+	FNAME        MatchKeyField `json:"fname" bigquery:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial" bigquery:"finitial"`
+	MNAME        MatchKeyField `json:"mname" bigquery:"mname"`
+	LNAME        MatchKeyField `json:"lname" bigquery:"lname"`
+	FULLNAME     MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
 	AD1NO        MatchKeyField `json:"ad1no" bigquery:"ad1no"`
 	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
@@ -93,8 +93,8 @@ type PeopleOutput struct {
 	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
 	MAILROUTE    MatchKeyField `json:"mailroute" bigquery:"mailroute"`
 	ADTYPE       MatchKeyField `json:"adtype" bigquery:"adtype"`
-	ZIPTYPE       MatchKeyField `json:"ziptype" bigquery:"ziptype"`
-	RECORDTYPE MatchKeyField `json:"recordtype" bigquery:"recordtype"`
+	ZIPTYPE      MatchKeyField `json:"ziptype" bigquery:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype" bigquery:"recordtype"`
 	ADBOOK       MatchKeyField `json:"adbook" bigquery:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser" bigquery:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
@@ -103,13 +103,13 @@ type PeopleOutput struct {
 	FULLADDRESS  MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 	CITYSTATEZIP MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
 
-	EMAIL MatchKeyField `json:"email" bigquery:"email"`
-	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
-	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
-	CLIENTID  MatchKeyField `json:"clientId" bigquery:"clientid"`
-	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
-	AGE    MatchKeyField `json:"age" bigquery:"age"`
-	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
+	EMAIL        MatchKeyField `json:"email" bigquery:"email"`
+	PHONE        MatchKeyField `json:"phone" bigquery:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId" bigquery:"trustedid"`
+	CLIENTID     MatchKeyField `json:"clientId" bigquery:"clientid"`
+	GENDER       MatchKeyField `json:"gender" bigquery:"gender"`
+	AGE          MatchKeyField `json:"age" bigquery:"age"`
+	DOB          MatchKeyField `json:"dob" bigquery:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
 	TITLE        MatchKeyField `json:"title" bigquery:"title"`
 	ROLE         MatchKeyField `json:"role" bigquery:"role"`
@@ -808,16 +808,14 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	}
 }
 
-
 func StandardizeAddressSS(mkOutput *PeopleOutput) {
-	STATEValue := mkOutput.STATE.Value
-	CITYValue := mkOutput.CITY.Value
+
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 0 {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
-		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first 
+		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
 			SetMkField(mkOutput, "AD1", a[0].DeliveryLine1, "SS")
 			SetMkField(mkOutput, "CITY", a[0].Components.CityName, "SS")
 			SetMkField(mkOutput, "STATE", a[0].Components.StateAbbreviation, "SS")
@@ -826,11 +824,11 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 				Zip += "-" + a[0].Components.Plus4Code
 			}
 			SetMkField(mkOutput, "ZIP", Zip, "SS")
-			SetMkField(mkOutput, "COUNTRY", "US", "SS") // if libpostal can parse it, it is an US address
+			SetMkField(mkOutput, "COUNTRY", "US", "SS")            // if libpostal can parse it, it is an US address
 			SetMkField(mkOutput, "ADPARSER", "smartystreet", "SS") // if libpostal can parse it, it is an US address
-			SetMkField(mkOutput, "ADTYPE", a[0].Metadata.Rdi)
-			SetMkField(mkOutput, "ZIPTYPE", a[0].Metadata.ZipType)
-			SetMkField(mkOutput, "RECORDTYPE", a[0].Metadata.RecordType)
+			SetMkField(mkOutput, "ADTYPE", a[0].Metadata.Rdi, "SS")
+			SetMkField(mkOutput, "ZIPTYPE", a[0].Metadata.ZipType, "SS")
+			SetMkField(mkOutput, "RECORDTYPE", a[0].Metadata.RecordType, "SS")
 		}
 	}
 }
