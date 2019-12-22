@@ -24,12 +24,12 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID    string `json:"ownerId"`
-	Source     string `json:"source"`
-	EventID    string `json:"eventId"`
-	EventType  string `json:"eventType"`
-	RecordType string `json:"recordType"`
-	RecordID   string `json:"recordId"`
+	OwnerID   string `json:"ownerId"`
+	Source    string `json:"source"`
+	EventID   string `json:"eventId"`
+	EventType string `json:"eventType"`
+	FiberType string `json:"fiberType"`
+	RecordID  string `json:"recordId"`
 }
 
 type PeopleInput struct {
@@ -56,7 +56,7 @@ type PeopleFiberDS struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
-	RecordType   string           `datastore:"recordtype"`
+	FiberType    string           `datastore:"fibertype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -176,7 +176,7 @@ type PeopleSetDS struct {
 	Source                 []string       `datastore:"source"`
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
-	RecordType             []string       `datastore:"recordtype"`
+	FiberType              []string       `datastore:"fibertype"`
 	RecordID               []string       `datastore:"recordid"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
@@ -358,10 +358,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	dsFiber.ID = dsKey
 
 	matchable := false
-	if input.Signature.RecordType == "default" {
+	if input.Signature.FiberType == "default" {
 		if len(input.MatchKeys.EMAIL.Value) > 0 ||
 			(len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0) ||
-			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADBOOK.Value) > 0) {
+			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADTYPE.Value) > 0) {
 			matchable = true
 		}
 	} else {
@@ -411,7 +411,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
 		MatchByKey5E := "AD1NO"
 		MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
-		MatchByKey5F := "ADBOOK"
+		MatchByKey5F := "ADTYPE"
 		MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
 
 		matchedSets := []PeopleSetDS{}
@@ -738,7 +738,7 @@ func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 		EventType:   v.Signature.EventType,
 		EventID:     v.Signature.EventID,
 		RecordID:    v.Signature.RecordID,
-		RecordType:  v.Signature.RecordType,
+		FiberType:   v.Signature.FiberType,
 		Passthrough: v.Passthrough,
 		CreatedAt:   v.CreatedAt,
 	}

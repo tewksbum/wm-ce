@@ -152,7 +152,7 @@ type Fiber struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
-	RecordType   string           `datastore:"recordtype"`
+	FiberType    string           `datastore:"fibertype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -191,12 +191,12 @@ type Fiber struct {
 }
 
 type Signature struct {
-	OwnerID    string
-	Source     string
-	EventID    string
-	EventType  string
-	RecordID   string
-	RecordType string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberType string
 }
 
 type Passthrough360 struct {
@@ -272,7 +272,7 @@ type PeopleSet struct {
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
 	RecordID               []string       `datastore:"recordid"`
-	RecordType             []string       `datastore:"recordtype"`
+	FiberType              []string       `datastore:"fibertype"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
@@ -617,12 +617,12 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		for _, f := range fibers {
-			if f.RecordType == "mar" || f.RecordType == "default" {
+			if f.FiberType == "mar" || f.FiberType == "default" {
 				if f.Disposition == "new" {
 					newIDs = append(newIDs, f.RecordID)
 				}
 			}
-			switch f.RecordType {
+			switch f.FiberType {
 			case "mpr":
 				MPR++
 			case "mar":
@@ -659,24 +659,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isFreshmen := false
 			isNew := false
 
-			if f.RecordType == "mar" { // skip mar
+			if f.FiberType == "mar" { // skip mar
 				continue
-			} else if f.RecordType == "default" { //same record id processed twice?
+			} else if f.FiberType == "default" { //same record id processed twice?
 				if Contains(recordIDs, f.RecordID) {
 					continue
 				}
 				recordIDs = append(recordIDs, f.RecordID)
-			} else if f.RecordType == "mpr" {
+			} else if f.FiberType == "mpr" {
 				isParent = true
 			}
 
 			if f.Disposition == "purge" {
-				if f.RecordType == "default" {
+				if f.FiberType == "default" {
 					PURGE2++
 				}
 
 			} else if f.Disposition == "dupe" {
-				if f.RecordType == "default" {
+				if f.FiberType == "default" {
 					DUPE++
 				}
 			} else {
@@ -976,7 +976,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					rowFiber = append(rowFiber, j+1)
 					rowFiber = append(rowFiber, f.ID.Name)
 					rowFiber = append(rowFiber, f.CreatedAt)
-					rowFiber = append(rowFiber, f.RecordType)
+					rowFiber = append(rowFiber, f.FiberType)
 					rowFiber = append(rowFiber, f.Disposition)
 
 					for _, k := range PeopleMatchKeyNames {
@@ -985,7 +985,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						rowFiber = append(rowFiber, mk.Source)
 					}
 					report.GridFibers = append(report.GridFibers, rowFiber)
-					switch f.RecordType {
+					switch f.FiberType {
 					case "mar":
 						marFiberCount++
 					case "mpr":
@@ -994,7 +994,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 						defaultFiberCount++
 					}
 
-					if f.RecordType == "default" || f.RecordType == "mar" {
+					if f.FiberType == "default" || f.FiberType == "mar" {
 						if f.Disposition == "new" {
 							anyFiberIsNew = true
 						}
@@ -1016,8 +1016,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 								columnTarget = val
 								if !Contains(columnTarget, m) {
 									target := m
-									if f.RecordType == "mar" || f.RecordType == "mpr" {
-										target = f.RecordType + " " + m
+									if f.FiberType == "mar" || f.FiberType == "mpr" {
+										target = f.FiberType + " " + m
 									}
 									columnTarget = append(columnTarget, target)
 

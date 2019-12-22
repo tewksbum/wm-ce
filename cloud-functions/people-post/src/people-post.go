@@ -29,12 +29,12 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID    string `json:"ownerId"`
-	Source     string `json:"source"`
-	EventID    string `json:"eventId"`
-	EventType  string `json:"eventType"`
-	RecordType string `json:"recordType"`
-	RecordID   string `json:"recordId"`
+	OwnerID   string `json:"ownerId"`
+	Source    string `json:"source"`
+	EventID   string `json:"eventId"`
+	EventType string `json:"eventType"`
+	FiberType string `json:"fiberType"`
+	RecordID  string `json:"recordId"`
 }
 
 type Prediction struct {
@@ -1211,7 +1211,7 @@ func ExtractMPRCounter(columnName string) int {
 func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
 	var output Output
 	output.Signature = input.Signature
-	output.Signature.RecordType = recordType
+	output.Signature.FiberType = recordType
 	if len(suffix) > 0 {
 		output.Signature.RecordID += suffix
 	}
