@@ -42,7 +42,6 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	if err != nil {
 		return nil, err
 	}
-
 	owner := cust.Owner
 	if owner == "" {
 		owner = input.Owner
@@ -54,8 +53,9 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	if organization == "" {
 		organization = input.Attributes["organization"]
 	}
-
 	br := models.BaseRecord{
+		IDField:     models.IDField,
+		ColumnList:  models.ColumnList,
 		EntityType:  input.EntityType,
 		OwnerID:     cust.Key.ID,
 		Owner:       owner,
@@ -76,8 +76,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	switch entityType {
 	case models.TypeHousehold:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblHousehold,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -92,8 +94,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeEvent:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblEvent,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -107,8 +111,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeProduct:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblProduct,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -123,8 +129,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypePeople:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblPeople,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -140,8 +148,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblOrderHeader,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -157,8 +167,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderConsignment:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblOrderConsignment,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -174,8 +186,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderDetail:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblOrderDetail,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -191,8 +205,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeCampaign:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
 			Tablename:          models.TblCampaign,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -218,18 +234,20 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 			IsPartitioned:      false,
 			HasTablenameSuffix: true,
 			HasTablenamePrefix: true,
-			Tablename:          record.GetStrOwnerID(),
 			TablenamePrefix:    models.TblnamePrefix,
-			TablenameSuffix:    models.TblDecode,
+			Tablename:          models.TblDecode,
+			TablenameSuffix:    record.GetStrOwnerID(),
 		}
 		return record, nil
 	default:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
-			Tablename:          models.TblShed,
+			Type:               models.CSQL,
 			Filters:            input.Filters,
+			HasTablenameSuffix: true,
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
+			Tablename:          models.TblShed,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.

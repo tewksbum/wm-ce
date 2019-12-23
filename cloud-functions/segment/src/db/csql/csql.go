@@ -2,8 +2,10 @@ package csql
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"segment/models"
+	"segment/utils"
 	"segment/utils/logger"
 	"segment/wemade"
 	"strings"
@@ -15,17 +17,11 @@ import (
 )
 
 const (
-	dialect             = "mysql"
-	tblDecodeCreateStmt = `CREATE TABLE IF NOT EXISTS %s.%s (
-		signature VARCHAR(255) NOT NULL,
-		people_id VARCHAR(255) NULL,
-		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (signature))`
+	dialect = "mysql"
 )
 
 func initDB(dsn string) *dbr.Session {
-	// create a connection (e.g. "postgres", "mysql", or "sqlite3")
+	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
 	conn, _ := dbr.Open(dialect, dsn, nil)
 	conn.SetMaxOpenConns(1)
 
@@ -49,29 +45,50 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	if opts.HasTablenameSuffix {
 		tblName += r.GetTablenameSuffix()
 	}
-	_, err = tx.Exec(fmt.Sprintf(tblDecodeCreateStmt, opts.SchemaName, tblName))
+	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
+	createTbl := getCreateTableStatement(r.GetEntityType())
+	_, err = tx.Exec(fmt.Sprintf(createTbl, tblNameTick))
 	if err != nil {
 		return updated, logger.Err(err)
 	}
 	var res sql.Result
 	rIDField := r.GetIDField()
 	rmap := r.GetMap()
-	stmt := tx.Select(rIDField).From(tblName).Where(rIDField+" = ?", rmap[rIDField])
+	stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.Info(buf.String())
+	logger.InfoFmt("EXISTS?: %s", buf.String())
 	exists, err := stmt.ReturnString()
+	logger.InfoFmt("%s: %s = %s", rIDField, rmap[rIDField], exists)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
 		}
 	}
-	logger.InfoFmt("%s = %s", rmap[rIDField], exists)
 	if len(exists) < 1 {
-		is := tx.InsertInto(tblName).Columns(r.GetColumnList()...).Record(r)
+		is := tx.InsertInto(tblName)
+		switch r.GetEntityType() {
+		case models.TypeDecode:
+			is = is.Columns(r.GetColumnList()...).Record(r)
+		default:
+			sigs := `[`
+			for _, s := range r.GetSignatures() {
+				sigs += `"` + s + `",`
+			}
+			sigs = sigs[:len(sigs)-1] + `]`
+			is = is.Pair("signatures", sigs)
+			if r.GetPassthrough() != "" {
+				is = is.Pair("passthrough", r.GetPassthrough())
+			}
+			rec := utils.StructToMap(r, r.GetColumnBlackList())
+			j, _ := json.Marshal(rec["record"])
+			// logger.InfoFmt("value: %#v", string(j))
+			is = is.Pair("record", string(j))
+		}
+
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
-		logger.Info(buf.String())
+		logger.InfoFmt("INSERT: %s", buf.String())
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).
@@ -79,7 +96,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			SetMap(rmap)
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
-		logger.Info(buf.String())
+		logger.InfoFmt("UPDATE: %s", buf.String())
 		res, err = us.Exec()
 		updated = true
 	}
@@ -107,7 +124,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	if opts.HasTablenameSuffix {
 		tblName += r.GetTablenameSuffix()
 	}
-	// querystr := "SELECT " + strings.Join(r.GetColumnList(), ",") + " FROM " + tblName
+	tblName = fmt.Sprintf(tblNameFormatTick, tblName)
 	sess := initDB(dsn)
 	tx, err := sess.Begin()
 	if err != nil {

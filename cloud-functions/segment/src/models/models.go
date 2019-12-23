@@ -94,14 +94,14 @@ func (r *DecodeRecord) GetSignatures() []string {
 
 // BaseRecord input for the API
 type BaseRecord struct {
-	OwnerID         int64     `json:"ownerId" bigquery:"-"`
-	EntityType      string    `json:"entityType" bigquery:"-"`
-	Source          string    `json:"source" bigquery:"-"`
-	Owner           string    `json:"owner" bigquery:"-"`
-	Passthrough     string    `json:"passthrough" bigquery:"passthrough"`
-	Attributes      string    `json:"attributes" bigquery:"-"`
-	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp"`
-	DBopts          Options   `json:"-" bigquery:"-"`
+	OwnerID         int64     `json:"ownerId" bigquery:"-" sql:"-"`
+	EntityType      string    `json:"entityType" bigquery:"-" sql:"-"`
+	Source          string    `json:"source" bigquery:"-" sql:"-"`
+	Owner           string    `json:"owner" bigquery:"-" sql:"-"`
+	Passthrough     string    `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
+	Attributes      string    `json:"attributes" bigquery:"-" sql:"-"`
+	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
+	DBopts          Options   `json:"-" bigquery:"-" sql:"-"`
 	StorageType     string    `json:"-" sql:"-" bigquery:"-"` // csql or bq
 	IDField         string    `json:"-" sql:"-" bigquery:"-"`
 	ColumnList      []string  `json:"-" sql:"-" bigquery:"-"`
@@ -115,6 +115,9 @@ func (r *BaseRecord) GetOwnerID() int64 {
 
 // GetStrOwnerID gets the Customer id
 func (r *BaseRecord) GetStrOwnerID() string {
+	if r.OwnerID == 0 {
+		return r.Owner
+	}
 	return utils.I64toa(r.OwnerID)
 }
 
@@ -300,9 +303,14 @@ func (r *OrderDetailRecord) GetSurrogateID() string {
 // PeopleRecord a event type record
 type PeopleRecord struct {
 	BaseRecord
-	Signatures []string `json:"signatures" bigquery:"signatures"`
+	Signatures []string `json:"signatures" bigquery:"signatures" sql:"signatures"`
 	// SurrogateID string   `json:"surrogateId" bigquery:"surrogateid"`
-	Record People `json:"record" bigquery:"record"`
+	Record People `json:"record" bigquery:"record" sql:"record"`
+}
+
+// GetMap gets the column list for DecodeRecord
+func (r *PeopleRecord) GetMap() map[string]interface{} {
+	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
 // GetSignatures gets the person signatures
@@ -333,31 +341,31 @@ type FallbackRecord struct {
 
 // Event data
 type Event struct {
-	EventID  string `json:"eventId" bigquery:"eventid"` // signature#
-	Type     string `json:"type" bigquery:"type"`
-	Browser  string `json:"browser" bigquery:"browser"`
-	OS       string `json:"os" bigquery:"os"`
-	Channel  string `json:"channel" bigquery:"channel"`
-	Location string `json:"location" bigquery:"location"`
-	Domain   string `json:"domain" bigquery:"domain"`
-	URL      string `json:"url" bigquery:"url"`
-	Referrer string `json:"referrer" bigquery:"referrer"`
+	EventID  string `json:"eventId" bigquery:"eventid" sql:"event_id"` // signature#
+	Type     string `json:"type" bigquery:"type" sql:"type"`
+	Browser  string `json:"browser" bigquery:"browser" sql:"browser"`
+	OS       string `json:"os" bigquery:"os" sql:"od"`
+	Channel  string `json:"channel" bigquery:"channel" sql:"channel"`
+	Location string `json:"location" bigquery:"location" sql:"location"`
+	Domain   string `json:"domain" bigquery:"domain" sql:"domain"`
+	URL      string `json:"url" bigquery:"url" sql:"url"`
+	Referrer string `json:"referrer" bigquery:"referrer" sql:"referrer"`
 }
 
 // Campaign data
 type Campaign struct {
-	CampaignID string    `json:"campaignId" bigquery:"campaignid"`
-	Name       string    `json:"name" bigquery:"name"`
-	StartDate  time.Time `json:"startDate" bigquery:"startdate"`
+	CampaignID string    `json:"campaignId" bigquery:"campaignid" sql:"campaign_id"`
+	Name       string    `json:"name" bigquery:"name" sql:"name"`
+	StartDate  time.Time `json:"startDate" bigquery:"startdate" sql:"startdate"`
 }
 
 // Product data
 type Product struct {
-	ProductID string `json:"productId" bigquery:"productid"`
-	Category  string `json:"category" bigquery:"category"`
-	SKU       string `json:"sku" bigquery:"sku"`
-	Size      string `json:"size" bigquery:"size"`
-	Color     string `json:"color" bigquery:"color"`
+	ProductID string `json:"productId" bigquery:"productid" sql:"product_id"`
+	Category  string `json:"category" bigquery:"category" sql:"category"`
+	SKU       string `json:"sku" bigquery:"sku" sql:"sku"`
+	Size      string `json:"size" bigquery:"size" sql:"size"`
+	Color     string `json:"color" bigquery:"color" sql:"color"`
 }
 
 // OrderHeader data
@@ -373,39 +381,39 @@ type OrderHeader struct {
 
 // OrderConsignment data
 type OrderConsignment struct {
-	OrderID       string    `json:"orderId" bigquery:"orderid"`
-	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid"`
-	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
-	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
+	OrderID       string    `json:"orderId" bigquery:"orderid" sql:"order_id"`
+	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid" sql:"consignment_id"`
+	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate" sql:"shipdate"`
+	SubTotal      string    `json:"subTotal" bigquery:"subtotal" sql:"subtotal"`
 }
 
 // OrderDetail data
 type OrderDetail struct {
-	OrderID       string    `json:"orderId" bigquery:"orderid"`
-	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid"`
-	OrderDetailID string    `json:"orderDetailId" bigquery:"orderdetailid"`
-	ProductID     string    `json:"productId" bigquery:"productid"`
-	SKU           string    `json:"sku" bigquery:"sku"`
-	Quantity      int       `json:"quantity" bigquery:"quantity"`
-	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate"`
-	SubTotal      string    `json:"subTotal" bigquery:"subtotal"`
-	UnitPrice     string    `json:"unitPrice" bigquery:"unitprice"`
+	OrderID       string    `json:"orderId" bigquery:"orderid" sql:"order_id"`
+	ConsignmentID string    `json:"consignmentId" bigquery:"consignmentid" sql:"consigment_id"`
+	OrderDetailID string    `json:"orderDetailId" bigquery:"orderdetailid" sql:"order_detail_id"`
+	ProductID     string    `json:"productId" bigquery:"productid" sql:"product_id"`
+	SKU           string    `json:"sku" bigquery:"sku" sql:"sku"`
+	Quantity      int       `json:"quantity" bigquery:"quantity" sql:"quantity"`
+	ShipDate      time.Time `json:"shipDate" bigquery:"shipdate" sql:"shipdate"`
+	SubTotal      string    `json:"subTotal" bigquery:"subtotal" sql:"subtotal"`
+	UnitPrice     string    `json:"unitPrice" bigquery:"unitprice" sql:"unitprice"`
 }
 
 // People data
 type People struct {
-	PeopleID     string  `json:"peopleId" bigquery:"peopleid"`
-	Salutation   string  `json:"salutation" bigquery:"salutation"`
-	FirstName    string  `json:"firstName" bigquery:"firstname"`
-	LastName     string  `json:"lastName" bigquery:"lastname"`
-	Gender       string  `json:"gender" bigquery:"gender"`
-	Age          string  `json:"age" bigquery:"age"`
-	Emails       []Email `json:"emails" bigquery:"emails"`
-	Phones       []Phone `json:"phones" bigquery:"phones"`
-	Organization string  `json:"organization" bigquery:"organization"`
-	Title        string  `json:"title" bigquery:"title"`
-	Role         string  `json:"role" bigquery:"role"`
-	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect"`
+	PeopleID     string  `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
+	Salutation   string  `json:"salutation" bigquery:"salutation" sql:"salutation"`
+	FirstName    string  `json:"firstName" bigquery:"firstname" sql:"firstname"`
+	LastName     string  `json:"lastName" bigquery:"lastname" sql:"lastname"`
+	Gender       string  `json:"gender" bigquery:"gender" sql:"gender"`
+	Age          string  `json:"age" bigquery:"age" sql:"age"`
+	Emails       []Email `json:"emails" bigquery:"emails" sql:"emails"`
+	Phones       []Phone `json:"phones" bigquery:"phones" sql:"phones"`
+	Organization string  `json:"organization" bigquery:"organization" sql:"organization"`
+	Title        string  `json:"title" bigquery:"title" sql:"title"`
+	Role         string  `json:"role" bigquery:"role" sql:"role"`
+	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect" sql:"adcorrect"`
 }
 
 // Email email+type struct

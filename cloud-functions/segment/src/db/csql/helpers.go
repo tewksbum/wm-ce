@@ -9,6 +9,23 @@ import (
 	"github.com/gocraft/dbr/v2"
 )
 
+const (
+	tblNameFormatTick   = "`%s`"
+	tblDecodeCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
+		signature VARCHAR(255) NOT NULL,
+		people_id VARCHAR(255) NULL,
+		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY (signature))`
+	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
+		id serial PRIMARY KEY,
+		signatures JSON NULL,
+		passthrough JSON NULL,
+		record JSON NULL,
+		timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+	)`
+)
+
 func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or wemade.OutputRecord, err error) {
 	totalrows := 0
 	switch entityType {
@@ -67,4 +84,13 @@ func appendList(rows interface{}, totalrows int, entityType string, blacklist []
 		list = append(list, utils.StructToMap(models.GetRecordFromSlice(entityType, rows, i), blacklist))
 	}
 	return list
+}
+
+func getCreateTableStatement(entityType string) string {
+	switch entityType {
+	case models.TypeDecode:
+		return tblDecodeCreateStmt
+	default:
+		return tblCreateStmt
+	}
 }

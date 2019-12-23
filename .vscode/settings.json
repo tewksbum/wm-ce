@@ -21,6 +21,15 @@
       "port": 3306,
       "server": "35.222.83.59",
       "username": "segment"
+    },
+    {
+      "database": "segment_dev",
+      "dialect": "MySQL",
+      "name": "local",
+      "password": "1D6ed69da19441c0a238da288c3cb8e2!",
+      "port": 3306,
+      "server": "localhost",
+      "username": "segment"
     }
   ],
   "go.testEnvVars": {
@@ -31,8 +40,8 @@
     "CSQL_INSTANCEID": "wemade",
     "CSQL_SCHEMA": "segment_dev",
     "CSQL_USER": "segment",
-    "CSQL_PASS": "RLWOrYOntAINtRatioNtURaI",
-    "CSQL_CNN": "%s:%s@tcp(localhost:3307)/segment_dev?charset=utf8mb4,utf8&parseTime=true",
+    "CSQL_PASS": "1D6ed69da19441c0a238da288c3cb8e2!",
+    "CSQL_CNN": "%s:%s@tcp(localhost:3306)/segment_dev?charset=utf8mb4,utf8&parseTime=true",
     // "TEMP_FIXED_ACCESS_KEY": "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3"
     "TEMP_FIXED_ACCESS_KEY": ""
   }

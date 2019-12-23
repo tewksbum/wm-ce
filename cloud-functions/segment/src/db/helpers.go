@@ -8,7 +8,7 @@ func buildDecode(r *models.PeopleRecord, signature string) models.Record {
 	rs := &models.DecodeRecord{}
 	rs.BaseRecord = models.BaseRecord{
 		OwnerID:     r.GetOwnerID(),
-		EntityType:  r.GetEntityType(),
+		EntityType:  models.TypeDecode,
 		Source:      r.GetSource(),
 		Owner:       r.GetOwner(),
 		Passthrough: r.GetPassthrough(),
@@ -20,9 +20,10 @@ func buildDecode(r *models.PeopleRecord, signature string) models.Record {
 	rs.ColumnBlackList = models.DecodeBlackList
 	rs.DBopts = models.Options{
 		Type:               models.CSQL,
-		Tablename:          rs.GetStrOwnerID(),
 		TablenamePrefix:    models.TblnamePrefix,
-		TablenameSuffix:    models.TblDecode,
+		Tablename:          models.TblDecode,
+		TablenameSuffix:    rs.GetStrOwnerID(),
+		SchemaName:         r.GetDBOptions().SchemaName,
 		IsPartitioned:      false,
 		HasTablenameSuffix: true,
 		HasTablenamePrefix: true,

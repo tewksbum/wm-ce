@@ -36,6 +36,8 @@ var (
 
 // "Decode" specific variables
 var (
+	IDField          = "id"
+	ColumnList       = []string{"signatures", "passthrough"}
 	DecodeIDField    = "signature"
 	DecodeColumnList = []string{"signature", "people_id"}
 	DecodeBlackList  = []string{"passthrough", "attributes", "source",
