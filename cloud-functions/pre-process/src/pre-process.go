@@ -449,8 +449,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
 
 	// see if the record already exists, discard if it is
-	var existing []RecordDS
-	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID), &existing); err != nil {
+	var existing []datastore.Key
+	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
 		log.Printf("Error querying existing records: %v", err)
 	}
 	if len(existing) > 0 {
