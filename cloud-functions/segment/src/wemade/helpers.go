@@ -53,9 +53,13 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	if organization == "" {
 		organization = input.Attributes["organization"]
 	}
+	columns := input.Columns
+	if len(columns) < 1 {
+		columns = models.ColumnList
+	}
 	br := models.BaseRecord{
 		IDField:     models.IDField,
-		ColumnList:  models.ColumnList,
+		ColumnList:  columns,
 		EntityType:  input.EntityType,
 		OwnerID:     cust.Key.ID,
 		Owner:       owner,

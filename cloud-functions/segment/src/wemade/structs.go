@@ -27,13 +27,14 @@ type APIInput struct {
 	Passthrough  map[string]string    `json:"passthrough"`
 	Attributes   map[string]string    `json:"attributes"`
 	Filters      []models.QueryFilter `json:"filters"`
+	Columns      []string             `json:"columns"`
 	// InputData    interface{}          `json:"inputData"`
 }
 
 // APIOutput basic json to return API responses
 type APIOutput struct {
-	Success bool           `json:"success"`
-	Message string         `json:"message"`
+	Success bool          `json:"success"`
+	Message string        `json:"message"`
 	Records *OutputRecord `json:"records,omitempty"`
 }
 
