@@ -815,23 +815,26 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
-			SetMkField(mkOutput, "AD1", a[0].DeliveryLine1, "SS")
-			SetMkField(mkOutput, "AD1NO", a[0].Components.PrimaryNumber, "SS")
-			SetMkField(mkOutput, "CITY", a[0].Components.CityName, "SS")
-			SetMkField(mkOutput, "STATE", a[0].Components.StateAbbreviation, "SS")
+			mkOutput.AD1.Value = a[0].DeliveryLine1
+			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			mkOutput.CITY.Value = a[0].Components.CityName
+			mkOutput.STATE.Value = a[0].Components.StateAbbreviation
+
 			Zip := a[0].Components.Zipcode
 			if len(a[0].Components.Plus4Code) > 0 {
 				Zip += "-" + a[0].Components.Plus4Code
 			}
-			SetMkField(mkOutput, "ZIP", Zip, "SS")
-			SetMkField(mkOutput, "COUNTRY", "US", "SS")            // if libpostal can parse it, it is an US address
+			mkOutput.ZIP.Value = Zip
+			mkOutput.COUNTRY.Value = "US"                          // if libpostal can parse it, it is an US address
 			SetMkField(mkOutput, "ADPARSER", "smartystreet", "SS") // if libpostal can parse it, it is an US address
-			SetMkField(mkOutput, "ADTYPE", a[0].Metadata.Rdi, "SS")
-			SetMkField(mkOutput, "ZIPTYPE", a[0].Metadata.ZipType, "SS")
-			SetMkField(mkOutput, "RECORDTYPE", a[0].Metadata.RecordType, "SS")
+			mkOutput.ADTYPE.Value = a[0].Metadata.Rdi
+			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
+			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
+
 		}
 	}
 }
+
 func CorrectAddress(in string) SmartyStreetResponse {
 	var smartyStreetResponse SmartyStreetResponse
 	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
