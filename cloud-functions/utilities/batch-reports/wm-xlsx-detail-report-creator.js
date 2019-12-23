@@ -12,8 +12,7 @@ const Excel = require("exceljs");
   }
   var workBook = new Excel.Workbook();
   workBook = await workBook.xlsx.readFile(inputFilename);
-  var DetailSheet1 = workBook.addWorksheet("Records");
-  var DetailSheet2 = workBook.addWorksheet("Fibers");
+
   //report logging
   const today = new Date();
   const logFile = `./logs/xdetailreport-log-${today.toISOString()}.json`;
@@ -27,9 +26,15 @@ const Excel = require("exceljs");
   // const reportStatic = JSON.parse(rawData);
   const worksheet = workBook.getWorksheet(1);
   for (let index = 2; index <= worksheet.rowCount; index++) {
+    
+    var workBookTarget = new Excel.Workbook();
+    var DetailSheet1 = workBookTarget.addWorksheet("Records");
+    var DetailSheet2 = workBookTarget.addWorksheet("Fibers");
     let currentRow = worksheet.getRow(index);
+    if (!currentRow.getCell(8).value) {
+      continue;
+    }
     currentRow.hidden = false;
-    console.log("value is " + currentRow.values[3]);
     const enabled = currentRow.values[3];
     if (!enabled) {
       console.log("row " + index + " not enabled");
@@ -79,17 +84,17 @@ const Excel = require("exceljs");
     }
     //DetailSheet.getRow(1).values = report.GridHeader;
     // console.log(report.GridRecords);
-    report.GridRecords.forEach(r => DetailSheet1.addRow(r));
-    report.GridFibers.forEach(r => DetailSheet2.addRow(r));
+    await report.GridRecords.forEach(r => DetailSheet1.addRow(r));
+    await report.GridFibers.forEach(r => DetailSheet2.addRow(r));
+
+    const xlsFileName = `detail-report-${currentUL.owner}-${currentUL.requestId}.xlsx`;
+    await workBookTarget.xlsx.writeFile(xlsFileName).then(function() {
+      console.log(`Saved xls file as ${xlsFileName}`);
+    });
   }
   //close log stream
   stream.write("\n]", () => {
     stream.end();
   });
-  worksheet.columns.forEach(c => (c.hidden = false));
-  worksheet.getRow(1).hidden = false;
-  const xlsFileName = "detail-report.xlsx";
-  workBook.xlsx.writeFile(xlsFileName).then(function() {
-    console.log(`Saved xls file as ${xlsFileName}`);
-  });
+
 })();
