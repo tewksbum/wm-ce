@@ -75,8 +75,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			for _, s := range r.GetSignatures() {
 				sigs += `"` + s + `",`
 			}
-			sigs = sigs[:len(sigs)-1] + `]`
-			is = is.Pair("signatures", sigs)
+			if sigs != "[" {
+				sigs = sigs[:len(sigs)-1] + `]`
+				is = is.Pair("signatures", sigs)
+			} else {
+				sigs = "[]"
+			}
 			if r.GetPassthrough() != "" {
 				is = is.Pair("passthrough", r.GetPassthrough())
 			}
