@@ -341,6 +341,8 @@ var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|I
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 
+var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
+
 // var StateList = map[string]string{
 // 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
 // 	"FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS",
@@ -716,6 +718,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// check to see if we need to deal with MAR that needs to be merged back to the default output
 	// specifically we are checking if the MAR field is AD1 and if default has a blank AD2
 	indexToSkip := -1
+
+	defaultMissingAddress := false
+	mprIndexWithAddress := -1
+
 	for i, v := range outputs {
 		if v.Type == "default" {
 			ad2 := GetMkField(&(v.Output), "AD2")
@@ -734,6 +740,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 				}
+			}
+			if len(GetMkField(&(v.Output), "AD1").Value) == 0 {
+				defaultMissingAddress = true
+			}
+		} else if v.Type == "mpr" {
+			if len(GetMkField(&(v.Output), "AD1").Value) == 0 && mprIndexWithAddress == -1 {
+				mprIndexWithAddress = i
 			}
 		}
 	}
@@ -756,6 +769,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				v.Output.STATE.Source = "WM"
 			}
 		}
+
+		// copy address fields from MPR to default if value is missing
+		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {
+			for _, f := range fieldsToCopyForDefault {
+				mk := GetMkField(&(outputs[mprIndexWithAddress].Output), f)
+				SetMkField(&(v.Output), f, mk.Value, mk.Source)
+			}
+
+		}
+
 		// // do a state lookup, no longer necessary
 		// stateUpper := strings.ToUpper(v.Output.STATE.Value)
 		// if sa, ok := StateList[stateUpper]; ok {
