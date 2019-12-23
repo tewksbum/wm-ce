@@ -582,9 +582,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// stop processing if no new values
-	if !HasNewValues {
-		return nil
-	}
+	// if !HasNewValues {
+	// 	return nil
+	// }
 	if !matchable {
 		return nil
 	}
