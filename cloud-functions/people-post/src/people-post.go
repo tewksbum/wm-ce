@@ -853,8 +853,19 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			mkOutput.ADTYPE.Value = a[0].Metadata.Rdi
 			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
 			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
-
 		}
+	}
+
+	if reState.MatchString(mkOutput.STATE.Value) {
+		LogDev(fmt.Sprintf("overriding country by state value: %v", mkOutput.STATE.Value))
+		mkOutput.COUNTRY.Value = "US"
+		mkOutput.COUNTRY.Source = "WM"
+	}
+
+	if len(mkOutput.STATE.Value) == 0 && mkOutput.COUNTRY.Value == "PR" { // handle libpostal treating PR as country
+		mkOutput.STATE.Value = "PR"
+		mkOutput.COUNTRY.Value = "US"
+		mkOutput.COUNTRY.Source = "WM"
 	}
 }
 
