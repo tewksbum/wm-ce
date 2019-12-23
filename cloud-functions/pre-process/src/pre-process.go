@@ -444,7 +444,20 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	dsNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+
 	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
+
+	// see if the record already exists, discard if it is
+	var existing []RecordDS
+	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID), &existing); err != nil {
+		log.Printf("Error querying existing records: %v", err)
+	}
+	if len(existing) > 0 {
+		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+		return nil
+	}
+
 	if len(input.Fields) > 0 {
 		for k, v := range input.Fields {
 			input.Fields[k] = strings.TrimSpace(v)
@@ -748,7 +761,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	}
 
 	dsKey := datastore.IncompleteKey(DSKind, nil)
-	dsKey.Namespace = strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+	dsKey.Namespace = dsNamespace
 	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
 		log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
 	}
