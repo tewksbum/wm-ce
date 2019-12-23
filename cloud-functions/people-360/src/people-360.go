@@ -361,7 +361,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if input.Signature.FiberType == "default" {
 		if len(input.MatchKeys.EMAIL.Value) > 0 ||
 			(len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0) ||
-			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADTYPE.Value) > 0) {
+			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADBOOK.Value) > 0) {
 			matchable = true
 		}
 	} else {
@@ -411,7 +411,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
 		MatchByKey5E := "AD1NO"
 		MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
-		MatchByKey5F := "ADTYPE"
+		MatchByKey5F := "ADBOOK"
 		MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
 
 		matchedSets := []PeopleSetDS{}
