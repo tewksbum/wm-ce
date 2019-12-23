@@ -380,6 +380,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		FiberMatchKeys[name] = []string{}
 	}
 	var matchedFibers []string
+	matchedDefaultFiber := 0
 	var expiredSetCollection []string
 
 	if matchable {
@@ -529,6 +530,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				RecordID:  fiber.RecordID,
 			})
 
+			if fiber.RECORDTYPE.Value == "default" {
+				matchedDefaultFiber++
+			}
+
 			for _, name := range MatchKeyList {
 				value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
 				if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
@@ -563,7 +568,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	if !matchable {
 		dsFiber.Disposition = "purge"
-	} else if len(matchedFibers) == 0 {
+	} else if matchedDefaultFiber == 0 {
 		dsFiber.Disposition = "new"
 	} else if !HasNewValues {
 		dsFiber.Disposition = "dupe"
