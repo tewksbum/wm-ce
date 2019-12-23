@@ -811,7 +811,7 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 func StandardizeAddressSS(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
-	if len(strings.TrimSpace(addressInput)) > 0 {
+	if len(strings.TrimSpace(addressInput)) > 10 {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
