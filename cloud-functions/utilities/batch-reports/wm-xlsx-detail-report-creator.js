@@ -26,11 +26,15 @@ const Excel = require("exceljs");
   // );
   // const reportStatic = JSON.parse(rawData);
   const worksheet = workBook.getWorksheet(1);
-  for (let index = 2; index < worksheet.rowCount; index++) {
+  for (let index = 2; index <= worksheet.rowCount; index++) {
     let currentRow = worksheet.getRow(index);
     currentRow.hidden = false;
-    const enabled = currentRow.values[3] ? currentRow.values[3] : false;
-    if (enabled !== true) if (enabled.formula !== "TRUE()") continue;
+    console.log("value is " + currentRow.values[3]);
+    const enabled = currentRow.values[3];
+    if (!enabled) {
+      console.log("row " + index + " not enabled");
+      continue;
+    }
     let currentUL = {
       schoolcode: currentRow.getCell(5).value,
       fileURL: currentRow.getCell(9).value,
