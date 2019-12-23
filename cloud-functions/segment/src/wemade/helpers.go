@@ -20,21 +20,29 @@ var (
 	tempfixFixedAccesskey = os.Getenv("TEMP_FIXED_ACCESS_KEY")
 )
 
-// BuildRecordFromInput serialize a json into a Request struct, checks the API key and
-func BuildRecordFromInput(projectID string, namespace string, data []byte) (models.Record, error) {
+// BuildInputFromData serializes the json into the APIInput struct and returns
+func BuildInputFromData(data []byte) (APIInput, error) {
 	var input APIInput
-	ctx := context.Background()
-	surrogateID := uuid.New().String()
 
 	err := json.Unmarshal(data, &input)
 	if err != nil {
-		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+		return input, logger.ErrFmt(ErrDecodingRequest, err)
 	}
+	return input, nil
+}
 
+// BuildRecordFromInput serialize a json into a Request struct, checks the API key and
+func BuildRecordFromInput(projectID string, namespace string, data []byte, useFixedAccessKey bool) (models.Record, error) {
+	ctx := context.Background()
+	surrogateID := uuid.New().String()
+	input, err := BuildInputFromData(data)
+	if err != nil {
+		return nil, err
+	}
 	accessKey := input.AccessKey
 
-	//TODO: Remove this dirty patch
-	if tempfixFixedAccesskey != "" {
+	if tempfixFixedAccesskey != "" && useFixedAccessKey {
+		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
 		accessKey = tempfixFixedAccesskey
 	}
 

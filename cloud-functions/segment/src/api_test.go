@@ -45,7 +45,7 @@ func TestUpsert(t *testing.T) {
 		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
 		"entityType": "people",
 		"peopleId":   "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
-		"firstName":  "Pupu", "lastName": "Toto",
+		"firstName":  "Pupu", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
 		"emails": []map[string]string{
 			{"email": "email@ocm.com", "type": "work"},
@@ -116,21 +116,20 @@ func TestRead(t *testing.T) {
 	// }
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType": "decode",
-		"source":     "test",
+		"entityType": "people",
+		// "source":     "test",
 		"filters": []map[string]interface{}{
+			{
+				"field": "record->'$.lastName'",
+				"op":    models.OperationEquals,
+				"value": "Ali",
+			},
 			// {
-			// 	"field": "peopleId",
-			// 	"op":    models.OperationEquals,
-			// 	"value": "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	"opLink": "AND",
+			// 	"field":  "signature",
+			// 	"op":     models.OperationIsNotNull,
 			// 	// "values": []int{108, 108, 110},
 			// },
-			{
-				"opLink": "AND",
-				"field":  "signature",
-				"op":     models.OperationIsNotNull,
-				// "values": []int{108, 108, 110},
-			},
 			// {
 			// 	"field":  "record.peopleid",
 			// 	"op":     models.OperationNotIn,
@@ -138,13 +137,13 @@ func TestRead(t *testing.T) {
 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
 			// 	"values": []int{108, 108, 110},
 			// },
-			{
-				"opType": "order",
-				"field":  "created_at", //"timestamp",
-				"op":     "desc",
-				// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-				// "values": []int{108, 108, 110},
-			},
+			// {
+			// 	"opType": "order",
+			// 	"field":  "created_at", //"timestamp",
+			// 	"op":     "desc",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	// "values": []int{108, 108, 110},
+			// },
 			// {
 			// 	"opType": "order",
 			// 	"field":  "signature",

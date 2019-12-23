@@ -65,8 +65,9 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 			op = opToSQL(f.Op, "")
 		}
 		pf := ParsedQueryFilter{
-			ParamNames:      []string{field},
-			ParsedCondition: utils.ToSnakeCase(f.Field) + op,
+			ParamNames: []string{field},
+			// ParsedCondition: utils.ToSnakeCase(f.Field) + op,
+			ParsedCondition: f.Field + op,
 		}
 		if f.Value != nil {
 			pf.Values = []interface{}{f.Value}

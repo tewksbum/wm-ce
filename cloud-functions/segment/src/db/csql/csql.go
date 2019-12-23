@@ -23,7 +23,7 @@ const (
 func initDB(dsn string) *dbr.Session {
 	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
 	conn, _ := dbr.Open(dialect, dsn, nil)
-	conn.SetMaxOpenConns(1)
+	// conn.SetMaxOpenConns(1)
 
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return conn.NewSession(nil)
