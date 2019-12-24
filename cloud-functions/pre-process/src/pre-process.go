@@ -539,10 +539,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 		// log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 		// this is going to be tight around name address... for entity detection could relax this...
-		if column.PeopleERR.FirstName == 1 {
+		if column.PeopleERR.FirstName == 1 || column.PeopleERR.ContainsFirstName == 1 {
 			columnFlags.PeopleFirstName = true
 		}
-		if column.PeopleERR.LastName == 1 {
+		if column.PeopleERR.LastName == 1 || column.PeopleERR.ContainsLastName == 1 {
 			columnFlags.PeopleLastName = true
 		}
 		if column.PeopleERR.Address1 == 1 {
@@ -551,10 +551,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.ContainsAddress == 1 {
 			columnFlags.PeopleAddress = true
 		}
-		if column.PeopleERR.ZipCode == 1 {
+		if column.PeopleERR.ZipCode == 1 || column.PeopleERR.ContainsZipCode == 1 {
 			columnFlags.PeopleZip = true
 		}
-		if column.PeopleERR.City == 1 {
+		if column.PeopleERR.City == 1 || column.PeopleERR.ContainsCity == 1 {
 			columnFlags.PeopleCity = true
 		}
 		if column.PeopleERR.ContainsEmail == 1 {
