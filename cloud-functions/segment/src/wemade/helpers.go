@@ -40,6 +40,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return nil, err
 	}
 	accessKey := input.AccessKey
+	logger.InfoFmt("RawInputJSON: %s", string(data))
 
 	if tempfixFixedAccesskey != "" && useFixedAccessKey {
 		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
@@ -79,7 +80,6 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 
 	// idata, _ := json.Marshal(input)
 	// brdata, _ := json.Marshal(br)
-	logger.InfoFmt("RawInputJSON: %s", string(data))
 	// logger.InfoFmt("APIInput: %s", string(idata))
 	// logger.InfoFmt("BaseRecord: %s", string(brdata))
 
