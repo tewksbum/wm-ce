@@ -745,7 +745,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				defaultMissingAddress = true
 			}
 		} else if v.Type == "mpr" {
-			if len(GetMkField(&(v.Output), "AD1").Value) == 0 && mprIndexWithAddress == -1 {
+			if len(GetMkField(&(v.Output), "AD1").Value) > 0 && mprIndexWithAddress == -1 {
 				mprIndexWithAddress = i
 			}
 		}
