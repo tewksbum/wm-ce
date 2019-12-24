@@ -745,7 +745,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				defaultMissingAddress = true
 			}
 		} else if v.Type == "mpr" {
-			if len(GetMkField(&(v.Output), "AD1").Value) > 0 && mprIndexWithAddress == -1 {
+			if (len(GetMkField(&(v.Output), "AD1").Value) > 0 || len(GetMkField(&(v.Output), "AD2").Value) > 0) && mprIndexWithAddress == -1 {
 				mprIndexWithAddress = i
 			}
 		}
@@ -775,7 +775,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {
 			for _, f := range fieldsToCopyForDefault {
 				mk := GetMkField(&(outputs[mprIndexWithAddress].Output), f)
-				SetMkField(&(v.Output), f, mk.Value, mk.Source)
+				mko := GetMkField(&(v.Output), f)
+				if len(mko.Value) == 0 {
+					SetMkField(&(v.Output), f, mk.Value, mk.Source)
+				}
 			}
 
 		}
