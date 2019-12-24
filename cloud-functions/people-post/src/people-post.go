@@ -750,6 +750,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 	}
+	LogDev(fmt.Sprintf("defaultMissingAddress = %v, mprIndexWithAddress = %v", defaultMissingAddress, mprIndexWithAddress))
 
 	pubQueue := []PubQueue{}
 	for i, v := range outputs {
