@@ -361,7 +361,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if input.Signature.FiberType == "default" {
 		if len(input.MatchKeys.EMAIL.Value) > 0 ||
 			(len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0) ||
-			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 && len(input.MatchKeys.ADBOOK.Value) > 0) {
+			(len(input.MatchKeys.CITY.Value) > 0 &&
+				(len(input.MatchKeys.STATE.Value) > 0 || (len(input.MatchKeys.COUNTRY.Value) > 0 && input.MatchKeys.COUNTRY.Value != "US")) &&
+				len(input.MatchKeys.LNAME.Value) > 0 &&
+				len(input.MatchKeys.FNAME.Value) > 0 &&
+				len(input.MatchKeys.AD1.Value) > 0 &&
+				len(input.MatchKeys.ADBOOK.Value) > 0) {
 			matchable = true
 		}
 	} else {
