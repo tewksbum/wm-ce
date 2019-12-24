@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -268,8 +267,8 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	logDebug(fmt.Sprintf("Input message decoded %v from %v pubsub message %v", string(inputType), string(inputSource), string(m.Data)))
 	var rSignature = request360.Signature
 	var rSignatures = request360.Signatures
-	//Get SOR setup
 
+	//Get SOR setup
 	// TODO: LP-205
 	// var sskind bytes.Buffer
 	// dsKindtemplate, err := template.New("abmOwnerSourcess").Parse(SORKindTemplate)
@@ -281,33 +280,32 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	// 	log.Printf("[ERROR]<%v>-<%v> Unable execute text template: %v", rSignature.OwnerID, rSignature.Source, err)
 	// 	return nil
 	// }
-	
+
 	//Get the customer info
 	var centities []CustomerInfo
-	k := datastore.Key{
-		Kind:      "Customer",
-		Name:      rSignature.OwnerID,
-		Namespace: "wemade-dev",
-	}
-	cquery := datastore.NewQuery("Customer").Namespace(CustomerNamespace)
-
-	cquery.Filter("__key__ =", k).Limit(1)
-
+	k := datastore.NameKey("Customer", rSignature.OwnerID, nil)
+	k.Namespace = "wemade-dev"
+	cquery := datastore.NewQuery("Customer").Filter("__key__ =", k).Limit(1).Namespace("wemade-dev")
 	if _, err := dsClient.GetAll(ctx, cquery, &centities); err != nil {
 		log.Printf("[ERROR]<%v>-<%v> Error querying CUSTOMER data: %v", rSignature.OwnerID, rSignature.Source, err)
 		return nil
 	}
 	if len(centities) == 0 {
-		log.Printf("[ERROR]<%v>-<%v> No Customer info kind: %v namespace: %v", rSignature.OwnerID, rSignature.Source, CustomerKind, CustomerNamespace)
+		log.Printf("[ERROR]<%v>-<%v> No Customer info namespace: %v kind: %v OwnerID: %v", rSignature.OwnerID, rSignature.Source, CustomerNamespace, CustomerKind, rSignature.OwnerID)
 		return nil
 	}
 	customerInfo := centities[0]
+	if customerInfo.Owner != rSignature.OwnerID {
+		log.Printf("[ERROR]<%v>-<%v> wrong owner from customer ds, expecting %s got %s  This means theres either an error on abm or a missmatch on the database between key and owner", rSignature.OwnerID, rSignature.Source, rSignature.OwnerID, customerInfo.Owner)
+		return nil
+	}
 
 	var r360filteredmk []MatchKey360
 	r360filteredmk = request360.MatchKeys
 
 	var outputHeader OutputHeader
 	outputHeader.AccessKey = customerInfo.AccessKey // don't Change to ocm then?
+
 	outputHeader.EntityType = inputType
 	var common Common
 	output := Output{
