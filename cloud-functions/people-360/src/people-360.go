@@ -535,7 +535,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				RecordID:  fiber.RecordID,
 			})
 
-			if fiber.RECORDTYPE.Value == "default" {
+			if fiber.FiberType == "default" {
 				matchedDefaultFiber++
 			}
 
