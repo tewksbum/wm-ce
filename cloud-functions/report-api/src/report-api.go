@@ -421,7 +421,7 @@ func init() {
 	log.Printf("init completed")
 }
 
-// ProcessEvent Receives a http event request
+// ProcessRequest Receives a http event request
 func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Owner      string `json:"owner"`
@@ -486,7 +486,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && len(input.RequestID) < 20 {
+	if !strings.EqualFold(input.ReportType, "file") && len(input.RequestID) < 36 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"requestId must be supplied for reportType of file\"}")
 		return
