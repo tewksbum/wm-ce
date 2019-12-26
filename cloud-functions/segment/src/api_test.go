@@ -43,10 +43,10 @@ func TestUpsert(t *testing.T) {
 
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType":  "people",
+		"entityType":  "household",
 		"peopleId":    "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"householdId": "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"firstName":   "Pupu", "lastName": "Ali",
+		"firstName":   "PERRO", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
 		"emails": []map[string]string{
 			{"email": "email@ocm.com", "type": "work"},
@@ -67,7 +67,7 @@ func TestUpsert(t *testing.T) {
 		"browser": "Duck OS 1.0.8.0",
 		"eventId": "ec86f654-ebac-4f90-8cb2-1eb083feebfb",
 		"id":      "ca1a173b-6cf9-4cff-a7c3-8241df12a487",
-
+		"age":     22,
 		// "signature": map[string]interface{}{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD"},
 		// "signatures": []map[string]interface{}{{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD",
 		// 	"recordId": "a46d0e9d-fa20-49ab-bce0-e47cbbd531c9"}},

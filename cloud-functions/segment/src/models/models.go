@@ -61,6 +61,7 @@ type Record interface {
 	GetMap() map[string]interface{}
 	SetCSQLSchemaName(string)
 	SetCSQLConnStr(string)
+	AddDBFilter(QueryFilter)
 }
 
 // DecodeRecord decode table record
@@ -223,6 +224,11 @@ func (r *BaseRecord) SetCSQLSchemaName(schemaname string) {
 // SetCSQLConnStr Sets the connection string for CSQL
 func (r *BaseRecord) SetCSQLConnStr(cnnstr string) {
 	r.DBopts.SchemaName = cnnstr
+}
+
+// AddDBFilter adds a QueryFilter to current options.QueryFilters
+func (r *BaseRecord) AddDBFilter(q QueryFilter) {
+	r.DBopts.Filters = append(r.DBopts.Filters, q)
 }
 
 // Record Structs

@@ -3,6 +3,7 @@ package csql
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"segment/models"
 	"segment/utils"
@@ -20,18 +21,34 @@ const (
 	dialect = "mysql"
 )
 
-func initDB(dsn string) *dbr.Session {
-	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
-	conn, _ := dbr.Open(dialect, dsn, nil)
-	// conn.SetMaxOpenConns(1)
+var (
+	_conn                *dbr.Connection = nil
+	errUnableToConnect                   = errors.New("Unable to instantiate a connection. err: -108")
+	errDeleteNotPossible                 = errors.New("Unable to delete with no conditionals")
+)
 
+func initDB(dsn string, method string) (sess *dbr.Session, err error) {
+	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
+	if _conn == nil {
+		logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
+		_conn, err = dbr.Open(dialect, dsn, nil)
+		if err != nil {
+			return nil, logger.Err(err)
+		}
+	} else {
+		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
+	}
+	// conn.SetMaxOpenConns(1)
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
-	return conn.NewSession(nil)
+	return _conn.NewSession(nil), nil
 }
 
 // Write the interface into CSQL
 func Write(dsn string, r models.Record) (updated bool, err error) {
-	sess := initDB(dsn)
+	sess, err := initDB(dsn, "Write")
+	if err != nil {
+		return false, logger.Err(errUnableToConnect)
+	}
 	tx, err := sess.Begin()
 	if err != nil {
 		return updated, logger.Err(err)
@@ -58,8 +75,8 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	exists, err := stmt.ReturnString()
-	logger.InfoFmt("EXISTS?: %s", buf.String())
-	logger.InfoFmt("%s: %s = %s", rIDField, rmap[rIDField], exists)
+	logger.InfoFmt("[SELECT]: %s\n%s: %s = %s", buf.String(), rIDField, rmap[rIDField], exists)
+	logger.InfoFmt("[csql.Write.selectStmt] %#v", err)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
@@ -89,10 +106,9 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			// logger.InfoFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
 		}
-
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
-		logger.InfoFmt("INSERT: %s", buf.String())
+		logger.InfoFmt("[INSERT]: %s", buf.String())
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).
@@ -100,7 +116,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			SetMap(rmap)
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
-		logger.InfoFmt("UPDATE: %s", buf.String())
+		logger.InfoFmt("[UPDATE]: %s", buf.String())
 		res, err = us.Exec()
 		updated = true
 	}
@@ -129,7 +145,10 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 		tblName += r.GetTablenameSuffix()
 	}
 	tblName = fmt.Sprintf(tblNameFormatTick, tblName)
-	sess := initDB(dsn)
+	sess, err := initDB(dsn, "Read")
+	if err != nil {
+		return or, logger.Err(errUnableToConnect)
+	}
 	tx, err := sess.Begin()
 	if err != nil {
 		return or, logger.Err(err)
@@ -154,9 +173,9 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 								tmp = append(tmp, fmt.Sprint(vv))
 							}
 							v = strings.Join(tmp, ",")
-							logger.InfoFmt("param: %q - type: %T", v, t)
+							logger.InfoFmt("readq array: [%s] %#v - type: %T", pf.ParamNames[i], t, t)
 						default:
-							logger.InfoFmt("param: %q - type: %T", v, t)
+							logger.InfoFmt("readq: [%s] %#v - type: %T", pf.ParamNames[i], t, t)
 						}
 					} else {
 						v = nil
@@ -184,8 +203,80 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 
 // Delete the interface from CSQL
 func Delete(dsn string, r models.Record) error {
-	for _, filter := range r.GetDBOptions().Filters {
-		logger.InfoFmt("filter: %#v", filter)
+	opts := r.GetDBOptions()
+	tblName := opts.Tablename
+	if opts.HasTablenamePrefix {
+		tblName = r.GetTablenamePrefix() + tblName
+	}
+	if opts.HasTablenameSuffix {
+		tblName += r.GetTablenameSuffix()
+	}
+	sess, err := initDB(dsn, "Delete")
+	if err != nil {
+		return logger.Err(errUnableToConnect)
+	}
+	tx, err := sess.Begin()
+	if err != nil {
+		return logger.Err(err)
+	}
+	defer tx.RollbackUnlessCommitted()
+	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
+	createTbl := getCreateTableStatement(r.GetEntityType())
+	_, err = tx.Exec(fmt.Sprintf(createTbl, tblNameTick))
+	if err != nil {
+		return logger.ErrFmt("[csql.Delete.createTbl]: %#v", err)
+	}
+	stmt := tx.DeleteFrom(tblName)
+	if len(opts.Filters) > 0 {
+		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
+		if err != nil {
+			return logger.ErrFmt("[csql.Delete.ParsingFilters]: %#v", err)
+		}
+		if len(pfs) > 0 {
+			for _, pf := range pfs {
+				for i := 0; i < len(pf.ParamNames); i++ {
+					var v interface{}
+					if pf.Values != nil {
+						v = pf.Values[i] // converInterfaceBQ(pf.Values[i])
+						switch t := v.(type) {
+						case []interface{}:
+							tmp := []string{}
+							for _, vv := range v.([]interface{}) {
+								tmp = append(tmp, fmt.Sprint(vv))
+							}
+							v = strings.Join(tmp, ",")
+							// logger.InfoFmt("param: %#v - type: %T", t, t)
+						default:
+							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], t, t)
+						}
+					} else {
+						v = nil
+					}
+					if v == nil {
+						stmt = stmt.Where(pf.ParsedCondition)
+					} else {
+						stmt = stmt.Where(pf.ParsedCondition, v)
+					}
+				}
+			}
+		}
+	} else {
+		return errDeleteNotPossible
+	}
+	buf := dbr.NewBuffer()
+	_ = stmt.Build(stmt.Dialect, buf)
+	logger.InfoFmt("[DELETE]: %s", buf.String())
+	res, err := stmt.Exec()
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	ra, _ := res.RowsAffected()
+	lid, _ := res.LastInsertId()
+	logger.InfoFmt("[csql.Delete] rows affected: %d - last inserted id: %d", ra, lid)
+	err = tx.Commit()
+	if err != nil {
+		return logger.ErrFmt("[csql.Delete.Commit] %v#", err)
 	}
 	return nil
 }
