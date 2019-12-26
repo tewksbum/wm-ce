@@ -35,6 +35,7 @@ type Event struct {
 	EventType   string
 	Source      string
 	Status      string
+	Message     string
 	Created     time.Time
 	Endpoint    string
 	Passthrough []KVP

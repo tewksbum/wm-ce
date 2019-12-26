@@ -95,6 +95,7 @@ type NERentry map[string]interface{}
 var ProjectID = os.Getenv("PROJECTID")
 
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var PubSubStatus = os.Getenv("PSSTATUS")
 
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
@@ -110,6 +111,7 @@ var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
 var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var status *pubsub.Topic
 var sb *storage.Client
 var msp *redis.Pool
 
@@ -118,6 +120,7 @@ func init() {
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	status = ps.Topic(PubSubStatus)
 
 	msp = NewPool(RedisAddress)
 
@@ -139,6 +142,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		resp, err := http.Get(fmt.Sprintf("%v", url))
 		if err != nil {
 			log.Fatalf("File cannot be downloaded %V", url)
+
+			input.EventData["status"] = "File cannot be downloaded"
+			input.EventData["success"] = false
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+			}
 		}
 
 		defer resp.Body.Close()
@@ -156,6 +170,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			if _, err := io.Copy(writer, bytes.NewReader(fileBytes)); err != nil {
 				log.Fatalf("File cannot be copied to bucket %v", err)
+
+				input.EventData["status"] = "File cannot be copied to bucket"
+				input.EventData["success"] = false
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 			if err := writer.Close(); err != nil {
 				log.Fatalf("Failed to close bucket write stream %v", err)
@@ -176,6 +201,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			log.Printf("read %v bytes from the file", fileSize)
 			if fileSize < 1 {
 				log.Fatal("Unable to process an empty file.")
+
+				input.EventData["status"] = "File is empty"
+				input.EventData["success"] = false
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 			var headers []string
 			var records [][]string
@@ -189,6 +225,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				sheetData, err := xlsxFile.ToSlice()
 				if err != nil {
+					input.EventData["status"] = "Unable to read excel data"
+					input.EventData["success"] = false
+					statusJSON, _ := json.Marshal(input)
+					psresult := status.Publish(ctx, &pubsub.Message{
+						Data: statusJSON,
+					})
+					_, err = psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					}
+
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
@@ -204,6 +251,18 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				allrows, err = csvReader.ReadAll()
 				if err != nil {
 					log.Fatalf("unable to read header: %v", err)
+
+					input.EventData["status"] = "Unable to read csv header"
+					input.EventData["success"] = false
+					statusJSON, _ := json.Marshal(input)
+					psresult := status.Publish(ctx, &pubsub.Message{
+						Data: statusJSON,
+					})
+					_, err = psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					}
+
 					return nil
 				}
 			}
@@ -243,6 +302,18 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			if headerlessTest2 {
 				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
+
+				input.EventData["status"] = "File appears to contain no header row - 1"
+				input.EventData["success"] = false
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				}
+
 				return nil
 			}
 			for i, h := range headers {
@@ -260,6 +331,18 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			if headerlessTest1 {
 				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
+
+				input.EventData["status"] = "File appears to contain no header row - 2"
+				input.EventData["success"] = false
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				}
+
 				return nil
 			}
 
@@ -314,15 +397,36 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Data: outputJSON,
 				})
 				psid, err := psresult.Get(ctx)
-				_, err = psresult.Get(ctx)
 				if err != nil {
 					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
 				} else {
 					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 				}
 
+				input.EventData["status"] = "Streamed"
+				input.EventData["success"] = true
+				input.EventData["recordcount"] = len(records)
+				statusJSON, _ := json.Marshal(input)
+				psresult = status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 		} else {
+			input.EventData["status"] = "Unable to fetch file"
+			input.EventData["success"] = false
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+			}
+
 			log.Fatalf("Unable to fetch file %v, response code %v", url, resp.StatusCode)
 		}
 

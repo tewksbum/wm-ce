@@ -181,6 +181,9 @@ type PeopleERR struct {
 	ContainsRole         int `json:"ContainsRole"`
 	ContainsStudentRole  int `json:"ContainsStudentRole"`
 	Junk                 int `json:"Junk"`
+	PermE                int `json:"PermE"`
+	PermM                int `json:"PermM"`
+	PermS                int `json:"PermS"`
 }
 
 type ProductERR struct {
@@ -940,6 +943,12 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ContainsStudentRole = 1
 	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr":
 		err.Junk = 1
+	case "perme", "permission email":
+		err.PermE = 1
+	case "permm", "permission mail":
+		err.PermM = 1
+	case "perms", "permission share":
+		err.PermS = 1
 	}
 
 	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {

@@ -35,6 +35,7 @@ type Event struct {
 	EventType   string
 	Source      string
 	Status      string
+	Message     string
 	Created     time.Time
 	Endpoint    string
 	Passthrough []KVP
@@ -168,6 +169,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Passthrough: ToKVPSlice(&input.Passthrough),
 		Attributes:  ToKVPSlice(&input.Attributes),
 		EventID:     uuid.New().String(),
+		Status:      "Pending",
 		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
 		Detail:      input.FileURL,
