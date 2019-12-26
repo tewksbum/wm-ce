@@ -14,9 +14,10 @@ const (
 	tblDecodeCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		signature VARCHAR(255) NOT NULL,
 		people_id VARCHAR(255) NULL,
+		household_id VARCHAR(255) NULL,
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (signature))`
+		PRIMARY KEY (signature)); `
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
 		signatures JSON NULL,

@@ -101,6 +101,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		json.Unmarshal(data, &record)
 		return &models.HouseholdRecord{
 			SurrogateID: surrogateID,
+			Signatures:  input.Signatures,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil

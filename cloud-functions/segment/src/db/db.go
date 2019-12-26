@@ -24,12 +24,20 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			fallthrough
 		case models.TypeOrderDetail:
 			fallthrough
+		case models.TypeHousehold:
+			// logger.InfoFmt("signatures: %q", r.GetSignatures())
+			for _, sig := range r.GetSignatures() {
+				rs := buildHouseholdDecode(r.(*models.HouseholdRecord), sig)
+				if _, err := csql.Write(csqlDSN, rs); err != nil {
+					logger.ErrFmt("[db.Write.HouseholdSignatureUpsert]: %q", err)
+				}
+			}
 		case models.TypePeople:
 			// logger.InfoFmt("signatures: %q", r.GetSignatures())
 			for _, sig := range r.GetSignatures() {
-				rs := buildDecode(r.(*models.PeopleRecord), sig)
+				rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 				if _, err := csql.Write(csqlDSN, rs); err != nil {
-					logger.ErrFmt("[db.Write.SignatureUpsert]: %q", err)
+					logger.ErrFmt("[db.Write.PeopleSignatureUpsert]: %q", err)
 				}
 			}
 		}

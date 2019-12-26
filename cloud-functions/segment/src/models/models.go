@@ -66,11 +66,12 @@ type Record interface {
 // DecodeRecord decode table record
 type DecodeRecord struct {
 	BaseRecord
-	Signature  string    `json:"signature" bigquery:"signature" sql:"signature"`
-	Signatures []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
-	PeopleID   string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
-	CreatedAt  time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
-	UpdatedAt  time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
+	Signature   string    `json:"signature" bigquery:"signature" sql:"signature"`
+	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
+	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"household_id"`
+	CreatedAt   time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
+	UpdatedAt   time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
 }
 
 // GetMap gets the column list for DecodeRecord
@@ -327,7 +328,18 @@ func (r *PeopleRecord) GetSignatures() []string {
 type HouseholdRecord struct {
 	BaseRecord
 	SurrogateID string    `json:"surrogateId" bigquery:"surrogateid"`
-	Record      Household `json:"record" bigquery:"record"`
+	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	Record      Household `json:"record" bigquery:"record" sql:"record"`
+}
+
+// GetMap gets the column list for DecodeRecord
+func (r *HouseholdRecord) GetMap() map[string]interface{} {
+	return utils.StructToMap(r, r.ColumnBlackList)
+}
+
+// GetSignatures gets the person signatures
+func (r *HouseholdRecord) GetSignatures() []string {
+	return r.Signatures
 }
 
 // FallbackRecord a fallback type record

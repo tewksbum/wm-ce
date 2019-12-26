@@ -30,7 +30,16 @@ func StructToMap(i interface{}, blacklist []string) map[string]interface{} {
 			}
 		}
 		if !dont {
-			r[sk] = v
+			switch v.(type) {
+			case string:
+				if v == "" {
+					delete(r, sk)
+				} else {
+					r[sk] = v
+				}
+			default:
+				r[sk] = v
+			}
 		}
 	}
 	return r

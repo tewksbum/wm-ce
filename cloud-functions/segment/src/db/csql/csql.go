@@ -57,8 +57,8 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.InfoFmt("EXISTS?: %s", buf.String())
 	exists, err := stmt.ReturnString()
+	logger.InfoFmt("EXISTS?: %s", buf.String())
 	logger.InfoFmt("%s: %s = %s", rIDField, rmap[rIDField], exists)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
