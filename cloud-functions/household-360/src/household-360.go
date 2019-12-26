@@ -76,42 +76,40 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
-	FNAME      MatchKeyField `json:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial"`
-	LNAME      MatchKeyField `json:"lname"`
-	MNAME      MatchKeyField `json:"mname"`
-
-	AD1       MatchKeyField `json:"ad1"`
-	AD1NO     MatchKeyField `json:"ad1no"`
-	AD2       MatchKeyField `json:"ad2"`
-	AD3       MatchKeyField `json:"ad3"`
-	CITY      MatchKeyField `json:"city"`
-	STATE     MatchKeyField `json:"state"`
-	ZIP       MatchKeyField `json:"zip"`
-	ZIP5      MatchKeyField `json:"zip5"`
-	COUNTRY   MatchKeyField `json:"country"`
-	MAILROUTE MatchKeyField `json:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adtype"`
-	ADBOOK    MatchKeyField `json:"adbook"`
-	ADPARSER  MatchKeyField `json:"adparser"`
-	ADCORRECT MatchKeyField `json:"adcorrect"`
-
-	EMAIL MatchKeyField `json:"email"`
-	PHONE MatchKeyField `json:"phone"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId"`
-	CLIENTID  MatchKeyField `json:"clientId"`
-
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
-
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
 	ROLE         MatchKeyField `json:"role"`
 	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type HouseHoldOutput struct {
@@ -191,6 +189,12 @@ type HouseHoldSetDS struct {
 	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
 	ADBOOK             []string       `datastore:"adbook"`
 	ADBOOKNormalized   []string       `datastore:"adbooknormalized"`
+	PermE              []string       `json:"perme"`
+	PermENormalized    []string       `json:"permenormalized"`
+	PermM              []string       `json:"permm"`
+	PermMNormalized    []string       `json:"permmnormalized"`
+	PermS              []string       `json:"perms"`
+	PermSNormalized    []string       `json:"permsnormalized"`
 }
 
 type HouseHoldGoldenDS struct {
@@ -207,6 +211,9 @@ type HouseHoldGoldenDS struct {
 	AD2       string         `datastore:"ad2"`
 	ADTYPE    string         `datastore:"adtype"`
 	ADBOOK    string         `datastore:"adbook"`
+	PermE     string         `datastore:"perme"`
+	PermM     string         `datastore:"permm"`
+	PermS     string         `datastore:"perms"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -297,8 +304,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue2A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", `''`, -1)
 	MatchByKey2B := "LNAME"
 	MatchByValue2B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey2C := "AD1NO"
-	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey2C := "AD1"
+	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey2D := "ADTYPE"
 	MatchByValue2D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
@@ -308,8 +315,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue3B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", `''`, -1)
 	MatchByKey3C := "LNAME"
 	MatchByValue3C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey3D := "AD1NO"
-	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey3D := "AD1"
+	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey3E := "ADTYPE"
 	MatchByValue3E := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
@@ -317,8 +324,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue4A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
 	MatchByKey4B := "ZIP5"
 	MatchByValue4B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
-	MatchByKey4C := "AD1NO"
-	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey4C := "AD1"
+	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey4D := "ADTYPE"
 	MatchByValue4D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 

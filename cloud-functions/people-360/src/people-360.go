@@ -91,6 +91,9 @@ type PeopleFiberDS struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
+	PermE        MatchKeyField    `datastore:"PermE"`
+	PermM        MatchKeyField    `datastore:"PermM"`
+	PermS        MatchKeyField    `datastore:"PermS"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -101,44 +104,42 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
-	FNAME      MatchKeyField `json:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial"`
-	LNAME      MatchKeyField `json:"lname"`
-	MNAME      MatchKeyField `json:"mname"`
-
-	AD1        MatchKeyField `json:"ad1"`
-	AD1NO      MatchKeyField `json:"ad1no"`
-	AD2        MatchKeyField `json:"ad2"`
-	AD3        MatchKeyField `json:"ad3"`
-	CITY       MatchKeyField `json:"city"`
-	STATE      MatchKeyField `json:"state"`
-	ZIP        MatchKeyField `json:"zip"`
-	ZIP5       MatchKeyField `json:"zip5"`
-	COUNTRY    MatchKeyField `json:"country"`
-	MAILROUTE  MatchKeyField `json:"mailroute"`
-	ADTYPE     MatchKeyField `json:"adtype"`
-	ADBOOK     MatchKeyField `json:"adbook"`
-	ADPARSER   MatchKeyField `json:"adparser"`
-	ADCORRECT  MatchKeyField `json:"adcorrect"`
-	ZIPTYPE    MatchKeyField `json:"ziptype"`
-	RECORDTYPE MatchKeyField `json:"recordtype"`
-
-	EMAIL MatchKeyField `json:"email"`
-	PHONE MatchKeyField `json:"phone"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId"`
-	CLIENTID  MatchKeyField `json:"clientId"`
-
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
-
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
 	ROLE         MatchKeyField `json:"role"`
 	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type Signature360 struct {
@@ -247,6 +248,12 @@ type PeopleSetDS struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
+	PermE                  []string       `json:"perme"`
+	PermENormalized        []string       `json:"permenormalized"`
+	PermM                  []string       `json:"permm"`
+	PermMNormalized        []string       `json:"permmnormalized"`
+	PermS                  []string       `json:"perms"`
+	PermSNormalized        []string       `json:"permsnormalized"`
 }
 
 type PeopleGoldenDS struct {
@@ -285,6 +292,9 @@ type PeopleGoldenDS struct {
 	TITLE        string         `datastore:"title"`
 	ROLE         string         `datastore:"role"`
 	STATUS       string         `datastore:"status"`
+	PermE        string         `datastore:"perme"`
+	PermM        string         `datastore:"permm"`
+	PermS        string         `datastore:"perms"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")

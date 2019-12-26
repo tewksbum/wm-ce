@@ -39,6 +39,7 @@ type Event struct {
 	EventType   string
 	Source      string
 	Status      string
+	Message     string
 	Created     time.Time
 	Endpoint    string
 	Passthrough []KVP
@@ -187,6 +188,9 @@ type Fiber struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
+	PermE        MatchKeyField    `datastore:"PermE"`
+	PermM        MatchKeyField    `datastore:"PermM"`
+	PermS        MatchKeyField    `datastore:"PermS"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -238,6 +242,9 @@ type PeopleMatchKeys struct {
 	TITLE        MatchKeyField
 	ROLE         MatchKeyField
 	STATUS       MatchKeyField
+	PermE        MatchKeyField
+	PermM        MatchKeyField
+	PermS        MatchKeyField
 }
 
 type HouseHoldMatchKeys struct {
@@ -342,6 +349,12 @@ type PeopleSet struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
+	PermE                  []string       `json:"perme"`
+	PermENormalized        []string       `json:"permenormalized"`
+	PermM                  []string       `json:"permm"`
+	PermMNormalized        []string       `json:"permmnormalized"`
+	PermS                  []string       `json:"perms"`
+	PermSNormalized        []string       `json:"permsnormalized"`
 }
 
 type PeopleGolden struct {
@@ -380,6 +393,9 @@ type PeopleGolden struct {
 	TITLE        string         `datastore:"title"`
 	ROLE         string         `datastore:"role"`
 	STATUS       string         `datastore:"status"`
+	PermE        string         `datastore:"perme"`
+	PermM        string         `datastore:"permm"`
+	PermS        string         `datastore:"perms"`
 }
 
 // ProjectID is the env var of project id
