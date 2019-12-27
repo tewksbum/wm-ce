@@ -94,13 +94,13 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				recordCompleted := false
 				fiberCompleted := false
 				recordCount := int(input.EventData["recordcount"].(float64))
-				var recordIDs []datastore.Key
 				var peopleFiberRecordIDs []string
 				var peoplrFiberRecordIDsNormalized []string
 
 				OwnerNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Environment, strings.ToLower(input.Signature.OwnerID)))
 
-				if _, err := ds.GetAll(ctx, datastore.NewQuery("record").Namespace(OwnerNamespace).Filter("EventID =", input.Signature.EventID).KeysOnly(), &recordIDs); err != nil {
+				dsRecordCount, err := ds.Count(ctx, datastore.NewQuery("record").Namespace(OwnerNamespace).Filter("EventID =", input.Signature.EventID))
+				if err != nil {
 					log.Printf("Error querying records (ns = %v, kind = %v): %v", OwnerNamespace, "record", err)
 				}
 				if _, err := ds.GetAll(ctx, datastore.NewQuery("people-fiber").Namespace(OwnerNamespace).Filter("eventid =", input.Signature.EventID).Project("recordid").Distinct(), &peopleFiberRecordIDs); err != nil {
@@ -126,7 +126,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 						request = requests[0]
 						if completed {
 							request.Status = "Completed"
-							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, len(recordIDs), len(peoplrFiberRecordIDsNormalized))
+							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, dsRecordCount, len(peoplrFiberRecordIDsNormalized))
 						} else {
 							request.Status = "Warning"
 							request.Message = "%v rows produced %v records and %v fibers"
