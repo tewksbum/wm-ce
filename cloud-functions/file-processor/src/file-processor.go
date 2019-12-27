@@ -121,6 +121,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	status = ps.Topic(PubSubStatus)
+	status.PublishSettings.DelayThreshold = 5 * time.Minute
 
 	msp = NewPool(RedisAddress)
 

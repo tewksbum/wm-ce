@@ -73,6 +73,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	topic.PublishSettings.DelayThreshold = 5 * time.Minute
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
