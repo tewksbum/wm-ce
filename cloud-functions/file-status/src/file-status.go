@@ -101,11 +101,8 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 			if val, ok := input.EventData["runcount"]; ok {
 				// we've waited for at least 5 min now, we can process
 				runCount := int(val.(float64))
-				recordCompleted := false
-				fiberCompleted := false
+
 				recordCount := int(input.EventData["recordcount"].(float64))
-				var peopleFiberRecordIDs []string
-				var peoplrFiberRecordIDsNormalized []string
 
 				OwnerNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Environment, strings.ToLower(input.Signature.OwnerID)))
 
@@ -117,14 +114,11 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				if err != nil {
 					log.Printf("Error querying fibers (ns = %v, kind = %v): %v", OwnerNamespace, "people-fiber", err)
 				}
-				for _, k := range peopleFiberRecordIDs {
-					recordID := Left(k, 36)
-					if !Contains(peoplrFiberRecordIDsNormalized, recordID) {
-						peoplrFiberRecordIDsNormalized = append(peoplrFiberRecordIDsNormalized, recordID)
-					}
-				}
+				recordCompleted := dsRecordCount >= recordCount
+				fiberCompleted := dsFiberCount >= recordCount
 
 				completed := recordCompleted && fiberCompleted
+				log.Printf("Current record count = %v, fiber count = %v", dsRecordCount, dsFiberCount)
 				if runCount >= MaxRepetition || completed {
 					// write the status
 					var requests []Event
