@@ -101,10 +101,10 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				OwnerNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Environment, strings.ToLower(input.Signature.OwnerID)))
 
 				if _, err := ds.GetAll(ctx, datastore.NewQuery("record").Namespace(OwnerNamespace).Filter("EventID =", input.Signature.EventID).KeysOnly(), &recordIDs); err != nil {
-					log.Printf("Error querying records: %v", err)
+					log.Printf("Error querying records (ns = %v, kind = %v): %v", OwnerNamespace, "record", err)
 				}
 				if _, err := ds.GetAll(ctx, datastore.NewQuery("people-fiber").Namespace(OwnerNamespace).Filter("eventid =", input.Signature.EventID).Project("recordid").Distinct(), &peopleFiberRecordIDs); err != nil {
-					log.Printf("Error querying records: %v", err)
+					log.Printf("Error querying fibers (ns = %v, kind = %v): %v", OwnerNamespace, "people-fiber", err)
 				}
 				for _, k := range peopleFiberRecordIDs {
 					recordID := Left(k, 36)
