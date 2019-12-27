@@ -103,7 +103,8 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				if err != nil {
 					log.Printf("Error querying records (ns = %v, kind = %v): %v", OwnerNamespace, "record", err)
 				}
-				if _, err := ds.GetAll(ctx, datastore.NewQuery("people-fiber").Namespace(OwnerNamespace).Filter("eventid =", input.Signature.EventID).Project("recordid").Distinct(), &peopleFiberRecordIDs); err != nil {
+				dsFiberCount, err := ds.Count(ctx, datastore.NewQuery("people-fiber").Namespace(OwnerNamespace).Filter("eventid =", input.Signature.EventID).Filter("fibertype =", "default"))
+				if err != nil {
 					log.Printf("Error querying fibers (ns = %v, kind = %v): %v", OwnerNamespace, "people-fiber", err)
 				}
 				for _, k := range peopleFiberRecordIDs {
@@ -126,7 +127,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 						request = requests[0]
 						if completed {
 							request.Status = "Completed"
-							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, dsRecordCount, len(peoplrFiberRecordIDsNormalized))
+							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, dsRecordCount, dsFiberCount)
 						} else {
 							request.Status = "Warning"
 							request.Message = "%v rows produced %v records and %v fibers"
