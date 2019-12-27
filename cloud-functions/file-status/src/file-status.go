@@ -90,10 +90,10 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 		if status == true {
 			if val, ok := input.EventData["runcount"]; ok {
 				// we've waited for at least 5 min now, we can process
-				runCount := val.(int)
+				runCount := int(val.(float64))
 				recordCompleted := false
 				fiberCompleted := false
-				recordCount := input.EventData["recordcount"].(int)
+				recordCount := int(input.EventData["recordcount"].(float64))
 				var recordIDs []datastore.Key
 				var peopleFiberRecordIDs []string
 				var peoplrFiberRecordIDsNormalized []string
@@ -126,7 +126,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 						request = requests[0]
 						if completed {
 							request.Status = "Completed"
-							request.Message = fmt.Sprintf("processed %v rows", recordCount, len(recordIDs), len(peoplrFiberRecordIDsNormalized))
+							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, len(recordIDs), len(peoplrFiberRecordIDsNormalized))
 						} else {
 							request.Status = "Warning"
 							request.Message = "%v rows produced %v records and %v fibers"
@@ -138,7 +138,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 
 				} else {
 					// sleep for 5 min and push this message back out
-					input.EventData["runcount"] = input.EventData["runcount"].(int) + 1
+					input.EventData["runcount"] = int(input.EventData["runcount"].(float64)) + 1
 					statusJSON, _ := json.Marshal(input)
 					time.Sleep(300 * time.Second)
 					psresult := topic.Publish(ctx, &pubsub.Message{
