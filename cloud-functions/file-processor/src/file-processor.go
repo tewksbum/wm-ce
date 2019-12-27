@@ -413,6 +413,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			input.EventData["status"] = "Streamed"
 			input.EventData["success"] = true
+			input.EventData["runcount"] = 1
 			input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
 			input.EventData["recordcount"] = len(records)
 			statusJSON, _ := json.Marshal(input)

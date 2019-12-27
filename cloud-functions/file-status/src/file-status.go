@@ -96,6 +96,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 
 	// check detail
 	if status, ok := input.EventData["success"]; ok {
+		log.Printf("Current status %v", status)
 		if status == true {
 			if val, ok := input.EventData["runcount"]; ok {
 				// we've waited for at least 5 min now, we can process
@@ -148,6 +149,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 
 				} else {
 					// sleep for 5 min and push this message back out
+					log.Printf("Dropping message back to pubsub")
 					input.EventData["runcount"] = int(input.EventData["runcount"].(float64)) + 1
 					input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
 					statusJSON, _ := json.Marshal(input)
@@ -160,22 +162,11 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 
-			} else {
-				// sleep for 5 min and push this message back out
-				input.EventData["runcount"] = 1
-				input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
-				statusJSON, _ := json.Marshal(input)
-				psresult := topic.Publish(ctx, &pubsub.Message{
-					Data: statusJSON,
-				})
-				_, err := psresult.Get(ctx)
-				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
-				}
 			}
-
 		} else {
 			// if not successful, it's the final status, update the event
+			log.Printf("Not successful %v", status)
+
 			var requests []Event
 			var request Event
 			query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
