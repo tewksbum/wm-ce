@@ -10,6 +10,7 @@ steps:
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
+    "--retry",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--vpc-connector", "${_VPC_CONNECTOR}"
     ]

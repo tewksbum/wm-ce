@@ -145,6 +145,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			input.EventData["status"] = "File cannot be downloaded"
 			input.EventData["success"] = false
+			input.EventData["processafter"] = time.Now().UnixNano()
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
@@ -173,6 +174,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				input.EventData["status"] = "File cannot be copied to bucket"
 				input.EventData["success"] = false
+				input.EventData["processafter"] = time.Now().UnixNano()
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -204,6 +206,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				input.EventData["status"] = "File is empty"
 				input.EventData["success"] = false
+				input.EventData["processafter"] = time.Now().UnixNano()
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -227,6 +230,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				if err != nil {
 					input.EventData["status"] = "Unable to read excel data"
 					input.EventData["success"] = false
+					input.EventData["processafter"] = time.Now().UnixNano()
 					statusJSON, _ := json.Marshal(input)
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
@@ -254,6 +258,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 					input.EventData["status"] = "Unable to read csv header"
 					input.EventData["success"] = false
+					input.EventData["processafter"] = time.Now().UnixNano()
 					statusJSON, _ := json.Marshal(input)
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
@@ -305,6 +310,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				input.EventData["status"] = "File appears to contain no header row - 1"
 				input.EventData["success"] = false
+				input.EventData["processafter"] = time.Now().UnixNano()
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -334,6 +340,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				input.EventData["status"] = "File appears to contain no header row - 2"
 				input.EventData["success"] = false
+				input.EventData["processafter"] = time.Now().UnixNano()
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -405,6 +412,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			input.EventData["status"] = "Streamed"
 			input.EventData["success"] = true
+			input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
 			input.EventData["recordcount"] = len(records)
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
@@ -417,6 +425,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		} else {
 			input.EventData["status"] = "Unable to fetch file"
 			input.EventData["success"] = false
+			input.EventData["processafter"] = time.Now().UnixNano()
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
