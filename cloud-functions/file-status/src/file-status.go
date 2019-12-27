@@ -84,8 +84,16 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
+
 	log.Printf("Received message %v", string(m.Data))
-	// get the file
+	currentTime := time.Now().UnixNano()
+	if processafter, ok := input.EventData["processafter"]; ok {
+		if currentTime < int64(processafter.(float64)) {
+			return fmt.Errorf("not yet ready %v < %v", currentTime, int64(processafter.(float64)))
+		}
+	}
+
+	// check detail
 	if status, ok := input.EventData["success"]; ok {
 		if status == true {
 			if val, ok := input.EventData["runcount"]; ok {
@@ -140,8 +148,8 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				} else {
 					// sleep for 5 min and push this message back out
 					input.EventData["runcount"] = int(input.EventData["runcount"].(float64)) + 1
+					input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
 					statusJSON, _ := json.Marshal(input)
-					time.Sleep(300 * time.Second)
 					psresult := topic.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
 					})
@@ -154,8 +162,8 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 			} else {
 				// sleep for 5 min and push this message back out
 				input.EventData["runcount"] = 1
+				input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
 				statusJSON, _ := json.Marshal(input)
-				time.Sleep(300 * time.Second)
 				psresult := topic.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
 				})
