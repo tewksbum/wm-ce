@@ -136,7 +136,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 							request.Status = "Warning"
 							request.Message = "%v rows produced %v records and %v fibers"
 						}
-						if _, err := ds.Put(ctx, request.Key, request); err != nil {
+						if _, err := ds.Put(ctx, request.Key, &request); err != nil {
 							log.Fatalf("error updating event: %v", err)
 						}
 					}
@@ -171,7 +171,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 				request = requests[0]
 				request.Status = "Rejected"
 				request.Message = input.EventData["status"].(string)
-				if _, err := ds.Put(ctx, request.Key, request); err != nil {
+				if _, err := ds.Put(ctx, request.Key, &request); err != nil {
 					log.Fatalf("error updating event: %v", err)
 				}
 			}
