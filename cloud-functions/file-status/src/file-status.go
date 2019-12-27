@@ -84,7 +84,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-
+	log.Printf("Received message %v", string(m.Data))
 	// get the file
 	if status, ok := input.EventData["success"]; ok {
 		if status == true {
