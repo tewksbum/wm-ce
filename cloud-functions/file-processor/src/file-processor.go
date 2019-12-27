@@ -151,7 +151,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
-				log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 		}
 
@@ -179,7 +179,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 			}
 			if err := writer.Close(); err != nil {
@@ -210,7 +210,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 			}
 			var headers []string
@@ -233,7 +233,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					})
 					_, err = psresult.Get(ctx)
 					if err != nil {
-						log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 					}
 
 					return fmt.Errorf("unable to read excel data: %v", err)
@@ -260,7 +260,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					})
 					_, err = psresult.Get(ctx)
 					if err != nil {
-						log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 					}
 
 					return nil
@@ -311,7 +311,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 
 				return nil
@@ -340,7 +340,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 
 				return nil
@@ -398,22 +398,21 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				psid, err := psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
 				} else {
 					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 				}
-
-				input.EventData["status"] = "Streamed"
-				input.EventData["success"] = true
-				input.EventData["recordcount"] = len(records)
-				statusJSON, _ := json.Marshal(input)
-				psresult = status.Publish(ctx, &pubsub.Message{
-					Data: statusJSON,
-				})
-				_, err = psresult.Get(ctx)
-				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
-				}
+			}
+			input.EventData["status"] = "Streamed"
+			input.EventData["success"] = true
+			input.EventData["recordcount"] = len(records)
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 		} else {
 			input.EventData["status"] = "Unable to fetch file"
@@ -424,7 +423,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
-				log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 
 			log.Fatalf("Unable to fetch file %v, response code %v", url, resp.StatusCode)
