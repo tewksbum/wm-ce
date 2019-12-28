@@ -797,24 +797,37 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	v.Output.STATE.Value = sa
 		// }
 
-		// StandardizeAddressLP(&(v.Output))
-
 		// don't forget we can have email only records....
 
-		// If we could not identify another country...
-		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
-			// maybe do one last check to see if we can find a country in another field?
+		// standardize state name > abreviation
+		if reStateFull.MatchString(v.Output.STATE.Value) {
+			LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", v.Output.STATE.Value))
+			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
+		}
+		// standardize "US" for any US State address
+		if reState.MatchString(v.Output.STATE.Value) {
+			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
 			v.Output.COUNTRY.Value = "US"
+			v.Output.COUNTRY.Source = "WM"
 		}
 
-		// IF we believe it to be a US address...
-		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
-			v.Output.ADVALID.Value = "FALSE"
-			StandardizeAddressSS(&(v.Output))
-		} else if v.Output.COUNTRY.Value != "" {
-			// 
-			v.Output.ADVALID.Value = "FALSE"
+		// If we could not identify another country previously...
+		// including US... meaning we don't have a state
+		// yet we have an address
+		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
+			LogDev(fmt.Sprintf("trying to find a country %v %v", v.Output.AD1.Value, v.Output.AD2.Value))
+			// TODO: Jie can you look at this poop...
+			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
 		}
+
+		v.Output.ADVALID.Value = "FALSE"
+		v.Output.ADCORRECT.Value = "FALSE"
+		// IF we believe it to NOT be an international address...
+		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
+		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
+			StandardizeAddressSS(&(v.Output))
+			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+		} 
 
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
@@ -860,23 +873,18 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 }
 
 func StandardizeAddressSS(mkOutput *PeopleOutput) {
-
-	// even if SS doesn't have match, lets standardize to 2 letter state
-	if reStateFull.MatchString(mkOutput.STATE.Value) {
-		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", mkOutput.STATE.Value))
-		mkOutput.STATE.Value = lookupState(mkOutput.STATE.Value)
-	}
-
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 10 {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
-			mkOutput.ADVALID.Value = "TRUE"
+			if mkOutput.AD1.Value != a[0].DeliveryLine1 { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			if mkOutput.CITY.Value != a[0].CityName { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.CITY.Value = a[0].Components.CityName
+			if mkOutput.STATE.Value != a[0].StateAbbreviation { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.STATE.Value = a[0].Components.StateAbbreviation
 
 			Zip := a[0].Components.Zipcode
@@ -889,6 +897,7 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			mkOutput.ADTYPE.Value = a[0].Metadata.Rdi
 			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
 			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
+			mkOutput.ADVALID.Value = "TRUE"
 		}
 	}
 
