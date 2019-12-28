@@ -123,6 +123,7 @@ type PeopleERR struct {
 	Address1             int `json:"Address1"`
 	Address2             int `json:"Address2"`
 	Address3             int `json:"Address3"`
+	Address4             int `json:"Address4"`
 	FullAddress          int `json:"FullAddress"`
 	Age                  int `json:"Age"`
 	Birthday             int `json:"Birthday"`
@@ -343,6 +344,7 @@ var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
+var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 
@@ -493,7 +495,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
+			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1 ) {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
 			} else if column.PeopleVER.IS_EMAIL {
@@ -795,7 +797,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// }
 
 		// StandardizeAddressLP(&(v.Output))
-		StandardizeAddressSS(&(v.Output))
+
+		// If we could not identify another country...
+		If v.Output.COUNTRY.Value == "" {
+			// maybe do one last check to see if we can find a country in another field?
+			v.Output.COUNTRY.Value == "US"
+		}
+
+		// IF we believe it to be a US address...
+		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
+			StandardizeAddressSS(&(v.Output))
+		}
 
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
@@ -865,17 +877,24 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 		}
 	}
 
-	if reState.MatchString(mkOutput.STATE.Value) {
-		LogDev(fmt.Sprintf("overriding country by state value: %v", mkOutput.STATE.Value))
-		mkOutput.COUNTRY.Value = "US"
-		mkOutput.COUNTRY.Source = "WM"
+	// even if SS doesn't have match, lets standardize to 2 letter state
+	if reStateFull.MatchString(mkOutput.STATE.Value) {
+		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", mkOutput.STATE.Value))
+		mkOutput.State.Value = lookupState(mkOutput.STATE.Value)
 	}
 
-	if len(mkOutput.STATE.Value) == 0 && mkOutput.COUNTRY.Value == "PR" { // handle libpostal treating PR as country
-		mkOutput.STATE.Value = "PR"
-		mkOutput.COUNTRY.Value = "US"
-		mkOutput.COUNTRY.Source = "WM"
-	}
+	// pre-empted before StandardizeAddressSS is called...
+	//
+	// if reState.MatchString(mkOutput.STATE.Value) {
+	// 	LogDev(fmt.Sprintf("overriding country by state value: %v", mkOutput.STATE.Value))
+	// 	mkOutput.COUNTRY.Value = "US"
+	// 	mkOutput.COUNTRY.Source = "WM"
+	// }
+	// if len(mkOutput.STATE.Value) == 0 && mkOutput.COUNTRY.Value == "PR" { // handle libpostal treating PR as country
+	// 	mkOutput.STATE.Value = "PR"
+	// 	mkOutput.COUNTRY.Value = "US"
+	// 	mkOutput.COUNTRY.Source = "WM"
+	// }
 }
 
 func CorrectAddress(in string) SmartyStreetResponse {
@@ -926,6 +945,115 @@ func CorrectAddress(in string) SmartyStreetResponse {
 		}
 	}
 	return nil
+}
+
+func lookupState(in string) string {
+	switch {
+		case "Alabama":
+			return "AL"
+		case "Alaska":
+			return "AK"
+		case "Arizona":
+			return "AZ"
+		case "Arkansas":
+			return "AR"
+		case "California":
+			return "CA"
+		case "Colorado":
+			return "CO"
+		case "Connecticut":
+			return "CT"
+		case "Delaware":
+			return "DE"
+		case "District Of Columbia":
+			return "DC"
+		case "Florida":
+			return "FL"
+		case "Georgia":
+			return "GA"
+		case "Hawaii":
+			return "HI"
+		case "Idaho":
+			return "ID"
+		case "Illinois":
+			return "IL"
+		case "Indiana":
+			return "IN"
+		case "Iowa":
+			return "IA"
+		case "Kansas":
+			return "KS"
+		case "Kentucky":
+			return "KY"
+		case "Louisiana":
+			return "LA"
+		case "Maine":
+			return "ME"
+		case "Maryland":
+			return "MD"
+		case "Massachusetts":
+			return "MA"
+		case "Michigan":
+			return "MI"
+		case "Minnesota":
+			return "MN"
+		case "Mississippi":
+			return "MS"
+		case "Missouri":
+			return "MO"
+		case "Montana":
+			return "MN"
+		case "Nebraska":
+			return "NE"
+		case "Nevada":
+			return "NV"
+		case "New Hampshire":
+			return "NH"
+		case "New Jersey":
+			return "NJ"
+		case "New Mexico":
+			return "NM"
+		case "New York":
+			return "NY"
+		case "North Carolina":
+			return "NC"
+		case "North Dakota":
+			return "ND"
+		case "Ohio":
+			return "OH"
+		case "Oklahoma":
+			return "OK"
+		case "Oregon":
+			return "OR"
+		case "Pennsylvania":
+			return "PA"
+		case "Rhode Island":
+			return "RI"
+		case "South Carolina":
+			return "SC"
+		case "South Dakota":
+			return "SD"
+		case "Tennessee":
+			return "TN"
+		case "Texas":
+			return "TX"
+		case "Utah":
+			return "UT"
+		case "Vermont":
+			return "VT"
+		case "Virginia":
+			return "VA"
+		case "Washington":
+			return "WA"
+		case "West Virginia":
+			return "WV"
+		case "Wisconsin":
+			return "WI" 
+		case "Wyoming":
+			return "WY"
+		default
+			return in
+	}
 }
 
 func IsInt(s string) bool {
