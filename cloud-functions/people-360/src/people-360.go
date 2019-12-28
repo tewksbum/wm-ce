@@ -80,6 +80,7 @@ type PeopleFiberDS struct {
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID    	 MatchKeyField 	  `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -124,6 +125,7 @@ type PeopleOutput struct {
 	ADBOOK       MatchKeyField `json:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
 	ZIPTYPE      MatchKeyField `json:"ziptype"`
 	RECORDTYPE   MatchKeyField `json:"recordtype"`
 	EMAIL        MatchKeyField `json:"email"`
@@ -202,6 +204,8 @@ type PeopleSetDS struct {
 	AD2Normalized          []string       `datastore:"ad2normalized"`
 	AD3                    []string       `datastore:"ad3"`
 	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
 	CITY                   []string       `datastore:"city"`
 	CITYNormalized         []string       `datastore:"citynormalized"`
 	STATE                  []string       `datastore:"state"`
@@ -226,6 +230,8 @@ type PeopleSetDS struct {
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
 	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
 	EMAIL                  []string       `datastore:"email"`
 	EMAILNormalized        []string       `datastore:"emailnormalized"`
 	PHONE                  []string       `datastore:"phone"`
@@ -281,6 +287,7 @@ type PeopleGoldenDS struct {
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
+	ADVALID      string         `datastore:"advalid"`
 	EMAIL        string         `datastore:"email"`
 	PHONE        string         `datastore:"phone"`
 	TRUSTEDID    string         `datastore:"trustedid"`

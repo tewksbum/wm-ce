@@ -66,6 +66,11 @@ type HouseHoldFiberDS struct {
 	AD2         MatchKeyField    `datastore:"ad2"`
 	ADTYPE      MatchKeyField    `datastore:"adtype"`
 	ADBOOK      MatchKeyField    `datastore:"adbook"`
+	ADPARSER    MatchKeyField    `datastore:"adparser"`
+	ADCORRECT   MatchKeyField    `datastore:"adcorrect"`
+	ADVALID    	MatchKeyField 	 `datastore:"advalid"`
+	PermM       MatchKeyField    `datastore:"PermM"`
+	ORGANIZATION MatchKeyField    `datastore:"organization"`
 	Passthrough []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -96,6 +101,9 @@ type PeopleOutput struct {
 	ADBOOK       MatchKeyField `json:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
 	EMAIL        MatchKeyField `json:"email"`
 	PHONE        MatchKeyField `json:"phone"`
 	TRUSTEDID    MatchKeyField `json:"trustedId"`
@@ -113,17 +121,25 @@ type PeopleOutput struct {
 }
 
 type HouseHoldOutput struct {
-	LNAME   MatchKeyField `json:"lname"`
-	CITY    MatchKeyField `json:"city"`
-	STATE   MatchKeyField `json:"state"`
-	ZIP     MatchKeyField `json:"zip"`
-	ZIP5    MatchKeyField `json:"zip5"`
-	COUNTRY MatchKeyField `json:"country"`
-	AD1     MatchKeyField `json:"ad1"`
-	AD1NO   MatchKeyField `json:"ad1no"`
-	AD2     MatchKeyField `json:"ad2"`
-	ADTYPE  MatchKeyField `json:"adtype"`
-	ADBOOK  MatchKeyField `json:"adbook"`
+	LNAME   	 MatchKeyField `json:"lname"`
+	CITY    	 MatchKeyField `json:"city"`
+	STATE   	 MatchKeyField `json:"state"`
+	ZIP     	 MatchKeyField `json:"zip"`
+	ZIP5    	 MatchKeyField `json:"zip5"`
+	COUNTRY 	 MatchKeyField `json:"country"`
+	AD1     	 MatchKeyField `json:"ad1"`
+	AD1NO   	 MatchKeyField `json:"ad1no"`
+	AD2     	 MatchKeyField `json:"ad2"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	PermM        MatchKeyField `json:"permm"`
+	ORGANIZATION MatchKeyField `json:"organization"`
 }
 
 type Signature360 struct {
@@ -185,35 +201,46 @@ type HouseHoldSetDS struct {
 	AD1NONormalized    []string       `datastore:"ad1nonormalized"`
 	AD2                []string       `datastore:"ad2"`
 	AD2Normalized      []string       `datastore:"ad2normalized"`
+	AD3                []string       `datastore:"ad3"`
+	AD3Normalized      []string       `datastore:"ad3normalized"`
+	AD4                []string       `datastore:"ad4"`
+	AD4Normalized      []string       `datastore:"ad4normalized"`
 	ADTYPE             []string       `datastore:"adtype"`
 	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
 	ADBOOK             []string       `datastore:"adbook"`
 	ADBOOKNormalized   []string       `datastore:"adbooknormalized"`
-	PermE              []string       `json:"perme"`
-	PermENormalized    []string       `json:"permenormalized"`
+	ADPARSER           []string       `datastore:"adparser"`
+	ADPARSERNormalized []string       `datastore:"adparsernormalized"`
+	ADCORRECT          []string       `datastore:"adcorrect"`
+	ADCORRECTNormalized []string       `datastore:"adcorrectnormalized"`
+	ADVALID            []string       `datastore:"advalid"`
+	ADVALIDNormalized  []string       `datastore:"advalidnormalized"`
 	PermM              []string       `json:"permm"`
 	PermMNormalized    []string       `json:"permmnormalized"`
-	PermS              []string       `json:"perms"`
-	PermSNormalized    []string       `json:"permsnormalized"`
 }
 
 type HouseHoldGoldenDS struct {
-	ID        *datastore.Key `datastore:"__key__"`
-	CreatedAt time.Time      `datastore:"createdat"`
-	LNAME     string         `datastore:"lname"`
-	CITY      string         `datastore:"city"`
-	STATE     string         `datastore:"state"`
-	ZIP       string         `datastore:"zip"`
-	ZIP5      string         `datastore:"zip5"`
-	COUNTRY   string         `datastore:"country"`
-	AD1       string         `datastore:"ad1"`
-	AD1NO     string         `datastore:"ad1no"`
-	AD2       string         `datastore:"ad2"`
-	ADTYPE    string         `datastore:"adtype"`
-	ADBOOK    string         `datastore:"adbook"`
-	PermE     string         `datastore:"perme"`
-	PermM     string         `datastore:"permm"`
-	PermS     string         `datastore:"perms"`
+	ID           *datastore.Key `datastore:"__key__"`
+	CreatedAt    time.Time      `datastore:"createdat"`
+	LNAME        string         `datastore:"lname"`
+	CITY         string         `datastore:"city"`
+	STATE        string         `datastore:"state"`
+	ZIP          string         `datastore:"zip"`
+	ZIP5         string         `datastore:"zip5"`
+	COUNTRY      string         `datastore:"country"`
+	AD1          string         `datastore:"ad1"`
+	AD1NO        string         `datastore:"ad1no"`
+	AD2          string         `datastore:"ad2"`
+	MAILROUTE    string         `datastore:"mailroute"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
+	ADTYPE       string         `datastore:"adtype"`
+	ADBOOK       string         `datastore:"adbook"`
+	PermM        string         `datastore:"permm"`
+	ADVALID      string         `datastore:"advalid"`
+	ADCORRECT    string         `datastore:"adcorrect"`
+	ADPARSER     string         `datastore:"adparser"`
+	ORGANIZATION string         `datastore:"organization"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
