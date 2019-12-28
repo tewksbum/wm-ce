@@ -804,7 +804,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// If we could not identify another country...
 		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
 			// maybe do one last check to see if we can find a country in another field?
-			v.Output.COUNTRY.Value == "US"
+			v.Output.COUNTRY.Value = "US"
 		}
 
 		// IF we believe it to be a US address...
@@ -864,7 +864,7 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 	// even if SS doesn't have match, lets standardize to 2 letter state
 	if reStateFull.MatchString(mkOutput.STATE.Value) {
 		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", mkOutput.STATE.Value))
-		mkOutput.State.Value = lookupState(mkOutput.STATE.Value)
+		mkOutput.STATE.Value = lookupState(mkOutput.STATE.Value)
 	}
 
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
@@ -957,7 +957,7 @@ func CorrectAddress(in string) SmartyStreetResponse {
 }
 
 func lookupState(in string) string {
-	switch {
+	switch in {
 		case "Alabama":
 			return "AL"
 		case "Alaska":
