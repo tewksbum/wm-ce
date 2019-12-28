@@ -48,30 +48,30 @@ type HouseHoldFiber struct {
 }
 
 type HouseHoldFiberDS struct {
-	ID          *datastore.Key   `datastore:"__key__"`
-	CreatedAt   time.Time        `datastore:"createdAt"`
-	OwnerID     string           `datastore:"ownerid"`
-	Source      string           `datastore:"source"`
-	EventID     string           `datastore:"eventid"`
-	EventType   string           `datastore:"eventtype"`
-	RecordID    string           `datastore:"recordid"`
-	LNAME       MatchKeyField    `datastore:"lname"`
-	CITY        MatchKeyField    `datastore:"city"`
-	STATE       MatchKeyField    `datastore:"state"`
-	ZIP         MatchKeyField    `datastore:"zip"`
-	ZIP5        MatchKeyField    `datastore:"zip5"`
-	COUNTRY     MatchKeyField    `datastore:"country"`
-	AD1         MatchKeyField    `datastore:"ad1"`
-	AD1NO       MatchKeyField    `datastore:"ad1no"`
-	AD2         MatchKeyField    `datastore:"ad2"`
-	ADTYPE      MatchKeyField    `datastore:"adtype"`
-	ADBOOK      MatchKeyField    `datastore:"adbook"`
-	ADPARSER    MatchKeyField    `datastore:"adparser"`
-	ADCORRECT   MatchKeyField    `datastore:"adcorrect"`
-	ADVALID    	MatchKeyField 	 `datastore:"advalid"`
-	PermM       MatchKeyField    `datastore:"PermM"`
+	ID           *datastore.Key   `datastore:"__key__"`
+	CreatedAt    time.Time        `datastore:"createdAt"`
+	OwnerID      string           `datastore:"ownerid"`
+	Source       string           `datastore:"source"`
+	EventID      string           `datastore:"eventid"`
+	EventType    string           `datastore:"eventtype"`
+	RecordID     string           `datastore:"recordid"`
+	LNAME        MatchKeyField    `datastore:"lname"`
+	CITY         MatchKeyField    `datastore:"city"`
+	STATE        MatchKeyField    `datastore:"state"`
+	ZIP          MatchKeyField    `datastore:"zip"`
+	ZIP5         MatchKeyField    `datastore:"zip5"`
+	COUNTRY      MatchKeyField    `datastore:"country"`
+	AD1          MatchKeyField    `datastore:"ad1"`
+	AD1NO        MatchKeyField    `datastore:"ad1no"`
+	AD2          MatchKeyField    `datastore:"ad2"`
+	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ADBOOK       MatchKeyField    `datastore:"adbook"`
+	ADPARSER     MatchKeyField    `datastore:"adparser"`
+	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
+	PermM        MatchKeyField    `datastore:"PermM"`
 	ORGANIZATION MatchKeyField    `datastore:"organization"`
-	Passthrough []Passthrough360 `datastore:"passthrough"`
+	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
 type MatchKeyField struct {
@@ -121,15 +121,15 @@ type PeopleOutput struct {
 }
 
 type HouseHoldOutput struct {
-	LNAME   	 MatchKeyField `json:"lname"`
-	CITY    	 MatchKeyField `json:"city"`
-	STATE   	 MatchKeyField `json:"state"`
-	ZIP     	 MatchKeyField `json:"zip"`
-	ZIP5    	 MatchKeyField `json:"zip5"`
-	COUNTRY 	 MatchKeyField `json:"country"`
-	AD1     	 MatchKeyField `json:"ad1"`
-	AD1NO   	 MatchKeyField `json:"ad1no"`
-	AD2     	 MatchKeyField `json:"ad2"`
+	LNAME        MatchKeyField `json:"lname"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
 	ADTYPE       MatchKeyField `json:"adtype"`
 	MAILROUTE    MatchKeyField `json:"mailroute"`
 	ADBOOK       MatchKeyField `json:"adbook"`
@@ -173,50 +173,52 @@ type HouseHold360Output struct {
 }
 
 type HouseHoldSetDS struct {
-	ID                 *datastore.Key `datastore:"__key__"`
-	OwnerID            []string       `datastore:"ownerid"`
-	Source             []string       `datastore:"source"`
-	EventID            []string       `datastore:"eventid"`
-	EventType          []string       `datastore:"eventtype"`
-	RecordType         []string       `datastore:"recordtype"`
-	RecordID           []string       `datastore:"recordid"`
-	RecordIDNormalized []string       `datastore:"recordidnormalized"`
-	CreatedAt          time.Time      `datastore:"createdat"`
-	Fibers             []string       `datastore:"fibers"`
-	LNAME              []string       `datastore:"lname"`
-	LNAMENormalized    []string       `datastore:"lnamenormalized"`
-	CITY               []string       `datastore:"city"`
-	CITYNormalized     []string       `datastore:"citynormalized"`
-	STATE              []string       `datastore:"state"`
-	STATENormalized    []string       `datastore:"statenormalized"`
-	ZIP                []string       `datastore:"zip"`
-	ZIPNormalized      []string       `datastore:"zipnormalized"`
-	ZIP5               []string       `datastore:"zip5"`
-	ZIP5Normalized     []string       `datastore:"zip5normalized"`
-	COUNTRY            []string       `datastore:"country"`
-	COUNTRYNormalized  []string       `datastore:"countrynormalized"`
-	AD1                []string       `datastore:"ad1"`
-	AD1Normalized      []string       `datastore:"ad1normalized"`
-	AD1NO              []string       `datastore:"ad1no"`
-	AD1NONormalized    []string       `datastore:"ad1nonormalized"`
-	AD2                []string       `datastore:"ad2"`
-	AD2Normalized      []string       `datastore:"ad2normalized"`
-	AD3                []string       `datastore:"ad3"`
-	AD3Normalized      []string       `datastore:"ad3normalized"`
-	AD4                []string       `datastore:"ad4"`
-	AD4Normalized      []string       `datastore:"ad4normalized"`
-	ADTYPE             []string       `datastore:"adtype"`
-	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
-	ADBOOK             []string       `datastore:"adbook"`
-	ADBOOKNormalized   []string       `datastore:"adbooknormalized"`
-	ADPARSER           []string       `datastore:"adparser"`
-	ADPARSERNormalized []string       `datastore:"adparsernormalized"`
-	ADCORRECT          []string       `datastore:"adcorrect"`
-	ADCORRECTNormalized []string       `datastore:"adcorrectnormalized"`
-	ADVALID            []string       `datastore:"advalid"`
-	ADVALIDNormalized  []string       `datastore:"advalidnormalized"`
-	PermM              []string       `json:"permm"`
-	PermMNormalized    []string       `json:"permmnormalized"`
+	ID                     *datastore.Key `datastore:"__key__"`
+	OwnerID                []string       `datastore:"ownerid"`
+	Source                 []string       `datastore:"source"`
+	EventID                []string       `datastore:"eventid"`
+	EventType              []string       `datastore:"eventtype"`
+	RecordType             []string       `datastore:"recordtype"`
+	RecordID               []string       `datastore:"recordid"`
+	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
+	CreatedAt              time.Time      `datastore:"createdat"`
+	Fibers                 []string       `datastore:"fibers"`
+	LNAME                  []string       `datastore:"lname"`
+	LNAMENormalized        []string       `datastore:"lnamenormalized"`
+	CITY                   []string       `datastore:"city"`
+	CITYNormalized         []string       `datastore:"citynormalized"`
+	STATE                  []string       `datastore:"state"`
+	STATENormalized        []string       `datastore:"statenormalized"`
+	ZIP                    []string       `datastore:"zip"`
+	ZIPNormalized          []string       `datastore:"zipnormalized"`
+	ZIP5                   []string       `datastore:"zip5"`
+	ZIP5Normalized         []string       `datastore:"zip5normalized"`
+	COUNTRY                []string       `datastore:"country"`
+	COUNTRYNormalized      []string       `datastore:"countrynormalized"`
+	AD1                    []string       `datastore:"ad1"`
+	AD1Normalized          []string       `datastore:"ad1normalized"`
+	AD1NO                  []string       `datastore:"ad1no"`
+	AD1NONormalized        []string       `datastore:"ad1nonormalized"`
+	AD2                    []string       `datastore:"ad2"`
+	AD2Normalized          []string       `datastore:"ad2normalized"`
+	AD3                    []string       `datastore:"ad3"`
+	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
+	ADTYPE                 []string       `datastore:"adtype"`
+	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ADBOOK                 []string       `datastore:"adbook"`
+	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
+	ADPARSER               []string       `datastore:"adparser"`
+	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
+	ADCORRECT              []string       `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
+	PermM                  []string       `json:"permm"`
+	PermMNormalized        []string       `json:"permmnormalized"`
+	ORGANIZATION           []string       `json:"organization"`
+	ORGANIZATIONNormalized []string       `json:"organizationnormalized"`
 }
 
 type HouseHoldGoldenDS struct {
