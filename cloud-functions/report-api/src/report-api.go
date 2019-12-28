@@ -32,6 +32,7 @@ type Customer struct {
 	Permissions []string
 }
 
+
 type Event struct {
 	CustomerID  string
 	Owner       string
@@ -101,6 +102,7 @@ type ColumnStat struct {
 type FiberCount struct {
 	Person    int
 	Dupe      int
+	Invalid	  int
 	Throwaway int
 	PurgePre  int
 	Purge360  int
@@ -177,6 +179,7 @@ type Fiber struct {
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID    	 MatchKeyField 	  `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -209,56 +212,65 @@ type Passthrough360 struct {
 }
 
 type PeopleMatchKeys struct {
-	SALUTATION   MatchKeyField
-	NICKNAME     MatchKeyField
-	FNAME        MatchKeyField
-	FINITIAL     MatchKeyField
-	LNAME        MatchKeyField
-	MNAME        MatchKeyField
-	AD1          MatchKeyField
-	AD1NO        MatchKeyField
-	AD2          MatchKeyField
-	AD3          MatchKeyField
-	CITY         MatchKeyField
-	STATE        MatchKeyField
-	ZIP          MatchKeyField
-	ZIP5         MatchKeyField
-	COUNTRY      MatchKeyField
-	MAILROUTE    MatchKeyField
-	ADTYPE       MatchKeyField
-	ZIPTYPE      MatchKeyField
-	RECORDTYPE   MatchKeyField
-	ADBOOK       MatchKeyField
-	ADPARSER     MatchKeyField
-	ADCORRECT    MatchKeyField
-	EMAIL        MatchKeyField
-	PHONE        MatchKeyField
-	TRUSTEDID    MatchKeyField
-	CLIENTID     MatchKeyField
-	GENDER       MatchKeyField
-	AGE          MatchKeyField
-	DOB          MatchKeyField
-	ORGANIZATION MatchKeyField
-	TITLE        MatchKeyField
-	ROLE         MatchKeyField
-	STATUS       MatchKeyField
-	PermE        MatchKeyField
-	PermM        MatchKeyField
-	PermS        MatchKeyField
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
+	ORGANIZATION MatchKeyField `json:"organization"`
+	TITLE        MatchKeyField `json:"title"`
+	ROLE         MatchKeyField `json:"role"`
+	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type HouseHoldMatchKeys struct {
-	LNAME   MatchKeyField
-	CITY    MatchKeyField
-	STATE   MatchKeyField
-	ZIP     MatchKeyField
-	ZIP5    MatchKeyField
-	COUNTRY MatchKeyField
-	AD1     MatchKeyField
-	AD1NO   MatchKeyField
-	AD2     MatchKeyField
-	ADTYPE  MatchKeyField
-	ADBOOK  MatchKeyField
+	LNAME   	 MatchKeyField `json:"lname"`
+	CITY    	 MatchKeyField `json:"city"`
+	STATE   	 MatchKeyField `json:"state"`
+	ZIP     	 MatchKeyField `json:"zip"`
+	ZIP5    	 MatchKeyField `json:"zip5"`
+	COUNTRY 	 MatchKeyField `json:"country"`
+	AD1     	 MatchKeyField `json:"ad1"`
+	AD1NO   	 MatchKeyField `json:"ad1no"`
+	AD2     	 MatchKeyField `json:"ad2"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	PermM        MatchKeyField `json:"permm"`
+	ORGANIZATION MatchKeyField `json:"organization"`
 }
 
 type MatchKeyField struct {
@@ -278,8 +290,8 @@ type PeopleSet struct {
 	Source                 []string       `datastore:"source"`
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
-	RecordID               []string       `datastore:"recordid"`
 	FiberType              []string       `datastore:"fibertype"`
+	RecordID               []string       `datastore:"recordid"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
@@ -303,6 +315,8 @@ type PeopleSet struct {
 	AD2Normalized          []string       `datastore:"ad2normalized"`
 	AD3                    []string       `datastore:"ad3"`
 	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
 	CITY                   []string       `datastore:"city"`
 	CITYNormalized         []string       `datastore:"citynormalized"`
 	STATE                  []string       `datastore:"state"`
@@ -327,6 +341,8 @@ type PeopleSet struct {
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
 	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
 	EMAIL                  []string       `datastore:"email"`
 	EMAILNormalized        []string       `datastore:"emailnormalized"`
 	PHONE                  []string       `datastore:"phone"`
@@ -382,6 +398,7 @@ type PeopleGolden struct {
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
+	ADVALID      string         `datastore:"advalid"`
 	EMAIL        string         `datastore:"email"`
 	PHONE        string         `datastore:"phone"`
 	TRUSTEDID    string         `datastore:"trustedid"`
@@ -622,6 +639,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PURGE1 := 0
 		PURGE2 := 0
+		INVALID := 0
 		DEFAULT := 0
 		MAR := 0
 		MPR := 0
@@ -721,6 +739,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				// if role == "Parent" {
 				// 	isParent = true
 				// }
+
+				// all international addresses would be invalid... guess we just want US invalid...
+				if f.ADVALID == "FALSE" {
+					INVALID++
+				}
 
 				if isNew && isDomestic && isFreshmen && !isParent {
 					NDFS++
@@ -876,6 +899,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			Purge360:  PURGE2,
 			Throwaway: PURGE1 + PURGE2, //len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			Default:   len(recordIDs),
+			Invalid:   INVALID,
 			MAR:       MAR,
 			MPR:       MPR,
 			EDFS:      EDFS,
@@ -951,8 +975,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "Disposition"})
+		//TODO: Jie I tried adding invalid into report... or started it...
 		diagnostics := []string{"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
-		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition"})
+		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition", "IsValid"})
 
 		for _, k := range PeopleMatchKeyNames {
 			report.GridFibers[0] = append(report.GridFibers[0], k)
@@ -995,6 +1020,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 					rowFiber = append(rowFiber, f.CreatedAt)
 					rowFiber = append(rowFiber, f.FiberType)
 					rowFiber = append(rowFiber, f.Disposition)
+					rowFiber = append(rowFiber, "TRUE")
 
 					for _, k := range PeopleMatchKeyNames {
 						mk := GetMatchKeyFieldFromFiberByName(&f, k)

@@ -882,9 +882,9 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			if mkOutput.AD1.Value != a[0].DeliveryLine1 { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
-			if mkOutput.CITY.Value != a[0].CityName { mkOutput.ADCORRECT.Value = "TRUE" }
+			if mkOutput.CITY.Value != a[0].Components.CityName { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.CITY.Value = a[0].Components.CityName
-			if mkOutput.STATE.Value != a[0].StateAbbreviation { mkOutput.ADCORRECT.Value = "TRUE" }
+			if mkOutput.STATE.Value != a[0].Components.StateAbbreviation { mkOutput.ADCORRECT.Value = "TRUE" }
 			mkOutput.STATE.Value = a[0].Components.StateAbbreviation
 
 			Zip := a[0].Components.Zipcode
