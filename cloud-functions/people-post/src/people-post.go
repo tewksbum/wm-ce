@@ -800,7 +800,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// don't forget we can have email only records....
 
 		// standardize state name > abreviation
-		if reStateFull.MatchString(v.Output.STATE.Value) {
+		if reStateFull.MatchString(strings.ToLower(v.Output.STATE.Value)) {
 			LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", v.Output.STATE.Value))
 			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
 		}
