@@ -46,13 +46,13 @@ function toColumnName(num) {
     .concat(["", "", "", "", "", "", ""])
     .concat(["Parents"]);
   MergeSheet.addRow(f);
-  for (let index = 9; index < 3 * 8; index += 8) {
+  for (let index = 10; index < 3 * 8; index += 8) {
     let fc = `${toColumnName(index)}1`;
     let sc = `${toColumnName(index + 7)}1`;
     MergeSheet.mergeCells(fc, sc);
     console.log(fc);
   }
-  MergeSheet.getCell("I1").fill = {
+  MergeSheet.getCell("J1").fill = {
     type: "gradient",
     gradient: "path",
     center: { left: 0.5, top: 0.5 },
@@ -61,7 +61,7 @@ function toColumnName(num) {
       { position: 1, color: { argb: "FF8A2BE2" } }
     ]
   };
-  MergeSheet.getCell("Q1").fill = {
+  MergeSheet.getCell("R1").fill = {
     type: "gradient",
     gradient: "path",
     center: { left: 0.5, top: 0.5 },
@@ -129,6 +129,7 @@ function toColumnName(num) {
   MergeSheet.getCell("F1").value = "";
   MergeSheet.getCell("G1").value = "";
   MergeSheet.getCell("H1").value = "";
+  MergeSheet.getCell("I1").value = "";
 
   //report logging
   const today = new Date();
