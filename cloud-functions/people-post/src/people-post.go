@@ -799,15 +799,21 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// StandardizeAddressLP(&(v.Output))
 
+		// don't forget we can have email only records....
+
 		// If we could not identify another country...
-		if v.Output.COUNTRY.Value == "" {
+		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
 			// maybe do one last check to see if we can find a country in another field?
 			v.Output.COUNTRY.Value == "US"
 		}
 
 		// IF we believe it to be a US address...
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
+			v.Output.ADVALID.Value = "FALSE"
 			StandardizeAddressSS(&(v.Output))
+		} else if v.Output.COUNTRY.Value != "" {
+			// 
+			v.Output.ADVALID.Value = "FALSE"
 		}
 
 		pubQueue = append(pubQueue, PubQueue{
@@ -854,12 +860,20 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 }
 
 func StandardizeAddressSS(mkOutput *PeopleOutput) {
+
+	// even if SS doesn't have match, lets standardize to 2 letter state
+	if reStateFull.MatchString(mkOutput.STATE.Value) {
+		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", mkOutput.STATE.Value))
+		mkOutput.State.Value = lookupState(mkOutput.STATE.Value)
+	}
+
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 10 {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
+			mkOutput.ADVALID.Value = "TRUE"
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
 			mkOutput.CITY.Value = a[0].Components.CityName
@@ -876,12 +890,6 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
 			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
 		}
-	}
-
-	// even if SS doesn't have match, lets standardize to 2 letter state
-	if reStateFull.MatchString(mkOutput.STATE.Value) {
-		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", mkOutput.STATE.Value))
-		mkOutput.State.Value = lookupState(mkOutput.STATE.Value)
 	}
 
 	// pre-empted before StandardizeAddressSS is called...
