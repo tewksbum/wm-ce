@@ -799,7 +799,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// StandardizeAddressLP(&(v.Output))
 
 		// If we could not identify another country...
-		If v.Output.COUNTRY.Value == "" {
+		if v.Output.COUNTRY.Value == "" {
 			// maybe do one last check to see if we can find a country in another field?
 			v.Output.COUNTRY.Value == "US"
 		}
