@@ -98,6 +98,7 @@ type PeopleOutput struct {
 	ADBOOK       MatchKeyField `json:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID    	 MatchKeyField `json:"advalid"`
 	DORM         MatchKeyField `json:"-"` // do not output in json or store in BQ
 	ROOM         MatchKeyField `json:"-"` // do not output in json or store in BQ
 	FULLADDRESS  MatchKeyField `json:"-"` // do not output in json or store in BQ
@@ -1051,9 +1052,8 @@ func lookupState(in string) string {
 			return "WI" 
 		case "Wyoming":
 			return "WY"
-		default
-			return in
 	}
+	return in
 }
 
 func IsInt(s string) bool {
