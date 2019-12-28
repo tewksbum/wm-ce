@@ -89,7 +89,7 @@ function toColumnName(num) {
     { header: "Duration", key: "Duration", width: 10 },
     { header: "Records", key: "Records", width: 10 },
     { header: "Purged", key: "Purged", width: 10 },
-    { header: "Dupes", key: "Purged", width: 10 }
+    { header: "Dupes", key: "Purged", width: 10 },
     { header: "Invalid", key: "Invalid", width: 10 }
   ];
   var MergeHeaderIds = [
