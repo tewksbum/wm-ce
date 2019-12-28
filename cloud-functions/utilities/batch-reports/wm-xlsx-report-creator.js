@@ -101,7 +101,7 @@ function toColumnName(num) {
     "Records",
     "Purged",
     "Dupes",
-    "Invalid",
+    "Non Valid Address",
     "Freshman",
     "Upperclassmen",
     "Freshman",
