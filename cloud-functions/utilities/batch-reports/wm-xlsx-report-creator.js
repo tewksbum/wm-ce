@@ -39,7 +39,7 @@ function toColumnName(num) {
   let maxCol = 0;
 
   var MergeSheet = workBook.addWorksheet("Merge purge");
-  var emptyHeader = ["", "", "", "", "", "", "", ""];
+  var emptyHeader = ["", "", "", "", "", "", "", "", ""];
 
   var f = emptyHeader
     .concat(["Student"])
@@ -90,6 +90,7 @@ function toColumnName(num) {
     { header: "Records", key: "Records", width: 10 },
     { header: "Purged", key: "Purged", width: 10 },
     { header: "Dupes", key: "Purged", width: 10 }
+    { header: "Invalid", key: "Invalid", width: 10 }
   ];
   var MergeHeaderIds = [
     "Organization",
@@ -100,6 +101,7 @@ function toColumnName(num) {
     "Records",
     "Purged",
     "Dupes",
+    "Invalid",
     "Freshman",
     "Upperclassmen",
     "Freshman",
@@ -243,6 +245,7 @@ function toColumnName(num) {
       report.RowCount,
       report.Fibers.Throwaway,
       report.Fibers.Dupe,
+      report.Fibers.Invalid,
       report.Fibers.NDFS,
       report.Fibers.NDUS,
       report.Fibers.NIFS,
