@@ -741,7 +741,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 				// all international addresses would be invalid... guess we just want US invalid...
 				if f.ADVALID.Value == "FALSE" {
-					INVALID++
+					if f.FiberType == "default" {
+						INVALID++
+					}
+					continue
 				}
 
 				if isNew && isDomestic && isFreshmen && !isParent {
