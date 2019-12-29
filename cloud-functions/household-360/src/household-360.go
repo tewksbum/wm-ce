@@ -291,7 +291,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	if len(input.MatchKeys.ZIP.Value) > 0 {
+	if len(input.MatchKeys.ZIP.Value) > 5 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
 			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
