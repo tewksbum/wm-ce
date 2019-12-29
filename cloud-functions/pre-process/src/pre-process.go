@@ -911,7 +911,7 @@ func GetPeopleERR(column string) PeopleERR {
 	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email":
 		// err.Email = 1
 		err.ParentEmail = 1
-	case "gender", "m/f", "sex", "student sex", "student gender":
+	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
 		err.Gender = 1
 	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first":
 		err.ParentFirstName = 1
@@ -927,7 +927,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name", "application: applicant":
+	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -993,7 +993,7 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 
 	// these should be looked up on a per owner basis
-	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
+	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") || strings.Contains(key, "classification description") {
 		err.ContainsTitle = 1
 	}
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") {
