@@ -98,7 +98,7 @@ function toColumnName(num) {
     "Owner",
     "TimeStamp",
     "Duration",
-    "Records",
+    "Rows",
     "Purged",
     "Dupes",
     "Non Valid Address",

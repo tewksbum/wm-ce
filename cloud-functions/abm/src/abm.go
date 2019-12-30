@@ -459,7 +459,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	var sr APIResponse
 	err = decoder.Decode(&sr)
 	if err != nil {
-		log.Printf("[ERROR]<%v>-<%v> There was a problem decoding the response %v", rSignature.OwnerID, rSignature.Source, sr.Message)
+		log.Printf("[ERROR]<%v>-<%v> There was a problem decoding the output response %v", rSignature.OwnerID, rSignature.Source, sr.Message)
 		return nil
 	}
 	if sr.Success != true {

@@ -17,7 +17,7 @@ import (
 // 	"CLIENTSECRET": "cool_works"
 // },
 
-func TestProcessRequest1(t *testing.T) {
+func TestProcessRequestALL(t *testing.T) {
 	json := `
 	{
 		"clientID": "wemade",
@@ -219,7 +219,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-uut-rha",
+		"targetSelection": "dev-ttu-rha",
 		"targetSubSelection": ""
 	}`
 

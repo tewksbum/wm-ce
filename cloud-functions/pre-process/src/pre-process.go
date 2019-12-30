@@ -687,64 +687,64 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		columns[i] = column
 	}
 
-	// look up NER and call ML if People
-	var prediction Prediction
+	// // look up NER and call ML if People
+	// var prediction Prediction
 
-	PeopleError := false
-	if flags.People {
-		log.Printf("Have people flag %v", input.Signature.EventID)
-		PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
-		PeopleNER := FindNER(PeopleNERKey)
+	// PeopleError := false
+	// if flags.People {
+	// 	log.Printf("Have people flag %v", input.Signature.EventID)
+	// 	PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
+	// 	PeopleNER := FindNER(PeopleNERKey)
 
-		if len(PeopleNER.Columns) > 0 {
-			// copy NER into the columns
-			for i, column := range columns {
-				for _, ner := range PeopleNER.Columns {
-					if strings.EqualFold(column.Name, ner.ColumnName) {
-						MapNER(column, ner.NEREntities)
-					}
-				}
-				columns[i] = column
-			}
-			if dev {
-				log.Printf("columns %v", columns)
-			}
-		}
+	// 	if len(PeopleNER.Columns) > 0 {
+	// 		// copy NER into the columns
+	// 		for i, column := range columns {
+	// 			for _, ner := range PeopleNER.Columns {
+	// 				if strings.EqualFold(column.Name, ner.ColumnName) {
+	// 					MapNER(column, ner.NEREntities)
+	// 				}
+	// 			}
+	// 			columns[i] = column
+	// 		}
+	// 		if dev {
+	// 			log.Printf("columns %v", columns)
+	// 		}
+	// 	}
 
-		mlInput := BuildMLData(columns)
-		if dev {
-			log.Printf("mlinput: %v", mlInput)
-		}
-		if dev {
-			log.Printf("columns: %v", columns)
-		}
-		mlJSON, _ := json.Marshal(mlInput)
-		log.Printf("ML request %v", string(mlJSON))
-		reqBody := &ml.GoogleApi__HttpBody{
-			Data: string(mlJSON),
-		}
-		req := ml.GoogleCloudMlV1__PredictRequest{
-			HttpBody: reqBody,
-		}
-		req.HttpBody.ContentType = "application/json"
-		ai, _ = ml.NewService(ctx)
-		mlPredict := ai.Projects.Predict(MLUrl, &req)
-		r, err := mlPredict.Context(ctx).Do()
-		if err != nil {
-			log.Fatalf("error calling mlService, %v", err)
-			PeopleError = true
-		} else {
-			if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
-				if _, ok := err.(*json.SyntaxError); ok {
-					log.Fatalf("error decoding json, %v", string(r.Data))
-				}
-			}
-			if len(prediction.Predictions) == 0 {
-				log.Fatalf("unexpected prediction returned, %v", string(r.Data))
-			}
-			log.Printf("ML result is %v", string(r.Data))
-		}
-	}
+	// 	mlInput := BuildMLData(columns)
+	// 	if dev {
+	// 		log.Printf("mlinput: %v", mlInput)
+	// 	}
+	// 	if dev {
+	// 		log.Printf("columns: %v", columns)
+	// 	}
+	// 	mlJSON, _ := json.Marshal(mlInput)
+	// 	log.Printf("ML request %v", string(mlJSON))
+	// 	reqBody := &ml.GoogleApi__HttpBody{
+	// 		Data: string(mlJSON),
+	// 	}
+	// 	req := ml.GoogleCloudMlV1__PredictRequest{
+	// 		HttpBody: reqBody,
+	// 	}
+	// 	req.HttpBody.ContentType = "application/json"
+	// 	ai, _ = ml.NewService(ctx)
+	// 	mlPredict := ai.Projects.Predict(MLUrl, &req)
+	// 	r, err := mlPredict.Context(ctx).Do()
+	// 	if err != nil {
+	// 		log.Fatalf("error calling mlService, %v", err)
+	// 		PeopleError = true
+	// 	} else {
+	// 		if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
+	// 			if _, ok := err.(*json.SyntaxError); ok {
+	// 				log.Fatalf("error decoding json, %v", string(r.Data))
+	// 			}
+	// 		}
+	// 		if len(prediction.Predictions) == 0 {
+	// 			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
+	// 		}
+	// 		log.Printf("ML result is %v", string(r.Data))
+	// 	}
+	// }
 
 	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
 		log.Printf("Error querying existing records: %v", err)
@@ -769,7 +769,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		IsConsignment: flags.Consignment,
 		IsOrderDetail: flags.OrderDetail,
 		IsEvent:       flags.Event,
-		MLError:       PeopleError,
+		MLError:       false,
 	}
 
 	dsKey := datastore.IncompleteKey(DSKind, nil)
@@ -783,7 +783,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	output.Signature = input.Signature
 	output.Passthrough = input.Passthrough
 	output.Columns = columns
-	output.Prediction = prediction
+	// output.Prediction = prediction
 
 	outputJSON, _ := json.Marshal(output)
 	if flags.People {
@@ -977,7 +977,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if ((strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") || !strings.Contains(key, "room"))) {
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
 	if strings.Contains(key, "city") {
