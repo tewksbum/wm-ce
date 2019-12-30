@@ -447,7 +447,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.PeopleERR.Country = 0 // override this is NOT a country
 			column.PeopleERR.State = 0   // override this is NOT a state value
 		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			column.MatchKey1 = "DORM"
+			// TODO: come back and fix this... maybe drop MAR all together?
+			// column.MatchKey1 = "DORM"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value)"))
 		} else if column.PeopleERR.Room == 1 {
 			column.MatchKey1 = "ROOM"
