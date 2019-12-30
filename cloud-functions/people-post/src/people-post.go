@@ -98,7 +98,7 @@ type PeopleOutput struct {
 	ADBOOK       MatchKeyField `json:"adbook"`
 	ADPARSER     MatchKeyField `json:"adparser"`
 	ADCORRECT    MatchKeyField `json:"adcorrect"`
-	ADVALID    	 MatchKeyField `json:"advalid"`
+	ADVALID      MatchKeyField `json:"advalid"`
 	DORM         MatchKeyField `json:"-"` // do not output in json or store in BQ
 	ROOM         MatchKeyField `json:"-"` // do not output in json or store in BQ
 	FULLADDRESS  MatchKeyField `json:"-"` // do not output in json or store in BQ
@@ -410,7 +410,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
 
 	// iterate through every column on the input record to decide what the column is...
-	for index, column := range input.Columns {
+	for _, column := range input.Columns {
 		// start with some sanitization
 		column.Value = strings.TrimSpace(column.Value)
 		column.Value = reNewline.ReplaceAllString(column.Value, " ")
@@ -421,10 +421,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// capture ML prediction to column
-		predictionValue := input.Prediction.Predictions[index]
-		predictionKey := strconv.Itoa(int(predictionValue))
-		mlMatchKey := MLLabels[predictionKey]
-		column.MatchKey = mlMatchKey
+		// predictionValue := input.Prediction.Predictions[index]
+		// predictionKey := strconv.Itoa(int(predictionValue))
+		// mlMatchKey := MLLabels[predictionKey]
+		// column.MatchKey = mlMatchKey
 
 		// let's figure out which column this goes to
 		if column.PeopleERR.TrustedID == 1 {
@@ -497,7 +497,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1 ) {
+			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1) {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
 			} else if column.PeopleVER.IS_EMAIL {
@@ -829,7 +829,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
-		} 
+		}
 
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
@@ -881,12 +881,18 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
 		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
 		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
-			if mkOutput.AD1.Value != a[0].DeliveryLine1 { mkOutput.ADCORRECT.Value = "TRUE" }
+			if mkOutput.AD1.Value != a[0].DeliveryLine1 {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
-			if mkOutput.CITY.Value != a[0].Components.CityName { mkOutput.ADCORRECT.Value = "TRUE" }
+			if mkOutput.CITY.Value != a[0].Components.CityName {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
 			mkOutput.CITY.Value = a[0].Components.CityName
-			if mkOutput.STATE.Value != a[0].Components.StateAbbreviation { mkOutput.ADCORRECT.Value = "TRUE" }
+			if mkOutput.STATE.Value != a[0].Components.StateAbbreviation {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
 			mkOutput.STATE.Value = a[0].Components.StateAbbreviation
 
 			Zip := a[0].Components.Zipcode
@@ -969,108 +975,108 @@ func CorrectAddress(in string) SmartyStreetResponse {
 
 func lookupState(in string) string {
 	switch in {
-		case "Alabama":
-			return "AL"
-		case "Alaska":
-			return "AK"
-		case "Arizona":
-			return "AZ"
-		case "Arkansas":
-			return "AR"
-		case "California":
-			return "CA"
-		case "Colorado":
-			return "CO"
-		case "Connecticut":
-			return "CT"
-		case "Delaware":
-			return "DE"
-		case "District Of Columbia":
-			return "DC"
-		case "Florida":
-			return "FL"
-		case "Georgia":
-			return "GA"
-		case "Hawaii":
-			return "HI"
-		case "Idaho":
-			return "ID"
-		case "Illinois":
-			return "IL"
-		case "Indiana":
-			return "IN"
-		case "Iowa":
-			return "IA"
-		case "Kansas":
-			return "KS"
-		case "Kentucky":
-			return "KY"
-		case "Louisiana":
-			return "LA"
-		case "Maine":
-			return "ME"
-		case "Maryland":
-			return "MD"
-		case "Massachusetts":
-			return "MA"
-		case "Michigan":
-			return "MI"
-		case "Minnesota":
-			return "MN"
-		case "Mississippi":
-			return "MS"
-		case "Missouri":
-			return "MO"
-		case "Montana":
-			return "MN"
-		case "Nebraska":
-			return "NE"
-		case "Nevada":
-			return "NV"
-		case "New Hampshire":
-			return "NH"
-		case "New Jersey":
-			return "NJ"
-		case "New Mexico":
-			return "NM"
-		case "New York":
-			return "NY"
-		case "North Carolina":
-			return "NC"
-		case "North Dakota":
-			return "ND"
-		case "Ohio":
-			return "OH"
-		case "Oklahoma":
-			return "OK"
-		case "Oregon":
-			return "OR"
-		case "Pennsylvania":
-			return "PA"
-		case "Rhode Island":
-			return "RI"
-		case "South Carolina":
-			return "SC"
-		case "South Dakota":
-			return "SD"
-		case "Tennessee":
-			return "TN"
-		case "Texas":
-			return "TX"
-		case "Utah":
-			return "UT"
-		case "Vermont":
-			return "VT"
-		case "Virginia":
-			return "VA"
-		case "Washington":
-			return "WA"
-		case "West Virginia":
-			return "WV"
-		case "Wisconsin":
-			return "WI" 
-		case "Wyoming":
-			return "WY"
+	case "Alabama":
+		return "AL"
+	case "Alaska":
+		return "AK"
+	case "Arizona":
+		return "AZ"
+	case "Arkansas":
+		return "AR"
+	case "California":
+		return "CA"
+	case "Colorado":
+		return "CO"
+	case "Connecticut":
+		return "CT"
+	case "Delaware":
+		return "DE"
+	case "District Of Columbia":
+		return "DC"
+	case "Florida":
+		return "FL"
+	case "Georgia":
+		return "GA"
+	case "Hawaii":
+		return "HI"
+	case "Idaho":
+		return "ID"
+	case "Illinois":
+		return "IL"
+	case "Indiana":
+		return "IN"
+	case "Iowa":
+		return "IA"
+	case "Kansas":
+		return "KS"
+	case "Kentucky":
+		return "KY"
+	case "Louisiana":
+		return "LA"
+	case "Maine":
+		return "ME"
+	case "Maryland":
+		return "MD"
+	case "Massachusetts":
+		return "MA"
+	case "Michigan":
+		return "MI"
+	case "Minnesota":
+		return "MN"
+	case "Mississippi":
+		return "MS"
+	case "Missouri":
+		return "MO"
+	case "Montana":
+		return "MN"
+	case "Nebraska":
+		return "NE"
+	case "Nevada":
+		return "NV"
+	case "New Hampshire":
+		return "NH"
+	case "New Jersey":
+		return "NJ"
+	case "New Mexico":
+		return "NM"
+	case "New York":
+		return "NY"
+	case "North Carolina":
+		return "NC"
+	case "North Dakota":
+		return "ND"
+	case "Ohio":
+		return "OH"
+	case "Oklahoma":
+		return "OK"
+	case "Oregon":
+		return "OR"
+	case "Pennsylvania":
+		return "PA"
+	case "Rhode Island":
+		return "RI"
+	case "South Carolina":
+		return "SC"
+	case "South Dakota":
+		return "SD"
+	case "Tennessee":
+		return "TN"
+	case "Texas":
+		return "TX"
+	case "Utah":
+		return "UT"
+	case "Vermont":
+		return "VT"
+	case "Virginia":
+		return "VA"
+	case "Washington":
+		return "WA"
+	case "West Virginia":
+		return "WV"
+	case "Wisconsin":
+		return "WI"
+	case "Wyoming":
+		return "WY"
 	}
 	return in
 }
@@ -1451,7 +1457,7 @@ func CalcClassYear(cy string) string {
 		case "senior", "sr":
 			return strconv.Itoa(time.Now().Year() + 1)
 		case "graduate", "undergraduate over 23 (archive)":
-			return strconv.Itoa(time.Now().Year() - 1)	
+			return strconv.Itoa(time.Now().Year() - 1)
 		default:
 			return strconv.Itoa(time.Now().Year() + 4)
 		}
