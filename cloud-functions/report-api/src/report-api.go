@@ -32,7 +32,6 @@ type Customer struct {
 	Permissions []string
 }
 
-
 type Event struct {
 	CustomerID  string
 	Owner       string
@@ -102,7 +101,7 @@ type ColumnStat struct {
 type FiberCount struct {
 	Person    int
 	Dupe      int
-	Invalid	  int
+	Invalid   int
 	Throwaway int
 	PurgePre  int
 	Purge360  int
@@ -179,7 +178,7 @@ type Fiber struct {
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
-	ADVALID    	 MatchKeyField 	  `datastore:"advalid"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -252,15 +251,15 @@ type PeopleMatchKeys struct {
 }
 
 type HouseHoldMatchKeys struct {
-	LNAME   	 MatchKeyField `json:"lname"`
-	CITY    	 MatchKeyField `json:"city"`
-	STATE   	 MatchKeyField `json:"state"`
-	ZIP     	 MatchKeyField `json:"zip"`
-	ZIP5    	 MatchKeyField `json:"zip5"`
-	COUNTRY 	 MatchKeyField `json:"country"`
-	AD1     	 MatchKeyField `json:"ad1"`
-	AD1NO   	 MatchKeyField `json:"ad1no"`
-	AD2     	 MatchKeyField `json:"ad2"`
+	LNAME        MatchKeyField `json:"lname"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
 	ADTYPE       MatchKeyField `json:"adtype"`
 	MAILROUTE    MatchKeyField `json:"mailroute"`
 	ADBOOK       MatchKeyField `json:"adbook"`
@@ -741,8 +740,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				// }
 
 				// all international addresses would be invalid... guess we just want US invalid...
-				if f.ADVALID == "FALSE" {
-					INVALID++
+				if f.ADVALID.Value == "FALSE" {
+					if f.FiberType == "default" {
+						INVALID++
+					}
+					continue
 				}
 
 				if isNew && isDomestic && isFreshmen && !isParent {
@@ -975,7 +977,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		}
 
 		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "Disposition"})
-		//TODO: Jie I tried adding invalid into report... or started it...
+
 		diagnostics := []string{"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
 		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition", "IsValid"})
 

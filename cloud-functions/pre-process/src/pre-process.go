@@ -746,6 +746,14 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+		log.Printf("Error querying existing records: %v", err)
+	}
+	if len(existing) > 0 {
+		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+		return nil
+	}
+
 	// store RECORD in DS
 	immutableDS := RecordDS{
 		EventID:       input.Signature.EventID,
