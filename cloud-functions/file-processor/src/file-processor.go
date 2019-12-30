@@ -331,7 +331,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			for i, h := range headers {
 				if len(h) > 0 {
 					for _, r := range records {
-						if h == r[i] {
+						if len(r) > i && h == r[i] {
 							headerlessTest1 = true
 							break
 						}
