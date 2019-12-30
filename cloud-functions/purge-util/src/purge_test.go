@@ -17,7 +17,7 @@ import (
 // 	"CLIENTSECRET": "cool_works"
 // },
 
-func TestProcessRequest1(t *testing.T) {
+func TestProcessRequestALL(t *testing.T) {
 	json := `
 	{
 		"clientID": "wemade",
