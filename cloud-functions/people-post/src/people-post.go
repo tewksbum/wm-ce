@@ -608,6 +608,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// clear MatchKey if Junk
 		if column.PeopleERR.Junk == 1 {
+			LogDev(fmt.Sprintf("JUNK is dropping your match keys: %v %v %v %v", column.MatchKey, column.MatchKey1, column.MatchKey2, column.MatchKey3))
 			column.MatchKey = ""
 			column.MatchKey1 = ""
 			column.MatchKey2 = ""
