@@ -977,7 +977,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
 	if strings.Contains(key, "city") {
