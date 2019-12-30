@@ -451,7 +451,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// column.MatchKey1 = "DORM"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value)"))
 		} else if column.PeopleERR.Room == 1 {
-			column.MatchKey1 = "ROOM"
+			// TODO: come back and fix this... maybe drop MAR all together?
+			// column.MatchKey1 = "ROOM"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Room == 1"))
 		} else if column.PeopleERR.FullAddress == 1 {
 			column.MatchKey1 = "FULLADDRESS"
