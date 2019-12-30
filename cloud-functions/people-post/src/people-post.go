@@ -442,8 +442,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
 			column.MatchKey1 = "TITLE"
 			column.MatchKey2 = "STATUS"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey2, "column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
+			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
 			column.PeopleERR.State = 0   // override this is NOT a state value
@@ -714,7 +713,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				outputs[indexOutput] = *currentOutput
 			}
 		} else {
-			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
+			log.Printf("Event %v Record %v Column has no match key assigned: %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 		LogDev(fmt.Sprintf("Outputs is %v", outputs))
 		// input.Columns[index] = column // dont need to update the input
