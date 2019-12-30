@@ -16,6 +16,7 @@ import (
 // 	"CLIENTID": "wemade",
 // 	"CLIENTSECRET": "cool_works"
 // },
+
 func TestProcessRequest1(t *testing.T) {
 	json := `
 	{
@@ -210,7 +211,7 @@ func TestProcessRequest5(t *testing.T) {
 	}
 }
 
-func TestProcessRequestA(t *testing.T) {
+func TestProcessRequestXXX(t *testing.T) {
 	json := `
 	{
 		"clientID": "wemade",
@@ -219,6 +220,29 @@ func TestProcessRequestA(t *testing.T) {
 		"targetLevel": "kind",
 		"operation": "delete",
 		"targetSelection": "dev-uut-rha",
+		"targetSubSelection": ""
+	}`
+
+	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	ProcessRequest(rr, req)
+
+	got := rr.Body.String()
+
+	fmt.Println(got)
+}
+
+func TestProcessRequestArkRl(t *testing.T) {
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "dev-ark-rl",
 		"targetSubSelection": ""
 	}`
 
