@@ -97,9 +97,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			} else {
 				sigs = "[]"
 			}
-			if r.GetPassthrough() != "" {
+			if len(r.GetPassthrough()) > 0 {
 				is = is.Pair("passthrough", r.GetPassthrough())
 			}
+			// if len(r.GetAttributes()) > 0 {
+			// 	is = is.Pair("Attributes", r.GetAttributes())
+			// }
 			rec := utils.StructToMap(r, r.GetColumnBlackList())
 			j, _ := json.Marshal(rec["record"])
 			// logger.InfoFmt("value: %#v", string(j))

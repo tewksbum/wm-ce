@@ -73,7 +73,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		OwnerID:     cust.Key.ID,
 		Owner:       owner,
 		Source:      input.Source,
-		Passthrough: utils.FlattenMap(input.Passthrough),
+		Passthrough: input.Passthrough,
 		Attributes:  utils.FlattenMap(input.Attributes),
 		Timestamp:   time.Now(),
 	}
