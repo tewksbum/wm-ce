@@ -49,7 +49,7 @@ type Record interface {
 	GetSurrogateID() string
 	GetSource() string
 	GetOwner() string
-	GetPassthrough() string
+	GetPassthrough() []Passthrough360
 	GetAttributes() string
 	GetDBType() string
 	GetIDField() string
@@ -94,20 +94,26 @@ func (r *DecodeRecord) GetSignatures() []string {
 	return sigs
 }
 
+// Passthrough360 defines a passthrough object
+type Passthrough360 struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
 // BaseRecord input for the API
 type BaseRecord struct {
-	OwnerID         int64     `json:"ownerId" bigquery:"-" sql:"-"`
-	EntityType      string    `json:"entityType" bigquery:"-" sql:"-"`
-	Source          string    `json:"source" bigquery:"-" sql:"-"`
-	Owner           string    `json:"owner" bigquery:"-" sql:"-"`
-	Passthrough     string    `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
-	Attributes      string    `json:"attributes" bigquery:"-" sql:"-"`
-	Timestamp       time.Time `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
-	DBopts          Options   `json:"-" bigquery:"-" sql:"-"`
-	StorageType     string    `json:"-" sql:"-" bigquery:"-"` // csql or bq
-	IDField         string    `json:"-" sql:"-" bigquery:"-"`
-	ColumnList      []string  `json:"-" sql:"-" bigquery:"-"`
-	ColumnBlackList []string  `json:"-" sql:"-" bigquery:"-"`
+	OwnerID         int64            `json:"ownerId" bigquery:"-" sql:"-"`
+	EntityType      string           `json:"entityType" bigquery:"-" sql:"-"`
+	Source          string           `json:"source" bigquery:"-" sql:"-"`
+	Owner           string           `json:"owner" bigquery:"-" sql:"-"`
+	Passthrough     []Passthrough360 `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
+	Attributes      string           `json:"attributes" bigquery:"-" sql:"-"`
+	Timestamp       time.Time        `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
+	DBopts          Options          `json:"-" bigquery:"-" sql:"-"`
+	StorageType     string           `json:"-" sql:"-" bigquery:"-"` // csql or bq
+	IDField         string           `json:"-" sql:"-" bigquery:"-"`
+	ColumnList      []string         `json:"-" sql:"-" bigquery:"-"`
+	ColumnBlackList []string         `json:"-" sql:"-" bigquery:"-"`
 }
 
 // GetOwnerID gets the Customer id
@@ -139,7 +145,7 @@ func (r *BaseRecord) GetSource() string {
 }
 
 // GetPassthrough gets the entity type
-func (r *BaseRecord) GetPassthrough() string {
+func (r *BaseRecord) GetPassthrough() []Passthrough360 {
 	return r.Passthrough
 }
 

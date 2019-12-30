@@ -63,8 +63,8 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		tblName += r.GetTablenameSuffix()
 	}
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
-	createTbl := getCreateTableStatement(r.GetEntityType())
-	_, err = tx.Exec(fmt.Sprintf(createTbl, tblNameTick))
+	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick)
+	_, err = tx.Exec(createTbl)
 	if err != nil {
 		return updated, logger.Err(err)
 	}
@@ -220,8 +220,8 @@ func Delete(dsn string, r models.Record) error {
 	}
 	defer tx.RollbackUnlessCommitted()
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
-	createTbl := getCreateTableStatement(r.GetEntityType())
-	_, err = tx.Exec(fmt.Sprintf(createTbl, tblNameTick))
+	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick)
+	_, err = tx.Exec(createTbl)
 	if err != nil {
 		return logger.ErrFmt("[csql.Delete.createTbl]: %#v", err)
 	}
