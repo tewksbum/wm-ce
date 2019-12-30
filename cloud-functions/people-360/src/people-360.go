@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -80,7 +81,7 @@ type PeopleFiberDS struct {
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
-	ADVALID    	 MatchKeyField 	  `datastore:"advalid"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -612,7 +613,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// append to the output value
-
 	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
@@ -638,6 +638,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
+
+		// special rules for assigning values
+		if name == "TITLE" {
+			mk.Value = GetSmallestYear(mk.Values)
+		}
+
 		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
@@ -712,6 +718,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	})
 
 	return nil
+}
+
+func GetSmallestYear(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	eligible := []string{}
+	for _, v := range values {
+		if strings.HasPrefix(v, "20") && len(v) == 4 && IsInt(v) {
+			eligible = append(eligible, v)
+		}
+	}
+	if len(eligible) > 0 {
+		sort.Strings(eligible)
+		return eligible[0]
+	} else {
+		return ""
+	}
 }
 
 func GetMatchKeyFieldFromStruct(v *PeopleOutput, field string) MatchKeyField {
@@ -905,4 +929,13 @@ func ToAsciiArray(s string) []int {
 		result = append(result, int(runes[i]))
 	}
 	return result
+}
+
+func IsInt(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
 }
