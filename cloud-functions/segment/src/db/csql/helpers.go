@@ -1,6 +1,7 @@
 package csql
 
 import (
+	"fmt"
 	"segment/models"
 	"segment/utils"
 	"segment/utils/logger"
@@ -16,15 +17,21 @@ const (
 		people_id VARCHAR(255) NULL,
 		household_id VARCHAR(255) NULL,
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		PRIMARY KEY (signature)); `
+		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		INDEX(people_id),
+		INDEX(household_id),
+		PRIMARY KEY (signature));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
 		signatures JSON NULL,
 		passthrough JSON NULL,
+		attributes JSON NULL,
 		record JSON NULL,
-		timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-	)`
+		%s
+		timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+		%s);`
 )
 
 func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or wemade.OutputRecord, err error) {
@@ -87,11 +94,15 @@ func appendList(rows interface{}, totalrows int, entityType string, blacklist []
 	return list
 }
 
-func getCreateTableStatement(entityType string) string {
+func getCreateTableStatement(entityType string, tblName string) string {
 	switch entityType {
 	case models.TypeDecode:
-		return tblDecodeCreateStmt
+		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
+	case models.TypePeople:
+		return fmt.Sprintf(tblCreateStmt, tblName, "people_id VARCHAR(255) AS (record->'$.peopleId'),", ",INDEX(people_id)")
+	case models.TypeHousehold:
+		return fmt.Sprintf(tblCreateStmt, tblName, "household_id VARCHAR(255) AS (record->'$.householdId'),", ",INDEX(household_id)")
 	default:
-		return tblCreateStmt
+		return fmt.Sprintf(tblCreateStmt, tblName, "", "")
 	}
 }
