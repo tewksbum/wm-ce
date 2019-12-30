@@ -846,7 +846,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// }
 		log.Printf("column maps: %v", columnMaps)
 
-		report.RowCount = len(records)
+		report.RowCount = len(recordIDs)
 		var minTime time.Time
 		var maxTime time.Time
 		for i, r := range records {
