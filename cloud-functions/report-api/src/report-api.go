@@ -45,6 +45,7 @@ type Event struct {
 	Passthrough []KVP
 	Attributes  []KVP
 	Detail      string
+	RowLimit    int
 }
 
 type FileReport struct {
