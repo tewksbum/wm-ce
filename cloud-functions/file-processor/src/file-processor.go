@@ -138,6 +138,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	RowLimit := 0
+	if row, ok := input.EventData["maxRows"]; ok {
+		RowLimit = int(row.(float64))
+	}
+
 	// get the file
 	if url, ok := input.EventData["fileUrl"]; ok {
 		resp, err := http.Get(fmt.Sprintf("%v", url))
@@ -381,6 +386,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					continue
+				}
+				if RowLimit > 1 && r > RowLimit-1 {
+					break
 				}
 
 				output.Signature.RecordID = uuid.New().String()
