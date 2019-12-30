@@ -76,7 +76,6 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	_ = stmt.Build(stmt.Dialect, buf)
 	exists, err := stmt.ReturnString()
 	logger.InfoFmt("[SELECT]: %s\n%s: %s = %s", buf.String(), rIDField, rmap[rIDField], exists)
-	logger.InfoFmt("[csql.Write.selectStmt] %#v", err)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
