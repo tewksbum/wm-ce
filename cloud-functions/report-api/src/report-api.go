@@ -631,6 +631,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		EIUP := 0 // existing international upperclassman parent
 
 		recordIDs := []string{}
+		recordUniques := []string{}
 		newIDs := []string{}
 
 		DUPE := 0
@@ -647,6 +648,10 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if !r.IsPeople {
 				PURGE1++
 			}
+			if Contains(recordUniques, r.RecordID) {
+				continue
+			}
+			recordUniques = append(recordUniques, r.RecordID)
 		}
 
 		for _, f := range fibers {
@@ -846,7 +851,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// }
 		log.Printf("column maps: %v", columnMaps)
 
-		report.RowCount = len(recordIDs)
+		report.RowCount = len(recordUniques)
 		var minTime time.Time
 		var maxTime time.Time
 		for i, r := range records {
