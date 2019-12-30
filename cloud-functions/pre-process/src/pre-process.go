@@ -996,7 +996,8 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
+	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
+		// strings.Contains(key, "description") ||
 		err.Junk = 1
 	}
 
