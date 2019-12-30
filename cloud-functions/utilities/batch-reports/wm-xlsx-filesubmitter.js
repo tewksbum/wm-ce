@@ -154,6 +154,7 @@ async function sendRequest(row) {
   var streamerData = {
     accessKey: `${accessKey}`,
     fileUrl: url,
+    maxRows: 30,
     owner: `${owner}`,
     source: "RHAA",
     passthrough: {},
