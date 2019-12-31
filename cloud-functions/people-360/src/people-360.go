@@ -752,6 +752,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if recordFinished && fiberFinished {
 			eventData := EventData{
 				Signature: input.Signature,
+				EventData: make(map[string]interface{}),
 			}
 			eventData.EventData["status"] = "Finished"
 			eventData.EventData["message"] = fmt.Sprintf("Processed %v records and %v fibers, purged %v records and %v fibers", recordCompleted, fiberCompleted, recordDeleted, fiberDeleted)
