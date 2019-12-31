@@ -46,7 +46,7 @@ func TestUpsert(t *testing.T) {
 		"entityType":  "household",
 		"peopleId":    "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"householdId": "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"firstName":   "PERRO", "lastName": "Ali",
+		"firstName":   "DOG", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
 		"emails": []map[string]string{
 			{"email": "email@ocm.com", "type": "work"},
@@ -73,7 +73,7 @@ func TestUpsert(t *testing.T) {
 		// 	"recordId": "a46d0e9d-fa20-49ab-bce0-e47cbbd531c9"}},
 		// "createdAt": "2019-11-12T22:29:49.181287005Z", "timestamp": "2019-11-12T22:29:49.181285984Z",
 		// "fibers":       []string{"a46d0e9d-fa20-49ab-bce0-e47cbbd531c9"},
-		// "passthroughs": nil,
+		// "passthrough": nil,
 	})
 	// logger.InfoFmt("input: %s", input)
 	w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)

@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	recordPeopleID    string = "record->'$.peopleId'"
-	recordHouseholdID string = "record->'$.householdId'"
+	recordPeopleID    string = "people_id"
+	recordHouseholdID string = "household_id"
 )
 
 // Write decides where the data will be stored, and does so.
