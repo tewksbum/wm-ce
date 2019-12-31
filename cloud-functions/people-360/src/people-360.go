@@ -731,12 +731,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			[]string{input.Signature.EventID, "fibers-completed"},
 			[]string{input.Signature.EventID, "fibers-deleted"},
 		})
-		recordCount := counters[0]
-		recordCompleted := counters[1]
-		recordDeleted := counters[2]
-		fiberCompleted := counters[3]
-		fiberDeleted := counters[4]
-
+		LogDev(fmt.Sprintf("Received response from redis %v", counters))
+		recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted := 0, 0, 0, 0, 0
+		if len(counters) == 5 {
+			recordCount = counters[0]
+			recordCompleted = counters[1]
+			recordDeleted = counters[2]
+			fiberCompleted = counters[3]
+			fiberDeleted = counters[4]
+		}
 		recordFinished := false
 		fiberFinished := false
 		if recordCompleted+recordDeleted >= recordCount {
