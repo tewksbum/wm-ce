@@ -1557,7 +1557,7 @@ func SetRedisValueWithExpiration(keyparts []string, value int) {
 
 	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
 	if err != nil {
-		log.Printf("Error setting redis value %v to %v", strings.Join(keyparts, ":"), value)
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
 	}
 }
 
@@ -1567,7 +1567,7 @@ func IncrRedisValue(keyparts []string) { // no need to update expiration
 
 	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
 	if err != nil {
-		log.Printf("Error incrementing redis value %v", strings.Join(keyparts, ":"))
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
 }
 
@@ -1580,7 +1580,7 @@ func GetRedisIntValue(keyparts []string) int {
 	defer ms.Close()
 	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		log.Printf("Error getting redis value %v", strings.Join(keyparts, ":"))
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
 	return value
 }
@@ -1596,7 +1596,7 @@ func GetRedisIntValues(keys [][]string) []int {
 
 	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
 	if err != nil {
-		log.Printf("Error getting redis values %v", formattedKeys)
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
 	return values
 }
