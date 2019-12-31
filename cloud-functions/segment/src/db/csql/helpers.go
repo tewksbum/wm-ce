@@ -134,7 +134,7 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			adCorrect    VARCHAR(255) AS (record->'$.adCorrect'),
 			city         VARCHAR(64)  AS (record->'$.city'),
 			state        VARCHAR(64)  AS (record->'$.state'),
-			zip          VARCHAR(8)   AS (record->'$.zip'),
+			zip          VARCHAR(64)   AS (record->'$.zip'),
 			country      VARCHAR(32)  AS (record->'$.country'),
 		`
 		idxs := `,

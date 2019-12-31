@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"segment/utils/logger"
 
 	"segment/db"
 	"segment/utils"
@@ -63,8 +64,11 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	rec, _ = wemade.BuildRecordFromInput(projectID, namespace, data, true)
+	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
 	db.Write(projectID, csqlDSN, rec)
+	if err != nil {
+		logger.ErrFmt("[API.Upsert.MainOwnerCopy.Error]: ", err)
+	}
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
 }
