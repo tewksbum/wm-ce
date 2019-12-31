@@ -135,38 +135,6 @@ type People struct {
 	Emails       []EmailSt `json:"emails,omitempty"`
 }
 
-// OutputHeader input for the API
-type OutputHeader struct {
-	AccessKey  string `json:"accessKey"`
-	EntityType string `json:"entityType"`
-	OwnerID    int64  `json:"ownerId"`
-}
-
-// Common allows us to merge structs with similar fields, these fields
-// relate to other structs which will get merge before sending
-type Common struct {
-	OrderID       string   `json:"orderId,omitempty"`
-	SurrogateID   string   `json:"surrogateId,omitempty"`
-	ConsignmentID string   `json:"consignmentId,omitempty"`
-	Signatures    []string `json:"signatures,omitempty"`
-	LastName      string   `json:"lastName,omitempty"`
-	ProductID     string   `json:"productId,omitempty"`
-}
-
-// Output merge struct
-type Output struct {
-	OutputHeader
-	Common
-	*People
-	*OrderDetail
-	*OrderConsignment
-	*OrderHeader
-	*Product
-	*Campaign
-	*Event
-	*Household
-}
-
 // APIResponse struct to parse the output message response
 type APIResponse struct {
 	Success bool   `json:"success"`
@@ -247,6 +215,39 @@ type Request360 struct {
 	TimeStamp   time.Time        `json:"timestamp"`
 }
 
+// OutputHeader input for the API
+type OutputHeader struct {
+	AccessKey   string           `json:"accessKey"`
+	EntityType  string           `json:"entityType"`
+	OwnerID     int64            `json:"ownerId"`
+	Passthrough []Passthrough360 `json:"passthrough"`
+}
+
+// Common allows us to merge structs with similar fields, these fields
+// relate to other structs which will get merge before sending
+type Common struct {
+	OrderID       string   `json:"orderId,omitempty"`
+	SurrogateID   string   `json:"surrogateId,omitempty"`
+	ConsignmentID string   `json:"consignmentId,omitempty"`
+	Signatures    []string `json:"signatures,omitempty"`
+	LastName      string   `json:"lastName,omitempty"`
+	ProductID     string   `json:"productId,omitempty"`
+}
+
+// Output merge struct
+type Output struct {
+	OutputHeader
+	Common
+	*People
+	*OrderDetail
+	*OrderConsignment
+	*OrderHeader
+	*Product
+	*Campaign
+	*Event
+	*Household
+}
+
 func logDebug(message string) {
 	if Debug == "true" {
 		log.Print(message)
@@ -307,6 +308,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	outputHeader.AccessKey = customerInfo.AccessKey // don't Change to ocm then?
 
 	outputHeader.EntityType = inputType
+	outputHeader.Passthrough = request360.Passthrough
 	var common Common
 	output := Output{
 		outputHeader,
@@ -432,6 +434,16 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		}
 		output.Common.Signatures = getSignaturesHash(rSignatures)
 		output.Common.LastName = getFrom360Slice("LNAME", r360filteredmk).Value
+		household := Household{
+			Address1: getFrom360Slice("AD1", r360filteredmk).Value,
+			Address2: getFrom360Slice("AD2", r360filteredmk).Value,
+			Address3: getFrom360Slice("AD3", r360filteredmk).Value,
+			City:     getFrom360Slice("CITY", r360filteredmk).Value,
+			State:    getFrom360Slice("STATE", r360filteredmk).Value,
+			Zip:      getFrom360Slice("ZIP", r360filteredmk).Value,
+			Country:  getFrom360Slice("COUNTRY", r360filteredmk).Value,
+		}
+		output.Household = &household
 	}
 
 	jsonStrOutput, err := json.Marshal(output)

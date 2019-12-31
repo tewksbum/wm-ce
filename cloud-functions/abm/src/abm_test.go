@@ -24,7 +24,7 @@ func compareSlices(a, b []string) bool {
 }
 
 func TestAbmFlattening(t *testing.T) {
-	expectedjsonStr := `{"accessKey":"AccessKey","entityType":"EntityType","ownerId":1234,"eventId":"test"}`
+	expectedjsonStr := `{"accessKey":"AccessKey","entityType":"EntityType","ownerId":1234,"passthrough":null,"eventId":"test"}`
 	var outputHeader OutputHeader
 	outputHeader.AccessKey = "AccessKey"
 	outputHeader.OwnerID = 1234
@@ -134,13 +134,25 @@ func Test360PeopleOutput(t *testing.T) {
 	}
 	output.Common.LastName = getFrom360Slice("LNAME", request360.MatchKeys).Value
 	output.Common.Signatures = getSignaturesHash(request360.Signatures)
+	household := Household{
+		Address1: getFrom360Slice("AD1", request360.MatchKeys).Value,
+		Address2: getFrom360Slice("AD2", request360.MatchKeys).Value,
+		Address3: getFrom360Slice("AD3", request360.MatchKeys).Value,
+		City:     getFrom360Slice("CITY", request360.MatchKeys).Value,
+		State:    getFrom360Slice("STATE", request360.MatchKeys).Value,
+		Zip:      getFrom360Slice("ZIP", request360.MatchKeys).Value,
+		Country:  getFrom360Slice("COUNTRY", request360.MatchKeys).Value,
+	}
+	output.Household = &household
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
 		fmt.Printf("Couldn't parse %v", jsonStrOutput)
 	}
+	fmt.Printf("%v", string(jsonStrOutput))
+
 }
 func TestParsing(t *testing.T) {
-	jsonstr := []byte(`{"id": "10bd2c2c-fc43-4bd8-ae0b-a3e739e4a744","signature":{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD"},"signatures":[{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD","recordId":"6623dc60-6fc3-4d58-a464-88e86c592322"}],"createdAt":"2019-12-02T13:29:30.703799715Z","fibers":["3cb35469-56c1-4a52-bc25-61d19f51a301"],"passthroughs":null,"matchKeys":[{"key":"SALUTATION","type":"","value":"","values":[]},{"key":"NICKNAME","type":"","value":"","values":[]},{"key":"FNAME","type":"","value":"Torres,Delilah","values":["Torres,Delilah"]},{"key":"FINITIAL","type":"","value":"T","values":["T"]},{"key":"LNAME","type":"","value":"","values":[]},{"key":"MNAME","type":"","value":"","values":[]},{"key":"AD1","type":"","value":"2450 N. LINDER AVE","values":["2450 N. LINDER AVE"]},{"key":"AD1NO","type":"","value":"2450","values":["2450"]},{"key":"AD2","type":"","value":"","values":[]},{"key":"AD3","type":"","value":"","values":[]},{"key":"CITY","type":"","value":"CHICAGO","values":["CHICAGO"]},{"key":"STATE","type":"","value":"IL","values":["IL"]},{"key":"ZIP","type":"","value":"60639","values":["60639"]},{"key":"ZIP5","type":"","value":"60639","values":["60639"]},{"key":"COUNTRY","type":"","value":"US","values":["US"]},{"key":"MAILROUTE","type":"","value":"","values":[]},{"key":"ADTYPE","type":"","value":"Home","values":["Home"]},{"key":"ADPARSER","type":"","value":"libpostal","values":["libpostal"]},{"key":"ADCORRECT","type":"","value":"","values":[]},{"key":"EMAIL","type":"","value":"","values":[]},{"key":"PHONE","type":"","value":"","values":[]},{"key":"TRUSTEDID","type":"","value":"","values":[]},{"key":"CLIENTID","type":"","value":"","values":[]},{"key":"GENDER","type":"","value":"","values":[]},{"key":"AGE","type":"","value":"","values":[]},{"key":"DOB","type":"","value":"","values":[]},{"key":"ORGANIZATION","type":"","value":"BUV","values":["BUV"]},{"key":"TITLE","type":"","value":"","values":[]},{"key":"ROLE","type":"","value":"","values":[]},{"key":"STATUS","type":"","value":"","values":[]}]}`)
+	jsonstr := []byte(`{"id": "10bd2c2c-fc43-4bd8-ae0b-a3e739e4a744","signature":{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD"},"signatures":[{"ownerId":"buv-bn","source":"OCM","eventId":"5d156436-3fe4-454d-95b6-ae0f65aae63c","eventType":"UPLOAD","recordId":"6623dc60-6fc3-4d58-a464-88e86c592322"}],"createdAt":"2019-12-02T13:29:30.703799715Z","fibers":["3cb35469-56c1-4a52-bc25-61d19f51a301"],"passthroughs":null,"matchKeys":[{"key":"SALUTATION","type":"","value":"","values":[]},{"key":"NICKNAME","type":"","value":"","values":[]},{"key":"FNAME","type":"","value":"Torres,Delilah","values":["Torres,Delilah"]},{"key":"FINITIAL","type":"","value":"T","values":["T"]},{"key":"LNAME","type":"","value":"","values":[]},{"key":"MNAME","type":"","value":"","values":[]},{"key":"AD1","type":"","value":"2450 N. LINDER AVE","values":["2450 N. LINDER AVE"]},{"key":"AD1","type":"","value":"2450","values":["2450"]},{"key":"AD2","type":"","value":"","values":[]},{"key":"AD3","type":"","value":"","values":[]},{"key":"CITY","type":"","value":"CHICAGO","values":["CHICAGO"]},{"key":"STATE","type":"","value":"IL","values":["IL"]},{"key":"ZIP","type":"","value":"60639","values":["60639"]},{"key":"ZIP5","type":"","value":"60639","values":["60639"]},{"key":"COUNTRY","type":"","value":"US","values":["US"]},{"key":"MAILROUTE","type":"","value":"","values":[]},{"key":"ADTYPE","type":"","value":"Home","values":["Home"]},{"key":"ADPARSER","type":"","value":"libpostal","values":["libpostal"]},{"key":"ADCORRECT","type":"","value":"","values":[]},{"key":"EMAIL","type":"","value":"","values":[]},{"key":"PHONE","type":"","value":"","values":[]},{"key":"TRUSTEDID","type":"","value":"","values":[]},{"key":"CLIENTID","type":"","value":"","values":[]},{"key":"GENDER","type":"","value":"","values":[]},{"key":"AGE","type":"","value":"","values":[]},{"key":"DOB","type":"","value":"","values":[]},{"key":"ORGANIZATION","type":"","value":"BUV","values":["BUV"]},{"key":"TITLE","type":"","value":"","values":[]},{"key":"ROLE","type":"","value":"","values":[]},{"key":"STATUS","type":"","value":"","values":[]}]}`)
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
 		fmt.Printf("There was an issue decoding the message %v %v", string(jsonstr), err)
