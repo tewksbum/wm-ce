@@ -3,7 +3,6 @@ package filestatus
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -48,6 +47,13 @@ type Event struct {
 	Passthrough []KVP
 	Attributes  []KVP
 	Detail      string
+	RowLimit    int
+	Counters    []KIP
+}
+
+type KIP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value int    `json:"v" datastore:"v"`
 }
 
 type KVP struct {
@@ -87,94 +93,52 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("Received message %v", string(m.Data))
-	currentTime := time.Now().UnixNano()
-	if processafter, ok := input.EventData["processafter"]; ok {
-		if currentTime < int64(processafter.(float64)) {
-			return fmt.Errorf("not yet ready %v < %v", currentTime, int64(processafter.(float64)))
-		}
+
+	var requests []Event
+	var request Event
+
+	Status, Message := "", ""
+	if val, ok := input.EventData["status"]; ok {
+		Status = val.(string)
+	}
+	if val, ok := input.EventData["message"]; ok {
+		Message = val.(string)
+	}
+	RecordsTotal, RecordsCompleted, RecordsDeleted, FibersCompleted, FibersDeleted := 0, 0, 0, 0, 0
+
+	if val, ok := input.EventData["records-total"]; ok {
+		RecordsTotal = int(val.(float64))
+	}
+	if val, ok := input.EventData["records-completed"]; ok {
+		RecordsCompleted = int(val.(float64))
+	}
+	if val, ok := input.EventData["records-deleted"]; ok {
+		RecordsDeleted = int(val.(float64))
+	}
+	if val, ok := input.EventData["fibers-completed"]; ok {
+		FibersCompleted = int(val.(float64))
+	}
+	if val, ok := input.EventData["fibers-deleted"]; ok {
+		FibersDeleted = int(val.(float64))
 	}
 
-	// check detail
-	if status, ok := input.EventData["success"]; ok {
-		log.Printf("Current status %v", status)
-		if status == true {
-			if val, ok := input.EventData["runcount"]; ok {
-				// we've waited for at least 5 min now, we can process
-				runCount := int(val.(float64))
-
-				recordCount := int(input.EventData["recordcount"].(float64))
-
-				OwnerNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Environment, strings.ToLower(input.Signature.OwnerID)))
-
-				dsRecordCount, err := ds.Count(ctx, datastore.NewQuery("record").Namespace(OwnerNamespace).Filter("EventID =", input.Signature.EventID))
-				if err != nil {
-					log.Printf("Error querying records (ns = %v, kind = %v): %v", OwnerNamespace, "record", err)
-				}
-				dsFiberCount, err := ds.Count(ctx, datastore.NewQuery("people-fiber").Namespace(OwnerNamespace).Filter("eventid =", input.Signature.EventID).Filter("fibertype =", "default"))
-				if err != nil {
-					log.Printf("Error querying fibers (ns = %v, kind = %v): %v", OwnerNamespace, "people-fiber", err)
-				}
-				recordCompleted := dsRecordCount >= recordCount
-				fiberCompleted := dsFiberCount >= recordCount
-
-				completed := recordCompleted && fiberCompleted
-				log.Printf("Current record count = %v, fiber count = %v", dsRecordCount, dsFiberCount)
-				if runCount >= MaxRepetition || completed {
-					// write the status
-					var requests []Event
-					var request Event
-					query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
-					if _, err := ds.GetAll(ctx, query, &requests); err != nil {
-						log.Fatalf("Error querying event: %v", err)
-						return nil
-					} else if len(requests) > 0 {
-						request = requests[0]
-						if completed {
-							request.Status = "Completed"
-							request.Message = fmt.Sprintf("processed %v rows, %v records, %v fibers", recordCount, dsRecordCount, dsFiberCount)
-						} else {
-							request.Status = "Warning"
-							request.Message = "%v rows produced %v records and %v fibers"
-						}
-						if _, err := ds.Put(ctx, request.Key, &request); err != nil {
-							log.Fatalf("error updating event: %v", err)
-						}
-					}
-
-				} else {
-					// sleep for 5 min and push this message back out
-					log.Printf("Dropping message back to pubsub")
-					input.EventData["runcount"] = int(input.EventData["runcount"].(float64)) + 1
-					input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
-					statusJSON, _ := json.Marshal(input)
-					psresult := topic.Publish(ctx, &pubsub.Message{
-						Data: statusJSON,
-					})
-					_, err := psresult.Get(ctx)
-					if err != nil {
-						log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
-					}
-				}
-
-			}
-		} else {
-			// if not successful, it's the final status, update the event
-			log.Printf("Not successful %v", status)
-
-			var requests []Event
-			var request Event
-			query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
-			if _, err := ds.GetAll(ctx, query, &requests); err != nil {
-				log.Fatalf("Error querying event: %v", err)
-				return nil
-			} else if len(requests) > 0 {
-				request = requests[0]
-				request.Status = "Rejected"
-				request.Message = input.EventData["status"].(string)
-				if _, err := ds.Put(ctx, request.Key, &request); err != nil {
-					log.Fatalf("error updating event: %v", err)
-				}
-			}
+	query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
+	if _, err := ds.GetAll(ctx, query, &requests); err != nil {
+		log.Fatalf("Error querying event: %v", err)
+		return nil
+	} else if len(requests) > 0 {
+		request = requests[0]
+		request.Status = Status
+		request.Message = Message
+		request.Counters = []KIP{
+			KIP{Key: "records-total", Value: RecordsTotal},
+			KIP{Key: "records-completed", Value: RecordsCompleted},
+			KIP{Key: "records-deleted", Value: RecordsDeleted},
+			KIP{Key: "fibers-completed", Value: FibersCompleted},
+			KIP{Key: "fibers-deleted", Value: FibersDeleted},
+		}
+		if _, err := ds.Put(ctx, request.Key, &request); err != nil {
+			log.Fatalf("error updating event: %v", err)
 		}
 	}
 

@@ -337,7 +337,8 @@ var DSKind = os.Getenv("DSKIND")
 var MLUrl = os.Getenv("PREDICTION")
 
 var AIDataBucket = os.Getenv("AIBUCKET")
-var RedisAddress = os.Getenv("MEMSTORE")
+
+var redisTransientExpiration = 3600 * 24
 
 // global vars
 var ctx context.Context
@@ -351,7 +352,7 @@ var topicConsignment *pubsub.Topic
 var topicOrderDetail *pubsub.Topic
 var ai *ml.Service
 var cs *storage.Client
-var msPool *redis.Pool
+var msp *redis.Pool
 var ds *datastore.Client
 
 var listCities map[string]bool
@@ -391,7 +392,11 @@ func init() {
 	cs, _ = storage.NewClient(ctx)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 
-	msPool = NewPool(RedisAddress)
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 
 	// preload the lists
 	var err error
@@ -754,58 +759,66 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
-	// store RECORD in DS
-	immutableDS := RecordDS{
-		EventID:       input.Signature.EventID,
-		EventType:     input.Signature.EventType,
-		RecordID:      input.Signature.RecordID,
-		RowNumber:     input.Signature.RowNumber,
-		Fields:        ToKVPSlice(&input.Fields),
-		TimeStamp:     time.Now(),
-		IsPeople:      flags.People,
-		IsProduct:     flags.Product,
-		IsCampaign:    flags.Campaign,
-		IsOrder:       flags.Order,
-		IsConsignment: flags.Consignment,
-		IsOrderDetail: flags.OrderDetail,
-		IsEvent:       flags.Event,
-		MLError:       false,
-	}
+	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	if existingCheck == 0 {
+		// store RECORD in DS
+		immutableDS := RecordDS{
+			EventID:       input.Signature.EventID,
+			EventType:     input.Signature.EventType,
+			RecordID:      input.Signature.RecordID,
+			RowNumber:     input.Signature.RowNumber,
+			Fields:        ToKVPSlice(&input.Fields),
+			TimeStamp:     time.Now(),
+			IsPeople:      flags.People,
+			IsProduct:     flags.Product,
+			IsCampaign:    flags.Campaign,
+			IsOrder:       flags.Order,
+			IsConsignment: flags.Consignment,
+			IsOrderDetail: flags.OrderDetail,
+			IsEvent:       flags.Event,
+			MLError:       false,
+		}
 
-	dsKey := datastore.IncompleteKey(DSKind, nil)
-	dsKey.Namespace = dsNamespace
-	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
-		log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
-	}
+		dsKey := datastore.IncompleteKey(DSKind, nil)
+		dsKey.Namespace = dsNamespace
+		if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
+			log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
+		}
 
-	// pub
-	var output Output
-	output.Signature = input.Signature
-	output.Passthrough = input.Passthrough
-	output.Columns = columns
-	// output.Prediction = prediction
+		// pub
+		var output Output
+		output.Signature = input.Signature
+		output.Passthrough = input.Passthrough
+		output.Columns = columns
+		// output.Prediction = prediction
 
-	outputJSON, _ := json.Marshal(output)
-	if flags.People {
-		PubMessage(topicPeople, outputJSON)
-	}
-	if flags.Product {
-		PubMessage(topicProduct, outputJSON)
-	}
-	if flags.Event {
-		PubMessage(topicEvent, outputJSON)
-	}
-	if flags.Campaign {
-		PubMessage(topicCampaign, outputJSON)
-	}
-	if flags.Order {
-		PubMessage(topicOrder, outputJSON)
-	}
-	if flags.Consignment {
-		PubMessage(topicConsignment, outputJSON)
-	}
-	if flags.OrderDetail {
-		PubMessage(topicOrderDetail, outputJSON)
+		outputJSON, _ := json.Marshal(output)
+		if flags.People {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+			IncrRedisValue([]string{input.Signature.EventID, "records-completed"})
+			PubMessage(topicPeople, outputJSON)
+		} else {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+			IncrRedisValue([]string{input.Signature.EventID, "records-deleted"})
+		}
+		if flags.Product {
+			PubMessage(topicProduct, outputJSON)
+		}
+		if flags.Event {
+			PubMessage(topicEvent, outputJSON)
+		}
+		if flags.Campaign {
+			PubMessage(topicCampaign, outputJSON)
+		}
+		if flags.Order {
+			PubMessage(topicOrder, outputJSON)
+		}
+		if flags.Consignment {
+			PubMessage(topicConsignment, outputJSON)
+		}
+		if flags.OrderDetail {
+			PubMessage(topicOrderDetail, outputJSON)
+		}
 	}
 
 	return nil
@@ -974,7 +987,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if ((strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") || !strings.Contains(key, "room"))) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") || !strings.Contains(key, "room")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
@@ -1311,7 +1324,7 @@ func GetNERKey(sig Signature, columns []string) string {
 
 func FindNER(key string) NERCache {
 	var ner NERCache
-	ms := msPool.Get()
+	ms := msp.Get()
 	s, err := redis.String(ms.Do("GET", key))
 	if err == nil {
 		json.Unmarshal([]byte(s), &ner)
@@ -1536,4 +1549,54 @@ func LogDev(s string) {
 	if dev {
 		log.Printf(s)
 	}
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v", strings.Join(keyparts, ":"), value)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v", strings.Join(keyparts, ":"))
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v", strings.Join(keyparts, ":"))
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v", formattedKeys)
+	}
+	return values
 }

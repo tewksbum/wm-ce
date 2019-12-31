@@ -94,18 +94,16 @@ type NERentry map[string]interface{}
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
-var PubSubTopic = os.Getenv("PSOUTPUT")
-var PubSubStatus = os.Getenv("PSSTATUS")
-
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
 
-var RedisAddress = os.Getenv("MEMSTORE")
 var NERApi = os.Getenv("NERAPI")
 
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
+
+var redisTransientExpiration = 3600 * 24
 
 // global vars
 var ctx context.Context
@@ -119,11 +117,14 @@ func init() {
 	ctx = context.Background()
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	topic = ps.Topic(PubSubTopic)
-	status = ps.Topic(PubSubStatus)
+	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	status = ps.Topic(os.Getenv("PSSTATUS"))
 	// status.PublishSettings.DelayThreshold = 5 * time.Minute
-
-	msp = NewPool(RedisAddress)
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -149,9 +150,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		if err != nil {
 			log.Fatalf("File cannot be downloaded %V", url)
 
-			input.EventData["status"] = "File cannot be downloaded"
-			input.EventData["success"] = false
-			input.EventData["processafter"] = time.Now().UnixNano()
+			input.EventData["message"] = "File cannot be downloaded"
+			input.EventData["status"] = "Error"
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
@@ -178,9 +178,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if _, err := io.Copy(writer, bytes.NewReader(fileBytes)); err != nil {
 				log.Fatalf("File cannot be copied to bucket %v", err)
 
-				input.EventData["status"] = "File cannot be copied to bucket"
-				input.EventData["success"] = false
-				input.EventData["processafter"] = time.Now().UnixNano()
+				input.EventData["message"] = "File cannot be copied to bucket"
+				input.EventData["status"] = "Error"
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -210,9 +209,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if fileSize < 1 {
 				log.Fatal("Unable to process an empty file.")
 
-				input.EventData["status"] = "File is empty"
-				input.EventData["success"] = false
-				input.EventData["processafter"] = time.Now().UnixNano()
+				input.EventData["message"] = "File is empty"
+				input.EventData["status"] = "Error"
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -234,9 +232,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				sheetData, err := xlsxFile.ToSlice()
 				if err != nil {
-					input.EventData["status"] = "Unable to read excel data"
-					input.EventData["success"] = false
-					input.EventData["processafter"] = time.Now().UnixNano()
+					input.EventData["message"] = "Unable to read excel data"
+					input.EventData["status"] = "Error"
 					statusJSON, _ := json.Marshal(input)
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
@@ -262,9 +259,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				if err != nil {
 					log.Fatalf("unable to read header: %v", err)
 
-					input.EventData["status"] = "Unable to read csv header"
-					input.EventData["success"] = false
-					input.EventData["processafter"] = time.Now().UnixNano()
+					input.EventData["message"] = "Unable to read csv header"
+					input.EventData["status"] = "Error"
 					statusJSON, _ := json.Marshal(input)
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
@@ -314,9 +310,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if headerlessTest2 {
 				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
 
-				input.EventData["status"] = "File appears to contain no header row - 1"
-				input.EventData["success"] = false
-				input.EventData["processafter"] = time.Now().UnixNano()
+				input.EventData["message"] = "File appears to contain no header row - 1"
+				input.EventData["status"] = "Error"
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -344,9 +339,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if headerlessTest1 {
 				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
 
-				input.EventData["status"] = "File appears to contain no header row - 2"
-				input.EventData["success"] = false
-				input.EventData["processafter"] = time.Now().UnixNano()
+				input.EventData["message"] = "File appears to contain no header row - 2"
+				input.EventData["status"] = "Error"
 				statusJSON, _ := json.Marshal(input)
 				psresult := status.Publish(ctx, &pubsub.Message{
 					Data: statusJSON,
@@ -381,6 +375,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			output.Signature = input.Signature
 			output.Attributes = input.Attributes
 			output.Passthrough = input.Passthrough
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-completed"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-deleted"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-completed"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-deleted"}, 0)
 
 			for r, d := range records {
 				// count unique values
@@ -420,9 +419,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			input.EventData["status"] = "Streamed"
-			input.EventData["success"] = true
-			input.EventData["runcount"] = 1
-			input.EventData["processafter"] = time.Now().Add(time.Minute * 5).UnixNano()
+			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
 			input.EventData["recordcount"] = len(records)
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
@@ -432,10 +429,12 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if err != nil {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
+
 		} else {
-			input.EventData["status"] = "Unable to fetch file"
-			input.EventData["success"] = false
-			input.EventData["processafter"] = time.Now().UnixNano()
+			input.EventData["message"] = "Unable to fetch file"
+			input.EventData["status"] = "Error"
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
@@ -602,10 +601,52 @@ func PersistNER(key string, ner NERresponse) {
 	}
 }
 
-func NewPool(addr string) *redis.Pool {
-	return &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v", strings.Join(keyparts, ":"), value)
 	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v", strings.Join(keyparts, ":"))
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v", strings.Join(keyparts, ":"))
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v", formattedKeys)
+	}
+	return values
 }
