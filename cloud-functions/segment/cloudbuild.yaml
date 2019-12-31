@@ -22,7 +22,7 @@ steps:
     "--runtime","go111",
     "--trigger-http",
     "--project", "${PROJECT_ID}",
-    "--timeout", "600",
+    "--timeout", "300",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
