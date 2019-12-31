@@ -40,7 +40,7 @@ var (
 	ColumnList       = []string{"signatures", "passthrough", "attributes"}
 	DecodeIDField    = "signature"
 	DecodeColumnList = []string{"signature", "people_id", "household_id"}
-	DecodeBlackList  = []string{"source",
+	DecodeBlackList  = []string{"source", "passthrough", "attributes",
 		"owner_id", "owner", "entity_type", "timestamp", "signatures"}
 )
 

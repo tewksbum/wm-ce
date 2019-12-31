@@ -114,13 +114,40 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).
-			Where(rIDField+" = ?", rmap[rIDField]).
-			SetMap(rmap)
+			Where(rIDField+" = ?", rmap[rIDField])
+		switch r.GetEntityType() {
+		case models.TypeDecode:
+			logger.InfoFmt("[HEY DUDE]: %#v", rmap)
+			us = us.SetMap(rmap)
+		default:
+			sigs := `[`
+			for _, s := range r.GetSignatures() {
+				sigs += `"` + s + `",`
+			}
+			if sigs != "[" {
+				sigs = sigs[:len(sigs)-1] + `]`
+				us = us.Set("signatures", sigs)
+			} else {
+				sigs = "[]"
+			}
+			if len(r.GetPassthrough()) > 0 {
+				us = us.Set("passthrough", r.GetPassthrough())
+			}
+			// if len(r.GetAttributes()) > 0 {
+			// 	us = us.Set("Attributes", r.GetAttributes())
+			// }
+			rec := utils.StructToMap(r, r.GetColumnBlackList())
+			j, _ := json.Marshal(rec["record"])
+			// logger.InfoFmt("value: %#v", string(j))
+			us = us.Set("record", string(j))
+		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
 		logger.InfoFmt("[UPDATE]: %s", buf.String())
 		res, err = us.Exec()
-		updated = true
+		if err == nil {
+			updated = true
+		}
 	}
 	// Logging of the created insert command
 	if err != nil {
