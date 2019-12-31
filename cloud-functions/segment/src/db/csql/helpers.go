@@ -99,16 +99,22 @@ func getCreateTableStatement(entityType string, tblName string) string {
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
 	case models.TypePeople:
 		cols := `
-			people_id    VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.peopleId')),
-			salutation   VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.salutation')),
-			firstName    VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.firstName')),
-			lastName     VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.lastName')),
-			gender       VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.gender')),
-			age          VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.age')),
-			organization VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.organization')),
-			title        VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.title')),
-			role         VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.role')),
-			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE(record->>'$.adCorrect')),
+			people_id    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.peopleId')),
+			salutation   VARCHAR(255) AS (JSON_UNQUOTE(record->'$.salutation')),
+			firstName    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.firstName')),
+			lastName     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.lastName')),
+			gender       VARCHAR(255) AS (JSON_UNQUOTE(record->'$.gender')),
+			age          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.age')),
+			organization VARCHAR(255) AS (JSON_UNQUOTE(record->'$.organization')),
+			title        VARCHAR(255) AS (JSON_UNQUOTE(record->'$.title')),
+			role         VARCHAR(255) AS (JSON_UNQUOTE(record->'$.role')),
+			ad1          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.ad1')),
+			ad2          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.ad2')),
+			city         VARCHAR(255) AS (JSON_UNQUOTE(record->'$.city')),
+			state        VARCHAR(255) AS (JSON_UNQUOTE(record->'$.state')),
+			zip          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.zip')),
+			country      VARCHAR(255) AS (JSON_UNQUOTE(record->'$.country')),
+			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.adCorrect')),
 			emails       JSON AS (record->'$.emails'),
 			phones       JSON AS (record->'$.phones'),
 		`
@@ -120,21 +126,25 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			INDEX(organization),
 			INDEX(title),
 			INDEX(role),
-			INDEX(adCorrect)
+			INDEX(ad1),
+			INDEX(ad2),
+			INDEX(city),
+			INDEX(state),
+			INDEX(zip)
 		`
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:
 		cols := `
 			household_id VARCHAR(255) AS (JSON_UNQUOTE(record->'$.householdId')),
-			lastName     VARCHAR(64)  AS (JSON_UNQUOTE((record->'$.lastName')),
-			address1     VARCHAR(255) AS (JSON_UNQUOTE((record->'$.address1')),
-			address2     VARCHAR(255) AS (JSON_UNQUOTE((record->'$.address2')),
-			address3     VARCHAR(255) AS (JSON_UNQUOTE((record->'$.address3')),
-			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE((record->'$.adCorrect')),
-			city         VARCHAR(64)  AS (JSON_UNQUOTE((record->'$.city')),
-			state        VARCHAR(64)  AS (JSON_UNQUOTE((record->'$.state')),
-			zip          VARCHAR(64)  AS (JSON_UNQUOTE((record->'$.zip')),
-			country      VARCHAR(32)  AS (JSON_UNQUOTE((record->'$.country')),
+			lastName     VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.lastName')),
+			address1     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address1')),
+			address2     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address2')),
+			address3     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address3')),
+			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.adCorrect')),
+			city         VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.city')),
+			state        VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.state')),
+			zip          VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.zip')),
+			country      VARCHAR(32)  AS (JSON_UNQUOTE(record->'$.country')),
 		`
 		idxs := `,
 			INDEX(household_id),
