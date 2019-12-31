@@ -49,9 +49,11 @@ type Household struct {
 	Address1    string `json:"address1,omitempty"`
 	Address2    string `json:"address2,omitempty"`
 	Address3    string `json:"address3,omitempty"`
+	Address1No  string `json:"address1no,omitempty"`
 	City        string `json:"city,omitempty"`
 	State       string `json:"state,omitempty"`
 	Zip         string `json:"zip,omitempty"`
+	Zip5        string `json:"zip5,omitempty"`
 	Country     string `json:"country,omitempty"`
 }
 
@@ -124,8 +126,10 @@ type PhoneSt struct {
 // People data
 type People struct {
 	PeopleID     string    `json:"peopleId,omitempty"`
+	Nickname     string    `json:"Nickname,omitempty"`
 	Salutation   string    `json:"salutation,omitempty"`
 	FirstName    string    `json:"firstName,omitempty"`
+	MiddleName   string    `json:"mname,omitempty"`
 	Gender       string    `json:"gender,omitempty"`
 	Age          string    `json:"age,omitempty"`
 	Organization string    `json:"organization,omitempty"`
@@ -232,6 +236,18 @@ type Common struct {
 	Signatures    []string `json:"signatures,omitempty"`
 	LastName      string   `json:"lastName,omitempty"`
 	ProductID     string   `json:"productId,omitempty"`
+	PermE         string   `json:"perme,omitempty"`
+	PermM         string   `json:"permm,omitempty"`
+	PermS         string   `json:"perms,omitempty"`
+	ADTYPE        string   `json:"adtype,omitempty"`
+	ADBOOK        string   `json:"adbook,omitempty"`
+	ADPARSER      string   `json:"adparser,omitempty"`
+	ADCORRECT     string   `json:"adcorrect,omitempty"`
+	ADVALID       string   `json:"advalid,omitempty"`
+	ZIPTYPE       string   `json:"ziptype,omitempty"`
+	RECORDTYPE    string   `json:"recordtype,omitempty"`
+	DOB           string   `json:"dob,omitempty"`
+	STATUS        string   `json:"status,omitempty"`
 }
 
 // Output merge struct
@@ -444,6 +460,18 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			Country:  getFrom360Slice("COUNTRY", r360filteredmk).Value,
 		}
 		output.Household = &household
+		common.PermE = getFrom360Slice("PermE", r360filteredmk).Value
+		common.PermM = getFrom360Slice("PermM", r360filteredmk).Value
+		common.PermS = getFrom360Slice("PermS", r360filteredmk).Value
+		common.ADTYPE = getFrom360Slice("ADTYPE", r360filteredmk).Value
+		common.ADBOOK = getFrom360Slice("ADBOOK", r360filteredmk).Value
+		common.ADPARSER = getFrom360Slice("ADPARSER", r360filteredmk).Value
+		common.ADCORRECT = getFrom360Slice("ADCORRECT", r360filteredmk).Value
+		common.ADVALID = getFrom360Slice("ADVALID", r360filteredmk).Value
+		common.ZIPTYPE = getFrom360Slice("ZIPTYPE", r360filteredmk).Value
+		common.RECORDTYPE = getFrom360Slice("RECORDTYPE", r360filteredmk).Value
+		common.DOB = getFrom360Slice("DOB", r360filteredmk).Value
+		common.STATUS = getFrom360Slice("STATUS", r360filteredmk).Value
 	}
 
 	jsonStrOutput, err := json.Marshal(output)
