@@ -51,11 +51,17 @@ var skippedSchoolCodes = [];
     { header: "Owner", id: "Min", width: 10 },
     { header: "AccessKey", id: "Min", width: 25 },
     { header: "RequestId", id: "Min", width: 10 },
-    { header: "fileUrl", id: "Min", width: 10 }
+    { header: "fileUrl", id: "Min", width: 10 },
+    { header: "Sequence", id: "Min", width: 10 }
   ];
   var lfiles = worksheet.rowCount;
-  for (let index = 2; index < lfiles; index++) {
-    await sendRequest(worksheet.getRow(index));
+  for (let seq = 1; seq < 6; seq++) {
+    for (let index = 2; index < lfiles; index++) {
+      if (seq == worksheet.getRow(index).values[10]) {
+        await sendRequest(worksheet.getRow(index));
+      }
+    }
+    await nap(120000)
   }
 
   await workbook.xlsx.writeFile("input.xlsx");
@@ -214,4 +220,10 @@ function sleep(time) {
   while(new Date().getTime() < stop + time) {
       ;
   }
+}
+
+function nap(ms){
+  return new Promise(resolve=>{
+      setTimeout(resolve,ms)
+  })
 }
