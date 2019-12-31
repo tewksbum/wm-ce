@@ -62,20 +62,22 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	if organization == "" {
 		organization = input.Attributes["organization"]
 	}
-	columns := input.Columns
-	if len(columns) < 1 {
-		columns = models.ColumnList
+	columns := models.DefaultColumnList
+	selectColumns := input.Columns
+	if len(selectColumns) < 1 {
+		selectColumns = models.DefaultSelectColumnList
 	}
 	br := models.BaseRecord{
-		IDField:     models.IDField,
-		ColumnList:  columns,
-		EntityType:  input.EntityType,
-		OwnerID:     cust.Key.ID,
-		Owner:       owner,
-		Source:      input.Source,
-		Passthrough: input.Passthrough,
-		Attributes:  utils.FlattenMap(input.Attributes),
-		Timestamp:   time.Now(),
+		IDField:          models.IDField,
+		ColumnList:       columns,
+		SelectColumnList: selectColumns,
+		EntityType:       input.EntityType,
+		OwnerID:          cust.Key.ID,
+		Owner:            owner,
+		Source:           input.Source,
+		Passthrough:      input.Passthrough,
+		Attributes:       utils.FlattenMap(input.Attributes),
+		Timestamp:        time.Now(),
 	}
 
 	// idata, _ := json.Marshal(input)

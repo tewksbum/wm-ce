@@ -1,13 +1,14 @@
 package csql
 
 import (
+	"encoding/json"
 	"fmt"
 	"segment/models"
 	"segment/utils"
 	"segment/utils/logger"
 	"segment/wemade"
 
-	"github.com/gocraft/dbr/v2"
+	dbr "github.com/gocraft/dbr/v2"
 )
 
 const (
@@ -35,49 +36,101 @@ const (
 
 func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or wemade.OutputRecord, err error) {
 	totalrows := 0
+	tmprows := [][]byte{}
 	switch entityType {
 	case models.TypeCampaign:
 		rows := []models.Campaign{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.Campaign{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeEvent:
 		rows := []models.Event{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.Event{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeHousehold:
 		rows := []models.Household{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.Household{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeOrderHeader:
 		rows := []models.OrderHeader{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.OrderHeader{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeOrderConsignment:
 		rows := []models.OrderConsignment{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.OrderConsignment{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeOrderDetail:
 		rows := []models.OrderDetail{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.OrderDetail{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypePeople:
 		rows := []models.People{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.People{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeProduct:
 		rows := []models.Product{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.Product{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeDecode:
 		rows := []models.DecodeRecord{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.DecodeRecord{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	default:
 		rows := []models.FallbackData{}
-		totalrows, err = stmt.Load(&rows)
+		row := models.FallbackData{}
+		totalrows, err = stmt.Load(&tmprows)
+		for _, tr := range tmprows {
+			json.Unmarshal(tr, &row)
+			rows = append(rows, row)
+		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	}
 	logger.InfoFmt("Total returned rows: %#v", totalrows)
+	logger.InfoFmt("Rows: %#v", or.List)
 	if err != nil {
 		return or, logger.ErrFmt("[csql.loadRows]: %q", err)
 	}
@@ -99,29 +152,30 @@ func getCreateTableStatement(entityType string, tblName string) string {
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
 	case models.TypePeople:
 		cols := `
-			people_id    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.peopleId')),
-			salutation   VARCHAR(255) AS (JSON_UNQUOTE(record->'$.salutation')),
-			firstName    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.firstName')),
-			lastName     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.lastName')),
-			gender       VARCHAR(255) AS (JSON_UNQUOTE(record->'$.gender')),
-			age          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.age')),
-			organization VARCHAR(255) AS (JSON_UNQUOTE(record->'$.organization')),
-			title        VARCHAR(255) AS (JSON_UNQUOTE(record->'$.title')),
-			role         VARCHAR(255) AS (JSON_UNQUOTE(record->'$.role')),
-			address1     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address1')),
-			address2     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address2')),
-			address3     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address3')),
-			city         VARCHAR(255) AS (JSON_UNQUOTE(record->'$.city')),
-			state        VARCHAR(255) AS (JSON_UNQUOTE(record->'$.state')),
-			zip          VARCHAR(255) AS (JSON_UNQUOTE(record->'$.zip')),
-			country      VARCHAR(255) AS (JSON_UNQUOTE(record->'$.country')),
-			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.adCorrect')),
-			emails       JSON AS (record->'$.emails'),
-			phones       JSON AS (record->'$.phones'),
+			peopleId     VARCHAR(255) AS (record->>'$.peopleId')     STORED,
+			salutation   VARCHAR(255) AS (record->>'$.salutation')   STORED,
+			firstName    VARCHAR(255) AS (record->>'$.firstName')    STORED,
+			lastName     VARCHAR(255) AS (record->>'$.lastName')     STORED,
+			gender       VARCHAR(255) AS (record->>'$.gender')       STORED,
+			age          VARCHAR(255) AS (record->>'$.age')          STORED,
+			organization VARCHAR(255) AS (record->>'$.organization') STORED,
+			title        VARCHAR(255) AS (record->>'$.title')        STORED,
+			role         VARCHAR(255) AS (record->>'$.role')         STORED,
+			address1     VARCHAR(255) AS (record->>'$.address1')     STORED,
+			address2     VARCHAR(255) AS (record->>'$.address2')     STORED,
+			address3     VARCHAR(255) AS (record->>'$.address3')     STORED,
+			city         VARCHAR(255) AS (record->>'$.city')         STORED,
+			state        VARCHAR(255) AS (record->>'$.state')        STORED,
+			zip          VARCHAR(255) AS (record->>'$.zip')          STORED,
+			country      VARCHAR(255) AS (record->>'$.country')      STORED,
+			ad_correct   VARCHAR(255) AS (record->>'$.adcorrect')    STORED,
+			emails               JSON AS (record->'$.emails')        STORED,
+			phones               JSON AS (record->'$.phones')        STORED,
 		`
 		idxs := `,
-			INDEX(people_id),
+			INDEX(peopleId),
 			INDEX(firstName),
+			INDEX(lastName),
 			INDEX(gender),
 			INDEX(age),
 			INDEX(organization),
@@ -130,27 +184,28 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			INDEX(city),
 			INDEX(state),
 			INDEX(zip)
-		`
+			`
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:
 		cols := `
-			household_id VARCHAR(255) AS (JSON_UNQUOTE(record->'$.householdId')),
-			lastName     VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.lastName')),
-			address1     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address1')),
-			address2     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address2')),
-			address3     VARCHAR(255) AS (JSON_UNQUOTE(record->'$.address3')),
-			adCorrect    VARCHAR(255) AS (JSON_UNQUOTE(record->'$.adCorrect')),
-			city         VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.city')),
-			state        VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.state')),
-			zip          VARCHAR(64)  AS (JSON_UNQUOTE(record->'$.zip')),
-			country      VARCHAR(32)  AS (JSON_UNQUOTE(record->'$.country')),
-		`
+			householdId  VARCHAR(255) AS (record->>'$.householdId') STORED,
+			lastName     VARCHAR(255) AS (record->>'$.lastName')    STORED,
+			address1     VARCHAR(255) AS (record->>'$.address1')    STORED,
+			address2     VARCHAR(255) AS (record->>'$.address2')    STORED,
+			address3     VARCHAR(255) AS (record->>'$.address3')    STORED,
+			ad_correct   VARCHAR(255) AS (record->>'$.adcorrect')   STORED,
+			city         VARCHAR(255) AS (record->>'$.city')        STORED,
+			state        VARCHAR(255) AS (record->>'$.state')       STORED,
+			zip          VARCHAR(255) AS (record->>'$.zip')         STORED,
+			country      VARCHAR(255) AS (record->>'$.country')     STORED,
+			`
 		idxs := `,
-			INDEX(household_id),
+			INDEX(householdId),
+			INDEX(lastName),
 			INDEX(city),
 			INDEX(state),
 			INDEX(zip)
-		`
+			`
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	default:
 		return fmt.Sprintf(tblCreateStmt, tblName, "", "")

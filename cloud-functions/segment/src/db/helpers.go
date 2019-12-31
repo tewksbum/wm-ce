@@ -18,6 +18,7 @@ func buildPeopleDecode(r *models.PeopleRecord, signature string) models.Record {
 	rs.IDField = models.DecodeIDField
 	rs.ColumnList = models.DecodeColumnList
 	rs.ColumnBlackList = models.DecodeBlackList
+	rs.SelectColumnList = models.DefaultSelectColumnList
 	rs.DBopts = models.Options{
 		Type:               models.CSQL,
 		TablenamePrefix:    models.TblnamePrefix,
@@ -47,6 +48,7 @@ func buildHouseholdDecode(r *models.HouseholdRecord, signature string) models.Re
 	rs.IDField = models.DecodeIDField
 	rs.ColumnList = models.DecodeColumnList
 	rs.ColumnBlackList = models.DecodeBlackList
+	rs.SelectColumnList = models.DefaultSelectColumnList
 	rs.DBopts = models.Options{
 		Type:               models.CSQL,
 		TablenamePrefix:    models.TblnamePrefix,

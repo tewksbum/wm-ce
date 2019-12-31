@@ -182,7 +182,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 		return or, logger.Err(err)
 	}
 	defer tx.RollbackUnlessCommitted()
-	stmt := tx.Select(r.GetColumnList()...).From(tblName)
+	stmt := tx.Select(r.GetSelectColumnList()...).From(tblName)
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {

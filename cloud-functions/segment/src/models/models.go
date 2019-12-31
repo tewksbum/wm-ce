@@ -58,6 +58,7 @@ type Record interface {
 	GetSignatures() []string
 	GetColumnList() []string
 	GetColumnBlackList() []string
+	GetSelectColumnList() []string
 	GetMap() map[string]interface{}
 	SetCSQLSchemaName(string)
 	SetCSQLConnStr(string)
@@ -102,18 +103,19 @@ type Passthrough360 struct {
 
 // BaseRecord input for the API
 type BaseRecord struct {
-	OwnerID         int64            `json:"ownerId" bigquery:"-" sql:"-"`
-	EntityType      string           `json:"entityType" bigquery:"-" sql:"-"`
-	Source          string           `json:"source" bigquery:"-" sql:"-"`
-	Owner           string           `json:"owner" bigquery:"-" sql:"-"`
-	Passthrough     []Passthrough360 `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
-	Attributes      string           `json:"attributes" bigquery:"-" sql:"-"`
-	Timestamp       time.Time        `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
-	DBopts          Options          `json:"-" bigquery:"-" sql:"-"`
-	StorageType     string           `json:"-" sql:"-" bigquery:"-"` // csql or bq
-	IDField         string           `json:"-" sql:"-" bigquery:"-"`
-	ColumnList      []string         `json:"-" sql:"-" bigquery:"-"`
-	ColumnBlackList []string         `json:"-" sql:"-" bigquery:"-"`
+	OwnerID          int64            `json:"ownerId" bigquery:"-" sql:"-"`
+	EntityType       string           `json:"entityType" bigquery:"-" sql:"-"`
+	Source           string           `json:"source" bigquery:"-" sql:"-"`
+	Owner            string           `json:"owner" bigquery:"-" sql:"-"`
+	Passthrough      []Passthrough360 `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
+	Attributes       string           `json:"attributes" bigquery:"-" sql:"-"`
+	Timestamp        time.Time        `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
+	DBopts           Options          `json:"-" bigquery:"-" sql:"-"`
+	StorageType      string           `json:"-" sql:"-" bigquery:"-"` // csql or bq
+	IDField          string           `json:"-" sql:"-" bigquery:"-"`
+	ColumnList       []string         `json:"-" sql:"-" bigquery:"-"`
+	ColumnBlackList  []string         `json:"-" sql:"-" bigquery:"-"`
+	SelectColumnList []string         `json:"-" sql:"-" bigquery:"-"`
 }
 
 // GetOwnerID gets the Customer id
@@ -215,6 +217,11 @@ func (r *BaseRecord) GetSurrogateID() string {
 // GetColumnList gets the column list
 func (r *BaseRecord) GetColumnList() []string {
 	return r.ColumnList
+}
+
+// GetSelectColumnList gets the column list
+func (r *BaseRecord) GetSelectColumnList() []string {
+	return r.SelectColumnList
 }
 
 // GetColumnBlackList gets the blacklisted column list
@@ -426,18 +433,25 @@ type OrderDetail struct {
 
 // People data
 type People struct {
-	PeopleID     string  `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
-	Salutation   string  `json:"salutation" bigquery:"salutation" sql:"salutation"`
-	FirstName    string  `json:"firstName" bigquery:"firstname" sql:"firstname"`
-	LastName     string  `json:"lastName" bigquery:"lastname" sql:"lastname"`
-	Gender       string  `json:"gender" bigquery:"gender" sql:"gender"`
-	Age          string  `json:"age" bigquery:"age" sql:"age"`
-	Emails       []Email `json:"emails" bigquery:"emails" sql:"emails"`
-	Phones       []Phone `json:"phones" bigquery:"phones" sql:"phones"`
-	Organization string  `json:"organization" bigquery:"organization" sql:"organization"`
-	Title        string  `json:"title" bigquery:"title" sql:"title"`
-	Role         string  `json:"role" bigquery:"role" sql:"role"`
-	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect" sql:"adcorrect"`
+	PeopleID     string  `json:"peopleId" bigquery:"peopleid"`
+	Salutation   string  `json:"salutation" bigquery:"salutation"`
+	FirstName    string  `json:"firstName" bigquery:"firstname"`
+	LastName     string  `json:"lastName" bigquery:"lastname"`
+	Gender       string  `json:"gender" bigquery:"gender"`
+	Age          string  `json:"age" bigquery:"age"`
+	Organization string  `json:"organization" bigquery:"organization"`
+	Title        string  `json:"title" bigquery:"title"`
+	Role         string  `json:"role" bigquery:"role"`
+	Address1     string  `json:"address1" bigquery:"address1"`
+	Address2     string  `json:"address2" bigquery:"address2"`
+	Address3     string  `json:"address3" bigquery:"address3"`
+	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect"`
+	City         string  `json:"city" bigquery:"city"`
+	State        string  `json:"state" bigquery:"state"`
+	Zip          string  `json:"zip" bigquery:"zip"`
+	Country      string  `json:"country" bigquery:"country"`
+	Emails       []Email `json:"emails" bigquery:"emails"`
+	Phones       []Phone `json:"phones" bigquery:"phones"`
 }
 
 // Email email+type struct
@@ -454,16 +468,16 @@ type Phone struct {
 
 // Household data
 type Household struct {
-	HouseholdID string `json:"householdId" bigquery:"householdid"`
-	LastName    string `json:"lastName" bigquery:"lastname"`
-	Address1    string `json:"address1" bigquery:"address1"`
-	Address2    string `json:"address2" bigquery:"address2"`
-	Address3    string `json:"address3" bigquery:"address3"`
-	AdCorrect   string `json:"adcorrect" bigquery:"adcorrect"`
-	City        string `json:"city" bigquery:"city"`
-	State       string `json:"state" bigquery:"state"`
-	Zip         string `json:"zip" bigquery:"zip"`
-	Country     string `json:"country" bigquery:"country"`
+	HouseholdID string `json:"householdId" bigquery:"householdid" sql:"household_id"`
+	LastName    string `json:"lastName" bigquery:"lastname" sql:"lastName"`
+	Address1    string `json:"address1" bigquery:"address1" sql:"address1"`
+	Address2    string `json:"address2" bigquery:"address2" sql:"address2"`
+	Address3    string `json:"address3" bigquery:"address3" sql:"address3"`
+	AdCorrect   string `json:"adcorrect" bigquery:"adcorrect" sql:"adcorrect"`
+	City        string `json:"city" bigquery:"city" sql:"city"`
+	State       string `json:"state" bigquery:"state" sql:"state"`
+	Zip         string `json:"zip" bigquery:"zip" sql:"zip"`
+	Country     string `json:"country" bigquery:"country" sql:"country"`
 }
 
 // FallbackData fallback data struct
