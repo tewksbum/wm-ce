@@ -72,7 +72,7 @@ async function main () {
         for (var r = 1; r < worksheet.rowCount; r++) {
             var row = worksheet.getRow(r + 1);
             if (!row.hidden) {
-                schoolcode = worksheet.getCell(r +1, columns["School Code"]).value;
+                var schoolcode = worksheet.getCell(r +1, columns["School Code"]).value;
                 if (schoolcode) {
                     schools.push(schoolcode);
                 }
@@ -99,16 +99,18 @@ async function main () {
                 errors.push(`${chalk.redBright(school)}: no matching owner found in datastore`);
             }
             else {
+                var filter = worksheet.getCell(1, columns["Anticipated Target Group"]).value.toUpperCase();
                 for (var f in files[school]) {
                     var file = files[school][f];
-                    const storageOptions = {
-                        version: "v2",
-                        action: "read",
-                        expires: Date.now() + 1000 * 60 * 60 // one hour
-                    };
-                    
-                    const [signedUrl] = await storage.bucket(options.bucket).file(`${options.folder}/${file}`).getSignedUrl(storageOptions);
-                    // console.log(signedUrl);
+                    if (file.toUpperCase().indexOf(filter) > -1) {
+                        const storageOptions = {
+                            version: "v2",
+                            action: "read",
+                            expires: Date.now() + 1000 * 60 * 60 // one hour
+                        };
+                        
+                        const [signedUrl] = await storage.bucket(options.bucket).file(`${options.folder}/${file}`).getSignedUrl(storageOptions);
+                    }
                 };
                 sleep(2);
             }
