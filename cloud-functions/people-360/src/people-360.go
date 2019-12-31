@@ -1063,7 +1063,7 @@ func GetRedisIntValues(keys [][]string) []int {
 		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
 	}
 
-	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys[0], formattedKeys[1], formattedKeys[2], formattedKeys[3], formattedKeys[4]))
 	if err != nil {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
