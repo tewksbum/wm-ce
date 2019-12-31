@@ -17,6 +17,7 @@ import (
 	"cloud.google.com/go/pubsub"
 
 	"github.com/fatih/structs"
+	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 )
 
@@ -31,6 +32,13 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	FiberType string `json:"fiberType"`
 	RecordID  string `json:"recordId"`
+}
+
+type EventData struct {
+	Signature   Signature              `json:"signature"`
+	Passthrough map[string]string      `json:"passthrough"`
+	Attributes  map[string]string      `json:"attributes"`
+	EventData   map[string]interface{} `json:"eventData"`
 }
 
 type PeopleInput struct {
@@ -306,8 +314,6 @@ type PeopleGoldenDS struct {
 }
 
 var ProjectID = os.Getenv("PROJECTID")
-var PubSubTopic = os.Getenv("PSOUTPUT")
-var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
@@ -322,10 +328,14 @@ var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
+var redisTransientExpiration = 3600 * 24
+
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var status *pubsub.Topic
 var ds *datastore.Client
+var msp *redis.Pool
 
 // var setSchema bigquery.Schema
 
@@ -333,9 +343,14 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
-	topic = ps.Topic(PubSubTopic)
-	topic2 = ps.Topic(PubSubTopic2)
-
+	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
+	status = ps.Topic(os.Getenv("PSSTATUS"))
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -356,6 +371,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		input.MatchKeys.ZIP5 = MatchKeyField{
 			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
+		}
+	}
+
+	existingCheck := 0
+	if input.Signature.FiberType == "default" {
+		existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+		if existingCheck == 1 { // this fiber has already been processed
+			LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
+			return nil
 		}
 	}
 
@@ -407,6 +431,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	var expiredSetCollection []string
 
 	if matchable {
+
 		// locate existing set
 		if len(input.Signature.RecordID) == 0 {
 			// ensure record id is not blank or we'll have problem
@@ -609,6 +634,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	// 	return nil
 	// }
 	if !matchable {
+		LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
+		IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
 		return nil
 	}
 
@@ -690,6 +717,55 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
 		log.Printf("Error: deleting expired golden records: %v", err)
+	}
+
+	if input.Signature.FiberType == "default" {
+		IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+
+		// grab the count and see if we are done
+		counters := GetRedisIntValues([][]string{
+			[]string{input.Signature.EventID, "records-total"},
+			[]string{input.Signature.EventID, "records-completed"},
+			[]string{input.Signature.EventID, "records-deleted"},
+			[]string{input.Signature.EventID, "fibers-completed"},
+			[]string{input.Signature.EventID, "fibers-deleted"},
+		})
+		recordCount := counters[0]
+		recordCompleted := counters[1]
+		recordDeleted := counters[2]
+		fiberCompleted := counters[3]
+		fiberDeleted := counters[4]
+
+		recordFinished := false
+		fiberFinished := false
+		if recordCompleted+recordDeleted >= recordCount {
+			recordFinished = true
+		}
+		if fiberCompleted+fiberDeleted >= recordCount {
+			fiberFinished = true
+		}
+		LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))
+		if recordFinished && fiberFinished {
+			eventData := EventData{
+				Signature: input.Signature,
+			}
+			eventData.EventData["status"] = "Finished"
+			eventData.EventData["message"] = fmt.Sprintf("Processed %v records and %v fibers, purged %v records and %v fibers", recordCompleted, fiberCompleted, recordDeleted, fiberDeleted)
+			eventData.EventData["records-total"] = recordCount
+			eventData.EventData["records-completed"] = recordCompleted
+			eventData.EventData["records-deleted"] = recordDeleted
+			eventData.EventData["fibers-completed"] = fiberCompleted
+			eventData.EventData["fibers-deleted"] = fiberDeleted
+			statusJSON, _ := json.Marshal(eventData)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err := psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+			}
+		}
 	}
 
 	// push into pubsub
@@ -938,4 +1014,54 @@ func IsInt(s string) bool {
 		}
 	}
 	return true
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v", strings.Join(keyparts, ":"), value)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v", strings.Join(keyparts, ":"))
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v", strings.Join(keyparts, ":"))
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v", formattedKeys)
+	}
+	return values
 }

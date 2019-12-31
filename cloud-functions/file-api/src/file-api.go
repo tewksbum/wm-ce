@@ -42,6 +42,12 @@ type Event struct {
 	Attributes  []KVP
 	Detail      string
 	RowLimit    int
+	Counters    []KIP
+}
+
+type KIP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value int    `json:"v" datastore:"v"`
 }
 
 type Signature struct {

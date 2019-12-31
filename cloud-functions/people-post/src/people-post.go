@@ -20,6 +20,7 @@ import (
 	"cloud.google.com/go/storage"
 
 	"github.com/fatih/structs"
+	"github.com/gomodule/redigo/redis"
 )
 
 // foo
@@ -351,6 +352,8 @@ var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$
 
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
 
+var redisTransientExpiration = 3600 * 24
+
 // var StateList = map[string]string{
 // 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
 // 	"FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS",
@@ -381,6 +384,7 @@ var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var ap http.Client
 var sb *storage.Client
+var msp *redis.Pool
 
 var MLLabels map[string]string
 
@@ -394,6 +398,13 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
+
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
+
 	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
 }
 
@@ -1541,4 +1552,54 @@ func LogDev(s string) {
 	if dev {
 		log.Printf(s)
 	}
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v", strings.Join(keyparts, ":"), value)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v", strings.Join(keyparts, ":"))
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v", strings.Join(keyparts, ":"))
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v", formattedKeys)
+	}
+	return values
 }
