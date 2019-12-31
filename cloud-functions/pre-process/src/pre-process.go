@@ -901,7 +901,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street":
 		err.Address1 = 1
 	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2":
 		err.Address2 = 1
@@ -913,7 +913,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address1 = 1
 	case "city", "city ", "street city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state":
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode":
 		err.ZipCode = 1
@@ -987,7 +987,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") || !strings.Contains(key, "room")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room ") || !strings.Contains(key, "hall")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
