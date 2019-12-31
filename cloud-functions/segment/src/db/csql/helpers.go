@@ -99,9 +99,51 @@ func getCreateTableStatement(entityType string, tblName string) string {
 	case models.TypeDecode:
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
 	case models.TypePeople:
-		return fmt.Sprintf(tblCreateStmt, tblName, "people_id VARCHAR(255) AS (record->'$.peopleId'),", ",INDEX(people_id)")
+		cols := `
+			people_id    VARCHAR(255) AS (record->>'$.peopleId'),
+			salutation   VARCHAR(255) AS (record->>'$.salutation'),
+			firstName    VARCHAR(255) AS (record->>'$.firstName'),
+			lastName     VARCHAR(255) AS (record->>'$.lastName'),
+			gender       VARCHAR(255) AS (record->>'$.gender'),
+			age          VARCHAR(255) AS (record->>'$.age'),
+			organization VARCHAR(255) AS (record->>'$.organization'),
+			title        VARCHAR(255) AS (record->>'$.title'),
+			role         VARCHAR(255) AS (record->>'$.role'),
+			adCorrect    VARCHAR(255) AS (record->>'$.adCorrect'),
+			emails       JSON AS (record->'$.emails'),
+			phones       JSON AS (record->'$.phones'),
+		`
+		idxs := `,
+			INDEX(people_id),
+			INDEX(firstName),
+			INDEX(gender),
+			INDEX(age),
+			INDEX(organization),
+			INDEX(title),
+			INDEX(role),
+			INDEX(adCorrect)
+		`
+		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:
-		return fmt.Sprintf(tblCreateStmt, tblName, "household_id VARCHAR(255) AS (record->'$.householdId'),", ",INDEX(household_id)")
+		cols := `
+			household_id VARCHAR(255) AS (record->'$.householdId'),
+			lastName     VARCHAR(64)  AS (record->'$.lastName'),
+			address1     VARCHAR(255) AS (record->'$.address1'),
+			address2     VARCHAR(255) AS (record->'$.address2'),
+			address3     VARCHAR(255) AS (record->'$.address3'),
+			adCorrect    VARCHAR(255) AS (record->'$.adCorrect'),
+			city         VARCHAR(64)  AS (record->'$.city'),
+			state        VARCHAR(64)  AS (record->'$.state'),
+			zip          VARCHAR(8)   AS (record->'$.zip'),
+			country      VARCHAR(32)  AS (record->'$.country'),
+		`
+		idxs := `,
+			INDEX(household_id),
+			INDEX(city),
+			INDEX(state),
+			INDEX(zip)
+		`
+		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	default:
 		return fmt.Sprintf(tblCreateStmt, tblName, "", "")
 	}
