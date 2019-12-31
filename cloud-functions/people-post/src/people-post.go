@@ -448,6 +448,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.MatchKey1 = "GENDER"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Gender == 1"))
 		} else if column.PeopleERR.ContainsStudentRole == 1 {
+			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
 		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
@@ -547,7 +548,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.City == 1 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.City == 1"))
-			} else if column.PeopleERR.State == 1 {
+			} else if column.PeopleERR.State == 1 || (column.PeopleERR.ContainsRole == 1 && column.PeopleERR.ContainsState == 1) {
 				column.MatchKey1 = "STATE"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.State == 1"))
 			} else if column.PeopleERR.ZipCode == 1 {
@@ -743,6 +744,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	defaultMissingAddress := false
 	mprIndexWithAddress := -1
 
+	// TODO: struggling to follow what this does.. I THINK what it was supposed to do was... if there was 
+	// a pobox in ad2... rahter than ad1... to flip flop them?
 	for i, v := range outputs {
 		if v.Type == "default" {
 			ad2 := GetMkField(&(v.Output), "AD2")
@@ -828,7 +831,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// including US... meaning we don't have a state
 		// yet we have an address
 		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
-			LogDev(fmt.Sprintf("trying to find a country %v %v", v.Output.AD1.Value, v.Output.AD2.Value))
+			LogDev(fmt.Sprintf("trying to find a country %v %v %v", v.Output.AD1.Value, v.Output.AD2.Value, v.Output.STATE.Value))
+			if (v.Output.STATE.Value == "other") {
+				v.Output.COUNTRY.Value = "INTL"
+			}
 			// TODO: Jie can you look at this poop...
 			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
 		}

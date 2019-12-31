@@ -87,7 +87,9 @@ const Excel = require("exceljs");
     await report.GridRecords.forEach(r => DetailSheet1.addRow(r));
     await report.GridFibers.forEach(r => DetailSheet2.addRow(r));
 
-    const xlsFileName = `${currentUL.owner}-detail-report-${currentUL.requestId}.xlsx`;
+    worksheet.getRow(index).values[10]
+
+    const xlsFileName = `${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
     await workBookTarget.xlsx.writeFile(xlsFileName).then(function() {
       console.log(`Saved xls file as ${xlsFileName}`);
     });
