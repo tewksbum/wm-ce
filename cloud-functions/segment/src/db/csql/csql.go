@@ -117,7 +117,6 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			Where(rIDField+" = ?", rmap[rIDField])
 		switch r.GetEntityType() {
 		case models.TypeDecode:
-			logger.InfoFmt("[HEY DUDE]: %#v", rmap)
 			us = us.SetMap(rmap)
 		default:
 			sigs := `[`
