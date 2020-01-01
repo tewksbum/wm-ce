@@ -35,6 +35,7 @@ type Options struct {
 	TablenameSuffix    string
 	HasTablenamePrefix bool
 	HasTablenameSuffix bool
+	IgnoreUniqueFields bool
 	Filters            []QueryFilter
 }
 
@@ -445,11 +446,22 @@ type People struct {
 	Address1     string  `json:"address1" bigquery:"address1"`
 	Address2     string  `json:"address2" bigquery:"address2"`
 	Address3     string  `json:"address3" bigquery:"address3"`
-	AdCorrect    string  `json:"adcorrect" bigquery:"adcorrect"`
 	City         string  `json:"city" bigquery:"city"`
 	State        string  `json:"state" bigquery:"state"`
 	Zip          string  `json:"zip" bigquery:"zip"`
 	Country      string  `json:"country" bigquery:"country"`
+	Perme        string  `json:"perme" bigquery:"perme"`
+	Permm        string  `json:"permm" bigquery:"permm"`
+	Perms        string  `json:"perms" bigquery:"perms"`
+	Adcorrect    string  `json:"adcorrect" bigquery:"adcorrect"`
+	Adtype       string  `json:"adtype" bigquery:"adtype"`
+	Advalid      string  `json:"advalid" bigquery:"advalid"`
+	Adbook       string  `json:"adbook" bigquery:"adbook"`
+	Adparser     string  `json:"adparser" bigquery:"adparser"`
+	Ziptype      string  `json:"ziptype" bigquery:"ziptype"`
+	Recordtype   string  `json:"recordtype" bigquery:"recordtype"`
+	Dob          string  `json:"dob" bigquery:"dob"`
+	Status       string  `json:"status" bigquery:"status"`
 	Emails       []Email `json:"emails" bigquery:"emails"`
 	Phones       []Phone `json:"phones" bigquery:"phones"`
 }

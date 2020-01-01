@@ -146,7 +146,7 @@ func appendList(rows interface{}, totalrows int, entityType string, blacklist []
 	return list
 }
 
-func getCreateTableStatement(entityType string, tblName string) string {
+func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFields bool) string {
 	switch entityType {
 	case models.TypeDecode:
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
@@ -168,12 +168,28 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			state        VARCHAR(255) AS (record->>'$.state')        STORED,
 			zip          VARCHAR(255) AS (record->>'$.zip')          STORED,
 			country      VARCHAR(255) AS (record->>'$.country')      STORED,
-			ad_correct   VARCHAR(255) AS (record->>'$.adcorrect')    STORED,
+			perme        VARCHAR(255) AS (record->>'$.perme')        STORED,
+			permm        VARCHAR(255) AS (record->>'$.permm')        STORED,
+			perms        VARCHAR(255) AS (record->>'$.perms')        STORED,
+			adcorrect    VARCHAR(255) AS (record->>'$.adcorrect')    STORED,
+			adtype       VARCHAR(255) AS (record->>'$.adtype')       STORED,
+			advalid      VARCHAR(255) AS (record->>'$.advalid')      STORED,
+			adbook       VARCHAR(255) AS (record->>'$.adbook')       STORED,
+			adparser     VARCHAR(255) AS (record->>'$.adparser')     STORED,
+			ziptype      VARCHAR(255) AS (record->>'$.ziptype')      STORED,
+			recordtype   VARCHAR(255) AS (record->>'$.recordtype')   STORED,
+			dob          VARCHAR(255) AS (record->>'$.dob')          STORED,
+			status       VARCHAR(255) AS (record->>'$.status')       STORED,
 			emails               JSON AS (record->'$.emails')        STORED,
 			phones               JSON AS (record->'$.phones')        STORED,
 		`
-		idxs := `,
-			INDEX(peopleId),
+		key := "INDEX(peopleId),"
+		if !ignoreUniqueFields {
+			key = "UNIQUE KEY(peopleId),"
+		}
+		idxs := fmt.Sprintf(`,
+			%s
+			UNIQUE KEY(peopleId),
 			INDEX(firstName),
 			INDEX(lastName),
 			INDEX(gender),
@@ -183,8 +199,20 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			INDEX(role),
 			INDEX(city),
 			INDEX(state),
-			INDEX(zip)
-			`
+			INDEX(zip),
+			INDEX(perme),
+			INDEX(permm),
+			INDEX(perms),
+			INDEX(adcorrect),
+			INDEX(adtype),
+			INDEX(advalid),
+			INDEX(adbook),
+			INDEX(adparser),
+			INDEX(ziptype),
+			INDEX(recordtype),
+			INDEX(dob),
+			INDEX(status)
+			`, key)
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:
 		cols := `
@@ -193,19 +221,24 @@ func getCreateTableStatement(entityType string, tblName string) string {
 			address1     VARCHAR(255) AS (record->>'$.address1')    STORED,
 			address2     VARCHAR(255) AS (record->>'$.address2')    STORED,
 			address3     VARCHAR(255) AS (record->>'$.address3')    STORED,
-			ad_correct   VARCHAR(255) AS (record->>'$.adcorrect')   STORED,
+			adcorrect    VARCHAR(255) AS (record->>'$.adcorrect')   STORED,
 			city         VARCHAR(255) AS (record->>'$.city')        STORED,
 			state        VARCHAR(255) AS (record->>'$.state')       STORED,
 			zip          VARCHAR(255) AS (record->>'$.zip')         STORED,
 			country      VARCHAR(255) AS (record->>'$.country')     STORED,
 			`
-		idxs := `,
-			INDEX(householdId),
+		key := "INDEX(householdId),"
+		if !ignoreUniqueFields {
+			key = "UNIQUE KEY(householdId),"
+		}
+		idxs := fmt.Sprintf(`,
+			%s
+			UNIQUE KEY(householdId),
 			INDEX(lastName),
 			INDEX(city),
 			INDEX(state),
 			INDEX(zip)
-			`
+			`, key)
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	default:
 		return fmt.Sprintf(tblCreateStmt, tblName, "", "")

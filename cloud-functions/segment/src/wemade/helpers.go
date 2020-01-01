@@ -39,12 +39,15 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	if err != nil {
 		return nil, err
 	}
+	ignoreUniqueFields := false
 	accessKey := input.AccessKey
 	logger.InfoFmt("RawInputJSON: %s", string(data))
 
 	if tempfixFixedAccesskey != "" && useFixedAccessKey {
+		// When using fixed access key also will ignore unique index
 		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
 		accessKey = tempfixFixedAccesskey
+		ignoreUniqueFields = true
 	}
 
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
@@ -91,6 +94,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeHousehold:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblHousehold,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -110,6 +114,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeEvent:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblEvent,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -127,6 +132,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeProduct:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblProduct,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -145,6 +151,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypePeople:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblPeople,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -164,6 +171,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderHeader,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -183,6 +191,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeOrderConsignment:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderConsignment,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -202,6 +211,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeOrderDetail:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderDetail,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -221,6 +231,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	case models.TypeCampaign:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblCampaign,
 			HasTablenameSuffix: true,
 			TablenameSuffix:    br.GetStrOwnerID(),
@@ -245,6 +256,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		record.ColumnBlackList = models.DecodeBlackList
 		record.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Filters:            input.Filters,
 			IsPartitioned:      false,
 			HasTablenameSuffix: true,
@@ -257,6 +269,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	default:
 		br.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Filters:            input.Filters,
 			HasTablenameSuffix: true,
 			HasTablenamePrefix: true,
