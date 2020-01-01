@@ -961,7 +961,7 @@ func GetPeopleERR(column string) PeopleERR {
 	case "title", "course year", "grad date", "class", "grade", "admit status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
@@ -987,7 +987,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room ") || !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
