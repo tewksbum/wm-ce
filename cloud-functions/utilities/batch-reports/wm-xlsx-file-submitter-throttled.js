@@ -103,8 +103,9 @@ async function sendRequest(row) {
   console.log("Processing " + file);
   const programName = file.substring(0, 3);
   // var schoolcode = file.substring(4, 7);
-  var schoolcode = row.values[5]
+  var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
+  var classYear = row.value[11];
   console.log(schoolName);
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
@@ -184,12 +185,12 @@ async function sendRequest(row) {
     fileUrl: url,
     maxRows: 30,
     owner: `${owner}`,
-    source: "RHAA",
+    source: "RHA",
     passthrough: {},
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: "2016"
+      Title: classYear
     }
   };
 

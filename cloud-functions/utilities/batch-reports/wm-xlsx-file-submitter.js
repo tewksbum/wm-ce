@@ -76,7 +76,7 @@ var skippedSchoolCodes = [];
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(90000)
+      await nap(15000)
     }
     console.log(`reset wait`);
     wroteFlag = false;
@@ -104,6 +104,7 @@ async function sendRequest(row) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5]
   var schoolName = schoolCodes[schoolcode];
+  var classYear = row.value[11];
   console.log(schoolName);
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
@@ -182,12 +183,12 @@ async function sendRequest(row) {
     accessKey: `${accessKey}`,
     fileUrl: url,
     owner: `${owner}`,
-    source: "RHAA",
+    source: "RHA",
     passthrough: {},
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: "2016"
+      Title: classYear
     }
   };
 
