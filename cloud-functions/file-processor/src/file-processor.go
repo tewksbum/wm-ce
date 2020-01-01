@@ -246,7 +246,32 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
-				// assume data is in sheet 0 of Excel workbook
+				origSheet, wcSheet, cpSheet := -1, -1, -1
+				for i, sheet := range xlsxFile.Sheets {
+					switch strings.ToLower(sheet.Name) {
+					case "original":
+						origSheet = i
+					case "wc", "working copy", "workingcopy", "working":
+						wcSheet = i
+					case "cp", "upload", "cp upload":
+						cpSheet = i
+					}
+				}
+
+				if cpSheet > -1 {
+					log.Printf("procesing cp sheet")
+					allrows = sheetData[cpSheet]
+				} else if wcSheet > -1 {
+					log.Printf("Processing wc sheet")
+					allrows = sheetData[wcSheet]
+				} else if origSheet > -1 {
+					log.Printf("Processing original sheet")
+					allrows = sheetData[origSheet]
+				} else {
+					// take the first sheet if we don't find something more interesting
+					log.Printf("processing first sheet")
+					allrows = sheetData[0]
+				}
 				allrows = sheetData[0]
 			} else {
 				// open a csv reader
