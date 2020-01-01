@@ -130,7 +130,7 @@ func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or w
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	}
 	logger.InfoFmt("Total returned rows: %#v", totalrows)
-	logger.InfoFmt("Rows: %#v", or.List)
+	// logger.InfoFmt("Rows: %#v", or.List)
 	if err != nil {
 		return or, logger.ErrFmt("[csql.loadRows]: %q", err)
 	}

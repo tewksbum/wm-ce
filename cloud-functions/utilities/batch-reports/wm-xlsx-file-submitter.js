@@ -54,17 +54,37 @@ var skippedSchoolCodes = [];
     { header: "fileUrl", id: "Min", width: 10 },
     { header: "Sequence", id: "Min", width: 10 }
   ];
+
   var lfiles = worksheet.rowCount;
-  for (let seq = 1; seq < 6; seq++) {
-    for (let index = 2; index < lfiles; index++) {
+  let wroteFlag = false;
+  let index = 2;
+  let seq = 1;
+
+  console.log(`starting file scan... files: `, worksheet.rowCount);
+  // for (let seq = 1; seq < 6; seq++) {
+  while (seq < 6) {
+    console.log(`checking for sequence: `, seq);
+    while (index < lfiles) {
+    // for (index; index < lfiles; index++) {
+      console.log(`current row seq: `, worksheet.getRow(index).values[10]);
       if (seq == worksheet.getRow(index).values[10]) {
+        console.log(`processing file...`);
         await sendRequest(worksheet.getRow(index));
+        wroteFlag = true;
       }
+      index++
     }
-    await nap(120000)
+    if (wroteFlag) {
+      console.log(`waiting for files to process`);
+      await nap(10000)
+    }
+    console.log(`reset wait`);
+    wroteFlag = false;
+    index = 2;
+    seq++
   }
 
-  await workbook.xlsx.writeFile("input.xlsx");
+  await workbook.xlsx.writeFile(inputFilename);
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
     stream.end();
@@ -81,7 +101,8 @@ async function sendRequest(row) {
   console.log(`${source}/${file}`);
   console.log("Processing " + file);
   const programName = file.substring(0, 3);
-  var schoolcode = file.substring(4, 7);
+  // var schoolcode = file.substring(4, 7);
+  var schoolcode = row.values[5]
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
   if (schoolName === undefined) {

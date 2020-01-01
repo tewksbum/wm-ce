@@ -381,6 +381,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
 			return nil
 		}
+	} else if input.Signature.FiberType == "mar" {
+		existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+		if existingCheck == 0 { // default fiber has not been processed
+			IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			if retryCount < 30 {
+				LogDev(fmt.Sprintf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount))
+			}
+		}
 	}
 
 	// store the fiber
@@ -770,6 +779,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 		}
+	} else if input.Signature.FiberType == "mar" {
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
 	}
 
 	// push into pubsub
