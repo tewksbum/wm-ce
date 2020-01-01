@@ -387,7 +387,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
 			retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
 			if retryCount < 30 {
-				LogDev(fmt.Sprintf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount))
+				return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
 			}
 		}
 	}
