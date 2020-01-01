@@ -406,6 +406,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-completed"}, 0)
 			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-deleted"}, 0)
 
+			recordCount := 0
 			for r, d := range records {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
@@ -441,6 +442,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
 				} else {
 					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+					recordCount++
 				}
 			}
 			input.EventData["status"] = "Streamed"
@@ -455,7 +457,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 
-			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
 
 		} else {
 			input.EventData["message"] = "Unable to fetch file"
