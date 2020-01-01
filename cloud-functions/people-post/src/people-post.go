@@ -833,11 +833,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// yet we have an address
 		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
 			LogDev(fmt.Sprintf("trying to find a country %v %v %v", v.Output.AD1.Value, v.Output.AD2.Value, v.Output.STATE.Value))
-<<<<<<< HEAD
-			if ("other" == strings.TrimSpace(strings.ToLower(v.Output.STATE.Value))) {
-=======
 			if v.Output.STATE.Value == "other" {
->>>>>>> dev
 				v.Output.COUNTRY.Value = "INTL"
 			}
 			// TODO: Jie can you look at this poop...
