@@ -938,7 +938,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last":
 		err.ParentLastName = 1
-	case "phone", "phone1", "hphone", "cphone", "mphone":
+	case "phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile":
 		err.Phone = 1
 	case "bday", "birthday":
 		err.Birthday = 1
@@ -1010,7 +1010,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
+	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") || strings.HasPrefix(key, "campus") {
 		// strings.Contains(key, "description") ||
 		err.Junk = 1
 	}
