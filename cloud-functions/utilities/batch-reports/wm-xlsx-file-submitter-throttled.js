@@ -68,8 +68,9 @@ var skippedSchoolCodes = [];
     // for (index; index < lfiles; index++) {
       console.log(`current row seq: `, worksheet.getRow(index).values[10]);
       if (seq == worksheet.getRow(index).values[10]) {
+        console.log(`classYear: `, worksheet.getRow(index).values[11]);
         console.log(`processing file...`);
-        await sendRequest(worksheet.getRow(index));
+        await sendRequest(worksheet.getRow(index), worksheet.getRow(index).values[11]);
         wroteFlag = true;
       }
       index++
@@ -93,7 +94,7 @@ var skippedSchoolCodes = [];
   });
 })();
 
-async function sendRequest(row) {
+async function sendRequest(row, classYear) {
   row.hidden = false;
   const enabled = row.values[3] ? row.values[3] : false;
   if (enabled !== true) if (enabled.formula !== "TRUE()") return;
@@ -105,7 +106,7 @@ async function sendRequest(row) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
-  var classYear = row.values[11];
+  console.log("ClassYear: ", classYear)
   console.log(schoolName);
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
@@ -190,7 +191,7 @@ async function sendRequest(row) {
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: classYear
+      Title: classYear.toString()
     }
   };
 

@@ -104,8 +104,8 @@ async function sendRequest(row) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5]
   var schoolName = schoolCodes[schoolcode];
-  var classYear = row.values[11];
   console.log(schoolName);
+  var classYear = row.values[11];
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
     console.log(error);
@@ -188,7 +188,7 @@ async function sendRequest(row) {
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: classYear
+      Title: classYear.toString()
     }
   };
 
