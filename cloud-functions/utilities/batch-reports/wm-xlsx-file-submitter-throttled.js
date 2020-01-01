@@ -84,7 +84,8 @@ var skippedSchoolCodes = [];
     seq++
   }
 
-  await workbook.xlsx.writeFile("input.xlsx");
+  // await workbook.xlsx.writeFile("input.xlsx");
+  await workbook.xlsx.writeFile(inputFilename);
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
     stream.end();
