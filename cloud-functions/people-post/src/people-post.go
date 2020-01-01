@@ -744,7 +744,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	defaultMissingAddress := false
 	mprIndexWithAddress := -1
 
-	// TODO: struggling to follow what this does.. I THINK what it was supposed to do was... if there was 
+	// TODO: struggling to follow what this does.. I THINK what it was supposed to do was... if there was
 	// a pobox in ad2... rahter than ad1... to flip flop them?
 	for i, v := range outputs {
 		if v.Type == "default" {
@@ -777,6 +777,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("defaultMissingAddress = %v, mprIndexWithAddress = %v", defaultMissingAddress, mprIndexWithAddress))
 
 	pubQueue := []PubQueue{}
+	SetRedisValueWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"}, 0)
 	for i, v := range outputs {
 		if i == indexToSkip {
 			continue
@@ -832,7 +833,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// yet we have an address
 		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
 			LogDev(fmt.Sprintf("trying to find a country %v %v %v", v.Output.AD1.Value, v.Output.AD2.Value, v.Output.STATE.Value))
-			if (v.Output.STATE.Value == "other") {
+			if v.Output.STATE.Value == "other" {
 				v.Output.COUNTRY.Value = "INTL"
 			}
 			// TODO: Jie can you look at this poop...
