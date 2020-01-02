@@ -13,6 +13,7 @@ const storageRecursive = config.gcp.recursive;
 const xlsxPath = config.local.xlsx.fileName;
 const xlsxSheet = config.local.xlsx.sheetName;
 const xlsxAppend = config.local.xlsx.append;
+const bucketFilter = config.gcp.bucket.filter;
 
 async function existsFile() {
     try {
@@ -66,8 +67,6 @@ async function existsSheet() {
     });
 }
 
-
-
 async function main () {
     const storageOptions = {
         prefix: storageFilter,
@@ -82,15 +81,37 @@ async function main () {
     var workbook = new xlsx.Workbook();
     workbook.xlsx.readFile(xlsxPath)
     .then(async function() {
+        var pos = 0;
+        var scode = "";
         var worksheet = workbook.getWorksheet(xlsxSheet);
         const [files] = await storage.bucket(storageBucket).getFiles(storageOptions);
         var lastRow = worksheet.rowCount
-        for (var i = 0; i < files.length; i++) {
+        
+        worksheet.getCell("A1").value = "Path";
+        worksheet.getCell("B1").value = "File";
+        worksheet.getCell("C1").value = "Enabled";
+        worksheet.getCell("D1").value = "Success";
+        worksheet.getCell("E1").value = "School";
+        worksheet.getCell("F1").value = "Owner";
+        worksheet.getCell("G1").value = "AccessKey";
+        worksheet.getCell("H1").value = "RequestId";
+        worksheet.getCell("I1").value = "fileUrl";
+        worksheet.getCell("J1").value = "Sequence";
+        worksheet.getCell("K1").value = "Class";
+        
+        for (var i = 1; i < files.length; i++) {
             var p = path.dirname(files[i].name)
             var f = path.basename(files[i].name)
             if (p != ".") {
+                pos = f.indexOf('-');
+                scode = f.slice(pos + 1, pos + 5);
+                scode = scode.replace(/[0-9]/g, "");
                 worksheet.getCell("A" + (lastRow + i)).value = p;
                 worksheet.getCell("B" + (lastRow + i)).value = f;
+                worksheet.getCell("C" + (lastRow + i)).value = "TRUE";
+                worksheet.getCell("E" + (lastRow + i)).value = scode;
+                worksheet.getCell("J" + (lastRow + i)).value = 1;
+                worksheet.getCell("K" + (lastRow + i)).value = "allfresh";
             }
         }
 

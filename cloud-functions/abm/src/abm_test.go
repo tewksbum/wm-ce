@@ -76,7 +76,7 @@ func Test360Unmarshalling(t *testing.T) {
 }
 
 func Test360PeopleOutput(t *testing.T) {
-	jsonstr := []byte(`{"id":"36a1d43b-0777-486e-b470-d8b19781e0e2","signature":{"ownerId":"2","source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD"},"signatures":[{"ownerId":"2","source":"Test","eventId":"066db5c3-03bc-4675-aa58-ad15f1aa5a4b","eventType":"UPLOAD","recordId":"5083a82f-0c01-465d-86ab-b1550518cd77"}],"createdAt":"2019-11-15T17:07:33.621655336Z","timestamp":"2019-11-15T17:07:33.621653425Z","fibers":["5083a82f-0c01-465d-86ab-b1550518cd77"],"passthroughs":[{"name":"BAAAAA","value":"1/2/1029"},{"name":"ABBB","value":"12323232"}],"matchKeys":[{"key":"FNAME","type":"","value":"Caitlin","values":["Caitlin"]},{"key":"FINITIAL","type":"","value":"C","values":["C"]},{"key":"LNAME","type":"","value":"Apacible","values":["Apacible"]},{"key":"CITY","type":"","value":"Cerritos","values":["Cerritos"]},{"key":"STATE","type":"","value":"CA","values":["CA"]},{"key":"ZIP","type":"","value":"90703","values":["90703"]},{"key":"ZIP5","type":"","value":"90703","values":["90703"]},{"key":"COUNTRY","type":"","value":"","values":null},{"key":"EMAIL","type":"work","value":"me@me.me","values":null},{"key":"PHONE","type":"personal","value":"123456","values":null},{"key":"AD1","type":"","value":"19131 Appletree Ct","values":["19131 Appletree Ct"]},{"key":"AD2","type":"","value":"","values":null},{"key":"ADTYPE","type":"","value":"","values":null},{"key":"TRUSTEDID","type":"","value":"","values":null},{"key":"CLIENTID","type":"","value":"","values":null},{"key":"SALUTATION","type":"","value":"","values":null},{"key":"NICKNAME","type":"","value":"","values":null},{"key":"GENDER","type":"","value":"","values":null},{"key":"AGE","type":"","value":"","values":null},{"key":"DOB","type":"","value":"","values":null},{"key":"MAILROUTE","type":"","value":"","values":null},{"key":"ORGANIZATION","type":"","value":"MARCUS","values":["MARCUS"]},{"key":"TITLE","type":"","value":"2023","values":["2023"]},{"key":"ROLE","type":"","value":"","values":null},{"key":"STATUS","type":"","value":"","values":null}]}`)
+	jsonstr := []byte(`{"id":"7b8fe145-a791-4ba5-808c-652cb26f8284","signature":{"ownerId":"ads-cec","source":"Admission","eventId":"1486e5d6-4bf8-4822-8858-ec7213042d54","eventType":"UPLOAD"},"signatures":[{"ownerId":"ads-cec","source":"Admission","eventId":"1486e5d6-4bf8-4822-8858-ec7213042d54","eventType":"UPLOAD","recordType":"","recordId":"46c0a074-748a-412e-ac5e-9fb373069ad7"}],"createdAt":"2020-01-02T16:43:20.281890635Z","timestamp":"0001-01-01T00:00:00Z","fibers":["2a627138-fb9b-48f8-be33-232db49839de"],"passthroughs":null,"matchKeys":[{"key":"LNAME","type":"","value":"Ralston","values":["Ralston"]},{"key":"CITY","type":"","value":"South Weymouth","values":["South Weymouth"]},{"key":"STATE","type":"","value":"MA","values":["MA"]},{"key":"ZIP","type":"","value":"02190-2334","values":["02190-2334"]},{"key":"ZIP5","type":"","value":"02190","values":["02190"]},{"key":"COUNTRY","type":"","value":"US","values":["US"]},{"key":"AD1","type":"","value":"62 Chauncy St","values":["62 Chauncy St"]},{"key":"AD1NO","type":"","value":"62","values":["62"]},{"key":"AD2","type":"","value":"","values":[]},{"key":"ADTYPE","type":"","value":"Residential","values":["Residential"]},{"key":"MAILROUTE","type":"","value":"","values":[]},{"key":"ADBOOK","type":"","value":"Residence","values":["Residence"]},{"key":"ADPARSER","type":"","value":"smartystreet","values":["smartystreet"]},{"key":"ADCORRECT","type":"","value":"FALSE","values":["FALSE"]},{"key":"ADVALID","type":"","value":"TRUE","values":["TRUE"]},{"key":"ZIPTYPE","type":"","value":"Standard","values":["Standard"]},{"key":"RECORDTYPE","type":"","value":"S","values":["S"]},{"key":"PermM","type":"","value":"","values":[]},{"key":"ORGANIZATION","type":"","value":"ADS","values":["ADS"]}]}`)
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(jsonstr)).Decode(&request360); err != nil {
 		fmt.Printf("There was an issue decoding the message %v %v", string(jsonstr), err)
@@ -144,6 +144,18 @@ func Test360PeopleOutput(t *testing.T) {
 		Country:  getFrom360Slice("COUNTRY", request360.MatchKeys).Value,
 	}
 	output.Household = &household
+	output.Common.PermE = getFrom360Slice("PermE", request360.MatchKeys).Value
+	output.Common.PermM = getFrom360Slice("PermM", request360.MatchKeys).Value
+	output.Common.PermS = getFrom360Slice("PermS", request360.MatchKeys).Value
+	output.Common.ADTYPE = getFrom360Slice("ADTYPE", request360.MatchKeys).Value
+	output.Common.ADBOOK = getFrom360Slice("ADBOOK", request360.MatchKeys).Value
+	output.Common.ADPARSER = getFrom360Slice("ADPARSER", request360.MatchKeys).Value
+	output.Common.ADCORRECT = getFrom360Slice("ADCORRECT", request360.MatchKeys).Value
+	output.Common.ADVALID = getFrom360Slice("ADVALID", request360.MatchKeys).Value
+	output.Common.ZIPTYPE = getFrom360Slice("ZIPTYPE", request360.MatchKeys).Value
+	output.Common.RECORDTYPE = getFrom360Slice("RECORDTYPE", request360.MatchKeys).Value
+	output.Common.DOB = getFrom360Slice("DOB", request360.MatchKeys).Value
+	output.Common.STATUS = getFrom360Slice("STATUS", request360.MatchKeys).Value
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
 		fmt.Printf("Couldn't parse %v", jsonStrOutput)

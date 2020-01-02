@@ -43,7 +43,7 @@ func TestUpsert(t *testing.T) {
 
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType":  "household",
+		"entityType":  "people",
 		"age":         "99",
 		"peopleId":    "c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"householdId": "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
@@ -70,7 +70,7 @@ func TestUpsert(t *testing.T) {
 			},
 		},
 		"signature":  "2be16825-5dc4-4c9d-aa0a-6b851ef16ff7",
-		"signatures": []string{"1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
+		"signatures": []string{"3a5c4190-8d66-43c0-9d01-d552d2b674cb", "1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
 		// "entityType": "event",
 		"source":  "test",

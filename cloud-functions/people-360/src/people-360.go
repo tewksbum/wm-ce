@@ -751,10 +751,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 		recordFinished := false
 		fiberFinished := false
-		if recordCompleted+recordDeleted >= recordCount {
+		if recordCompleted+recordDeleted >= recordCount && recordCount > 0 {
 			recordFinished = true
 		}
-		if fiberCompleted+fiberDeleted >= recordCount {
+		if fiberCompleted+fiberDeleted >= recordCount && recordCount > 0 {
 			fiberFinished = true
 		}
 		LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))

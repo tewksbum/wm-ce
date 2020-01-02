@@ -1,12 +1,12 @@
 {
     "gcp": {
         "bucket": "oncampusmarketing",
-        "filter": "rhl-1112/",
+        "filter": "dd-1920/",
         "recursive": false
     },
     "local": {
         "xlsx": {
-            "fileName": "/mnt/p/temp/test.xlsx",
+            "fileName": "input-dd1920.xlsx",
             "sheetName": "Files"
         }
     }

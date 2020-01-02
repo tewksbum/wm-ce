@@ -901,9 +901,9 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
@@ -911,11 +911,11 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address4 = 1
 	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
 		err.Address1 = 1
-	case "city", "city ", "street city":
+	case "city", "city ", "street city", "home city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province":
 		err.State = 1
-	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode":
+	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
@@ -923,7 +923,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -938,7 +938,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last":
 		err.ParentLastName = 1
-	case "phone", "phone1", "hphone", "cphone", "mphone":
+	case "phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile":
 		err.Phone = 1
 	case "bday", "birthday":
 		err.Birthday = 1
@@ -958,14 +958,14 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "grade", "admit status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
+	case "title", "course year", "grad date", "class", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "school code":
 		err.Junk = 1
 	case "perme", "permission email":
 		err.PermE = 1
@@ -1010,7 +1010,7 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
+	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") || strings.HasPrefix(key, "campus") {
 		// strings.Contains(key, "description") ||
 		err.Junk = 1
 	}

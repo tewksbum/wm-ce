@@ -1,37 +1,65 @@
 package db
 
 import (
+	"fmt"
 	"segment/db/bq"
 	"segment/db/csql"
 	"segment/models"
+	"segment/utils"
 	"segment/utils/logger"
 	"segment/wemade"
+	"strings"
 )
 
 const (
-	recordPeopleID    string = "peopleId"
-	recordHouseholdID string = "householdId"
+	recordSignature  string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
+	recordDistinctC  string = `DISTINCT JSON_OBJECT("%s", %s)`
+	peopleIDField    string = "peopleId"
+	householdIDField string = "householdId"
 )
 
 // Write decides where the data will be stored, and does so.
 func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err error) {
+	var one interface{} = 1
 	switch r.GetEntityType() {
 	case models.TypeOrderHeader:
-		fallthrough
+		break
 	case models.TypeOrderConsignment:
-		fallthrough
+		break
 	case models.TypeOrderDetail:
-		fallthrough
+		break
 	case models.TypeHousehold:
-		var pid interface{}
-		pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
-		(r.(*models.HouseholdRecord)).AddDBFilter(
+		// Cleanup
+		recopy := *r.(*models.HouseholdRecord)
+		rrec := buildHouseholdDecode(r.(*models.HouseholdRecord), "")
+		rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, householdIDField, householdIDField)})
+		rrec.AddDBFilter(
 			models.QueryFilter{
-				Field: recordHouseholdID,
+				Field: fmt.Sprintf(recordSignature, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
-				Value: &pid,
+				Value: &one,
 			},
 		)
+		or, err := csql.Read(csqlDSN, rrec)
+		if err != nil {
+			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup.Read]: %q", err)
+		}
+		for _, cr := range or.List {
+			jr := utils.StructToMap(cr, nil)
+			pid := jr[householdIDField]
+			recopy.AddDBFilter(
+				models.QueryFilter{
+					Field: householdIDField,
+					Op:    models.OperationEquals,
+					Value: &pid,
+				},
+			)
+			err = csql.Delete(csqlDSN, &recopy)
+			if err != nil {
+				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
+			}
+		}
+		// Cleanup end
 		err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
 		if err != nil {
 			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
@@ -43,20 +71,37 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			}
 		}
 	case models.TypePeople:
-		// logger.InfoFmt("signatures: %q", r.GetSignatures())
-		var pid interface{}
-		pid = (r.(*models.PeopleRecord)).Record.PeopleID
-		(r.(*models.PeopleRecord)).AddDBFilter(
+		// Cleanup
+		recopy := *r.(*models.PeopleRecord)
+		rrec := buildPeopleDecode(r.(*models.PeopleRecord), "")
+		rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, peopleIDField, peopleIDField)})
+		rrec.AddDBFilter(
 			models.QueryFilter{
-				Field: recordPeopleID,
+				Field: fmt.Sprintf(recordSignature, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
-				Value: &pid,
+				Value: &one,
 			},
 		)
-		err = csql.Delete(csqlDSN, (r.(*models.PeopleRecord)))
+		or, err := csql.Read(csqlDSN, rrec)
 		if err != nil {
-			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
+			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup.Read]: %q", err)
 		}
+		for _, cr := range or.List {
+			jr := utils.StructToMap(cr, nil)
+			pid := jr[peopleIDField]
+			recopy.AddDBFilter(
+				models.QueryFilter{
+					Field: peopleIDField,
+					Op:    models.OperationEquals,
+					Value: &pid,
+				},
+			)
+			err = csql.Delete(csqlDSN, &recopy)
+			if err != nil {
+				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
+			}
+		}
+		// Cleanup end
 		for _, sig := range r.GetSignatures() {
 			rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs); err != nil {

@@ -15,12 +15,12 @@ const (
 	tblNameFormatTick   = "`%s`"
 	tblDecodeCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		signature VARCHAR(255) NOT NULL,
-		people_id VARCHAR(255) NULL,
-		household_id VARCHAR(255) NULL,
+		peopleId VARCHAR(255) NULL,
+		householdId VARCHAR(255) NULL,
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-		INDEX(people_id),
-		INDEX(household_id),
+		INDEX(peopleId),
+		INDEX(householdId),
 		PRIMARY KEY (signature));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,

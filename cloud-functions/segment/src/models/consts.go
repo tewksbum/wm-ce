@@ -40,9 +40,9 @@ var (
 	DefaultSelectColumnList = []string{"record"}
 	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}
 	DecodeIDField           = "signature"
-	DecodeColumnList        = []string{"signature", "people_id", "household_id"}
+	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
 	DecodeBlackList         = []string{"source", "passthrough", "attributes",
-		"owner_id", "owner", "entity_type", "timestamp", "signatures"}
+		"ownerId", "owner", "entityType", "timestamp", "signatures"}
 )
 
 // Operation types
