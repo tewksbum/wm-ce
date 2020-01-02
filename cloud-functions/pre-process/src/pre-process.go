@@ -965,7 +965,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "school code":
 		err.Junk = 1
 	case "perme", "permission email":
 		err.PermE = 1
