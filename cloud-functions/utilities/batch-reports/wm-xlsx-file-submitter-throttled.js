@@ -106,6 +106,7 @@ async function sendRequest(row, classYear) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
+  var titleYear = row.values[12];
   console.log("ClassYear: ", classYear)
   console.log(schoolName);
   if (schoolName === undefined) {
@@ -191,7 +192,8 @@ async function sendRequest(row, classYear) {
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: classYear.toString()
+      Title: classYear.toString(),
+      TitleYear: titleYear.toString()
     }
   };
 
