@@ -183,6 +183,9 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	}
 	defer tx.RollbackUnlessCommitted()
 	stmt := tx.Select(r.GetSelectColumnList()...).From(tblName)
+	if len(opts.Joins) > 0 {
+		// No need for joins now, but placeholder.
+	}
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {
@@ -255,6 +258,9 @@ func Delete(dsn string, r models.Record) error {
 		return logger.ErrFmt("[csql.Delete.createTbl]: %#v", err)
 	}
 	stmt := tx.DeleteFrom(tblName)
+	if len(opts.Joins) > 0 {
+		// No need for joins now, but placeholder.
+	}
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {

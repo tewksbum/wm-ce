@@ -70,7 +70,7 @@ func TestUpsert(t *testing.T) {
 			},
 		},
 		"signature":  "2be16825-5dc4-4c9d-aa0a-6b851ef16ff7",
-		"signatures": []string{"1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
+		"signatures": []string{"3a5c4190-8d66-43c0-9d01-d552d2b674cb", "1a86cae5-4495-4e9b-81af-c5f24c90972a", "05f633bb-4192-47b7-beb4-dccefe363a13"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
 		// "entityType": "event",
 		"source":  "test",

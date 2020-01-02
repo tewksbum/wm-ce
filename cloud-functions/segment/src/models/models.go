@@ -37,6 +37,7 @@ type Options struct {
 	HasTablenameSuffix bool
 	IgnoreUniqueFields bool
 	Filters            []QueryFilter
+	Joins              []string
 }
 
 //Record interface
@@ -71,8 +72,8 @@ type DecodeRecord struct {
 	BaseRecord
 	Signature   string    `json:"signature" bigquery:"signature" sql:"signature"`
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
-	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"people_id"`
-	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"household_id"`
+	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"peopleId"`
+	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"householdId"`
 	CreatedAt   time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
 	UpdatedAt   time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
 }
@@ -243,6 +244,11 @@ func (r *BaseRecord) SetCSQLConnStr(cnnstr string) {
 // AddDBFilter adds a QueryFilter to current options.QueryFilters
 func (r *BaseRecord) AddDBFilter(q QueryFilter) {
 	r.DBopts.Filters = append(r.DBopts.Filters, q)
+}
+
+// AddDBJoin adds a QueryJoin to current options.QueryJoins
+func (r *BaseRecord) AddDBJoin(join string) {
+	r.DBopts.Joins = append(r.DBopts.Joins, join)
 }
 
 // Record Structs
@@ -480,7 +486,7 @@ type Phone struct {
 
 // Household data
 type Household struct {
-	HouseholdID string `json:"householdId" bigquery:"householdid" sql:"household_id"`
+	HouseholdID string `json:"householdId" bigquery:"householdid" sql:"householdid"`
 	LastName    string `json:"lastName" bigquery:"lastname" sql:"lastName"`
 	Address1    string `json:"address1" bigquery:"address1" sql:"address1"`
 	Address2    string `json:"address2" bigquery:"address2" sql:"address2"`

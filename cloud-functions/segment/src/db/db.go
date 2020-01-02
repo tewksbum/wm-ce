@@ -1,35 +1,35 @@
 package db
 
 import (
+	"fmt"
 	"segment/db/bq"
 	"segment/db/csql"
 	"segment/models"
 	"segment/utils/logger"
 	"segment/wemade"
+	"strings"
 )
 
 const (
-	recordPeopleID    string = "peopleId"
-	recordHouseholdID string = "householdId"
+	recordSignatures string = "JSON_CONTAINS('[\"%s\"]', signatures)"
 )
 
 // Write decides where the data will be stored, and does so.
 func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err error) {
+	var one interface{} = 1
 	switch r.GetEntityType() {
 	case models.TypeOrderHeader:
-		fallthrough
+		break
 	case models.TypeOrderConsignment:
-		fallthrough
+		break
 	case models.TypeOrderDetail:
-		fallthrough
+		break
 	case models.TypeHousehold:
-		var pid interface{}
-		pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
 		(r.(*models.HouseholdRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: recordHouseholdID,
+				Field: fmt.Sprintf(recordSignatures, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
-				Value: &pid,
+				Value: &one,
 			},
 		)
 		err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
@@ -43,14 +43,11 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			}
 		}
 	case models.TypePeople:
-		// logger.InfoFmt("signatures: %q", r.GetSignatures())
-		var pid interface{}
-		pid = (r.(*models.PeopleRecord)).Record.PeopleID
 		(r.(*models.PeopleRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: recordPeopleID,
+				Field: fmt.Sprintf(recordSignatures, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
-				Value: &pid,
+				Value: &one,
 			},
 		)
 		err = csql.Delete(csqlDSN, (r.(*models.PeopleRecord)))

@@ -22,9 +22,8 @@ func StructToMap(i interface{}, blacklist []string) map[string]interface{} {
 	json.Unmarshal(jj, &j)
 	for k, v := range j {
 		dont := false
-		sk := ToSnakeCase(k)
 		for _, blp := range blacklist {
-			dont = blp == sk
+			dont = blp == k
 			if dont {
 				break
 			}
@@ -33,12 +32,12 @@ func StructToMap(i interface{}, blacklist []string) map[string]interface{} {
 			switch v.(type) {
 			case string:
 				if v == "" {
-					delete(r, sk)
+					delete(r, k)
 				} else {
-					r[sk] = v
+					r[k] = v
 				}
 			default:
-				r[sk] = v
+				r[k] = v
 			}
 		}
 	}
