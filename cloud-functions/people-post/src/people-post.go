@@ -1482,7 +1482,7 @@ func CalcClassYear(cy string) string {
 			}
 			return strconv.Itoa(time.Now().Year() + 1)
 		case "senior", "sr":
-			if time.Now().Month() > 6) {
+			if (time.Now().Month() > 6) {
 				return strconv.Itoa(time.Now().Year() + 1)
 			}
 			return strconv.Itoa(time.Now().Year())
