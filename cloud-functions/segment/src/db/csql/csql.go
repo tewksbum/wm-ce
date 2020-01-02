@@ -150,7 +150,11 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	// Logging of the created insert command
 	if err != nil {
-		return updated, logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		errorito := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		// TODO: remove this conditional for HH
+		if r.GetTablename() != models.TblHousehold {
+			return updated, errorito
+		}
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
