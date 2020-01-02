@@ -425,9 +425,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// locate title year, if a 4 digit year is passed then assign it
 	for _, column := range input.Columns {
-		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute && strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
-			TitleYear, _ := strconv.ParseInt(column.Value, 10, 0)
-			_ = TitleYear
+		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
+			// make sure thie field is not used for anything else
+
+			column.PeopleERR.Junk = 1
+
+			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
+				TitleYear, _ := strconv.ParseInt(column.Value, 10, 0)
+				_ = TitleYear
+			}
 		}
 	}
 
@@ -662,7 +668,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// TODO: make sure to not overwrite title column with title attribute
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				if matchKeyAssigned == "TITLE" {
-					LogDev(fmt.Sprintf("title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
+					LogDev(fmt.Sprintf("pending title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
 				}
 				if column.IsAttribute && len(currentValue.Value) > 0 {
 					skipValue = true
