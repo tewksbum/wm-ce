@@ -10,7 +10,7 @@ steps:
     "--project", "${PROJECT_ID}",
     "--timeout", "30",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "500"
+    "--max-instances", "100"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'

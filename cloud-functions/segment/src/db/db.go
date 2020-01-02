@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	recordSignatures string = "JSON_CONTAINS('[\"%s\"]', signatures)"
+	recordSignature  string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
+	recordDistinctC  string = `DISTINCT JSON_OBJECT("%s", %s)`
 	peopleIDField    string = "peopleId"
 	householdIDField string = "householdId"
 )
@@ -31,10 +32,10 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		// Cleanup
 		recopy := *r.(*models.HouseholdRecord)
 		rrec := buildHouseholdDecode(r.(*models.HouseholdRecord), "")
-		rrec.SetSelectColumnList([]string{`DISTINCT JSON_OBJECT("` + householdIDField + `", ` + householdIDField + `)`})
+		rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, householdIDField, householdIDField)})
 		rrec.AddDBFilter(
 			models.QueryFilter{
-				Field: fmt.Sprintf("JSON_CONTAINS('[\"%s\"]', JSON_ARRAY(signature))", strings.Join(r.GetSignatures(), `", "`)),
+				Field: fmt.Sprintf(recordSignature, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
 				Value: &one,
 			},
@@ -73,10 +74,10 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		// Cleanup
 		recopy := *r.(*models.PeopleRecord)
 		rrec := buildPeopleDecode(r.(*models.PeopleRecord), "")
-		rrec.SetSelectColumnList([]string{`DISTINCT JSON_OBJECT("` + peopleIDField + `", ` + peopleIDField + `)`})
+		rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, peopleIDField, peopleIDField)})
 		rrec.AddDBFilter(
 			models.QueryFilter{
-				Field: fmt.Sprintf("JSON_CONTAINS('[\"%s\"]', JSON_ARRAY(signature))", strings.Join(r.GetSignatures(), `", "`)),
+				Field: fmt.Sprintf(recordSignature, strings.Join(r.GetSignatures(), `", "`)),
 				Op:    models.OperationEquals,
 				Value: &one,
 			},
