@@ -923,7 +923,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -958,10 +958,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "grade", "admit status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
+	case "title", "course year", "grad date", "class", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1

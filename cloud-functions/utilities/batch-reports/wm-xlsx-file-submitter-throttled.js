@@ -77,7 +77,7 @@ var skippedSchoolCodes = [];
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(10000)
+      await nap(5000)
     }
     console.log(`reset wait`);
     wroteFlag = false;
