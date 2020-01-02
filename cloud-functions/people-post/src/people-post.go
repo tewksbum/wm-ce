@@ -431,8 +431,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.PeopleERR.Junk = 1
 
 			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
-				TitleYear, _ := strconv.ParseInt(column.Value, 10, 0)
-				_ = TitleYear
+				titleYear, _ := strconv.ParseInt(column.Value, 10, 0)
+				TitleYear = int(titleYear)
 			}
 		}
 	}
@@ -709,7 +709,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// let's assign the value
 				switch matchKeyAssigned {
 				case "TITLE":
-					LogDev(fmt.Sprintf("ClassYear value %v, TitleYear value %v, final value", column.Value, TitleYear, CalcClassYear(column.Value)))
+					LogDev(fmt.Sprintf("ClassYear value %v, TitleYear value %v, final value %v", column.Value, TitleYear, CalcClassYear(column.Value)))
 					SetMkField(&(currentOutput.Output), "TITLE", CalcClassYear(column.Value), column.Name)
 				case "FULLNAME":
 					SetMkField(&(currentOutput.Output), "FULLNAME", column.Value, column.Name)
