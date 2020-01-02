@@ -1467,17 +1467,37 @@ func CalcClassYear(cy string) string {
 	} else {
 		switch strings.ToLower(cy) {
 		case "freshman", "frosh", "fresh", "fr", "first year student", "first year":
-			return strconv.Itoa(time.Now().Year() + 4)
+			if strconv.Itoa(time.Now().Month() > 3 {
+				return strconv.Itoa(time.Now().Year() + 4)
+			} else {
+				return strconv.Itoa(time.Now().Year() + 3)
+			}
 		case "sophomore", "soph", "so", "sophomore/transfer":
-			return strconv.Itoa(time.Now().Year() + 3)
+			if strconv.Itoa(time.Now().Month() > 6 {
+				return strconv.Itoa(time.Now().Year() + 3)
+			} else {
+				return strconv.Itoa(time.Now().Year() + 2)
+			}
 		case "junior", "jr", "junior/senior":
-			return strconv.Itoa(time.Now().Year() + 2)
+			if strconv.Itoa(time.Now().Month() > 6 {
+				return strconv.Itoa(time.Now().Year() + 2)
+			} else {
+				return strconv.Itoa(time.Now().Year() + 1)
+			}
 		case "senior", "sr":
-			return strconv.Itoa(time.Now().Year() + 1)
+			if strconv.Itoa(time.Now().Month() > 6 {
+				return strconv.Itoa(time.Now().Year() + 1)
+			} else {
+				return strconv.Itoa(time.Now().Year())
+			}
 		case "graduate", "undergraduate over 23 (archive)":
 			return strconv.Itoa(time.Now().Year() - 1)
 		default:
-			return strconv.Itoa(time.Now().Year() + 4)
+			if strconv.Itoa(time.Now().Month() > 4 {
+				return strconv.Itoa(time.Now().Year() + 4)
+			} else {
+				return strconv.Itoa(time.Now().Year() + 3)
+			}
 		}
 	}
 }
