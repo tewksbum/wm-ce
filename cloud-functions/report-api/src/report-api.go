@@ -740,9 +740,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
 				if err == nil {
-					if class == CurrentYear+4 {
+					if class == CurrentYear+4 || (class == CurrentYear+3 && time.Now().Month() < 6) {
 						isFreshmen = true
-					} else if class >= CurrentYear && class < CurrentYear+4 {
+					} else if (class > CurrentYear-1 || (class == CurrentYear-1 && time.Now().Month() >= 6)) && (class < CurrentYear+3 || (class == CurrentYear+3 && time.Now().Month() >= 6)) {
 						isUpperClassman = true
 					}
 				}
