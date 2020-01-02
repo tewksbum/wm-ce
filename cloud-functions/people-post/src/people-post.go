@@ -1487,7 +1487,7 @@ func CalcClassYear(cy string) string {
 			}
 			return strconv.Itoa(time.Now().Year())
 		case "graduate", "undergraduate over 23 (archive)":
-			return (time.Now().Year() - 1)
+			return strconv.Itoa(time.Now().Year() - 1)
 		default:
 			if (time.Now().Month() > 4) {
 				return strconv.Itoa(time.Now().Year() + 4)
