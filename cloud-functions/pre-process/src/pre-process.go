@@ -901,9 +901,9 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
