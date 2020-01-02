@@ -62,7 +62,7 @@ var skippedSchoolCodes = [];
 
   console.log(`starting file scan... files: `, worksheet.rowCount);
   // for (let seq = 1; seq < 6; seq++) {
-  while (seq < 6) {
+  while (seq < 10) {
     console.log(`checking for sequence: `, seq);
     while (index < lfiles) {
     // for (index; index < lfiles; index++) {
@@ -77,7 +77,7 @@ var skippedSchoolCodes = [];
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(5000)
+      await nap(2500)
     }
     console.log(`reset wait`);
     wroteFlag = false;
