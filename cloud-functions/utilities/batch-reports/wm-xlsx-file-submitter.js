@@ -103,6 +103,7 @@ async function sendRequest(row) {
   var schoolcode = row.values[5]
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
+  var titleYear = row.values[12];
   var classYear = row.values[11];
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
@@ -186,7 +187,8 @@ async function sendRequest(row) {
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: classYear.toString()
+      Title: classYear.toString(),
+      TitleYear: titleYear.toString()
     }
   };
 
