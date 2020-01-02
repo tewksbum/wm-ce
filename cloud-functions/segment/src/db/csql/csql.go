@@ -184,7 +184,19 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	defer tx.RollbackUnlessCommitted()
 	stmt := tx.Select(r.GetSelectColumnList()...).From(tblName)
 	if len(opts.Joins) > 0 {
-		// No need for joins now, but placeholder.
+		// TODO : Optimize joins, sprintf the tablename and the j.Tablename into `On`
+		for _, j := range opts.Joins {
+			switch j.Type {
+			case "left":
+				stmt = stmt.LeftJoin(j.Table, j.On)
+			case "right":
+				stmt = stmt.RightJoin(j.Table, j.On)
+			case "full":
+				stmt = stmt.FullJoin(j.Table, j.On)
+			default:
+				stmt = stmt.Join(j.Table, j.On)
+			}
+		}
 	}
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
@@ -258,9 +270,6 @@ func Delete(dsn string, r models.Record) error {
 		return logger.ErrFmt("[csql.Delete.createTbl]: %#v", err)
 	}
 	stmt := tx.DeleteFrom(tblName)
-	if len(opts.Joins) > 0 {
-		// No need for joins now, but placeholder.
-	}
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {

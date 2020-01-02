@@ -17,6 +17,14 @@ type QueryFilter struct {
 	Values []interface{} `json:"values"`
 }
 
+// QueryJoin joins for queries
+type QueryJoin struct {
+	Type  string `json:"type"`
+	Table string `json:"table"`
+	On    string `json:"on"` // filter
+	Alias string `json:"alias"`
+}
+
 // ParsedQueryFilter filter parsed to build queries
 type ParsedQueryFilter struct {
 	ParsedCondition string        `json:"parsedCondition"`
@@ -37,7 +45,7 @@ type Options struct {
 	HasTablenameSuffix bool
 	IgnoreUniqueFields bool
 	Filters            []QueryFilter
-	Joins              []string
+	Joins              []QueryJoin
 }
 
 //Record interface
@@ -64,7 +72,10 @@ type Record interface {
 	GetMap() map[string]interface{}
 	SetCSQLSchemaName(string)
 	SetCSQLConnStr(string)
+	SetSelectColumnList([]string)
+	AddSelectColumnList(string)
 	AddDBFilter(QueryFilter)
+	AddDBJoin(QueryJoin)
 }
 
 // DecodeRecord decode table record
@@ -74,8 +85,8 @@ type DecodeRecord struct {
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
 	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"peopleId"`
 	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"householdId"`
-	CreatedAt   time.Time `json:"-"  bigquery:"created_at" sql:"created_at"`
-	UpdatedAt   time.Time `json:"-"  bigquery:"updated_at" sql:"updated_at"`
+	CreatedAt   time.Time `json:"-" bigquery:"created_at" sql:"created_at"`
+	UpdatedAt   time.Time `json:"-" bigquery:"updated_at" sql:"updated_at"`
 }
 
 // GetMap gets the column list for DecodeRecord
@@ -241,14 +252,24 @@ func (r *BaseRecord) SetCSQLConnStr(cnnstr string) {
 	r.DBopts.SchemaName = cnnstr
 }
 
+// SetSelectColumnList sets the column list
+func (r *BaseRecord) SetSelectColumnList(list []string) {
+	r.SelectColumnList = list
+}
+
 // AddDBFilter adds a QueryFilter to current options.QueryFilters
 func (r *BaseRecord) AddDBFilter(q QueryFilter) {
 	r.DBopts.Filters = append(r.DBopts.Filters, q)
 }
 
-// AddDBJoin adds a QueryJoin to current options.QueryJoins
-func (r *BaseRecord) AddDBJoin(join string) {
+// AddDBJoin adds a QueryJoin to current options.Join
+func (r *BaseRecord) AddDBJoin(join QueryJoin) {
 	r.DBopts.Joins = append(r.DBopts.Joins, join)
+}
+
+// AddSelectColumnList sets the column list
+func (r *BaseRecord) AddSelectColumnList(col string) {
+	r.SelectColumnList = append(r.SelectColumnList, col)
 }
 
 // Record Structs
