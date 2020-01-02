@@ -408,17 +408,34 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
 }
 
+var TitleYear int
+
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	TitleYear = time.Now().Year()
 	var MPRCounter int       // keep track of how many MPR we have
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
 	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
+
+	// locate title year, if a 4 digit year is passed then assign it
+	for _, column := range input.Columns {
+		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
+			// make sure thie field is not used for anything else
+
+			column.PeopleERR.Junk = 1
+
+			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
+				TitleYear, _ := strconv.ParseInt(column.Value, 10, 0)
+				_ = TitleYear
+			}
+		}
+	}
 
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
@@ -648,10 +665,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput, indexOutput = GetOutputByType(&outputs, "dorm")
 				}
-
+				// TODO: make sure to not overwrite title column with title attribute
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				if matchKeyAssigned == "TITLE" {
-					LogDev(fmt.Sprintf("title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
+					LogDev(fmt.Sprintf("pending title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
 				}
 				if column.IsAttribute && len(currentValue.Value) > 0 {
 					skipValue = true
@@ -1464,39 +1481,25 @@ func CalcClassYear(cy string) string {
 	log.Printf("have classyear: %v", cy)
 	if reGraduationYear.MatchString(cy) {
 		return cy
-	} else {
-		switch strings.ToLower(cy) {
-		case "freshman", "frosh", "fresh", "fr", "first year student", "first year":
-			if (time.Now().Month() > 3) {
-				return strconv.Itoa(time.Now().Year() + 4)
-			}
-			return strconv.Itoa(time.Now().Year() + 3)
-		case "sophomore", "soph", "so", "sophomore/transfer":
-			if (time.Now().Month() > 6) {
-				return strconv.Itoa(time.Now().Year() + 3)
-			}
-			return strconv.Itoa(time.Now().Year() + 2)
-		case "junior", "jr", "junior/senior":
-			if (time.Now().Month() > 6) {
-				return strconv.Itoa(time.Now().Year() + 2)
-			}
-			return strconv.Itoa(time.Now().Year() + 1)
-		case "senior", "sr":
-			if (time.Now().Month() > 6) {
-				return strconv.Itoa(time.Now().Year() + 1)
-			}
-			return strconv.Itoa(time.Now().Year())
-		case "graduate", "undergraduate over 23 (archive)":
-			return strconv.Itoa(time.Now().Year() - 1)
-		case "allfresh":
-			return strconv.Itoa(time.Now().Year() + 4)	
-		default:
-			if (time.Now().Month() > 4) {
-				return strconv.Itoa(time.Now().Year() + 4)
-			}
-			return strconv.Itoa(time.Now().Year() + 3)
-		}
 	}
+
+	switch strings.ToLower(cy) {
+	case "freshman", "frosh", "fresh", "fr", "first year student", "first year":
+		return strconv.Itoa(TitleYear + 4)
+	case "sophomore", "soph", "so", "sophomore/transfer":
+		return strconv.Itoa(TitleYear + 3)
+	case "junior", "jr", "junior/senior":
+		return strconv.Itoa(TitleYear + 2)
+	case "senior", "sr":
+		return strconv.Itoa(TitleYear + 1)
+	case "graduate", "undergraduate over 23 (archive)":
+		return strconv.Itoa(TitleYear - 1)
+	case "allfresh":
+		return strconv.Itoa(TitleYear + 4)
+	default:
+		return strconv.Itoa(TitleYear + 4)
+	}
+
 }
 
 func CalcClassDesig(cy string) string {
