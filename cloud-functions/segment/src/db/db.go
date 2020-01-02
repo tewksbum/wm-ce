@@ -42,7 +42,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		)
 		or, err := csql.Read(csqlDSN, rrec)
 		if err != nil {
-			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup.Read]: %q", err)
+			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup.Read]: %#v", err)
 		}
 		for _, cr := range or.List {
 			jr := utils.StructToMap(cr, nil)
@@ -56,18 +56,18 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			)
 			err = csql.Delete(csqlDSN, &recopy)
 			if err != nil {
-				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
+				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %#v", err)
 			}
 		}
 		// Cleanup end
 		err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
 		if err != nil {
-			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
+			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %#v", err)
 		}
 		for _, sig := range r.GetSignatures() {
 			rs := buildHouseholdDecode(r.(*models.HouseholdRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs); err != nil {
-				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert]: %q", err)
+				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert]: %#v", err)
 			}
 		}
 	case models.TypePeople:
@@ -84,7 +84,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		)
 		or, err := csql.Read(csqlDSN, rrec)
 		if err != nil {
-			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup.Read]: %q", err)
+			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup.Read]: %#v", err)
 		}
 		for _, cr := range or.List {
 			jr := utils.StructToMap(cr, nil)
@@ -98,14 +98,14 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			)
 			err = csql.Delete(csqlDSN, &recopy)
 			if err != nil {
-				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
+				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %#v", err)
 			}
 		}
 		// Cleanup end
 		for _, sig := range r.GetSignatures() {
 			rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs); err != nil {
-				logger.ErrFmt("[db.Write.PeopleSignatureUpsert]: %q", err)
+				logger.ErrFmt("[db.Write.PeopleSignatureUpsert]: %#v", err)
 			}
 		}
 	}

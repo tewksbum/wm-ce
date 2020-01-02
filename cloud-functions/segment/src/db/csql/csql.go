@@ -150,14 +150,14 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	// Logging of the created insert command
 	if err != nil {
-		return updated, logger.ErrFmt("[csql.Write.Exec] %v#", err)
+		return updated, logger.ErrFmt("[csql.Write.Exec] %#v", err)
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
 	logger.InfoFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
-		return updated, logger.ErrFmt("[csql.Write.Commit] %v#", err)
+		return updated, logger.ErrFmt("[csql.Write.Commit] %#v", err)
 	}
 	return updated, err
 }

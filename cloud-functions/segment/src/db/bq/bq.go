@@ -66,11 +66,11 @@ func Write(projectID string, r models.Record) (updated bool, err error) {
 		if multiError, ok := err.(bigquery.PutMultiError); ok {
 			for _, err1 := range multiError {
 				for _, err2 := range err1.Errors {
-					logger.ErrFmt("[BQ.Write.recordInserter] %q", err2)
+					logger.ErrFmt("[BQ.Write.recordInserter] %#v", err2)
 				}
 			}
 		}
-		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %q", err)
+		return updated, logger.ErrFmt("[BQ.Write.recordInserter] %#v", err)
 	}
 	return updated, nil
 }

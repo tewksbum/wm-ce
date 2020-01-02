@@ -67,7 +67,7 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
 	db.Write(projectID, csqlDSN, rec)
 	if err != nil {
-		logger.ErrFmt("[API.Upsert.MainOwnerCopy.Error]: ", err)
+		logger.ErrFmt("[API.Upsert.MainOwnerCopy.Error]: %v", err)
 	}
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
