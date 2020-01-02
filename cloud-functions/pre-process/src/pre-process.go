@@ -476,6 +476,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 	} else {
 		// empty field list
+		IncrRedisValue([]string{input.Signature.EventID, "records-deleted"})
 		return nil
 	}
 
