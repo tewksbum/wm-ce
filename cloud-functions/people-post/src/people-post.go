@@ -670,6 +670,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if matchKeyAssigned == "TITLE" {
 					LogDev(fmt.Sprintf("pending title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
 				}
+				// do not overwrite a matchkey from attribute if matchkey already as value assigned
 				if column.IsAttribute && len(currentValue.Value) > 0 {
 					skipValue = true
 				} else { // skip the MAR if it is an attribute
