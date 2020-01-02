@@ -427,7 +427,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	for _, column := range input.Columns {
 		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
 			// make sure thie field is not used for anything else
-
+			LogDev(fmt.Sprintf("Using attribute TitleYear: %v", column.Value))
 			column.PeopleERR.Junk = 1
 
 			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
