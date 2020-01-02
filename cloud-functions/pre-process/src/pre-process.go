@@ -913,7 +913,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address1 = 1
 	case "city", "city ", "street city", "home city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province":
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode":
 		err.ZipCode = 1
