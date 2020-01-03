@@ -35,10 +35,10 @@ func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 		if err != nil {
 			return nil, logger.Err(err)
 		}
+		_conn.SetMaxOpenConns(1)
 	} else {
 		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
 	}
-	// conn.SetMaxOpenConns(1)
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
 }
