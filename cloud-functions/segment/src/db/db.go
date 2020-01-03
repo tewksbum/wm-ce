@@ -29,6 +29,9 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 	case models.TypeOrderDetail:
 		break
 	case models.TypeHousehold:
+		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" {
+			logger.ErrStr("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
+		}
 		// Cleanup
 		recopy := *r.(*models.HouseholdRecord)
 		rrec := buildHouseholdDecode(r.(*models.HouseholdRecord), "")
