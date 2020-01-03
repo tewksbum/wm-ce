@@ -448,6 +448,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			continue
 		}
 
+		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
+			// make sure thie field is not used for anything else
+			column.PeopleERR.Junk = 1
+		}
+
 		// capture ML prediction to column
 		// predictionValue := input.Prediction.Predictions[index]
 		// predictionKey := strconv.Itoa(int(predictionValue))
