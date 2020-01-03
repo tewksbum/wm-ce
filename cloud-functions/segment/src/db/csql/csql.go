@@ -29,16 +29,16 @@ var (
 
 func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
-	// if _conn == nil {
-	logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
-	_conn, err := dbr.Open(dialect, dsn, nil)
-	if err != nil {
-		return nil, logger.Err(err)
+	if _conn == nil {
+		logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
+		_conn, err = dbr.Open(dialect, dsn, nil)
+		if err != nil {
+			return nil, logger.Err(err)
+		}
+		_conn.SetMaxOpenConns(1)
+	} else {
+		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
 	}
-	_conn.SetMaxOpenConns(1)
-	// } else {
-	// 	logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
-	// }
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
 }
@@ -154,9 +154,8 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		// TODO: remove this conditional for HH
 		if r.GetTablename() != models.TblHousehold {
 			return updated, errorito
-		} else {
-			return true, nil
 		}
+		return true, nil
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
@@ -296,7 +295,7 @@ func Delete(dsn string, r models.Record) error {
 							v = strings.Join(tmp, ",")
 							// logger.InfoFmt("param: %#v - type: %T", t, t)
 						default:
-							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], t, t)
+							logger.InfoFmt("delete param [%s]: %v - type: %T", pf.ParamNames[i], t, t)
 						}
 					} else {
 						v = nil
