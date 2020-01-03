@@ -31,4 +31,6 @@ wm-file-submitter-log.json
 oncampusmarketing/*
 input2/*
 *log*
+*.xlsx
+*.zip
 .DS_Store
