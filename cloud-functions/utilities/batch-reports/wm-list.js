@@ -174,7 +174,6 @@ async function main () {
             var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
             try {
                 var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "`"; // WHERE role = 'student'" + titleFilter;
-                console.log(query);
                 const [results, fields] = await cloudsql.query(query);
 
                 if (results && results.length) {
