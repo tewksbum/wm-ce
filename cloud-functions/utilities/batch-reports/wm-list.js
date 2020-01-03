@@ -154,80 +154,90 @@ async function main () {
         for (var s in schools) {
             var school = schools[s];
             bar.tick(1);
-            const [results, fields] = await cloudsql.query('SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `seg_people_oku-rha` LIMIT 10');
-
-            if (results) {
-                var file = new excel.Workbook();
-                var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
-                var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
-                var nameAlpha = "", nameOmega = "";
-                
-                // populate first sheet
-                sheetList.columns = ListColumns;
-                var outputDate = new Date().toLocaleDateString('en-US');
-                // add row 2
-                var row2 = {};
-                ListColumns.forEach(function (item, index) {
-                    row2[item.key] = school.schoolname;
-                });
-                sheetList.addRow(row2);
-                results.forEach(function(row, index) {
-                    sheetList.addRow({
-                        "SALUTATION SLUG": school.salutation,
-                        "FIRST NAME": row["firstName"],
-                        "LAST NAME": row["lastName"],
-                        "STREET ADDRESS 1": row["address1"],
-                        "STREET ADDRESS 2": row["address2"],
-                        "CITY": row["city"],
-                        "STATE": row["state"],
-                        "ZIPCODE": row["zip"],
-                        "SCHOOL CODE": school.schoolcode,
-                        "PROGRAM": programs[school.program.toLowerCase()],
-                        "MAILER TYPE": "",
-                        "FILE OUTPUT DATE": outputDate,
-                        "GENDER": row["gender"],
-                        "DISTRIBUTION": school.distribution
-                    });
-                });
-                sheetList.getRow(1).font = {bold: true};
-
-                nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
-                nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
-                sheetReport.columns = ReportColumns;
-                sheetReport.addRows([
-                    ["OCM Mailing List Form", ""],
-                    ["School Name:", school.schoolname],
-                    ["School Code:", school.schoolcode],
-                    ["Program:", programs[school.program.toLowerCase()]],
-                    ["Adcode:", school.adcode],
-                    ["Best Drop Date", school.dropdate],
-                    ["", ""],
-                    ["", ""],
-                    ["", ""],
-                    ["List Type:", "S"],
-                    ["First Name on List", nameAlpha],
-                    ["Last Name on List", nameOmega],
-                    ["Quantity Output", results.length],
-                    ["Print Size", school.printsize],
-                    ["Importe"],
-                    ["Imported Date"],
-                    ["Used"],
-                    ["Used Date"],
-                    ["SJ1 Label Amount"],
-                    ["SJ1 Last Record Name/Number:"],
-                    [" ", ""],
-                    ["SJ2 Label Amount"],
-                    ["SJ2 Last Record Name/Number:"],
-                    [" ", ""],
-                    ["SJ3 Label Amount"],
-                    ["SJ3 Last Record Name/Number:"]
-                ]);
-
-                var filename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
-                await file.xlsx.writeFile(filename);
+            if (!owners[school.schoolcode.toUpperCase()]) {
+                errors.push(`${chalk.redBright(school.schoolcode.toUpperCase())}: no owner found in wemade customer DS for this school code`);
+                continue;
             }
-            else {
-                errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
+            var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
+            try {
+                const [results, fields] = await cloudsql.query('SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `' + tablename + '` LIMIT 10');
+
+                if (results) {
+                    var file = new excel.Workbook();
+                    var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
+                    var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
+                    var nameAlpha = "", nameOmega = "";
+                    
+                    // populate first sheet
+                    sheetList.columns = ListColumns;
+                    var outputDate = new Date().toLocaleDateString('en-US');
+                    // add row 2
+                    var row2 = {};
+                    ListColumns.forEach(function (item, index) {
+                        row2[item.key] = school.schoolname;
+                    });
+                    sheetList.addRow(row2);
+                    results.forEach(function(row, index) {
+                        sheetList.addRow({
+                            "SALUTATION SLUG": school.salutation,
+                            "FIRST NAME": row["firstName"],
+                            "LAST NAME": row["lastName"],
+                            "STREET ADDRESS 1": row["address1"],
+                            "STREET ADDRESS 2": row["address2"],
+                            "CITY": row["city"],
+                            "STATE": row["state"],
+                            "ZIPCODE": row["zip"],
+                            "SCHOOL CODE": school.schoolcode,
+                            "PROGRAM": programs[school.program.toLowerCase()],
+                            "MAILER TYPE": "",
+                            "FILE OUTPUT DATE": outputDate,
+                            "GENDER": row["gender"],
+                            "DISTRIBUTION": school.distribution
+                        });
+                    });
+                    sheetList.getRow(1).font = {bold: true};
+
+                    nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
+                    nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
+                    sheetReport.columns = ReportColumns;
+                    sheetReport.addRows([
+                        ["OCM Mailing List Form", ""],
+                        ["School Name:", school.schoolname],
+                        ["School Code:", school.schoolcode],
+                        ["Program:", programs[school.program.toLowerCase()]],
+                        ["Adcode:", school.adcode],
+                        ["Best Drop Date", school.dropdate],
+                        ["", ""],
+                        ["", ""],
+                        ["", ""],
+                        ["List Type:", "S"],
+                        ["First Name on List", nameAlpha],
+                        ["Last Name on List", nameOmega],
+                        ["Quantity Output", results.length],
+                        ["Print Size", school.printsize],
+                        ["Importe"],
+                        ["Imported Date"],
+                        ["Used"],
+                        ["Used Date"],
+                        ["SJ1 Label Amount"],
+                        ["SJ1 Last Record Name/Number:"],
+                        [" ", ""],
+                        ["SJ2 Label Amount"],
+                        ["SJ2 Last Record Name/Number:"],
+                        [" ", ""],
+                        ["SJ3 Label Amount"],
+                        ["SJ3 Last Record Name/Number:"]
+                    ]);
+
+                    var filename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
+                    await file.xlsx.writeFile(filename);
+                }
+                else {
+                    errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
+                }
+            }
+            catch (error) {
+                errors.push(`${chalk.redBright(school)}: error occurred - ${error}`);
             }
         };
         if (errors.length > 0 ) {
