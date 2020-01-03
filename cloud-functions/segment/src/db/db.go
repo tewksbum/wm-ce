@@ -63,10 +63,6 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			}
 		}
 		// Cleanup end
-		err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
-		if err != nil {
-			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %#v", err)
-		}
 		for _, sig := range r.GetSignatures() {
 			rs := buildHouseholdDecode(r.(*models.HouseholdRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs); err != nil {
