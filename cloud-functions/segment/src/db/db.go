@@ -30,7 +30,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		break
 	case models.TypeHousehold:
 		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" {
-			logger.ErrStr("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
+			logger.Info("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
 		}
 		// Cleanup
 		recopy := *r.(*models.HouseholdRecord)
