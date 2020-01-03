@@ -28,6 +28,7 @@ type QueryJoin struct {
 // ParsedQueryFilter filter parsed to build queries
 type ParsedQueryFilter struct {
 	ParsedCondition string        `json:"parsedCondition"`
+	Op              string        `json:"op"`
 	ParamNames      []string      `json:"paramNames"`
 	Values          []interface{} `json:"values"`
 }

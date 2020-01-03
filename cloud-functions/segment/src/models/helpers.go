@@ -76,7 +76,7 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 			pf.Values = []interface{}{f.Values}
 		}
 		if i > 0 && f.OpLink != nil && (*f.OpLink == OperationLinkOr || *f.OpLink == OperationLinkAnd) {
-			pf.ParsedCondition = *f.OpLink + " " + pf.ParsedCondition
+			pf.ParsedCondition = strings.ToUpper(*f.OpLink) + " " + pf.ParsedCondition
 		}
 		pf.ParsedCondition = " " + pf.ParsedCondition
 		switch f.Op {
@@ -100,6 +100,7 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 				return pq, logger.ErrFmtStr("Operation [%#v] needs the field [value] to compare", f.Op)
 			}
 		}
+		pf.Op = f.Op
 		pq = append(pq, pf)
 	}
 	return pq, nil
