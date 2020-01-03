@@ -191,7 +191,7 @@ async function main () {
                         row2[item.key] = school.schoolname;
                     });
                     sheetList.addRow(row2);
-                    console.log(results.length);
+                    
                     results.forEach(function(row, index) {
                         sheetList.addRow({
                             "SALUTATION SLUG": school.salutation,
