@@ -57,6 +57,14 @@ var ReportColumns = [
     {key: "Value", width: 15},
 ];
 
+var TargetFilter = {
+    "allgrads": " and title <= '2019'",
+    "allsen": " and title = '2019'",
+    "gradboth": " and title <= '2019'",
+    "gradgrad": " and title <= '2019'",
+    "gradsen": " and title = '2019'",
+};
+
 async function main () {
     // first get a list of all files in the bucket
     const storageOptions = {prefix: options.folder, delimiter: "/", };
@@ -158,9 +166,13 @@ async function main () {
                 errors.push(`${chalk.redBright(school.schoolcode.toUpperCase())}: no owner found in wemade customer DS for this school code`);
                 continue;
             }
+            var titleFilter = "";
+            if (TargetFilter[school.targetgroup.toLowerCase()]) {
+                titleFilter = TargetFilter[school.targetgroup.toLowerCase()];
+            }
             var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
             try {
-                const [results, fields] = await cloudsql.query('SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `' + tablename + '` LIMIT 10');
+                const [results, fields] = await cloudsql.query("SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "` WHERE role = 'student'" + titleFilter + " LIMIT 10");
 
                 if (results) {
                     var file = new excel.Workbook();
