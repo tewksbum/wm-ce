@@ -154,6 +154,8 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		// TODO: remove this conditional for HH
 		if r.GetTablename() != models.TblHousehold {
 			return updated, errorito
+		} else {
+			return true, nil
 		}
 	}
 	ra, _ := res.RowsAffected()
