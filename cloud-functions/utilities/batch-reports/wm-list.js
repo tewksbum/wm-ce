@@ -170,11 +170,13 @@ async function main () {
             if (TargetFilter[school.targetgroup.toLowerCase()]) {
                 titleFilter = TargetFilter[school.targetgroup.toLowerCase()];
             }
+            titleFilter = "";
             var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
             try {
-                const [results, fields] = await cloudsql.query("SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "` WHERE role = 'student'" + titleFilter + " LIMIT 10");
+                var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "`"; // WHERE role = 'student'" + titleFilter;
+                const [results, fields] = await cloudsql.query(query);
 
-                if (results) {
+                if (results && results.length) {
                     var file = new excel.Workbook();
                     var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
                     var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
@@ -189,6 +191,7 @@ async function main () {
                         row2[item.key] = school.schoolname;
                     });
                     sheetList.addRow(row2);
+                    console.log(results.length);
                     results.forEach(function(row, index) {
                         sheetList.addRow({
                             "SALUTATION SLUG": school.salutation,
@@ -208,7 +211,6 @@ async function main () {
                         });
                     });
                     sheetList.getRow(1).font = {bold: true};
-
                     nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
                     nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
                     sheetReport.columns = ReportColumns;
