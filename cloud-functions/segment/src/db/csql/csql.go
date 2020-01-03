@@ -29,16 +29,16 @@ var (
 
 func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
-	if _conn == nil {
-		logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
-		_conn, err = dbr.Open(dialect, dsn, nil)
-		if err != nil {
-			return nil, logger.Err(err)
-		}
-		_conn.SetMaxOpenConns(1)
-	} else {
-		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
+	// if _conn == nil {
+	logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
+	_conn, err := dbr.Open(dialect, dsn, nil)
+	if err != nil {
+		return nil, logger.Err(err)
 	}
+	_conn.SetMaxOpenConns(1)
+	// } else {
+	// 	logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
+	// }
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
 }
