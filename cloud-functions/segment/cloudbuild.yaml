@@ -8,7 +8,7 @@ steps:
     "--runtime","go111",
     "--trigger-http",
     "--project", "${PROJECT_ID}",
-    "--timeout", "30",
+    "--timeout", "120",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "100"
     ]
