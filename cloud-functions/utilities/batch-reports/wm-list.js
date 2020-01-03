@@ -247,11 +247,11 @@ async function main () {
                     await file.xlsx.writeFile(filename);
                 }
                 else {
-                    errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
+                    errors.push(`${chalk.redBright(school.schoolcode)}: no recordsd returned from segment query`);
                 }
             }
             catch (error) {
-                errors.push(`${chalk.redBright(school)}: error occurred - ${error}`);
+                errors.push(`${chalk.redBright(school.schoolcode)}: error occurred - ${error}`);
             }
         };
         if (errors.length > 0 ) {
