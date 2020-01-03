@@ -61,7 +61,7 @@ var skippedSchoolCodes = [];
   let seq = 1;
 
   console.log(`starting file scan... files: `, worksheet.rowCount);
-  while (seq < 10) {
+  while (seq < 16) {
     console.log(`checking for sequence: `, seq);
     while (index < lfiles) {
       console.log(`current row seq: `, worksheet.getRow(index).values[10]);
