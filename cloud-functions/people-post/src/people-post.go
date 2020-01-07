@@ -340,6 +340,7 @@ var AddressParserPath = os.Getenv("ADDRESSPATH")
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -474,7 +475,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
-		} else if ((column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || column.PeopleERR.ContainsTitle == 1) {
+		} else if (column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || column.PeopleERR.ContainsTitle == 1 {
 			column.MatchKey1 = "TITLE"
 			column.MatchKey2 = "STATUS"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
@@ -1489,6 +1490,11 @@ func CalcClassYear(cy string) string {
 	log.Printf("have classyear: %v", cy)
 	if reGraduationYear.MatchString(cy) {
 		return cy
+	} else if reClassYearFY1.MatchString(cy) { // FY1617
+		twodigityear, err := strconv.Atoi(cy[2:4])
+		if err == nil {
+			return strconv.Itoa(2000 + twodigityear + 4)
+		}
 	}
 
 	switch strings.ToLower(cy) {
