@@ -34,35 +34,38 @@ var (
 	DsFilterCustomers    = "AccessKey = "
 )
 
-// "Decode" specific variables
+// Default variables
 var (
-	DecodeIDField    = "signature"
-	DecodeColumnList = []string{"signature", "people_id"}
-	DecodeBlackList  = []string{"passthrough", "attributes", "source",
-		"owner_id", "owner", "entity_type", "timestamp", "signatures"}
+	IDField                 = "id"
+	DefaultSelectColumnList = []string{"record"}
+	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}
+	DecodeIDField           = "signature"
+	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
+	DecodeBlackList         = []string{"source", "passthrough", "attributes",
+		"ownerId", "owner", "entityType", "timestamp", "signatures"}
 )
 
 // Operation types
 const (
-	OperationEquals           = "eq"
-	OperationNotEquals        = "noteq"
-	OperationLessThan         = "lt"
-	OperationLessThanEqual    = "ltq"
-	OperationGreaterThan      = "gt"
-	OperationGreaterThanEqual = "gte"
-	OperationIs               = "is"
-	OperationIsNull           = "isnull"
-	OperationIsNotNull        = "isnotnull"
-	OperationIn               = "in"
-	OperationNotIn            = "notin"
-	OperationLike             = "like"
-	OperationILike            = "ilike"
-	OperationNotLike          = "notlike"
-	OperationBetween          = "between"
-	OperationLinkAnd          = "and"
-	OperationLinkOr           = "or"
-	OperationTypeFilter       = "filter"
-	OperationTypeOrderBy      = "order"
-	OperationOrderByAsc       = "ASC"
-	OperationOrderByDesc      = "DESC"
+	OperationEquals           string = "eq"
+	OperationNotEquals        string = "noteq"
+	OperationLessThan         string = "lt"
+	OperationLessThanEqual    string = "ltq"
+	OperationGreaterThan      string = "gt"
+	OperationGreaterThanEqual string = "gte"
+	OperationIs               string = "is"
+	OperationIsNull           string = "isnull"
+	OperationIsNotNull        string = "isnotnull"
+	OperationIn               string = "in"
+	OperationNotIn            string = "notin"
+	OperationLike             string = "like"
+	OperationILike            string = "ilike"
+	OperationNotLike          string = "notlike"
+	OperationBetween          string = "between"
+	OperationLinkAnd          string = "and"
+	OperationLinkOr           string = "or"
+	OperationTypeFilter       string = "filter"
+	OperationTypeOrderBy      string = "order"
+	OperationOrderByAsc       string = "ASC"
+	OperationOrderByDesc      string = "DESC"
 )

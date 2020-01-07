@@ -41,6 +41,7 @@ type Signature struct {
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
 	RecordID  string `json:"recordId"`
+	RowNumber int    `json:"rowNum"`
 }
 
 type Input struct {
@@ -93,21 +94,22 @@ type NERentry map[string]interface{}
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
-var PubSubTopic = os.Getenv("PSOUTPUT")
-
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
 
-var RedisAddress = os.Getenv("MEMSTORE")
 var NERApi = os.Getenv("NERAPI")
 
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
+var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
+
+var redisTransientExpiration = 3600 * 24
 
 // global vars
 var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var status *pubsub.Topic
 var sb *storage.Client
 var msp *redis.Pool
 
@@ -115,9 +117,14 @@ func init() {
 	ctx = context.Background()
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	topic = ps.Topic(PubSubTopic)
-
-	msp = NewPool(RedisAddress)
+	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	status = ps.Topic(os.Getenv("PSSTATUS"))
+	// status.PublishSettings.DelayThreshold = 5 * time.Minute
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -132,11 +139,27 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	RowLimit := 0
+	if row, ok := input.EventData["maxRows"]; ok {
+		RowLimit = int(row.(float64))
+	}
+
 	// get the file
 	if url, ok := input.EventData["fileUrl"]; ok {
 		resp, err := http.Get(fmt.Sprintf("%v", url))
 		if err != nil {
 			log.Fatalf("File cannot be downloaded %V", url)
+
+			input.EventData["message"] = "File cannot be downloaded"
+			input.EventData["status"] = "Error"
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+			}
 		}
 
 		defer resp.Body.Close()
@@ -154,6 +177,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			if _, err := io.Copy(writer, bytes.NewReader(fileBytes)); err != nil {
 				log.Fatalf("File cannot be copied to bucket %v", err)
+
+				input.EventData["message"] = "File cannot be copied to bucket"
+				input.EventData["status"] = "Error"
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 			if err := writer.Close(); err != nil {
 				log.Fatalf("Failed to close bucket write stream %v", err)
@@ -174,6 +208,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			log.Printf("read %v bytes from the file", fileSize)
 			if fileSize < 1 {
 				log.Fatal("Unable to process an empty file.")
+
+				input.EventData["message"] = "File is empty"
+				input.EventData["status"] = "Error"
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 			var headers []string
 			var records [][]string
@@ -187,10 +232,46 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				sheetData, err := xlsxFile.ToSlice()
 				if err != nil {
+					input.EventData["message"] = "Unable to read excel data"
+					input.EventData["status"] = "Error"
+					statusJSON, _ := json.Marshal(input)
+					psresult := status.Publish(ctx, &pubsub.Message{
+						Data: statusJSON,
+					})
+					_, err = psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+					}
+
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
-				// assume data is in sheet 0 of Excel workbook
+				origSheet, wcSheet, cpSheet := -1, -1, -1
+				for i, sheet := range xlsxFile.Sheets {
+					switch strings.ToLower(sheet.Name) {
+					case "original":
+						origSheet = i
+					case "wc", "working copy", "workingcopy", "working":
+						wcSheet = i
+					case "cp", "upload", "cp upload":
+						cpSheet = i
+					}
+				}
+
+				if cpSheet > -1 {
+					log.Printf("procesing cp sheet")
+					allrows = sheetData[cpSheet]
+				} else if wcSheet > -1 {
+					log.Printf("Processing wc sheet")
+					allrows = sheetData[wcSheet]
+				} else if origSheet > -1 {
+					log.Printf("Processing original sheet")
+					allrows = sheetData[origSheet]
+				} else {
+					// take the first sheet if we don't find something more interesting
+					log.Printf("processing first sheet")
+					allrows = sheetData[0]
+				}
 				allrows = sheetData[0]
 			} else {
 				// open a csv reader
@@ -202,6 +283,18 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				allrows, err = csvReader.ReadAll()
 				if err != nil {
 					log.Fatalf("unable to read header: %v", err)
+
+					input.EventData["message"] = "Unable to read csv header"
+					input.EventData["status"] = "Error"
+					statusJSON, _ := json.Marshal(input)
+					psresult := status.Publish(ctx, &pubsub.Message{
+						Data: statusJSON,
+					})
+					_, err = psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+					}
+
 					return nil
 				}
 			}
@@ -228,6 +321,63 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headers = allrows[maxColumnRowAt]
 			records = allrows[maxColumnRowAt+1:]
 
+			// attempt to detect if file has no header
+			// a. if the header has any column that contains same value that is not blank as the rest of the rows
+			// b. if the header contains any column that starts with a number
+			headerlessTest2 := false
+			headerlessTest1 := false
+			for _, h := range headers {
+				if len(h) > 0 && reStartsWithNumber.MatchString(h) {
+					headerlessTest2 = true
+					break
+				}
+			}
+			if headerlessTest2 {
+				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
+
+				input.EventData["message"] = "File appears to contain no header row - 1"
+				input.EventData["status"] = "Error"
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
+
+				return nil
+			}
+			for i, h := range headers {
+				if len(h) > 0 {
+					for _, r := range records {
+						if len(r) > i && h == r[i] {
+							headerlessTest1 = true
+							break
+						}
+					}
+					if headerlessTest1 {
+						break
+					}
+				}
+			}
+			if headerlessTest1 {
+				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
+
+				input.EventData["message"] = "File appears to contain no header row - 2"
+				input.EventData["status"] = "Error"
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
+
+				return nil
+			}
+
 			headers = EnsureColumnsHaveNames(RenameDuplicateColumns(headers))
 
 			// Call NER API
@@ -251,13 +401,23 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			output.Attributes = input.Attributes
 			output.Passthrough = input.Passthrough
 
-			for _, d := range records {
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-completed"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-deleted"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-completed"}, 0)
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-deleted"}, 0)
+
+			recordCount := 0
+			for r, d := range records {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					continue
 				}
+				if RowLimit > 1 && r > RowLimit-1 {
+					break
+				}
 
 				output.Signature.RecordID = uuid.New().String()
+				output.Signature.RowNumber = r + 1
 
 				fields := make(map[string]string)
 				for j, y := range d {
@@ -278,15 +438,39 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Data: outputJSON,
 				})
 				psid, err := psresult.Get(ctx)
-				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+					log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
 				} else {
 					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+					recordCount++
 				}
-
 			}
+			input.EventData["status"] = "Streamed"
+			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
+			input.EventData["recordcount"] = len(records)
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+			}
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
+
 		} else {
+			input.EventData["message"] = "Unable to fetch file"
+			input.EventData["status"] = "Error"
+			statusJSON, _ := json.Marshal(input)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+			}
+
 			log.Fatalf("Unable to fetch file %v, response code %v", url, resp.StatusCode)
 		}
 
@@ -444,10 +628,52 @@ func PersistNER(key string, ner NERresponse) {
 	}
 }
 
-func NewPool(addr string) *redis.Pool {
-	return &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
-		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", addr) },
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
 	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
+	}
+	return values
 }

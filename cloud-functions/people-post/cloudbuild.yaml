@@ -10,7 +10,8 @@ steps:
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "100"
+    "--max-instances", "100",
+    "--vpc-connector", "${_VPC_CONNECTOR}"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
@@ -19,5 +20,6 @@ substitutions:
     _FUNCTION_NAME: people-post
     _TRIGGER_TOPIC: people-prepipe
     _ENTRY_POINT: PostProcessPeople
+    _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'

@@ -276,7 +276,7 @@ for (let index = 0; index < uploadLog.length; index++) {
   //This will add the necesary columns
   for (let index = 0; index < report.ColumnCount - lastRCC; index++) {
     [
-      { header: "Name", id: "Name", width: 20 },
+      { header: "Source", id: "Name", width: 20 },
       { header: "Mapped", id: "Mapped", width: 10 },
       { header: "Min", id: "Min", width: 10 },
       { header: "Max", id: "Max", width: 10 },

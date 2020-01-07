@@ -20,20 +20,22 @@ import (
 	"cloud.google.com/go/storage"
 
 	"github.com/fatih/structs"
+	"github.com/gomodule/redigo/redis"
 )
 
+// foo
 // PubSubMessage is the payload of a pubsub event
 type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
 type Signature struct {
-	OwnerID    string `json:"ownerId"`
-	Source     string `json:"source"`
-	EventID    string `json:"eventId"`
-	EventType  string `json:"eventType"`
-	RecordType string `json:"recordType"`
-	RecordID   string `json:"recordId"`
+	OwnerID   string `json:"ownerId"`
+	Source    string `json:"source"`
+	EventID   string `json:"eventId"`
+	EventType string `json:"eventType"`
+	FiberType string `json:"fiberType"`
+	RecordID  string `json:"recordId"`
 }
 
 type Prediction struct {
@@ -74,47 +76,48 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation" bigquery:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname" bigquery:"nickname"`
-	FNAME      MatchKeyField `json:"fname" bigquery:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial" bigquery:"finitial"`
-	MNAME      MatchKeyField `json:"mname" bigquery:"mname"`
-	LNAME      MatchKeyField `json:"lname" bigquery:"lname"`
-	FULLNAME   MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
-
-	AD1          MatchKeyField `json:"ad1" bigquery:"ad1"`
-	AD1NO        MatchKeyField `json:"ad1no" bigquery:"ad1no"`
-	AD2          MatchKeyField `json:"ad2" bigquery:"ad2"`
-	AD3          MatchKeyField `json:"ad3" bigquery:"ad3"`
-	CITY         MatchKeyField `json:"city" bigquery:"city"`
-	STATE        MatchKeyField `json:"state" bigquery:"state"`
-	ZIP          MatchKeyField `json:"zip" bigquery:"zip"`
-	ZIP5         MatchKeyField `json:"zip5" bigquery:"zip5"`
-	COUNTRY      MatchKeyField `json:"country" bigquery:"country"`
-	MAILROUTE    MatchKeyField `json:"mailroute" bigquery:"mailroute"`
-	ADTYPE       MatchKeyField `json:"adtype" bigquery:"adtype"`
-	ADBOOK       MatchKeyField `json:"adbook" bigquery:"adbook"`
-	ADPARSER     MatchKeyField `json:"adparser" bigquery:"adparser"`
-	ADCORRECT    MatchKeyField `json:"adcorrect" bigquery:"adcorrect"`
-	DORM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
-	ROOM         MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
-	FULLADDRESS  MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
-	CITYSTATEZIP MatchKeyField `json:"-" bigquery:"-"` // do not output in json or store in BQ
-
-	EMAIL MatchKeyField `json:"email" bigquery:"email"`
-	PHONE MatchKeyField `json:"phone" bigquery:"phone"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId" bigquery:"trustedid"`
-	CLIENTID  MatchKeyField `json:"clientId" bigquery:"clientid"`
-
-	GENDER MatchKeyField `json:"gender" bigquery:"gender"`
-	AGE    MatchKeyField `json:"age" bigquery:"age"`
-	DOB    MatchKeyField `json:"dob" bigquery:"dob"`
-
-	ORGANIZATION MatchKeyField `json:"organization" bigquery:"organization"`
-	TITLE        MatchKeyField `json:"title" bigquery:"title"`
-	ROLE         MatchKeyField `json:"role" bigquery:"role"`
-	STATUS       MatchKeyField `json:"status" bigquery:"status"`
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	MNAME        MatchKeyField `json:"mname"`
+	LNAME        MatchKeyField `json:"lname"`
+	FULLNAME     MatchKeyField `json:"-"` // do not output in json or store in BQ
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	DORM         MatchKeyField `json:"-"` // do not output in json or store in BQ
+	ROOM         MatchKeyField `json:"-"` // do not output in json or store in BQ
+	FULLADDRESS  MatchKeyField `json:"-"` // do not output in json or store in BQ
+	CITYSTATEZIP MatchKeyField `json:"-"` // do not output in json or store in BQ
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
+	ORGANIZATION MatchKeyField `json:"organization"`
+	TITLE        MatchKeyField `json:"title"`
+	ROLE         MatchKeyField `json:"role"`
+	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"PermE"`
+	PermM        MatchKeyField `json:"PermM"`
+	PermS        MatchKeyField `json:"PermS"`
 }
 
 type PeopleERR struct {
@@ -122,6 +125,7 @@ type PeopleERR struct {
 	Address1             int `json:"Address1"`
 	Address2             int `json:"Address2"`
 	Address3             int `json:"Address3"`
+	Address4             int `json:"Address4"`
 	FullAddress          int `json:"FullAddress"`
 	Age                  int `json:"Age"`
 	Birthday             int `json:"Birthday"`
@@ -167,6 +171,9 @@ type PeopleERR struct {
 	ContainsRole         int `json:"ContainsRole"`
 	ContainsStudentRole  int `json:"ContainsStudentRole"`
 	Junk                 int `json:"Junk"`
+	PermE                int `json:"PermE"`
+	PermM                int `json:"PermM"`
+	PermS                int `json:"PermS"`
 }
 
 type PeopleVER struct {
@@ -339,20 +346,26 @@ var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reResidenceHall = regexp.MustCompile(`(?i)\sALPHA|ALUMNI|APARTMENT|APTS|BETA|BUILDING|CAMPUS|CENTENNIAL|CENTER|CHI|COLLEGE|COMMON|COMMUNITY|COMPLEX|COURT|CROSS|DELTA|DORM|EPSILON|ETA|FOUNDER|FOUNTAIN|FRATERNITY|GAMMA|GARDEN|GREEK|HALL|HEIGHT|HERITAGE|HIGH|HILL|HOME|HONOR|HOUS|INN|INTERNATIONAL|IOTA|KAPPA|LAMBDA|LANDING|LEARNING|LIVING|LODGE|MEMORIAL|MU|NU|OMEGA|OMICRON|PARK|PHASE|PHI|PI|PLACE|PLAZA|PSI|RESIDEN|RHO|RIVER|SCHOLARSHIP|SIGMA|SQUARE|STATE|STUDENT|SUITE|TAU|TERRACE|THETA|TOWER|TRADITIONAL|UNIV|UNIVERSITY|UPSILON|VIEW|VILLAGE|VISTA|WING|WOOD|XI|YOUNG|ZETA`)
 var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
+var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
+var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|mr.|ms.|miss|mrs.|Mr.|Ms.|Mrs.|MR|MRS|MS)$`)
 
-var StateList = map[string]string{
-	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
-	"FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS",
-	"KENTUCKY": "KY", "LOUISIANA": "LA", "MAINE": "ME", "MARYLAND": "MD", "MASSACHUSETTS": "MA", "MICHIGAN": "MI", "MINNESOTA": "MN",
-	"MISSISSIPPI": "MS", "MISSOURI": "MO", "MONTANA": "MT", "NEBRASKA": "NE", "NEVADA": "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ",
-	"NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", "OHIO": "OH", "OKLAHOMA": "OK", "OREGON": "OR",
-	"PENNSYLVANIA": "PA", "RHODE ISLAND": "RI", "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", "TENNESSEE": "TN", "TEXAS": "TX", "UTAH": "UT",
-	"VERMONT": "VT", "VIRGINIA": "VA", "WASHINGTON": "WA", "WEST VIRGINIA": "WV", "WISCONSIN": "WI", "WYOMING": "WY", "DISTRICT OF COLUMBIA": "DC",
-	"MARSHALL ISLANDS": "MH", "ARMED FORCES AFRICA": "AE", "ARMED FORCES AMERICAS": "AA", "ARMED FORCES CANADA": "AE", "ARMED FORCES EUROPE": "AE",
-	"ARMED FORCES MIDDLE EAST": "AE", "ARMED FORCES PACIFIC": "AP",
-}
+var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
+
+var redisTransientExpiration = 3600 * 24
+
+// var StateList = map[string]string{
+// 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
+// 	"FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS",
+// 	"KENTUCKY": "KY", "LOUISIANA": "LA", "MAINE": "ME", "MARYLAND": "MD", "MASSACHUSETTS": "MA", "MICHIGAN": "MI", "MINNESOTA": "MN",
+// 	"MISSISSIPPI": "MS", "MISSOURI": "MO", "MONTANA": "MT", "NEBRASKA": "NE", "NEVADA": "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ",
+// 	"NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", "OHIO": "OH", "OKLAHOMA": "OK", "OREGON": "OR",
+// 	"PENNSYLVANIA": "PA", "RHODE ISLAND": "RI", "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", "TENNESSEE": "TN", "TEXAS": "TX", "UTAH": "UT",
+// 	"VERMONT": "VT", "VIRGINIA": "VA", "WASHINGTON": "WA", "WEST VIRGINIA": "WV", "WISCONSIN": "WI", "WYOMING": "WY", "DISTRICT OF COLUMBIA": "DC",
+// 	"MARSHALL ISLANDS": "MH", "ARMED FORCES AFRICA": "AE", "ARMED FORCES AMERICAS": "AA", "ARMED FORCES CANADA": "AE", "ARMED FORCES EUROPE": "AE",
+// 	"ARMED FORCES MIDDLE EAST": "AE", "ARMED FORCES PACIFIC": "AP",
+// }
 
 // JY: this code looks dangerous as it uses contains, think minneapolis
 func reMilityBaseCity(val string) bool {
@@ -372,6 +385,7 @@ var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var ap http.Client
 var sb *storage.Client
+var msp *redis.Pool
 
 var MLLabels map[string]string
 
@@ -385,8 +399,17 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
+
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
+
 	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
 }
+
+var TitleYear int
 
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var input Input
@@ -394,14 +417,29 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	TitleYear = time.Now().Year()
 	var MPRCounter int       // keep track of how many MPR we have
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
 	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
 
+	// locate title year, if a 4 digit year is passed then assign it
+	for _, column := range input.Columns {
+		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
+			// make sure thie field is not used for anything else
+			LogDev(fmt.Sprintf("Using attribute TitleYear: %v", column.Value))
+			column.PeopleERR.Junk = 1
+
+			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
+				titleYear, _ := strconv.ParseInt(column.Value, 10, 0)
+				TitleYear = int(titleYear)
+			}
+		}
+	}
+
 	// iterate through every column on the input record to decide what the column is...
-	for index, column := range input.Columns {
+	for _, column := range input.Columns {
 		// start with some sanitization
 		column.Value = strings.TrimSpace(column.Value)
 		column.Value = reNewline.ReplaceAllString(column.Value, " ")
@@ -411,11 +449,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			continue
 		}
 
+		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
+			// make sure thie field is not used for anything else
+			column.PeopleERR.Junk = 1
+		}
+
 		// capture ML prediction to column
-		predictionValue := input.Prediction.Predictions[index]
-		predictionKey := strconv.Itoa(int(predictionValue))
-		mlMatchKey := MLLabels[predictionKey]
-		column.MatchKey = mlMatchKey
+		// predictionValue := input.Prediction.Predictions[index]
+		// predictionKey := strconv.Itoa(int(predictionValue))
+		// mlMatchKey := MLLabels[predictionKey]
+		// column.MatchKey = mlMatchKey
 
 		// let's figure out which column this goes to
 		if column.PeopleERR.TrustedID == 1 {
@@ -428,21 +471,23 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.MatchKey1 = "GENDER"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Gender == 1"))
 		} else if column.PeopleERR.ContainsStudentRole == 1 {
+			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
-		} else if column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1 {
+		} else if ((column.PeopleERR.Title == 1 && reNameTitle.MatchString(column.Value)) || column.PeopleERR.ContainsTitle == 1) {
 			column.MatchKey1 = "TITLE"
 			column.MatchKey2 = "STATUS"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey2, "column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
+			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
 			column.PeopleERR.State = 0   // override this is NOT a state value
 		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			column.MatchKey1 = "DORM"
+			// TODO: come back and fix this... maybe drop MAR all together?
+			// column.MatchKey1 = "DORM"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value)"))
 		} else if column.PeopleERR.Room == 1 {
-			column.MatchKey1 = "ROOM"
+			// TODO: come back and fix this... maybe drop MAR all together?
+			// column.MatchKey1 = "ROOM"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Room == 1"))
 		} else if column.PeopleERR.FullAddress == 1 {
 			column.MatchKey1 = "FULLADDRESS"
@@ -456,7 +501,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
 			// this might be a full name, try to parse it and see if we have first and last names
 			parsedName = ParseName(column.Value)
-			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 {
+			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 && column.PeopleERR.Address == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.ContainsAddress == 0 && column.PeopleERR.City == 0 && column.PeopleERR.ContainsCity == 0 {
 				column.MatchKey1 = "FULLNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0"))
 			}
@@ -487,7 +532,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1 {
+			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1) {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
 			} else if column.PeopleVER.IS_EMAIL {
@@ -526,7 +571,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.City == 1 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.City == 1"))
-			} else if column.PeopleERR.State == 1 {
+			} else if column.PeopleERR.State == 1 || (column.PeopleERR.ContainsRole == 1 && column.PeopleERR.ContainsState == 1) {
 				column.MatchKey1 = "STATE"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.State == 1"))
 			} else if column.PeopleERR.ZipCode == 1 {
@@ -541,7 +586,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "AD3"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 {
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0"))
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
@@ -600,6 +645,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// clear MatchKey if Junk
 		if column.PeopleERR.Junk == 1 {
+			LogDev(fmt.Sprintf("JUNK is dropping your match keys: %v %v %v %v", column.MatchKey, column.MatchKey1, column.MatchKey2, column.MatchKey3))
 			column.MatchKey = ""
 			column.MatchKey1 = ""
 			column.MatchKey2 = ""
@@ -625,11 +671,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
 					currentOutput, indexOutput = GetOutputByType(&outputs, "dorm")
 				}
-
+				// TODO: make sure to not overwrite title column with title attribute
 				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 				if matchKeyAssigned == "TITLE" {
-					LogDev(fmt.Sprintf("title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
+					LogDev(fmt.Sprintf("pending title assignment - column %v, match key %v, isattribute %v, current value %v", column.Name, matchKeyAssigned, column.IsAttribute, currentValue))
 				}
+				// do not overwrite a matchkey from attribute if matchkey already as value assigned
 				if column.IsAttribute && len(currentValue.Value) > 0 {
 					skipValue = true
 				} else { // skip the MAR if it is an attribute
@@ -668,6 +715,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// let's assign the value
 				switch matchKeyAssigned {
 				case "TITLE":
+					LogDev(fmt.Sprintf("ClassYear value %v, TitleYear value %v, final value %v", column.Value, TitleYear, CalcClassYear(column.Value)))
 					SetMkField(&(currentOutput.Output), "TITLE", CalcClassYear(column.Value), column.Name)
 				case "FULLNAME":
 					SetMkField(&(currentOutput.Output), "FULLNAME", column.Value, column.Name)
@@ -705,7 +753,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				outputs[indexOutput] = *currentOutput
 			}
 		} else {
-			log.Printf("Event %v Record %v Column has no match key assigned: : %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
+			log.Printf("Event %v Record %v Column has no match key assigned: %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 		LogDev(fmt.Sprintf("Outputs is %v", outputs))
 		// input.Columns[index] = column // dont need to update the input
@@ -717,6 +765,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// check to see if we need to deal with MAR that needs to be merged back to the default output
 	// specifically we are checking if the MAR field is AD1 and if default has a blank AD2
 	indexToSkip := -1
+
+	defaultMissingAddress := false
+	mprIndexWithAddress := -1
+
+	// TODO: struggling to follow what this does.. I THINK what it was supposed to do was... if there was
+	// a pobox in ad2... rahter than ad1... to flip flop them?
 	for i, v := range outputs {
 		if v.Type == "default" {
 			ad2 := GetMkField(&(v.Output), "AD2")
@@ -736,10 +790,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			if len(GetMkField(&(v.Output), "AD1").Value) == 0 {
+				defaultMissingAddress = true
+			}
+		} else if v.Type == "mpr" {
+			if (len(GetMkField(&(v.Output), "AD1").Value) > 0 || len(GetMkField(&(v.Output), "AD2").Value) > 0) && mprIndexWithAddress == -1 {
+				mprIndexWithAddress = i
+			}
 		}
 	}
+	LogDev(fmt.Sprintf("defaultMissingAddress = %v, mprIndexWithAddress = %v", defaultMissingAddress, mprIndexWithAddress))
 
 	pubQueue := []PubQueue{}
+	SetRedisValueWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"}, 0)
 	for i, v := range outputs {
 		if i == indexToSkip {
 			continue
@@ -757,13 +820,59 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				v.Output.STATE.Source = "WM"
 			}
 		}
-		// do a state lookup
-		stateUpper := strings.ToUpper(v.Output.STATE.Value)
-		if sa, ok := StateList[stateUpper]; ok {
-			v.Output.STATE.Value = sa
+
+		// copy address fields from MPR to default if value is missing
+		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {
+			for _, f := range fieldsToCopyForDefault {
+				mk := GetMkField(&(outputs[mprIndexWithAddress].Output), f)
+				mko := GetMkField(&(v.Output), f)
+				if len(mko.Value) == 0 {
+					SetMkField(&(v.Output), f, mk.Value, mk.Source)
+				}
+			}
+
 		}
 
-		StandardizeAddress(&(v.Output))
+		// // do a state lookup, no longer necessary
+		// stateUpper := strings.ToUpper(v.Output.STATE.Value)
+		// if sa, ok := StateList[stateUpper]; ok {
+		// 	v.Output.STATE.Value = sa
+		// }
+
+		// don't forget we can have email only records....
+
+		// standardize state name > abreviation
+		if reStateFull.MatchString(strings.ToLower(v.Output.STATE.Value)) {
+			LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", v.Output.STATE.Value))
+			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
+		}
+		// standardize "US" for any US State address
+		if reState.MatchString(v.Output.STATE.Value) {
+			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
+			v.Output.COUNTRY.Value = "US"
+			v.Output.COUNTRY.Source = "WM"
+		}
+
+		// If we could not identify another country previously...
+		// including US... meaning we don't have a state
+		// yet we have an address
+		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
+			LogDev(fmt.Sprintf("trying to find a country %v %v %v", v.Output.AD1.Value, v.Output.AD2.Value, v.Output.STATE.Value))
+			if v.Output.STATE.Value == "other" {
+				v.Output.COUNTRY.Value = "INTL"
+			}
+			// TODO: Jie can you look at this poop...
+			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
+		}
+
+		v.Output.ADVALID.Value = "FALSE"
+		v.Output.ADCORRECT.Value = "FALSE"
+		// IF we believe it to NOT be an international address...
+		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
+		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
+			StandardizeAddressSS(&(v.Output))
+			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+		}
 
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
@@ -798,7 +907,7 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	e := v.Type()
 	for i := 0; i < v.NumField(); i++ {
 		name := e.Field(i).Name
-		if name != "EMAIL" && name != "PHONE" { // do not copy email and phone
+		if name != "EMAIL" && name != "PHONE" && name != "FNAME" { // do not copy email and phone and fname
 			s := v.FieldByName(name).Interface().(MatchKeyField)
 			t := z.FieldByName(name).Interface().(MatchKeyField)
 			if len(t.Value) == 0 {
@@ -808,53 +917,212 @@ func CopyFieldsToMPR(a *PeopleOutput, b *PeopleOutput) {
 	}
 }
 
-// func CorrectAddress(in string) SmartyStreetResponse {
-// 	var smartyStreetResponse SmartyStreetResponse
-// 	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
-// 	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
-// 	response, err := http.Get(smartyStreetRequestURL)
-// 	if err != nil {
-// 		log.Fatalf("smartystreet request failed: %v", err)
-// 	} else {
-// 		if response.StatusCode != 200 {
-// 			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
-// 		}
-// 		data, err := ioutil.ReadAll(response.Body)
-// 		if err != nil {
-// 			log.Fatalf("Couldn't read the smartystreet response: %v", err)
-// 		}
-// 		log.Printf("smartystreet response %v", string(data))
-// 		json.Unmarshal(data, &smartyStreetResponse)
+func StandardizeAddressSS(mkOutput *PeopleOutput) {
+	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
+	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
+	if len(strings.TrimSpace(addressInput)) > 10 {
+		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
+		LogDev(fmt.Sprintf("address parser returned %v from input %v", a, addressInput))
+		if len(a) > 0 && len(a[0].DeliveryLine1) > 1 { // take the first
+			if mkOutput.AD1.Value != a[0].DeliveryLine1 {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
+			mkOutput.AD1.Value = a[0].DeliveryLine1
+			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			if mkOutput.CITY.Value != a[0].Components.CityName {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
+			mkOutput.CITY.Value = a[0].Components.CityName
+			if mkOutput.STATE.Value != a[0].Components.StateAbbreviation {
+				mkOutput.ADCORRECT.Value = "TRUE"
+			}
+			mkOutput.STATE.Value = a[0].Components.StateAbbreviation
 
-// 		if len(smartyStreetResponse) > 0 {
-// 			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
-// 			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
-// 			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
-// 			// 	correctedAddress.Add2 = ""
-// 			// }
-// 			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
-// 			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
-// 			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
-// 			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
-// 			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
-// 			// }
-// 			// correctedAddress.CityStateZipMatch = true
-// 			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
-// 			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
-// 			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
-// 			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
-// 			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
-// 			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
+			Zip := a[0].Components.Zipcode
+			if len(a[0].Components.Plus4Code) > 0 {
+				Zip += "-" + a[0].Components.Plus4Code
+			}
+			mkOutput.ZIP.Value = Zip
+			mkOutput.COUNTRY.Value = "US"                          // if libpostal can parse it, it is an US address
+			SetMkField(mkOutput, "ADPARSER", "smartystreet", "SS") // if libpostal can parse it, it is an US address
+			mkOutput.ADTYPE.Value = a[0].Metadata.Rdi
+			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
+			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
+			mkOutput.ADVALID.Value = "TRUE"
+		}
+	}
 
-// 			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
-// 			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
+	// pre-empted before StandardizeAddressSS is called...
+	//
+	// if reState.MatchString(mkOutput.STATE.Value) {
+	// 	LogDev(fmt.Sprintf("overriding country by state value: %v", mkOutput.STATE.Value))
+	// 	mkOutput.COUNTRY.Value = "US"
+	// 	mkOutput.COUNTRY.Source = "WM"
+	// }
+	// if len(mkOutput.STATE.Value) == 0 && mkOutput.COUNTRY.Value == "PR" { // handle libpostal treating PR as country
+	// 	mkOutput.STATE.Value = "PR"
+	// 	mkOutput.COUNTRY.Value = "US"
+	// 	mkOutput.COUNTRY.Source = "WM"
+	// }
+}
 
-// 			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
-// 			return smartyStreetResponse
-// 		}
-// 	}
-// 	return nil
-// }
+func CorrectAddress(in string) SmartyStreetResponse {
+	var smartyStreetResponse SmartyStreetResponse
+	smartyStreetRequestURL := fmt.Sprintf(SmartyStreetsEndpoint, url.QueryEscape(in))
+	log.Printf("invoking smartystreet request %v", smartyStreetRequestURL)
+	response, err := http.Get(smartyStreetRequestURL)
+	if err != nil {
+		log.Fatalf("smartystreet request failed: %v", err)
+	} else {
+		if response.StatusCode != 200 {
+			log.Fatalf("smartystreet request failed, status code:%v", response.StatusCode)
+		}
+		data, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			log.Fatalf("Couldn't read the smartystreet response: %v", err)
+		}
+		log.Printf("smartystreet response %v", string(data))
+		json.Unmarshal(data, &smartyStreetResponse)
+
+		if len(smartyStreetResponse) > 0 {
+			// correctedAddress.Add1 = smartyStreetResponse[0].DeliveryLine1
+			// correctedAddress.Add2 = strings.Join([]string{smartyStreetResponse[0].Components.SecondaryDesignator, " ", smartyStreetResponse[0].Components.SecondaryNumber}, "")
+			// if len(strings.TrimSpace(correctedAddress.Add2)) == 0 {
+			// 	correctedAddress.Add2 = ""
+			// }
+			// correctedAddress.City = smartyStreetResponse[0].Components.CityName
+			// correctedAddress.State = smartyStreetResponse[0].Components.StateAbbreviation
+			// correctedAddress.Postal = smartyStreetResponse[0].Components.Zipcode
+			// if len(smartyStreetResponse[0].Components.Plus4Code) > 0 {
+			// 	correctedAddress.Postal = strings.Join([]string{smartyStreetResponse[0].Components.Zipcode, "-", smartyStreetResponse[0].Components.Plus4Code}, "")
+			// }
+			// correctedAddress.CityStateZipMatch = true
+			// correctedAddress.Lat = smartyStreetResponse[0].Metadata.Latitude
+			// correctedAddress.Long = smartyStreetResponse[0].Metadata.Longitude
+			// correctedAddress.Number = smartyStreetResponse[0].Components.PrimaryNumber
+			// correctedAddress.Directional = smartyStreetResponse[0].Components.StreetPredirection
+			// correctedAddress.StreetName = smartyStreetResponse[0].Components.StreetName
+			// correctedAddress.PostType = smartyStreetResponse[0].Components.StreetSuffix
+
+			// correctedAddress.OccupancyType = smartyStreetResponse[0].Components.SecondaryDesignator
+			// correctedAddress.OccupancyIdentifier = smartyStreetResponse[0].Components.SecondaryNumber
+
+			// correctedAddress.MailRoute = smartyStreetResponse[0].Metadata.CarrierRoute
+			// correctedAddress.AddressType = smartyStreetResponse[0].Metadata.Rdi
+
+			return smartyStreetResponse
+		}
+	}
+	return nil
+}
+
+func lookupState(in string) string {
+	switch in {
+	case "Alabama":
+		return "AL"
+	case "Alaska":
+		return "AK"
+	case "Arizona":
+		return "AZ"
+	case "Arkansas":
+		return "AR"
+	case "California":
+		return "CA"
+	case "Colorado":
+		return "CO"
+	case "Connecticut":
+		return "CT"
+	case "Delaware":
+		return "DE"
+	case "District Of Columbia":
+		return "DC"
+	case "Florida":
+		return "FL"
+	case "Georgia":
+		return "GA"
+	case "Hawaii":
+		return "HI"
+	case "Idaho":
+		return "ID"
+	case "Illinois":
+		return "IL"
+	case "Indiana":
+		return "IN"
+	case "Iowa":
+		return "IA"
+	case "Kansas":
+		return "KS"
+	case "Kentucky":
+		return "KY"
+	case "Louisiana":
+		return "LA"
+	case "Maine":
+		return "ME"
+	case "Maryland":
+		return "MD"
+	case "Massachusetts":
+		return "MA"
+	case "Michigan":
+		return "MI"
+	case "Minnesota":
+		return "MN"
+	case "Mississippi":
+		return "MS"
+	case "Missouri":
+		return "MO"
+	case "Montana":
+		return "MN"
+	case "Nebraska":
+		return "NE"
+	case "Nevada":
+		return "NV"
+	case "New Hampshire":
+		return "NH"
+	case "New Jersey":
+		return "NJ"
+	case "New Mexico":
+		return "NM"
+	case "New York":
+		return "NY"
+	case "North Carolina":
+		return "NC"
+	case "North Dakota":
+		return "ND"
+	case "Ohio":
+		return "OH"
+	case "Oklahoma":
+		return "OK"
+	case "Oregon":
+		return "OR"
+	case "Pennsylvania":
+		return "PA"
+	case "Rhode Island":
+		return "RI"
+	case "South Carolina":
+		return "SC"
+	case "South Dakota":
+		return "SD"
+	case "Tennessee":
+		return "TN"
+	case "Texas":
+		return "TX"
+	case "Utah":
+		return "UT"
+	case "Vermont":
+		return "VT"
+	case "Virginia":
+		return "VA"
+	case "Washington":
+		return "WA"
+	case "West Virginia":
+		return "WV"
+	case "Wisconsin":
+		return "WI"
+	case "Wyoming":
+		return "WY"
+	}
+	return in
+}
 
 func IsInt(s string) bool {
 	for _, c := range s {
@@ -975,7 +1243,7 @@ func IndexOf(element string, data []string) int {
 	return -1 //not found.
 }
 
-func StandardizeAddress(mkOutput *PeopleOutput) {
+func StandardizeAddressLP(mkOutput *PeopleOutput) {
 	STATEValue := mkOutput.STATE.Value
 	CITYValue := mkOutput.CITY.Value
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
@@ -1185,7 +1453,7 @@ func ExtractMPRCounter(columnName string) int {
 func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
 	var output Output
 	output.Signature = input.Signature
-	output.Signature.RecordType = recordType
+	output.Signature.FiberType = recordType
 	if len(suffix) > 0 {
 		output.Signature.RecordID += suffix
 	}
@@ -1221,20 +1489,25 @@ func CalcClassYear(cy string) string {
 	log.Printf("have classyear: %v", cy)
 	if reGraduationYear.MatchString(cy) {
 		return cy
-	} else {
-		switch strings.ToLower(cy) {
-		case "freshman", "frosh", "fresh", "fr":
-			return strconv.Itoa(time.Now().Year() + 4)
-		case "sophomore", "soph", "so":
-			return strconv.Itoa(time.Now().Year() + 3)
-		case "junior", "jr":
-			return strconv.Itoa(time.Now().Year() + 2)
-		case "senior", "sr":
-			return strconv.Itoa(time.Now().Year() + 1)
-		default:
-			return strconv.Itoa(time.Now().Year() + 4)
-		}
 	}
+
+	switch strings.ToLower(cy) {
+	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident":
+		return strconv.Itoa(TitleYear + 4)
+	case "sophomore", "soph", "so", "sophomore/transfer":
+		return strconv.Itoa(TitleYear + 3)
+	case "junior", "jr", "junior/senior":
+		return strconv.Itoa(TitleYear + 2)
+	case "senior", "sr":
+		return strconv.Itoa(TitleYear + 1)
+	case "graduate", "undergraduate over 23 (archive)":
+		return strconv.Itoa(TitleYear - 1)
+	case "allfresh":
+		return strconv.Itoa(TitleYear + 4)
+	default:
+		return strconv.Itoa(TitleYear + 4)
+	}
+
 }
 
 func CalcClassDesig(cy string) string {
@@ -1314,4 +1587,54 @@ func LogDev(s string) {
 	if dev {
 		log.Printf(s)
 	}
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
+	}
+	return values
 }

@@ -212,16 +212,25 @@ func deleteDS(ns string, kind string) int {
 			e = len(keys)
 		}
 		log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
-		c := make(chan bool)
-		go func() {
+		if r%10 == 0 {
+			log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
 			err := ds.DeleteMulti(ctx, keys[s:e])
 
 			if err != nil {
 				log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
 			}
+		} else {
+			c := make(chan bool)
+			go func() {
+				err := ds.DeleteMulti(ctx, keys[s:e])
 
-			c <- true
-		}()
+				if err != nil {
+					log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+				}
+
+				c <- true
+			}()
+		}
 	}
 
 	return len(keys)

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"segment/utils/logger"
 
 	"segment/db"
 	"segment/utils"
@@ -42,7 +43,7 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errToHTTP(w, r, err)
 	}
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data, false)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -62,6 +63,13 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 	}
+
+	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
+	db.Write(projectID, csqlDSN, rec)
+	if err != nil {
+		logger.ErrFmt("[API.Upsert.MainOwnerCopy.Error]: %v", err)
+	}
+
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
 }
 
@@ -79,7 +87,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 		errToHTTP(w, r, err)
 		return
 	}
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data, false)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -112,7 +120,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errToHTTP(w, r, err)
 	}
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data)
+	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data, false)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return

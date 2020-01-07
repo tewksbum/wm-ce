@@ -7,9 +7,10 @@ steps:
     "--allow-unauthenticated", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
+    "--memory", "1024MB",
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "120",
+    "--timeout", "300",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']

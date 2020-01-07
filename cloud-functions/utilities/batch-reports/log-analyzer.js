@@ -5,7 +5,7 @@ if (process.argv.length === 2) {
 }
 let rawdata = fs.readFileSync(process.argv[2]);
 let logfile = JSON.parse(rawdata);
-let filesWithError = logfile.filter(record => record.error);
+let emtpyReports = logfile.filter(record => record.Columns === null);
 console.log(`Files processed ${logfile.length}`);
-console.log(`Files with error ${filesWithError.length}`);
-console.log(`Files submitted ${logfile.length - filesWithError.length}`);
+console.log(`Files with error ${emtpyReports.length}`);
+console.log(`Files submitted ${logfile.length - emtpyReports.length}`);

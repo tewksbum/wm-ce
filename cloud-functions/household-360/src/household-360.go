@@ -48,25 +48,33 @@ type HouseHoldFiber struct {
 }
 
 type HouseHoldFiberDS struct {
-	ID          *datastore.Key   `datastore:"__key__"`
-	CreatedAt   time.Time        `datastore:"createdAt"`
-	OwnerID     string           `datastore:"ownerid"`
-	Source      string           `datastore:"source"`
-	EventID     string           `datastore:"eventid"`
-	EventType   string           `datastore:"eventtype"`
-	RecordID    string           `datastore:"recordid"`
-	LNAME       MatchKeyField    `datastore:"lname"`
-	CITY        MatchKeyField    `datastore:"city"`
-	STATE       MatchKeyField    `datastore:"state"`
-	ZIP         MatchKeyField    `datastore:"zip"`
-	ZIP5        MatchKeyField    `datastore:"zip5"`
-	COUNTRY     MatchKeyField    `datastore:"country"`
-	AD1         MatchKeyField    `datastore:"ad1"`
-	AD1NO       MatchKeyField    `datastore:"ad1no"`
-	AD2         MatchKeyField    `datastore:"ad2"`
-	ADTYPE      MatchKeyField    `datastore:"adtype"`
-	ADBOOK      MatchKeyField    `datastore:"adbook"`
-	Passthrough []Passthrough360 `datastore:"passthrough"`
+	ID           *datastore.Key   `datastore:"__key__"`
+	CreatedAt    time.Time        `datastore:"createdAt"`
+	OwnerID      string           `datastore:"ownerid"`
+	Source       string           `datastore:"source"`
+	EventID      string           `datastore:"eventid"`
+	EventType    string           `datastore:"eventtype"`
+	RecordID     string           `datastore:"recordid"`
+	LNAME        MatchKeyField    `datastore:"lname"`
+	CITY         MatchKeyField    `datastore:"city"`
+	STATE        MatchKeyField    `datastore:"state"`
+	ZIP          MatchKeyField    `datastore:"zip"`
+	ZIP5         MatchKeyField    `datastore:"zip5"`
+	COUNTRY      MatchKeyField    `datastore:"country"`
+	AD1          MatchKeyField    `datastore:"ad1"`
+	AD1NO        MatchKeyField    `datastore:"ad1no"`
+	AD2          MatchKeyField    `datastore:"ad2"`
+	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
+	ADBOOK       MatchKeyField    `datastore:"adbook"`
+	ADPARSER     MatchKeyField    `datastore:"adparser"`
+	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
+	ZIPTYPE      MatchKeyField    `datastore:"ziptype"`
+	RECORDTYPE   MatchKeyField    `datastore:"recordtype"`
+	PermM        MatchKeyField    `datastore:"permm"`
+	ORGANIZATION MatchKeyField    `datastore:"organization"`
+	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
 type MatchKeyField struct {
@@ -76,56 +84,65 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
-	FNAME      MatchKeyField `json:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial"`
-	LNAME      MatchKeyField `json:"lname"`
-	MNAME      MatchKeyField `json:"mname"`
-
-	AD1       MatchKeyField `json:"ad1"`
-	AD1NO     MatchKeyField `json:"ad1no"`
-	AD2       MatchKeyField `json:"ad2"`
-	AD3       MatchKeyField `json:"ad3"`
-	CITY      MatchKeyField `json:"city"`
-	STATE     MatchKeyField `json:"state"`
-	ZIP       MatchKeyField `json:"zip"`
-	ZIP5      MatchKeyField `json:"zip5"`
-	COUNTRY   MatchKeyField `json:"country"`
-	MAILROUTE MatchKeyField `json:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adtype"`
-	ADBOOK    MatchKeyField `json:"adbook"`
-	ADPARSER  MatchKeyField `json:"adparser"`
-	ADCORRECT MatchKeyField `json:"adcorrect"`
-
-	EMAIL MatchKeyField `json:"email"`
-	PHONE MatchKeyField `json:"phone"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId"`
-	CLIENTID  MatchKeyField `json:"clientId"`
-
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
-
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
 	ROLE         MatchKeyField `json:"role"`
 	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type HouseHoldOutput struct {
-	LNAME   MatchKeyField `json:"lname"`
-	CITY    MatchKeyField `json:"city"`
-	STATE   MatchKeyField `json:"state"`
-	ZIP     MatchKeyField `json:"zip"`
-	ZIP5    MatchKeyField `json:"zip5"`
-	COUNTRY MatchKeyField `json:"country"`
-	AD1     MatchKeyField `json:"ad1"`
-	AD1NO   MatchKeyField `json:"ad1no"`
-	AD2     MatchKeyField `json:"ad2"`
-	ADTYPE  MatchKeyField `json:"adtype"`
-	ADBOOK  MatchKeyField `json:"adbook"`
+	LNAME        MatchKeyField `json:"lname"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	PermM        MatchKeyField `json:"permm"`
+	ORGANIZATION MatchKeyField `json:"organization"`
 }
 
 type Signature360 struct {
@@ -187,26 +204,54 @@ type HouseHoldSetDS struct {
 	AD1NONormalized    []string       `datastore:"ad1nonormalized"`
 	AD2                []string       `datastore:"ad2"`
 	AD2Normalized      []string       `datastore:"ad2normalized"`
-	ADTYPE             []string       `datastore:"adtype"`
-	ADTYPENormalized   []string       `datastore:"adtypenormalized"`
-	ADBOOK             []string       `datastore:"adbook"`
-	ADBOOKNormalized   []string       `datastore:"adbooknormalized"`
+	// AD3                    []string       `datastore:"ad3"`
+	// AD3Normalized          []string       `datastore:"ad3normalized"`
+	// AD4                    []string       `datastore:"ad4"`
+	// AD4Normalized          []string       `datastore:"ad4normalized"`
+	MAILROUTE              []string `datastore:"mailroute"`
+	MAILROUTENormalized    []string `datastore:"mailroutenormalized"`
+	ADTYPE                 []string `datastore:"adtype"`
+	ADTYPENormalized       []string `datastore:"adtypenormalized"`
+	ZIPTYPE                []string `datastore:"ziptype"`
+	ZIPTYPENormalized      []string `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string `datastore:"recordtype"`
+	RECORDTYPENormalized   []string `datastore:"recordtypenormalized"`
+	ADBOOK                 []string `datastore:"adbook"`
+	ADBOOKNormalized       []string `datastore:"adbooknormalized"`
+	ADPARSER               []string `datastore:"adparser"`
+	ADPARSERNormalized     []string `datastore:"adparsernormalized"`
+	ADCORRECT              []string `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string `datastore:"adcorrectnormalized"`
+	ADVALID                []string `datastore:"advalid"`
+	ADVALIDNormalized      []string `datastore:"advalidnormalized"`
+	PermM                  []string `datastore:"permm"`
+	PermMNormalized        []string `datastore:"permmnormalized"`
+	ORGANIZATION           []string `datastore:"organization"`
+	ORGANIZATIONNormalized []string `datastore:"organizationnormalized"`
 }
 
 type HouseHoldGoldenDS struct {
-	ID        *datastore.Key `datastore:"__key__"`
-	CreatedAt time.Time      `datastore:"createdat"`
-	LNAME     string         `datastore:"lname"`
-	CITY      string         `datastore:"city"`
-	STATE     string         `datastore:"state"`
-	ZIP       string         `datastore:"zip"`
-	ZIP5      string         `datastore:"zip5"`
-	COUNTRY   string         `datastore:"country"`
-	AD1       string         `datastore:"ad1"`
-	AD1NO     string         `datastore:"ad1no"`
-	AD2       string         `datastore:"ad2"`
-	ADTYPE    string         `datastore:"adtype"`
-	ADBOOK    string         `datastore:"adbook"`
+	ID           *datastore.Key `datastore:"__key__"`
+	CreatedAt    time.Time      `datastore:"createdat"`
+	LNAME        string         `datastore:"lname"`
+	CITY         string         `datastore:"city"`
+	STATE        string         `datastore:"state"`
+	ZIP          string         `datastore:"zip"`
+	ZIP5         string         `datastore:"zip5"`
+	COUNTRY      string         `datastore:"country"`
+	AD1          string         `datastore:"ad1"`
+	AD1NO        string         `datastore:"ad1no"`
+	AD2          string         `datastore:"ad2"`
+	MAILROUTE    string         `datastore:"mailroute"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
+	ADTYPE       string         `datastore:"adtype"`
+	ADBOOK       string         `datastore:"adbook"`
+	PermM        string         `datastore:"permm"`
+	ADVALID      string         `datastore:"advalid"`
+	ADCORRECT    string         `datastore:"adcorrect"`
+	ADPARSER     string         `datastore:"adparser"`
+	ORGANIZATION string         `datastore:"organization"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -246,7 +291,7 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	if len(input.MatchKeys.ZIP.Value) > 0 {
+	if len(input.MatchKeys.ZIP.Value) > 5 {
 		input.MatchKeys.ZIP5 = MatchKeyField{
 			Value:  input.MatchKeys.ZIP.Value[0:5],
 			Source: input.MatchKeys.ZIP.Source,
@@ -297,8 +342,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue2A := strings.Replace(input.MatchKeys.ZIP5.Value, "'", `''`, -1)
 	MatchByKey2B := "LNAME"
 	MatchByValue2B := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey2C := "AD1NO"
-	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey2C := "AD1"
+	MatchByValue2C := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey2D := "ADTYPE"
 	MatchByValue2D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
@@ -308,8 +353,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue3B := strings.Replace(HouseholdMatchKeys.STATE.Value, "'", `''`, -1)
 	MatchByKey3C := "LNAME"
 	MatchByValue3C := strings.Replace(HouseholdMatchKeys.LNAME.Value, "'", `''`, -1)
-	MatchByKey3D := "AD1NO"
-	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey3D := "AD1"
+	MatchByValue3D := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey3E := "ADTYPE"
 	MatchByValue3E := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
@@ -317,8 +362,8 @@ func HouseHold360(ctx context.Context, m PubSubMessage) error {
 	MatchByValue4A := strings.Replace(HouseholdMatchKeys.AD2.Value, "'", `''`, -1)
 	MatchByKey4B := "ZIP5"
 	MatchByValue4B := strings.Replace(HouseholdMatchKeys.ZIP5.Value, "'", `''`, -1)
-	MatchByKey4C := "AD1NO"
-	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1NO.Value, "'", `''`, -1)
+	MatchByKey4C := "AD1"
+	MatchByValue4C := strings.Replace(HouseholdMatchKeys.AD1.Value, "'", `''`, -1)
 	MatchByKey4D := "ADTYPE"
 	MatchByValue4D := strings.Replace(HouseholdMatchKeys.ADTYPE.Value, "'", `''`, -1)
 
@@ -638,8 +683,9 @@ func PopulateFiberMatchKeys(target *HouseHoldFiberDS, source *HouseHoldOutput) {
 func SetHouseHoldFiberMatchKeyField(v *HouseHoldFiberDS, field string, value MatchKeyField) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
-	f.Set(reflect.ValueOf(value))
 	LogDev(fmt.Sprintf("SetHouseHoldFiberMatchKeyField: %v %v", field, value))
+	f.Set(reflect.ValueOf(value))
+
 }
 
 func GetMatchKeyFieldFromPeopleOutput(v *PeopleOutput, field string) MatchKeyField {

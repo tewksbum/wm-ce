@@ -7,7 +7,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -50,9 +49,11 @@ type Household struct {
 	Address1    string `json:"address1,omitempty"`
 	Address2    string `json:"address2,omitempty"`
 	Address3    string `json:"address3,omitempty"`
+	Address1No  string `json:"address1no,omitempty"`
 	City        string `json:"city,omitempty"`
 	State       string `json:"state,omitempty"`
 	Zip         string `json:"zip,omitempty"`
+	Zip5        string `json:"zip5,omitempty"`
 	Country     string `json:"country,omitempty"`
 }
 
@@ -125,8 +126,10 @@ type PhoneSt struct {
 // People data
 type People struct {
 	PeopleID     string    `json:"peopleId,omitempty"`
+	Nickname     string    `json:"Nickname,omitempty"`
 	Salutation   string    `json:"salutation,omitempty"`
 	FirstName    string    `json:"firstName,omitempty"`
+	MiddleName   string    `json:"mname,omitempty"`
 	Gender       string    `json:"gender,omitempty"`
 	Age          string    `json:"age,omitempty"`
 	Organization string    `json:"organization,omitempty"`
@@ -134,38 +137,6 @@ type People struct {
 	Role         string    `json:"role,omitempty"`
 	Phones       []PhoneSt `json:"phones,omitempty"`
 	Emails       []EmailSt `json:"emails,omitempty"`
-}
-
-// OutputHeader input for the API
-type OutputHeader struct {
-	AccessKey  string `json:"accessKey"`
-	EntityType string `json:"entityType"`
-	OwnerID    int64  `json:"ownerId"`
-}
-
-// Common allows us to merge structs with similar fields, these fields
-// relate to other structs which will get merge before sending
-type Common struct {
-	OrderID       string   `json:"orderId,omitempty"`
-	SurrogateID   string   `json:"surrogateId,omitempty"`
-	ConsignmentID string   `json:"consignmentId,omitempty"`
-	Signatures    []string `json:"signatures,omitempty"`
-	LastName      string   `json:"lastName,omitempty"`
-	ProductID     string   `json:"productId,omitempty"`
-}
-
-// Output merge struct
-type Output struct {
-	OutputHeader
-	Common
-	*People
-	*OrderDetail
-	*OrderConsignment
-	*OrderHeader
-	*Product
-	*Campaign
-	*Event
-	*Household
 }
 
 // APIResponse struct to parse the output message response
@@ -248,6 +219,51 @@ type Request360 struct {
 	TimeStamp   time.Time        `json:"timestamp"`
 }
 
+// OutputHeader input for the API
+type OutputHeader struct {
+	AccessKey   string           `json:"accessKey"`
+	EntityType  string           `json:"entityType"`
+	OwnerID     int64            `json:"ownerId"`
+	Passthrough []Passthrough360 `json:"passthrough"`
+}
+
+// Common allows us to merge structs with similar fields, these fields
+// relate to other structs which will get merge before sending
+type Common struct {
+	OrderID       string   `json:"orderId,omitempty"`
+	SurrogateID   string   `json:"surrogateId,omitempty"`
+	ConsignmentID string   `json:"consignmentId,omitempty"`
+	Signatures    []string `json:"signatures,omitempty"`
+	LastName      string   `json:"lastName,omitempty"`
+	ProductID     string   `json:"productId,omitempty"`
+	PermE         string   `json:"perme,omitempty"`
+	PermM         string   `json:"permm,omitempty"`
+	PermS         string   `json:"perms,omitempty"`
+	ADTYPE        string   `json:"adtype,omitempty"`
+	ADBOOK        string   `json:"adbook,omitempty"`
+	ADPARSER      string   `json:"adparser,omitempty"`
+	ADCORRECT     string   `json:"adcorrect,omitempty"`
+	ADVALID       string   `json:"advalid,omitempty"`
+	ZIPTYPE       string   `json:"ziptype,omitempty"`
+	RECORDTYPE    string   `json:"recordtype,omitempty"`
+	DOB           string   `json:"dob,omitempty"`
+	STATUS        string   `json:"status,omitempty"`
+}
+
+// Output merge struct
+type Output struct {
+	OutputHeader
+	Common
+	*People
+	*OrderDetail
+	*OrderConsignment
+	*OrderHeader
+	*Product
+	*Campaign
+	*Event
+	*Household
+}
+
 func logDebug(message string) {
 	if Debug == "true" {
 		log.Print(message)
@@ -260,113 +276,55 @@ func Main(ctx context.Context, m PubSubMessage) error {
 
 	var request360 Request360
 	if err := json.NewDecoder(bytes.NewBuffer(m.Data)).Decode(&request360); err != nil {
-		log.Panicf("There was an issue decoding the message %v", string(m.Data))
-		return err
+		log.Printf("[ERROR]There was an issue decoding the message %v", string(m.Data))
+		return nil
 	}
 	inputType := m.Attributes["type"]
 	inputSource := m.Attributes["source"]
 	logDebug(fmt.Sprintf("Input message decoded %v from %v pubsub message %v", string(inputType), string(inputSource), string(m.Data)))
 	var rSignature = request360.Signature
 	var rSignatures = request360.Signatures
-	//Get SOR setup
-	var sskind bytes.Buffer
-	dsKindtemplate, err := template.New("abmOwnerSourcess").Parse(SORKindTemplate)
-	if err != nil {
-		log.Printf("<%v>-<%v> Unable to parse text template: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
-	if err := dsKindtemplate.Execute(&sskind, rSignature); err != nil {
-		log.Printf("<%v>-<%v> Unable execute text template: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
 
-	if err != nil {
-		log.Printf("Error accessing datastore: %v", err)
-		return err
-	}
-	var sorSetups []SORSETUP
-	var sorSetup SORSETUP
-	logDebug(fmt.Sprintf("Getting source setup %v %v", SORNamespace, sskind.String()))
-	sorSetupQuery := datastore.NewQuery(sskind.String()).Namespace(SORNamespace)
-	if _, err := dsClient.GetAll(ctx, sorSetupQuery, &sorSetups); err != nil {
-		log.Printf("<%v>-<%v> Error querying SORSETUP: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
-	if len(sorSetups) == 0 {
-		logDebug(fmt.Sprintf("<%v>-<%v> No SORSETUP, sending all fields to default endpoint <%v>", rSignature.OwnerID, rSignature.Source, inputType))
-		sorSetup.Endpoint = DefaultEndpoint
-	}
-	for i, ss := range sorSetups {
-		if strings.ToLower(ss.Type) == strings.ToLower(inputType) {
-			sorSetup = sorSetups[i]
-			break
-		} else if strings.ToLower(ss.Type) == "default" {
-			// If we don't have an event type in the sorsetup we log it and default it
-			sorSetup = sorSetups[i]
-		}
-	}
+	//Get SOR setup
+	// TODO: LP-205
+	// var sskind bytes.Buffer
+	// dsKindtemplate, err := template.New("abmOwnerSourcess").Parse(SORKindTemplate)
+	// if err != nil {
+	// 	log.Printf("[ERROR]<%v>-<%v> Unable to parse text template: %v", rSignature.OwnerID, rSignature.Source, err)
+	// 	return nil
+	// }
+	// if err := dsKindtemplate.Execute(&sskind, rSignature); err != nil {
+	// 	log.Printf("[ERROR]<%v>-<%v> Unable execute text template: %v", rSignature.OwnerID, rSignature.Source, err)
+	// 	return nil
+	// }
 
 	//Get the customer info
 	var centities []CustomerInfo
-	k := datastore.Key{
-		Kind:      "Customer",
-		Name:      rSignature.OwnerID,
-		Namespace: "wemade-dev",
-	}
-	cquery := datastore.NewQuery("Customer").Namespace(CustomerNamespace)
-
-	cquery.Filter("__key__ =", k).Limit(1)
-
+	k := datastore.NameKey("Customer", rSignature.OwnerID, nil)
+	k.Namespace = "wemade-dev"
+	cquery := datastore.NewQuery("Customer").Filter("__key__ =", k).Limit(1).Namespace("wemade-dev")
 	if _, err := dsClient.GetAll(ctx, cquery, &centities); err != nil {
-		log.Printf("<%v>-<%v> Error querying CUSTOMER data: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
+		log.Printf("[ERROR]<%v>-<%v> Error querying CUSTOMER data: %v", rSignature.OwnerID, rSignature.Source, err)
+		return nil
 	}
 	if len(centities) == 0 {
-		return fmt.Errorf("<%v>-<%v> No Customer info kind: %v namespace: %v", rSignature.OwnerID, rSignature.Source, CustomerKind, CustomerNamespace)
+		log.Printf("[ERROR]<%v>-<%v> No Customer info namespace: %v kind: %v OwnerID: %v", rSignature.OwnerID, rSignature.Source, CustomerNamespace, CustomerKind, rSignature.OwnerID)
+		return nil
 	}
 	customerInfo := centities[0]
-
-	// Get the matchkeys from mapper's datastore table
-	var mkkind bytes.Buffer
-	dsmkKindtemplate, err := template.New("abmOwnerSourcemk").Parse(MatchKindTemplate)
-	if err != nil {
-		log.Printf("<%v>-<%v> Unable to parse sor text template: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
-	if err := dsmkKindtemplate.Execute(&mkkind, rSignature); err != nil {
-		log.Printf("<%v>-<%v> Unable execute sor text template: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
-	}
-	var matchKeysMap []MatchKeyMap
-	// This may improve by just getting the required matchkeys instead of all of them with a .filter on
-	// the query
-	mkSetupQuery := datastore.NewQuery(mkkind.String()).Namespace(MatchNamespace)
-	if _, err := dsClient.GetAll(ctx, mkSetupQuery, &matchKeysMap); err != nil {
-		log.Printf("<%v>-<%v> Error querying matchkeys: %v", rSignature.OwnerID, rSignature.Source, err)
-		return err
+	if customerInfo.Owner != rSignature.OwnerID {
+		log.Printf("[ERROR]<%v>-<%v> wrong owner from customer ds, expecting %s got %s  This means theres either an error on abm or a missmatch on the database between key and owner", rSignature.OwnerID, rSignature.Source, rSignature.OwnerID, customerInfo.Owner)
+		return nil
 	}
 
-	//Here process the input based on sorSetup
-	//If we don't have a list of matchkeys on the sorsetup we don't filter it
 	var r360filteredmk []MatchKey360
 	r360filteredmk = request360.MatchKeys
 
-	// if len(sorSetup.MatchKeys) > 0 {
-	// 	log.Printf("<%v>-<%v>  Only allowing matchkey from the sorSetup %v", rSignature.OwnerID, rSignature.Source, sorSetup.MatchKeys)
-	// 	for _, mk := range request360.MatchKeys {
-	// 		if inSlice(mk.Key, sorSetup.MatchKeys) {
-	// 			r360filteredmk = append(r360filteredmk, mk)
-	// 		}
-	// 	}
-	// } else {
-	// 	log.Printf("<%v>-<%v> Passing every matchkey", rSignature.OwnerID, rSignature.Source)
-
-	// 	r360filteredmk = request360.MatchKeys
-	// }
-
 	var outputHeader OutputHeader
 	outputHeader.AccessKey = customerInfo.AccessKey // don't Change to ocm then?
+
 	outputHeader.EntityType = inputType
+	outputHeader.Passthrough = request360.Passthrough
 	var common Common
 	output := Output{
 		outputHeader,
@@ -381,7 +339,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		&Household{},
 	}
 	// var dynamicMap map[string]interface{}
-	//Prepare the ABM output and segment input
+	// Prepare the ABM output and segment input
 	//	Based on the signature event type we create and populate a struct
 	switch inputType {
 	case "event":
@@ -409,9 +367,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.Signatures = getSignaturesHash(rSignatures)
 		output.Common.OrderID = getFrom360Slice("ID", r360filteredmk).Value
 		output.Common.SurrogateID = request360.ID
-
 		output.OrderHeader = &orderHeader
-
 	case "consignment":
 		orderConsignment := OrderConsignment{
 			ShipDate: getFrom360Slice("ShipDate", r360filteredmk).Value,
@@ -420,7 +376,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.ConsignmentID = getFrom360Slice("ConsignmentID", r360filteredmk).Value //Check if valid
 		output.Common.SurrogateID = request360.ID
 		output.OrderConsignment = &orderConsignment
-
 	case "orderdetail":
 		orderDetail := OrderDetail{
 			OrderDetailID: getFrom360Slice("OrderDetailID", r360filteredmk).Value,
@@ -436,7 +391,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.ProductID = getFrom360Slice("ProductID", r360filteredmk).Value
 		output.Common.SurrogateID = request360.ID
 		output.Common.Signatures = getSignaturesHash(rSignatures)
-
 	case "household":
 		household := Household{
 			HouseholdID: getFrom360Slice("TrustedId", r360filteredmk).Value,
@@ -452,7 +406,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.Signatures = getSignaturesHash(rSignatures)
 		output.Common.LastName = getFrom360Slice("LNAME", r360filteredmk).Value
 		output.Common.SurrogateID = request360.ID
-
 	case "product":
 		product := Product{
 			Category: getFrom360Slice("CATEGORY", r360filteredmk).Value,
@@ -463,17 +416,14 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Product = &product
 		output.Common.SurrogateID = request360.ID
 		output.Common.ProductID = getFrom360Slice("ProductID", r360filteredmk).Value
-
 	case "campaign":
 		campaign := Campaign{
 			CampaignID: getFrom360Slice("CAMPAIGNID", r360filteredmk).Value,
 			Name:       getFrom360Slice("NAME", r360filteredmk).Value,
 			StartDate:  getFrom360Slice("STARTDATE", r360filteredmk).Value,
 		}
-
 		output.Campaign = &campaign
 		output.Common.SurrogateID = request360.ID
-
 	case "people":
 		people := People{
 			PeopleID:     request360.ID,
@@ -492,7 +442,6 @@ func Main(ctx context.Context, m PubSubMessage) error {
 				Type:  getFrom360Slice("PHONE", r360filteredmk).Type,
 			},
 		}
-
 		output.People.Emails = []EmailSt{
 			EmailSt{
 				Email: getFrom360Slice("EMAIL", r360filteredmk).Value,
@@ -501,50 +450,61 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		}
 		output.Common.Signatures = getSignaturesHash(rSignatures)
 		output.Common.LastName = getFrom360Slice("LNAME", r360filteredmk).Value
-
+		household := Household{
+			Address1: getFrom360Slice("AD1", r360filteredmk).Value,
+			Address2: getFrom360Slice("AD2", r360filteredmk).Value,
+			Address3: getFrom360Slice("AD3", r360filteredmk).Value,
+			City:     getFrom360Slice("CITY", r360filteredmk).Value,
+			State:    getFrom360Slice("STATE", r360filteredmk).Value,
+			Zip:      getFrom360Slice("ZIP", r360filteredmk).Value,
+			Country:  getFrom360Slice("COUNTRY", r360filteredmk).Value,
+		}
+		output.Household = &household
+		output.Common.PermE = getFrom360Slice("PermE", r360filteredmk).Value
+		output.Common.PermM = getFrom360Slice("PermM", r360filteredmk).Value
+		output.Common.PermS = getFrom360Slice("PermS", r360filteredmk).Value
+		output.Common.ADTYPE = getFrom360Slice("ADTYPE", r360filteredmk).Value
+		output.Common.ADBOOK = getFrom360Slice("ADBOOK", r360filteredmk).Value
+		output.Common.ADPARSER = getFrom360Slice("ADPARSER", r360filteredmk).Value
+		output.Common.ADCORRECT = getFrom360Slice("ADCORRECT", r360filteredmk).Value
+		output.Common.ADVALID = getFrom360Slice("ADVALID", r360filteredmk).Value
+		output.Common.ZIPTYPE = getFrom360Slice("ZIPTYPE", r360filteredmk).Value
+		output.Common.RECORDTYPE = getFrom360Slice("RECORDTYPE", r360filteredmk).Value
+		output.Common.DOB = getFrom360Slice("DOB", r360filteredmk).Value
+		output.Common.STATUS = getFrom360Slice("STATUS", r360filteredmk).Value
 	}
-	// If/when we go back to mapper we can re-enable this
-	// dynamicMap = fillMap(r360filteredmk, matchKeysMap)
 
-	// var completeOutput map[string]interface{}
 	jsonStrOutput, err := json.Marshal(output)
 	if err != nil {
-		log.Printf("<%v>-<%v> There was a problem preparing the output object %v ", rSignature.OwnerID, rSignature.Source, err)
-		return err
+		log.Printf("[ERROR] <%v>-<%v> There was a problem preparing the output object %v ", rSignature.OwnerID, rSignature.Source, err)
+		return nil
 	}
-	// json.Unmarshal(jsonStrOutput, &completeOutput)
-	// jsonStrDynamicMap, err := json.Marshal(dynamicMap)
-	// if err != nil {
-	// 	log.Printf("<%v>-<%v> There was a problem preparing the dynamic map %v ", rSignature.OwnerID, rSignature.Source, err)
-	// 	return err
-	// }
-	// json.Unmarshal(jsonStrDynamicMap, &completeOutput)
-	// jsonStr, err := json.Marshal(completeOutput)
-	// if err != nil {
-	// 	log.Printf("<%v>-<%v> There was a problem preparing the complete output %v ", rSignature.OwnerID, rSignature.Source, err)
-	// 	return err
-	// }
-	logDebug(fmt.Sprintf("<%v>-<%v> ABM pushing to Endpoint: %v", rSignature.OwnerID, rSignature.Source, sorSetup.Endpoint))
+
+	logDebug(fmt.Sprintf("<%v>-<%v> ABM pushing to Endpoint: %v", rSignature.OwnerID, rSignature.Source, DefaultEndpoint))
 	logDebug(fmt.Sprintf("<%v>-<%v> Outbound message: %v", rSignature.OwnerID, rSignature.Source, string(jsonStrOutput)))
-	req, err := http.NewRequest("POST", sorSetup.Endpoint,
+
+	//TODO.... this will pull from owner_sor table
+	req, err := http.NewRequest("POST", DefaultEndpoint,
 		bytes.NewBuffer(jsonStrOutput))
 	req.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("<%v>-<%v> [ABM OUTPUT]: %v ", rSignature.OwnerID, rSignature.Source, err)
-		return err
+		log.Printf("[ERROR]<%v>-<%v> [ABM OUTPUT]: %v ", rSignature.OwnerID, rSignature.Source, err)
+		return nil
 	}
 	defer resp.Body.Close()
+
 	decoder := json.NewDecoder(resp.Body)
 	var sr APIResponse
 	err = decoder.Decode(&sr)
 	if err != nil {
-		log.Printf("<%v>-<%v> There was a problem decoding the response %v", rSignature.OwnerID, rSignature.Source, sr.Message)
-		return err
+		log.Printf("[ERROR]<%v>-<%v> There was a problem decoding the output response %v", rSignature.OwnerID, rSignature.Source, sr.Message)
+		return nil
 	}
 	if sr.Success != true {
-		return fmt.Errorf("<%v>-<%v> response not succesfull %v", rSignature.OwnerID, rSignature.Source, sr.Message)
+		log.Printf("[ERROR]<%v>-<%v> response not succesfull %v", rSignature.OwnerID, rSignature.Source, sr.Message)
+		return nil
 	}
 	logDebug(fmt.Sprintf("<%v>-<%v> Succesfull response: Status <%v> Message <%v>", rSignature.OwnerID, rSignature.Source, sr.Success, sr.Message))
 	log.Printf("<%v>-<%v> Succesfull response: Status <%v>, 360id %v", rSignature.OwnerID, rSignature.Source, sr.Success, request360.ID)

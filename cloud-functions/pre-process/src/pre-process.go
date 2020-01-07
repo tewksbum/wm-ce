@@ -38,6 +38,7 @@ type Signature struct {
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
 	RecordID  string `json:"recordId"`
+	RowNumber int    `json:"rowNum"`
 }
 
 type Input struct {
@@ -59,6 +60,7 @@ type RecordDS struct {
 	EventType     string    `datastore:"Type"`
 	EventID       string    `datastore:"EventID"`
 	RecordID      string    `datastore:"RecordID"`
+	RowNumber     int       `datastore:"RowNo"`
 	Fields        []KVP     `datastore:"Fields,noindex"`
 	TimeStamp     time.Time `datastore:"Created"`
 	IsPeople      bool      `datastore:"IsPeople"`
@@ -68,6 +70,7 @@ type RecordDS struct {
 	IsConsignment bool      `datastore:"IsConsignment"`
 	IsOrderDetail bool      `datastore:"IsOrderDetail"`
 	IsEvent       bool      `datastore:"IsEvent"`
+	MLError       bool      `datastore:"MLError"`
 }
 
 type KVP struct {
@@ -133,6 +136,7 @@ type PeopleERR struct {
 	Address1             int `json:"Address1"`
 	Address2             int `json:"Address2"`
 	Address3             int `json:"Address3"`
+	Address4             int `json:"Address4"`
 	FullAddress          int `json:"FullAddress"`
 	Age                  int `json:"Age"`
 	Birthday             int `json:"Birthday"`
@@ -178,6 +182,9 @@ type PeopleERR struct {
 	ContainsRole         int `json:"ContainsRole"`
 	ContainsStudentRole  int `json:"ContainsStudentRole"`
 	Junk                 int `json:"Junk"`
+	PermE                int `json:"PermE"`
+	PermM                int `json:"PermM"`
+	PermS                int `json:"PermS"`
 }
 
 type ProductERR struct {
@@ -324,13 +331,14 @@ var PSOrder = os.Getenv("PSOUTPUTORDER")
 var PSConsignment = os.Getenv("PSOUTPUTCONSIGNMENT")
 var PSOrderDetail = os.Getenv("PSOUTPUTORDERDETAIL")
 var Env = os.Getenv("ENVIRONMENT")
-var dev = os.Getenv("ENVIRONMENT") == "dev"
+var dev = Env == "dev"
 var DSKind = os.Getenv("DSKIND")
 
 var MLUrl = os.Getenv("PREDICTION")
 
 var AIDataBucket = os.Getenv("AIBUCKET")
-var RedisAddress = os.Getenv("MEMSTORE")
+
+var redisTransientExpiration = 3600 * 24
 
 // global vars
 var ctx context.Context
@@ -344,7 +352,7 @@ var topicConsignment *pubsub.Topic
 var topicOrderDetail *pubsub.Topic
 var ai *ml.Service
 var cs *storage.Client
-var msPool *redis.Pool
+var msp *redis.Pool
 var ds *datastore.Client
 
 var listCities map[string]bool
@@ -384,7 +392,11 @@ func init() {
 	cs, _ = storage.NewClient(ctx)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 
-	msPool = NewPool(RedisAddress)
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 
 	// preload the lists
 	var err error
@@ -392,42 +404,42 @@ func init() {
 	listChannels = map[string]bool{"tablet": true, "mobile": true, "desktop": true}
 	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCities), "data/cities.json")
 	}
 
 	listStates, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/states.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/states.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/states.json")
 	} else {
 		log.Printf("read %v values from %v", len(listStates), "data/states.json")
 	}
 
 	listCountries, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/countries.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCountries), "data/countries.json")
 	}
 
 	listFirstNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/first_names.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listFirstNames), "data/first_names.json")
 	}
 
 	listLastNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/last_names.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listLastNames), "data/last_names.json")
 	}
 
 	listCityStateZip, err = ReadCityStateZip(ctx, cs, AIDataBucket, "data/zip_city_state.json")
 	if err != nil {
-		log.Fatalf("Failed to read json %v from bucket", "data/zip_city_state.json")
+		// log.Fatalf("Failed to read json %v from bucket", "data/zip_city_state.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCityStateZip), "data/zip_city_state.json")
 	}
@@ -438,7 +450,21 @@ func init() {
 func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
+	}
+
+	dsNamespace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+
+	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
+
+	// see if the record already exists, discard if it is
+	var existing []datastore.Key
+	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+		log.Printf("Error querying existing records: %v", err)
+	}
+	if len(existing) > 0 {
+		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+		return nil
 	}
 
 	if len(input.Fields) > 0 {
@@ -450,6 +476,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		}
 	} else {
 		// empty field list
+		IncrRedisValue([]string{input.Signature.EventID, "records-deleted"})
 		return nil
 	}
 
@@ -522,10 +549,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 		// log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
 		// this is going to be tight around name address... for entity detection could relax this...
-		if column.PeopleERR.FirstName == 1 {
+		if column.PeopleERR.FirstName == 1 || column.PeopleERR.ContainsFirstName == 1 {
 			columnFlags.PeopleFirstName = true
 		}
-		if column.PeopleERR.LastName == 1 {
+		if column.PeopleERR.LastName == 1 || column.PeopleERR.ContainsLastName == 1 {
 			columnFlags.PeopleLastName = true
 		}
 		if column.PeopleERR.Address1 == 1 {
@@ -534,10 +561,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.ContainsAddress == 1 {
 			columnFlags.PeopleAddress = true
 		}
-		if column.PeopleERR.ZipCode == 1 {
+		if column.PeopleERR.ZipCode == 1 || column.PeopleERR.ContainsZipCode == 1 {
 			columnFlags.PeopleZip = true
 		}
-		if column.PeopleERR.City == 1 {
+		if column.PeopleERR.City == 1 || column.PeopleERR.ContainsCity == 1 {
 			columnFlags.PeopleCity = true
 		}
 		if column.PeopleERR.ContainsEmail == 1 {
@@ -666,114 +693,133 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		columns[i] = column
 	}
 
-	// look up NER and call ML if People
-	var prediction Prediction
+	// // look up NER and call ML if People
+	// var prediction Prediction
 
-	if flags.People {
-		log.Printf("Have people flag %v", input.Signature.EventID)
-		PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
-		PeopleNER := FindNER(PeopleNERKey)
+	// PeopleError := false
+	// if flags.People {
+	// 	log.Printf("Have people flag %v", input.Signature.EventID)
+	// 	PeopleNERKey := GetNERKey(input.Signature, GetMapKeys(input.Fields))
+	// 	PeopleNER := FindNER(PeopleNERKey)
 
-		if len(PeopleNER.Columns) > 0 {
-			// copy NER into the columns
-			for i, column := range columns {
-				for _, ner := range PeopleNER.Columns {
-					if strings.EqualFold(column.Name, ner.ColumnName) {
-						MapNER(column, ner.NEREntities)
-					}
-				}
-				columns[i] = column
-			}
-			if dev {
-				log.Printf("columns %v", columns)
-			}
-		}
+	// 	if len(PeopleNER.Columns) > 0 {
+	// 		// copy NER into the columns
+	// 		for i, column := range columns {
+	// 			for _, ner := range PeopleNER.Columns {
+	// 				if strings.EqualFold(column.Name, ner.ColumnName) {
+	// 					MapNER(column, ner.NEREntities)
+	// 				}
+	// 			}
+	// 			columns[i] = column
+	// 		}
+	// 		if dev {
+	// 			log.Printf("columns %v", columns)
+	// 		}
+	// 	}
 
-		mlInput := BuildMLData(columns)
-		if dev {
-			log.Printf("mlinput: %v", mlInput)
-		}
-		if dev {
-			log.Printf("columns: %v", columns)
-		}
-		mlJSON, _ := json.Marshal(mlInput)
-		log.Printf("ML request %v", string(mlJSON))
-		reqBody := &ml.GoogleApi__HttpBody{
-			Data: string(mlJSON),
-		}
-		req := ml.GoogleCloudMlV1__PredictRequest{
-			HttpBody: reqBody,
-		}
-		req.HttpBody.ContentType = "application/json"
-		ai, _ = ml.NewService(ctx)
-		mlPredict := ai.Projects.Predict(MLUrl, &req)
-		r, err := mlPredict.Context(ctx).Do()
-		if err != nil {
-			log.Fatalf("error calling mlService, %v", err)
-			return nil
-		}
+	// 	mlInput := BuildMLData(columns)
+	// 	if dev {
+	// 		log.Printf("mlinput: %v", mlInput)
+	// 	}
+	// 	if dev {
+	// 		log.Printf("columns: %v", columns)
+	// 	}
+	// 	mlJSON, _ := json.Marshal(mlInput)
+	// 	log.Printf("ML request %v", string(mlJSON))
+	// 	reqBody := &ml.GoogleApi__HttpBody{
+	// 		Data: string(mlJSON),
+	// 	}
+	// 	req := ml.GoogleCloudMlV1__PredictRequest{
+	// 		HttpBody: reqBody,
+	// 	}
+	// 	req.HttpBody.ContentType = "application/json"
+	// 	ai, _ = ml.NewService(ctx)
+	// 	mlPredict := ai.Projects.Predict(MLUrl, &req)
+	// 	r, err := mlPredict.Context(ctx).Do()
+	// 	if err != nil {
+	// 		log.Fatalf("error calling mlService, %v", err)
+	// 		PeopleError = true
+	// 	} else {
+	// 		if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
+	// 			if _, ok := err.(*json.SyntaxError); ok {
+	// 				log.Fatalf("error decoding json, %v", string(r.Data))
+	// 			}
+	// 		}
+	// 		if len(prediction.Predictions) == 0 {
+	// 			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
+	// 		}
+	// 		log.Printf("ML result is %v", string(r.Data))
+	// 	}
+	// }
 
-		if err := json.NewDecoder(strings.NewReader(r.Data)).Decode(&prediction); err != nil {
-			if _, ok := err.(*json.SyntaxError); ok {
-				log.Fatalf("error decoding json, %v", string(r.Data))
-			}
-		}
-		if len(prediction.Predictions) == 0 {
-			log.Fatalf("unexpected prediction returned, %v", string(r.Data))
-		}
-		log.Printf("ML result is %v", string(r.Data))
+	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+		log.Printf("Error querying existing records: %v", err)
 	}
-
-	// store RECORD in DS
-	immutableDS := RecordDS{
-		EventID:       input.Signature.EventID,
-		EventType:     input.Signature.EventType,
-		RecordID:      input.Signature.RecordID,
-		Fields:        ToKVPSlice(&input.Fields),
-		TimeStamp:     time.Now(),
-		IsPeople:      flags.People,
-		IsProduct:     flags.Product,
-		IsCampaign:    flags.Campaign,
-		IsOrder:       flags.Order,
-		IsConsignment: flags.Consignment,
-		IsOrderDetail: flags.OrderDetail,
-		IsEvent:       flags.Event,
+	if len(existing) > 0 {
+		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+		return nil
 	}
 
-	dsKey := datastore.IncompleteKey(DSKind, nil)
-	dsKey.Namespace = strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
-	if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
-		log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
-	}
+	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	if existingCheck == 0 {
+		// store RECORD in DS
+		immutableDS := RecordDS{
+			EventID:       input.Signature.EventID,
+			EventType:     input.Signature.EventType,
+			RecordID:      input.Signature.RecordID,
+			RowNumber:     input.Signature.RowNumber,
+			Fields:        ToKVPSlice(&input.Fields),
+			TimeStamp:     time.Now(),
+			IsPeople:      flags.People,
+			IsProduct:     flags.Product,
+			IsCampaign:    flags.Campaign,
+			IsOrder:       flags.Order,
+			IsConsignment: flags.Consignment,
+			IsOrderDetail: flags.OrderDetail,
+			IsEvent:       flags.Event,
+			MLError:       false,
+		}
 
-	// pub
-	var output Output
-	output.Signature = input.Signature
-	output.Passthrough = input.Passthrough
-	output.Columns = columns
-	output.Prediction = prediction
+		dsKey := datastore.IncompleteKey(DSKind, nil)
+		dsKey.Namespace = dsNamespace
+		if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
+			log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
+		}
 
-	outputJSON, _ := json.Marshal(output)
-	if flags.People {
-		PubMessage(topicPeople, outputJSON)
-	}
-	if flags.Product {
-		PubMessage(topicProduct, outputJSON)
-	}
-	if flags.Event {
-		PubMessage(topicEvent, outputJSON)
-	}
-	if flags.Campaign {
-		PubMessage(topicCampaign, outputJSON)
-	}
-	if flags.Order {
-		PubMessage(topicOrder, outputJSON)
-	}
-	if flags.Consignment {
-		PubMessage(topicConsignment, outputJSON)
-	}
-	if flags.OrderDetail {
-		PubMessage(topicOrderDetail, outputJSON)
+		// pub
+		var output Output
+		output.Signature = input.Signature
+		output.Passthrough = input.Passthrough
+		output.Columns = columns
+		// output.Prediction = prediction
+
+		outputJSON, _ := json.Marshal(output)
+		if flags.People {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+			IncrRedisValue([]string{input.Signature.EventID, "records-completed"})
+			PubMessage(topicPeople, outputJSON)
+		} else {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+			IncrRedisValue([]string{input.Signature.EventID, "records-deleted"})
+		}
+		if flags.Product {
+			PubMessage(topicProduct, outputJSON)
+		}
+		if flags.Event {
+			PubMessage(topicEvent, outputJSON)
+		}
+		if flags.Campaign {
+			PubMessage(topicCampaign, outputJSON)
+		}
+		if flags.Order {
+			PubMessage(topicOrder, outputJSON)
+		}
+		if flags.Consignment {
+			PubMessage(topicConsignment, outputJSON)
+		}
+		if flags.OrderDetail {
+			PubMessage(topicOrderDetail, outputJSON)
+		}
 	}
 
 	return nil
@@ -848,25 +894,29 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.ToLower(column)
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "chosen name", "patron.first name":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "name preferred", "chosen name", "patron.first name":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
 		err.Address3 = 1
-	case "city", "city ", "street city":
+	case "ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4":
+		err.Address4 = 1
+	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
+		err.Address1 = 1
+	case "city", "city ", "street city", "home city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province":
 		err.State = 1
-	case "zip", "zip code", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip":
+	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip":
 		err.ZipCode = 1
 	case "citystzip", "city/st/zip ":
 		err.City = 1
@@ -874,7 +924,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -883,13 +933,13 @@ func GetPeopleERR(column string) PeopleERR {
 	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email":
 		// err.Email = 1
 		err.ParentEmail = 1
-	case "gender", "m/f", "sex", "student sex", "student gender":
+	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
 		err.Gender = 1
 	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first":
 		err.ParentFirstName = 1
 	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last":
 		err.ParentLastName = 1
-	case "phone", "phone1", "hphone", "cphone", "mphone":
+	case "phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile":
 		err.Phone = 1
 	case "bday", "birthday":
 		err.Birthday = 1
@@ -899,25 +949,31 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name":
+	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first", "addressee":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
-	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence":
+	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence", "hall assignment":
 		err.Dorm = 1
 	case "room", "room number", "room #":
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "grade", "admit status", "student type", "studenttype", "yr_cde":
+	case "title", "course year", "grad date", "class", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber":
+	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code":
 		err.Junk = 1
+	case "perme", "permission email":
+		err.PermE = 1
+	case "permm", "permission mail":
+		err.PermM = 1
+	case "perms", "permission share":
+		err.PermS = 1
 	}
 
 	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
@@ -932,10 +988,11 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if strings.Contains(key, "address") || strings.Contains(key, "addr") {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
 	if strings.Contains(key, "city") {
@@ -954,12 +1011,13 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
 		err.ContainsPhone = 1
 	}
-	if strings.Contains(key, "description") || strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") {
+	if strings.Contains(key, "email status") || strings.Contains(key, "parent(s) of") || strings.HasPrefix(key, "to the ") || strings.HasPrefix(key, "v-lookup") || strings.HasPrefix(key, "campus") {
+		// strings.Contains(key, "description") ||
 		err.Junk = 1
 	}
 
 	// these should be looked up on a per owner basis
-	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") {
+	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") || strings.Contains(key, "classification description") {
 		err.ContainsTitle = 1
 	}
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") {
@@ -1267,7 +1325,7 @@ func GetNERKey(sig Signature, columns []string) string {
 
 func FindNER(key string) NERCache {
 	var ner NERCache
-	ms := msPool.Get()
+	ms := msp.Get()
 	s, err := redis.String(ms.Do("GET", key))
 	if err == nil {
 		json.Unmarshal([]byte(s), &ner)
@@ -1486,4 +1544,60 @@ func ToKVPSlice(v *map[string]string) []KVP {
 		})
 	}
 	return result
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	if err != nil {
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
+	}
+	return values
 }

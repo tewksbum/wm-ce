@@ -35,11 +35,19 @@ type Event struct {
 	EventType   string
 	Source      string
 	Status      string
+	Message     string
 	Created     time.Time
 	Endpoint    string
 	Passthrough []KVP
 	Attributes  []KVP
 	Detail      string
+	RowLimit    int
+	Counters    []KIP
+}
+
+type KIP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value int    `json:"v" datastore:"v"`
 }
 
 type Signature struct {
@@ -91,6 +99,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Passthrough map[string]string `json:"passthrough"`
 		Attributes  map[string]string `json:"attributes"`
 		FileURL     string            `json:"fileUrl"`
+		MaxRows     int               `json:"maxRows"`
 	}
 
 	if r.Method == http.MethodOptions {
@@ -133,9 +142,9 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "{success: false, message: \"Invalid access key, -10\"}")
 		return
-	} else {
-		log.Printf("found %v matches: %v", len(entities), entities)
 	}
+
+	log.Printf("found %v matches: %v", len(entities), entities)
 
 	customer := entities[0]
 	if customer.Enabled == false {
@@ -168,9 +177,11 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Passthrough: ToKVPSlice(&input.Passthrough),
 		Attributes:  ToKVPSlice(&input.Attributes),
 		EventID:     uuid.New().String(),
+		Status:      "Pending",
 		EventType:   "UPLOAD",
 		Endpoint:    "FILE",
 		Detail:      input.FileURL,
+		RowLimit:    input.MaxRows,
 	}
 
 	eventKey := datastore.IncompleteKey("Event", nil)
@@ -188,6 +199,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	output.Attributes = input.Attributes
 	output.EventData = make(map[string]interface{})
 	output.EventData["fileUrl"] = input.FileURL
+	output.EventData["maxRows"] = input.MaxRows
 	output.Signature = Signature{
 		OwnerID:   OwnerKey,
 		Source:    input.Source,

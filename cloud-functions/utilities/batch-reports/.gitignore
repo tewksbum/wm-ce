@@ -23,13 +23,14 @@ typings/
 
 # Output of 'npm pack'
 *.tgz
-
 # Yarn Integrity file
 .yarn-integrity
 
 npm-debug.log
 wm-file-submitter-log.json
-input/*
 oncampusmarketing/*
 input2/*
 *log*
+*.xlsx
+*.zip
+.DS_Store

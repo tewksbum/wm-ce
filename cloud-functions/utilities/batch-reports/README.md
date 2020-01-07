@@ -46,3 +46,14 @@ Run it with `node wm-xlsx-report-creator.js`
 
 - Install Nodejs
 - run `$npm install` on the root of the folder
+
+## wm-xlsx-detail-report-creator.js
+
+Run it with `node wm-xlsx-detail-report-creator.js`
+
+- Creates an detail report from the `input.xlsx` which is the output of the wm-xls-file-submitter, logs the reports to a `xdetailreport-log*.json` file
+
+### Pre-requisistes
+
+- Install Nodejs
+- run `$npm install` on the root of the folder

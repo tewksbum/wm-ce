@@ -20,29 +20,40 @@ var (
 	tempfixFixedAccesskey = os.Getenv("TEMP_FIXED_ACCESS_KEY")
 )
 
-// BuildRecordFromInput serialize a json into a Request struct, checks the API key and
-func BuildRecordFromInput(projectID string, namespace string, data []byte) (models.Record, error) {
+// BuildInputFromData serializes the json into the APIInput struct and returns
+func BuildInputFromData(data []byte) (APIInput, error) {
 	var input APIInput
-	ctx := context.Background()
-	surrogateID := uuid.New().String()
 
 	err := json.Unmarshal(data, &input)
 	if err != nil {
-		return nil, logger.ErrFmt(ErrDecodingRequest, err)
+		return input, logger.ErrFmt(ErrDecodingRequest, err)
 	}
+	return input, nil
+}
 
+// BuildRecordFromInput serialize a json into a Request struct, checks the API key and
+func BuildRecordFromInput(projectID string, namespace string, data []byte, useFixedAccessKey bool) (models.Record, error) {
+	ctx := context.Background()
+	surrogateID := uuid.New().String()
+	input, err := BuildInputFromData(data)
+	if err != nil {
+		return nil, err
+	}
+	ignoreUniqueFields := false
 	accessKey := input.AccessKey
+	logger.InfoFmt("RawInputJSON: %s", string(data))
 
-	//TODO: Remove this dirty patch
-	if tempfixFixedAccesskey != "" {
+	if tempfixFixedAccesskey != "" && useFixedAccessKey {
+		// When using fixed access key also will ignore unique index
+		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
 		accessKey = tempfixFixedAccesskey
+		ignoreUniqueFields = true
 	}
 
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err
 	}
-
 	owner := cust.Owner
 	if owner == "" {
 		owner = input.Owner
@@ -54,20 +65,26 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	if organization == "" {
 		organization = input.Attributes["organization"]
 	}
-
+	columns := models.DefaultColumnList
+	selectColumns := input.Columns
+	if len(selectColumns) < 1 {
+		selectColumns = models.DefaultSelectColumnList
+	}
 	br := models.BaseRecord{
-		EntityType:  input.EntityType,
-		OwnerID:     cust.Key.ID,
-		Owner:       owner,
-		Source:      input.Source,
-		Passthrough: utils.FlattenMap(input.Passthrough),
-		Attributes:  utils.FlattenMap(input.Attributes),
-		Timestamp:   time.Now(),
+		IDField:          models.IDField,
+		ColumnList:       columns,
+		SelectColumnList: selectColumns,
+		EntityType:       input.EntityType,
+		OwnerID:          cust.Key.ID,
+		Owner:            owner,
+		Source:           input.Source,
+		Passthrough:      input.Passthrough,
+		Attributes:       utils.FlattenMap(input.Attributes),
+		Timestamp:        time.Now(),
 	}
 
 	// idata, _ := json.Marshal(input)
 	// brdata, _ := json.Marshal(br)
-	logger.InfoFmt("RawInputJSON: %s", string(data))
 	// logger.InfoFmt("APIInput: %s", string(idata))
 	// logger.InfoFmt("BaseRecord: %s", string(brdata))
 
@@ -76,8 +93,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 	switch entityType {
 	case models.TypeHousehold:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblHousehold,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -87,13 +107,17 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		json.Unmarshal(data, &record)
 		return &models.HouseholdRecord{
 			SurrogateID: surrogateID,
+			Signatures:  input.Signatures,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
 	case models.TypeEvent:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblEvent,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -107,8 +131,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeProduct:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblProduct,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -123,8 +150,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypePeople:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblPeople,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -140,8 +170,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderHeader,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -157,8 +190,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderConsignment:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderConsignment,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -174,8 +210,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeOrderDetail:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblOrderDetail,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -191,8 +230,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		}, nil
 	case models.TypeCampaign:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Tablename:          models.TblCampaign,
+			HasTablenameSuffix: true,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
 			Filters:            input.Filters,
@@ -214,22 +256,26 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte) (mode
 		record.ColumnBlackList = models.DecodeBlackList
 		record.DBopts = models.Options{
 			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Filters:            input.Filters,
 			IsPartitioned:      false,
 			HasTablenameSuffix: true,
 			HasTablenamePrefix: true,
-			Tablename:          record.GetStrOwnerID(),
 			TablenamePrefix:    models.TblnamePrefix,
-			TablenameSuffix:    models.TblDecode,
+			Tablename:          models.TblDecode,
+			TablenameSuffix:    record.GetStrOwnerID(),
 		}
 		return record, nil
 	default:
 		br.DBopts = models.Options{
-			Type:               models.BQ,
-			Tablename:          models.TblShed,
+			Type:               models.CSQL,
+			IgnoreUniqueFields: ignoreUniqueFields,
 			Filters:            input.Filters,
+			HasTablenameSuffix: true,
 			HasTablenamePrefix: true,
 			TablenamePrefix:    models.TblnamePrefix,
+			Tablename:          models.TblShed,
+			TablenameSuffix:    br.GetStrOwnerID(),
 			// IsPartitioned:      true, PartitionField: models.DefPartitionField,
 		}
 		// the Shed - shabby werehouse where any dummy requests die in.

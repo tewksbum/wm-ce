@@ -1,4 +1,4 @@
-timeout: 10m
+timeout: 15m
 steps:
   - id: segment_upsert_deploy
     name: 'gcr.io/cloud-builders/gcloud'
@@ -8,8 +8,9 @@ steps:
     "--runtime","go111",
     "--trigger-http",
     "--project", "${PROJECT_ID}",
-    "--timeout", "30",
-    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    "--timeout", "120",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--max-instances", "100"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
@@ -21,7 +22,7 @@ steps:
     "--runtime","go111",
     "--trigger-http",
     "--project", "${PROJECT_ID}",
-    "--timeout", "30",
+    "--timeout", "300",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']

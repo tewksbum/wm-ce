@@ -33,13 +33,25 @@ type Customer struct {
 }
 
 type Event struct {
-	CustomerID string
-	Owner      string
-	EventID    string
-	EventType  string
-	Status     string
-	Created    time.Time
-	Endpoint   string
+	CustomerID  string
+	Owner       string
+	EventID     string
+	EventType   string
+	Source      string
+	Status      string
+	Message     string
+	Created     time.Time
+	Endpoint    string
+	Passthrough []KVP
+	Attributes  []KVP
+	Detail      string
+	RowLimit    int
+	Counters    []KIP
+}
+
+type KIP struct {
+	Key   string `json:"k" datastore:"k"`
+	Value int    `json:"v" datastore:"v"`
 }
 
 type FileReport struct {
@@ -50,6 +62,32 @@ type FileReport struct {
 	ProcessedOn time.Time
 	PcocessTime string
 	Fibers      FiberCount
+}
+
+type DetailReport struct {
+	Summary     DetailSummary
+	GridRecords [][]interface{}
+	GridFibers  [][]interface{}
+}
+
+type DetailSummary struct {
+	EventType   string
+	EventID     string
+	Owner       string
+	Source      string
+	Attributes  map[string]string
+	FileURL     string
+	RowCount    int
+	ColumnCount int
+}
+
+type DetailRecord struct {
+	RecordID  string
+	RowNumber int
+	TimeStamp time.Time
+	IsPeople  bool
+	Record    []interface{}
+	Fibers    [][]interface{}
 }
 
 type OwnerReport struct {
@@ -70,6 +108,7 @@ type ColumnStat struct {
 type FiberCount struct {
 	Person    int
 	Dupe      int
+	Invalid   int
 	Throwaway int
 	PurgePre  int
 	Purge360  int
@@ -101,6 +140,7 @@ type Record struct {
 	EventType     string    `datastore:"Type"`
 	EventID       string    `datastore:"EventID"`
 	RecordID      string    `datastore:"RecordID"`
+	RowNumber     int       `datastore:"RowNo"`
 	Fields        []KVP     `datastore:"Fields,noindex"`
 	TimeStamp     time.Time `datastore:"Created"`
 	IsPeople      bool      `datastore:"IsPeople"`
@@ -110,6 +150,7 @@ type Record struct {
 	IsConsignment bool      `datastore:"IsConsignment"`
 	IsOrderDetail bool      `datastore:"IsOrderDetail"`
 	IsEvent       bool      `datastore:"IsEvent"`
+	MLError       bool      `datastore:"MLError"`
 }
 
 type Fiber struct {
@@ -120,7 +161,7 @@ type Fiber struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
-	RecordType   string           `datastore:"recordtype"`
+	FiberType    string           `datastore:"fibertype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -139,9 +180,12 @@ type Fiber struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ZIPTYPE      MatchKeyField    `datastore:"ziptype"`
+	RECORDTYPE   MatchKeyField    `datastore:"recordtype"`
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -153,16 +197,19 @@ type Fiber struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
+	PermE        MatchKeyField    `datastore:"PermE"`
+	PermM        MatchKeyField    `datastore:"PermM"`
+	PermS        MatchKeyField    `datastore:"PermS"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
 type Signature struct {
-	OwnerID    string
-	Source     string
-	EventID    string
-	EventType  string
-	RecordID   string
-	RecordType string
+	OwnerID   string
+	Source    string
+	EventID   string
+	EventType string
+	RecordID  string
+	FiberType string
 }
 
 type Passthrough360 struct {
@@ -171,51 +218,65 @@ type Passthrough360 struct {
 }
 
 type PeopleMatchKeys struct {
-	SALUTATION   MatchKeyField
-	NICKNAME     MatchKeyField
-	FNAME        MatchKeyField
-	FINITIAL     MatchKeyField
-	LNAME        MatchKeyField
-	MNAME        MatchKeyField
-	AD1          MatchKeyField
-	AD1NO        MatchKeyField
-	AD2          MatchKeyField
-	AD3          MatchKeyField
-	CITY         MatchKeyField
-	STATE        MatchKeyField
-	ZIP          MatchKeyField
-	ZIP5         MatchKeyField
-	COUNTRY      MatchKeyField
-	MAILROUTE    MatchKeyField
-	ADTYPE       MatchKeyField
-	ADBOOK       MatchKeyField
-	ADPARSER     MatchKeyField
-	ADCORRECT    MatchKeyField
-	EMAIL        MatchKeyField
-	PHONE        MatchKeyField
-	TRUSTEDID    MatchKeyField
-	CLIENTID     MatchKeyField
-	GENDER       MatchKeyField
-	AGE          MatchKeyField
-	DOB          MatchKeyField
-	ORGANIZATION MatchKeyField
-	TITLE        MatchKeyField
-	ROLE         MatchKeyField
-	STATUS       MatchKeyField
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
+	ORGANIZATION MatchKeyField `json:"organization"`
+	TITLE        MatchKeyField `json:"title"`
+	ROLE         MatchKeyField `json:"role"`
+	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type HouseHoldMatchKeys struct {
-	LNAME   MatchKeyField
-	CITY    MatchKeyField
-	STATE   MatchKeyField
-	ZIP     MatchKeyField
-	ZIP5    MatchKeyField
-	COUNTRY MatchKeyField
-	AD1     MatchKeyField
-	AD1NO   MatchKeyField
-	AD2     MatchKeyField
-	ADTYPE  MatchKeyField
-	ADBOOK  MatchKeyField
+	LNAME        MatchKeyField `json:"lname"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	PermM        MatchKeyField `json:"permm"`
+	ORGANIZATION MatchKeyField `json:"organization"`
 }
 
 type MatchKeyField struct {
@@ -235,8 +296,8 @@ type PeopleSet struct {
 	Source                 []string       `datastore:"source"`
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
+	FiberType              []string       `datastore:"fibertype"`
 	RecordID               []string       `datastore:"recordid"`
-	RecordType             []string       `datastore:"recordtype"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
@@ -260,6 +321,8 @@ type PeopleSet struct {
 	AD2Normalized          []string       `datastore:"ad2normalized"`
 	AD3                    []string       `datastore:"ad3"`
 	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
 	CITY                   []string       `datastore:"city"`
 	CITYNormalized         []string       `datastore:"citynormalized"`
 	STATE                  []string       `datastore:"state"`
@@ -274,12 +337,18 @@ type PeopleSet struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ZIPTYPE                []string       `datastore:"ziptype"`
+	ZIPTYPENormalized      []string       `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string       `datastore:"recordtype"`
+	RECORDTYPENormalized   []string       `datastore:"recordtypenormalized"`
 	ADBOOK                 []string       `datastore:"adbook"`
 	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
 	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
 	EMAIL                  []string       `datastore:"email"`
 	EMAILNormalized        []string       `datastore:"emailnormalized"`
 	PHONE                  []string       `datastore:"phone"`
@@ -302,6 +371,12 @@ type PeopleSet struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
+	PermE                  []string       `json:"perme"`
+	PermENormalized        []string       `json:"permenormalized"`
+	PermM                  []string       `json:"permm"`
+	PermMNormalized        []string       `json:"permmnormalized"`
+	PermS                  []string       `json:"perms"`
+	PermSNormalized        []string       `json:"permsnormalized"`
 }
 
 type PeopleGolden struct {
@@ -324,9 +399,12 @@ type PeopleGolden struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
+	ADVALID      string         `datastore:"advalid"`
 	EMAIL        string         `datastore:"email"`
 	PHONE        string         `datastore:"phone"`
 	TRUSTEDID    string         `datastore:"trustedid"`
@@ -338,6 +416,9 @@ type PeopleGolden struct {
 	TITLE        string         `datastore:"title"`
 	ROLE         string         `datastore:"role"`
 	STATUS       string         `datastore:"status"`
+	PermE        string         `datastore:"perme"`
+	PermM        string         `datastore:"permm"`
+	PermS        string         `datastore:"perms"`
 }
 
 // ProjectID is the env var of project id
@@ -363,7 +444,7 @@ func init() {
 	log.Printf("init completed")
 }
 
-// ProcessEvent Receives a http event request
+// ProcessRequest Receives a http event request
 func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Owner      string `json:"owner"`
@@ -422,13 +503,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") {
+	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be either file or owner\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner or detail\"}")
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && len(input.RequestID) < 20 {
+	if !strings.EqualFold(input.ReportType, "file") && len(input.RequestID) < 36 {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"requestId must be supplied for reportType of file\"}")
 		return
@@ -462,7 +543,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var output interface{}
 	columns := make(map[string]ColumnStat)
 	columnMaps := make(map[string][]string)
-
+	PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
 	if strings.EqualFold(input.ReportType, "file") {
 		report := FileReport{
 			RequestID: input.RequestID,
@@ -538,8 +619,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// 	}
 		// }
 
-		PeopleMatchKeyNames := structs.Names(&PeopleMatchKeys{})
-
 		NDFS := 0 // new domestic freshmen student
 		NDFP := 0 // new domestic freshmen parent
 		NDUS := 0 // new domestic upperclassman student
@@ -559,6 +638,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		EIUP := 0 // existing international upperclassman parent
 
 		recordIDs := []string{}
+		recordUniques := []string{}
 		newIDs := []string{}
 
 		DUPE := 0
@@ -566,6 +646,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		PURGE1 := 0
 		PURGE2 := 0
+		INVALID := 0
 		DEFAULT := 0
 		MAR := 0
 		MPR := 0
@@ -574,15 +655,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			if !r.IsPeople {
 				PURGE1++
 			}
+			if Contains(recordUniques, r.RecordID) {
+				continue
+			}
+			recordUniques = append(recordUniques, r.RecordID)
 		}
 
 		for _, f := range fibers {
-			if f.RecordType == "mar" || f.RecordType == "default" {
+			if f.FiberType == "mar" || f.FiberType == "default" {
 				if f.Disposition == "new" {
 					newIDs = append(newIDs, f.RecordID)
 				}
 			}
-			switch f.RecordType {
+			switch f.FiberType {
 			case "mpr":
 				MPR++
 			case "mar":
@@ -619,24 +704,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			isFreshmen := false
 			isNew := false
 
-			if f.RecordType == "mar" { // skip mar
+			if f.FiberType == "mar" { // skip mar
 				continue
-			} else if f.RecordType == "default" { //same record id processed twice?
+			} else if f.FiberType == "default" { //same record id processed twice?
 				if Contains(recordIDs, f.RecordID) {
 					continue
 				}
 				recordIDs = append(recordIDs, f.RecordID)
-			} else if f.RecordType == "mpr" {
+			} else if f.FiberType == "mpr" {
 				isParent = true
 			}
 
 			if f.Disposition == "purge" {
-				if f.RecordType == "default" {
+				if f.FiberType == "default" {
 					PURGE2++
 				}
 
 			} else if f.Disposition == "dupe" {
-				if f.RecordType == "default" {
+				if f.FiberType == "default" {
 					DUPE++
 				}
 			} else {
@@ -647,16 +732,17 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 				country := strings.ToUpper(GetMatchKeyFieldFromFiberByName(&f, "COUNTRY").Value)
-				if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+				//if country != "" && country != "US" && country != "USA" && country != "UNITED STATES" && country != "UNITED STATES OF AMERICA" {
+				if country != "US" {
 					isInternational = true
 				} else {
 					isDomestic = true
 				}
 				class, err := strconv.Atoi(GetMatchKeyFieldFromFiberByName(&f, "TITLE").Value)
 				if err == nil {
-					if class == CurrentYear+4 {
+					if class == CurrentYear+4 || (class == CurrentYear+3 && time.Now().Month() < 6) {
 						isFreshmen = true
-					} else if class >= CurrentYear && class < CurrentYear+4 {
+					} else if (class > CurrentYear-1 || (class == CurrentYear-1 && time.Now().Month() >= 6)) && (class < CurrentYear+3 || (class == CurrentYear+3 && time.Now().Month() >= 6)) {
 						isUpperClassman = true
 					}
 				}
@@ -664,6 +750,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				// if role == "Parent" {
 				// 	isParent = true
 				// }
+
+				// all international addresses would be invalid... guess we just want US invalid...
+				if f.ADVALID.Value == "FALSE" {
+					if f.FiberType == "default" {
+						INVALID++
+					}
+					continue
+				}
 
 				if isNew && isDomestic && isFreshmen && !isParent {
 					NDFS++
@@ -764,7 +858,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// }
 		log.Printf("column maps: %v", columnMaps)
 
-		report.RowCount = len(records)
+		report.RowCount = len(recordUniques)
 		var minTime time.Time
 		var maxTime time.Time
 		for i, r := range records {
@@ -819,6 +913,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			Purge360:  PURGE2,
 			Throwaway: PURGE1 + PURGE2, //len(records) - len(recordIDs), // unique record id, take first 36 characters of record id, to avoid counting MPR records
 			Default:   len(recordIDs),
+			Invalid:   INVALID,
 			MAR:       MAR,
 			MPR:       MPR,
 			EDFS:      EDFS,
@@ -839,13 +934,248 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			NIUP:      NIUP,
 		}
 		output = report
+	} else if strings.EqualFold(input.ReportType, "detail") {
+		report := DetailReport{}
+		var records []Record
+		var fibers []Fiber
+		var requests []Event
+		var request Event
+
+		var summary DetailSummary
+
+		query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
+
+		if _, err := ds.GetAll(ctx, query, &requests); err != nil {
+			log.Fatalf("Error querying event: %v", err)
+			return
+		} else if len(requests) > 0 {
+			request = requests[0]
+			summary.EventType = request.EventType
+			summary.EventID = request.EventID
+			summary.Owner = request.Owner
+			summary.Source = request.Source
+			summary.FileURL = request.Detail
+			summary.Attributes = ToMap(request.Attributes)
+		}
+
+		log.Printf("Found %v matching events", len(requests))
+
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
+			log.Fatalf("Error querying records: %v", err)
+			return
+		}
+		log.Printf("records retrieved: %v", len(records))
+		// sort records
+		sort.Slice(records, func(i, j int) bool {
+			return records[i].RowNumber < records[j].RowNumber
+		})
+
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+		log.Printf("fibers retrieved: %v", len(fibers))
+
+		// organize fibers by record
+		fibermap := make(map[string][]Fiber)
+		for _, f := range fibers {
+			recordID := Left(f.RecordID, 36)
+			if _, ok := fibermap[recordID]; ok {
+
+			} else {
+				fibermap[recordID] = []Fiber{}
+			}
+			fibermap[recordID] = append(fibermap[recordID], f)
+		}
+
+		report.GridRecords = append(report.GridRecords, []interface{}{"RecordID", "RowNumber", "TimeStamp", "Disposition"})
+
+		diagnostics := []string{"IsPeople", "MLError", "FiberCount", "PersonFiberCount", "MARFiberCount", "MPRFiberCount"}
+		report.GridFibers = append(report.GridFibers, []interface{}{"RecordID", "RowNumber", "FiberNumber", "FiberID", "TimeStamp", "Type", "Disposition", "IsValid"})
+
+		for _, k := range PeopleMatchKeyNames {
+			report.GridFibers[0] = append(report.GridFibers[0], k)
+			report.GridFibers[0] = append(report.GridFibers[0], "Source")
+		}
+
+		// var gridFiber [][]interface{}
+		summary.RowCount = len(records)
+		columns := make(map[string]ColumnStat)
+
+		for i, r := range records {
+			var rowRecord []interface{}
+			rowRecord = append(rowRecord, r.RecordID)
+			rowRecord = append(rowRecord, r.RowNumber)
+			rowRecord = append(rowRecord, r.TimeStamp)
+
+			fiberCount := 0
+			marFiberCount := 0
+			mprFiberCount := 0
+			defaultFiberCount := 0
+
+			columnMaps := make(map[string][]string)
+			recordDisposition := "update"
+			anyFiberIsNew := false
+			allFibersAreDupe := true
+			allFibersArePurged := true
+
+			if _, ok := fibermap[r.RecordID]; ok {
+				fiberCount = len(fibermap[r.RecordID])
+				sort.Slice(fibermap[r.RecordID], func(i int, j int) bool {
+					return fibermap[r.RecordID][i].CreatedAt.Before(fibermap[r.RecordID][j].CreatedAt)
+				})
+				for j, f := range fibermap[r.RecordID] {
+					var rowFiber []interface{}
+
+					rowFiber = append(rowFiber, r.RecordID)
+					rowFiber = append(rowFiber, r.RowNumber)
+					rowFiber = append(rowFiber, j+1)
+					rowFiber = append(rowFiber, f.ID.Name)
+					rowFiber = append(rowFiber, f.CreatedAt)
+					rowFiber = append(rowFiber, f.FiberType)
+					rowFiber = append(rowFiber, f.Disposition)
+					rowFiber = append(rowFiber, "TRUE")
+
+					for _, k := range PeopleMatchKeyNames {
+						mk := GetMatchKeyFieldFromFiberByName(&f, k)
+						rowFiber = append(rowFiber, mk.Value)
+						rowFiber = append(rowFiber, mk.Source)
+					}
+					report.GridFibers = append(report.GridFibers, rowFiber)
+					switch f.FiberType {
+					case "mar":
+						marFiberCount++
+					case "mpr":
+						mprFiberCount++
+					case "default":
+						defaultFiberCount++
+					}
+
+					if f.FiberType == "default" || f.FiberType == "mar" {
+						if f.Disposition == "new" {
+							anyFiberIsNew = true
+						}
+						if f.Disposition != "dupe" {
+							allFibersAreDupe = false
+						}
+						if f.Disposition != "purge" {
+							allFibersArePurged = false
+						}
+
+					}
+
+					for _, m := range PeopleMatchKeyNames {
+						mk := GetMatchKeyFieldFromFiberByName(&f, m)
+						columnTarget := []string{m}
+						source := mk.Source
+						if len(mk.Source) > 0 {
+							if val, ok := columnMaps[source]; ok {
+								columnTarget = val
+								if !Contains(columnTarget, m) {
+									target := m
+									if f.FiberType == "mar" || f.FiberType == "mpr" {
+										target = f.FiberType + " " + m
+									}
+									columnTarget = append(columnTarget, target)
+
+								}
+							}
+							columnMaps[source] = columnTarget
+						}
+					}
+				}
+
+			}
+			if anyFiberIsNew {
+				recordDisposition = "new"
+			} else if allFibersAreDupe {
+				recordDisposition = "dupe"
+			} else if allFibersArePurged {
+				recordDisposition = "purge"
+			}
+			rowRecord = append(rowRecord, recordDisposition)
+
+			headers := []string{}
+			if len(r.Fields) > 0 && i == 0 {
+				for _, f := range r.Fields {
+					headers = append(headers, f.Key)
+				}
+				sort.Strings(headers)
+			}
+			for _, h := range headers {
+				report.GridRecords[0] = append(report.GridRecords[0], h)
+				report.GridRecords[0] = append(report.GridRecords[0], "MappedTo")
+			}
+			values := make(map[string]string)
+			mapped := make(map[string]string)
+
+			for _, f := range r.Fields {
+				values[f.Key] = f.Value
+				if val, ok := columnMaps[f.Key]; ok {
+					mapped[f.Key] = strings.Join(val, ", ")
+				} else {
+					mapped[f.Key] = ""
+				}
+			}
+			for c, f := range report.GridRecords[0] {
+				if c < 4 { // skip first 8 columns
+					continue
+				}
+				if f.(string) == "MappedTo" {
+					continue
+				}
+				if val, ok := values[f.(string)]; ok {
+					rowRecord = append(rowRecord, val)
+				} else {
+					rowRecord = append(rowRecord, "")
+				}
+
+				// append mapped
+				if val, ok := mapped[f.(string)]; ok {
+					rowRecord = append(rowRecord, val)
+				} else {
+					rowRecord = append(rowRecord, "")
+				}
+
+			}
+
+			rowRecord = append(rowRecord, r.IsPeople)
+			rowRecord = append(rowRecord, r.MLError)
+
+			rowRecord = append(rowRecord, fiberCount)
+			rowRecord = append(rowRecord, defaultFiberCount)
+			rowRecord = append(rowRecord, marFiberCount)
+			rowRecord = append(rowRecord, mprFiberCount)
+
+			report.GridRecords = append(report.GridRecords, rowRecord)
+		}
+
+		for _, d := range diagnostics {
+			report.GridRecords[0] = append(report.GridRecords[0], d)
+		}
+
+		summary.ColumnCount = len(columns)
+		report.Summary = summary
+
+		output = report
 	} else {
 		report := OwnerReport{}
 
 		output = report
 	}
-	outputJSON, _ := json.Marshal(output)
+	outputJSON, err := json.Marshal(output)
+	if err != nil {
+		log.Fatalf("Error writing json %v", err)
+	}
 	fmt.Fprintf(w, string(outputJSON))
+}
+
+func ToMap(v []KVP) map[string]string {
+	result := make(map[string]string)
+	for _, kvp := range v {
+		result[kvp.Key] = kvp.Value
+	}
+	return result
 }
 
 func GetMatchKeyFieldFromFiberByName(v *Fiber, field string) MatchKeyField {

@@ -11,11 +11,13 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 
 	"github.com/fatih/structs"
+	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 )
 
@@ -24,12 +26,19 @@ type PubSubMessage struct {
 }
 
 type Signature struct {
-	OwnerID    string `json:"ownerId"`
-	Source     string `json:"source"`
-	EventID    string `json:"eventId"`
-	EventType  string `json:"eventType"`
-	RecordType string `json:"recordType"`
-	RecordID   string `json:"recordId"`
+	OwnerID   string `json:"ownerId"`
+	Source    string `json:"source"`
+	EventID   string `json:"eventId"`
+	EventType string `json:"eventType"`
+	FiberType string `json:"fiberType"`
+	RecordID  string `json:"recordId"`
+}
+
+type EventData struct {
+	Signature   Signature              `json:"signature"`
+	Passthrough map[string]string      `json:"passthrough"`
+	Attributes  map[string]string      `json:"attributes"`
+	EventData   map[string]interface{} `json:"eventData"`
 }
 
 type PeopleInput struct {
@@ -56,7 +65,7 @@ type PeopleFiberDS struct {
 	EventID      string           `datastore:"eventid"`
 	EventType    string           `datastore:"eventtype"`
 	RecordID     string           `datastore:"recordid"`
-	RecordType   string           `datastore:"recordtype"`
+	FiberType    string           `datastore:"fibertype"`
 	Disposition  string           `datastore:"disposition"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
@@ -75,9 +84,12 @@ type PeopleFiberDS struct {
 	COUNTRY      MatchKeyField    `datastore:"country"`
 	MAILROUTE    MatchKeyField    `datastore:"mailroute"`
 	ADTYPE       MatchKeyField    `datastore:"adtype"`
+	ZIPTYPE      MatchKeyField    `datastore:"ziptype"`
+	RECORDTYPE   MatchKeyField    `datastore:"recordtype"`
 	ADBOOK       MatchKeyField    `datastore:"adbook"`
 	ADPARSER     MatchKeyField    `datastore:"adparser"`
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
+	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
 	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
@@ -89,6 +101,9 @@ type PeopleFiberDS struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
+	PermE        MatchKeyField    `datastore:"PermE"`
+	PermM        MatchKeyField    `datastore:"PermM"`
+	PermS        MatchKeyField    `datastore:"PermS"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -99,42 +114,43 @@ type MatchKeyField struct {
 }
 
 type PeopleOutput struct {
-	SALUTATION MatchKeyField `json:"salutation"`
-	NICKNAME   MatchKeyField `json:"nickname"`
-	FNAME      MatchKeyField `json:"fname"`
-	FINITIAL   MatchKeyField `json:"finitial"`
-	LNAME      MatchKeyField `json:"lname"`
-	MNAME      MatchKeyField `json:"mname"`
-
-	AD1       MatchKeyField `json:"ad1"`
-	AD1NO     MatchKeyField `json:"ad1no"`
-	AD2       MatchKeyField `json:"ad2"`
-	AD3       MatchKeyField `json:"ad3"`
-	CITY      MatchKeyField `json:"city"`
-	STATE     MatchKeyField `json:"state"`
-	ZIP       MatchKeyField `json:"zip"`
-	ZIP5      MatchKeyField `json:"zip5"`
-	COUNTRY   MatchKeyField `json:"country"`
-	MAILROUTE MatchKeyField `json:"mailroute"`
-	ADTYPE    MatchKeyField `json:"adtype"`
-	ADBOOK    MatchKeyField `json:"adbook"`
-	ADPARSER  MatchKeyField `json:"adparser"`
-	ADCORRECT MatchKeyField `json:"adcorrect"`
-
-	EMAIL MatchKeyField `json:"email"`
-	PHONE MatchKeyField `json:"phone"`
-
-	TRUSTEDID MatchKeyField `json:"trustedId"`
-	CLIENTID  MatchKeyField `json:"clientId"`
-
-	GENDER MatchKeyField `json:"gender"`
-	AGE    MatchKeyField `json:"age"`
-	DOB    MatchKeyField `json:"dob"`
-
+	SALUTATION   MatchKeyField `json:"salutation"`
+	NICKNAME     MatchKeyField `json:"nickname"`
+	FNAME        MatchKeyField `json:"fname"`
+	FINITIAL     MatchKeyField `json:"finitial"`
+	LNAME        MatchKeyField `json:"lname"`
+	MNAME        MatchKeyField `json:"mname"`
+	AD1          MatchKeyField `json:"ad1"`
+	AD1NO        MatchKeyField `json:"ad1no"`
+	AD2          MatchKeyField `json:"ad2"`
+	AD3          MatchKeyField `json:"ad3"`
+	CITY         MatchKeyField `json:"city"`
+	STATE        MatchKeyField `json:"state"`
+	ZIP          MatchKeyField `json:"zip"`
+	ZIP5         MatchKeyField `json:"zip5"`
+	COUNTRY      MatchKeyField `json:"country"`
+	MAILROUTE    MatchKeyField `json:"mailroute"`
+	ADTYPE       MatchKeyField `json:"adtype"`
+	ADBOOK       MatchKeyField `json:"adbook"`
+	ADPARSER     MatchKeyField `json:"adparser"`
+	ADCORRECT    MatchKeyField `json:"adcorrect"`
+	ADVALID      MatchKeyField `json:"advalid"`
+	ZIPTYPE      MatchKeyField `json:"ziptype"`
+	RECORDTYPE   MatchKeyField `json:"recordtype"`
+	EMAIL        MatchKeyField `json:"email"`
+	PHONE        MatchKeyField `json:"phone"`
+	TRUSTEDID    MatchKeyField `json:"trustedId"`
+	CLIENTID     MatchKeyField `json:"clientId"`
+	GENDER       MatchKeyField `json:"gender"`
+	AGE          MatchKeyField `json:"age"`
+	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
 	ROLE         MatchKeyField `json:"role"`
 	STATUS       MatchKeyField `json:"status"`
+	PermE        MatchKeyField `json:"perme"`
+	PermM        MatchKeyField `json:"permm"`
+	PermS        MatchKeyField `json:"perms"`
 }
 
 type Signature360 struct {
@@ -172,7 +188,7 @@ type PeopleSetDS struct {
 	Source                 []string       `datastore:"source"`
 	EventID                []string       `datastore:"eventid"`
 	EventType              []string       `datastore:"eventtype"`
-	RecordType             []string       `datastore:"recordtype"`
+	FiberType              []string       `datastore:"fibertype"`
 	RecordID               []string       `datastore:"recordid"`
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
@@ -197,6 +213,8 @@ type PeopleSetDS struct {
 	AD2Normalized          []string       `datastore:"ad2normalized"`
 	AD3                    []string       `datastore:"ad3"`
 	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
 	CITY                   []string       `datastore:"city"`
 	CITYNormalized         []string       `datastore:"citynormalized"`
 	STATE                  []string       `datastore:"state"`
@@ -211,12 +229,18 @@ type PeopleSetDS struct {
 	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
 	ADTYPE                 []string       `datastore:"adtype"`
 	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ZIPTYPE                []string       `datastore:"ziptype"`
+	ZIPTYPENormalized      []string       `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string       `datastore:"recordtype"`
+	RECORDTYPENormalized   []string       `datastore:"recordtypenormalized"`
 	ADBOOK                 []string       `datastore:"adbook"`
 	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
 	ADPARSER               []string       `datastore:"adparser"`
 	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
 	ADCORRECT              []string       `datastore:"adcorrect"`
 	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
 	EMAIL                  []string       `datastore:"email"`
 	EMAILNormalized        []string       `datastore:"emailnormalized"`
 	PHONE                  []string       `datastore:"phone"`
@@ -239,6 +263,12 @@ type PeopleSetDS struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
+	PermE                  []string       `json:"perme"`
+	PermENormalized        []string       `json:"permenormalized"`
+	PermM                  []string       `json:"permm"`
+	PermMNormalized        []string       `json:"permmnormalized"`
+	PermS                  []string       `json:"perms"`
+	PermSNormalized        []string       `json:"permsnormalized"`
 }
 
 type PeopleGoldenDS struct {
@@ -261,9 +291,12 @@ type PeopleGoldenDS struct {
 	COUNTRY      string         `datastore:"country"`
 	MAILROUTE    string         `datastore:"mailroute"`
 	ADTYPE       string         `datastore:"adtype"`
+	ZIPTYPE      string         `datastore:"ziptype"`
+	RECORDTYPE   string         `datastore:"recordtype"`
 	ADBOOK       string         `datastore:"adbook"`
 	ADPARSER     string         `datastore:"adparser"`
 	ADCORRECT    string         `datastore:"adcorrect"`
+	ADVALID      string         `datastore:"advalid"`
 	EMAIL        string         `datastore:"email"`
 	PHONE        string         `datastore:"phone"`
 	TRUSTEDID    string         `datastore:"trustedid"`
@@ -275,11 +308,12 @@ type PeopleGoldenDS struct {
 	TITLE        string         `datastore:"title"`
 	ROLE         string         `datastore:"role"`
 	STATUS       string         `datastore:"status"`
+	PermE        string         `datastore:"perme"`
+	PermM        string         `datastore:"permm"`
+	PermS        string         `datastore:"perms"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
-var PubSubTopic = os.Getenv("PSOUTPUT")
-var PubSubTopic2 = os.Getenv("PSOUTPUT2")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
@@ -294,10 +328,14 @@ var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
+var redisTransientExpiration = 3600 * 24
+
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var status *pubsub.Topic
 var ds *datastore.Client
+var msp *redis.Pool
 
 // var setSchema bigquery.Schema
 
@@ -305,9 +343,14 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
-	topic = ps.Topic(PubSubTopic)
-	topic2 = ps.Topic(PubSubTopic2)
-
+	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
+	status = ps.Topic(os.Getenv("PSSTATUS"))
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -331,6 +374,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	existingCheck := 0
+	if input.Signature.FiberType == "default" {
+		existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+		if existingCheck == 1 { // this fiber has already been processed
+			LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
+			return nil
+		}
+	} else if input.Signature.FiberType == "mar" {
+		existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+		if existingCheck == 0 { // default fiber has not been processed
+			IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			if retryCount < 30 {
+				return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
+			}
+		}
+	}
+
 	// store the fiber
 	OutputPassthrough := ConvertPassthrough(input.Passthrough)
 	var fiber PeopleFiber
@@ -348,10 +409,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	dsFiber.ID = dsKey
 
 	matchable := false
-	if input.Signature.RecordType == "default" {
+	if input.Signature.FiberType == "default" {
 		if len(input.MatchKeys.EMAIL.Value) > 0 ||
 			(len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0) ||
-			(len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1NO.Value) > 0 && len(input.MatchKeys.ADBOOK.Value) > 0) {
+			(len(input.MatchKeys.CITY.Value) > 0 &&
+				(len(input.MatchKeys.STATE.Value) > 0 || (len(input.MatchKeys.COUNTRY.Value) > 0 && input.MatchKeys.COUNTRY.Value != "US")) &&
+				len(input.MatchKeys.LNAME.Value) > 0 &&
+				len(input.MatchKeys.FNAME.Value) > 0 &&
+				len(input.MatchKeys.AD1.Value) > 0 &&
+				len(input.MatchKeys.ADBOOK.Value) > 0) {
 			matchable = true
 		}
 	} else {
@@ -370,9 +436,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		FiberMatchKeys[name] = []string{}
 	}
 	var matchedFibers []string
+	matchedDefaultFiber := 0
 	var expiredSetCollection []string
 
 	if matchable {
+
 		// locate existing set
 		if len(input.Signature.RecordID) == 0 {
 			// ensure record id is not blank or we'll have problem
@@ -399,8 +467,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
 		MatchByKey5D := "FNAME"
 		MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
-		MatchByKey5E := "AD1NO"
-		MatchByValue5E := strings.Replace(input.MatchKeys.AD1NO.Value, "'", `''`, -1)
+		MatchByKey5E := "AD1"
+		MatchByValue5E := strings.Replace(input.MatchKeys.AD1.Value, "'", `''`, -1)
 		MatchByKey5F := "ADBOOK"
 		MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
 
@@ -519,6 +587,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				RecordID:  fiber.RecordID,
 			})
 
+			if fiber.FiberType == "default" {
+				matchedDefaultFiber++
+			}
+
 			for _, name := range MatchKeyList {
 				value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&fiber, name).Value)
 				if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
@@ -553,7 +625,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	if !matchable {
 		dsFiber.Disposition = "purge"
-	} else if len(matchedFibers) == 0 {
+	} else if matchedDefaultFiber == 0 {
 		dsFiber.Disposition = "new"
 	} else if !HasNewValues {
 		dsFiber.Disposition = "dupe"
@@ -567,15 +639,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// stop processing if no new values
-	if !HasNewValues {
-		return nil
-	}
+	// if !HasNewValues {
+	// 	return nil
+	// }
 	if !matchable {
+		LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
+		IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
 		return nil
 	}
 
 	// append to the output value
-
 	output.Signatures = append(FiberSignatures, input.Signature)
 	output.Signature = Signature360{
 		OwnerID:   input.Signature.OwnerID,
@@ -601,6 +674,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(mk.Value) > 0 && !Contains(mk.Values, mk.Value) {
 			mk.Values = append(mk.Values, mk.Value)
 		}
+
+		// special rules for assigning values
+		if name == "TITLE" {
+			mk.Value = GetSmallestYear(mk.Values)
+		}
+
 		OutputMatchKeys = append(OutputMatchKeys, *mk)
 	}
 	output.MatchKeys = OutputMatchKeys
@@ -649,6 +728,61 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Error: deleting expired golden records: %v", err)
 	}
 
+	if input.Signature.FiberType == "default" {
+		IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+
+		// grab the count and see if we are done
+		counters := GetRedisIntValues([][]string{
+			[]string{input.Signature.EventID, "records-total"},
+			[]string{input.Signature.EventID, "records-completed"},
+			[]string{input.Signature.EventID, "records-deleted"},
+			[]string{input.Signature.EventID, "fibers-completed"},
+			[]string{input.Signature.EventID, "fibers-deleted"},
+		})
+		LogDev(fmt.Sprintf("Received response from redis %v", counters))
+		recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted := 0, 0, 0, 0, 0
+		if len(counters) == 5 {
+			recordCount = counters[0]
+			recordCompleted = counters[1]
+			recordDeleted = counters[2]
+			fiberCompleted = counters[3]
+			fiberDeleted = counters[4]
+		}
+		recordFinished := false
+		fiberFinished := false
+		if recordCompleted+recordDeleted >= recordCount && recordCount > 0 {
+			recordFinished = true
+		}
+		if fiberCompleted+fiberDeleted >= recordCount && recordCount > 0 {
+			fiberFinished = true
+		}
+		LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))
+		if recordFinished && fiberFinished {
+			eventData := EventData{
+				Signature: input.Signature,
+				EventData: make(map[string]interface{}),
+			}
+			eventData.EventData["status"] = "Finished"
+			eventData.EventData["message"] = fmt.Sprintf("Processed %v records and %v fibers, purged %v records and %v fibers", recordCompleted, fiberCompleted, recordDeleted, fiberDeleted)
+			eventData.EventData["records-total"] = recordCount
+			eventData.EventData["records-completed"] = recordCompleted
+			eventData.EventData["records-deleted"] = recordDeleted
+			eventData.EventData["fibers-completed"] = fiberCompleted
+			eventData.EventData["fibers-deleted"] = fiberDeleted
+			statusJSON, _ := json.Marshal(eventData)
+			psresult := status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			_, err := psresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+			}
+		}
+	} else if input.Signature.FiberType == "mar" {
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
+	}
+
 	// push into pubsub
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
@@ -675,6 +809,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	})
 
 	return nil
+}
+
+func GetSmallestYear(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	eligible := []string{}
+	for _, v := range values {
+		if strings.HasPrefix(v, "20") && len(v) == 4 && IsInt(v) {
+			eligible = append(eligible, v)
+		}
+	}
+	if len(eligible) > 0 {
+		sort.Strings(eligible)
+		return eligible[0]
+	} else {
+		return ""
+	}
 }
 
 func GetMatchKeyFieldFromStruct(v *PeopleOutput, field string) MatchKeyField {
@@ -728,7 +880,7 @@ func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
 		EventType:   v.Signature.EventType,
 		EventID:     v.Signature.EventID,
 		RecordID:    v.Signature.RecordID,
-		RecordType:  v.Signature.RecordType,
+		FiberType:   v.Signature.FiberType,
 		Passthrough: v.Passthrough,
 		CreatedAt:   v.CreatedAt,
 	}
@@ -773,10 +925,11 @@ func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value s
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
+	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	// LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
+
 }
 
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
@@ -867,4 +1020,63 @@ func ToAsciiArray(s string) []int {
 		result = append(result, int(runes[i]))
 	}
 	return result
+}
+
+func IsInt(s string) bool {
+	for _, c := range s {
+		if !unicode.IsDigit(c) {
+			return false
+		}
+	}
+	return true
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys[0], formattedKeys[1], formattedKeys[2], formattedKeys[3], formattedKeys[4]))
+	if err != nil {
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
+	}
+	return values
 }
