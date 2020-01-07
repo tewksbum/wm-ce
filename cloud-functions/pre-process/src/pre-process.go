@@ -894,9 +894,9 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.ToLower(column)
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "name preferred", "chosen name", "patron.first name":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "name preferred", "chosen name", "patron.first name":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid":
 		err.MiddleName = 1
@@ -949,7 +949,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first":
+	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first", "addressee":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
