@@ -35,10 +35,10 @@ func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 		if err != nil {
 			return nil, logger.Err(err)
 		}
+		_conn.SetMaxOpenConns(1)
 	} else {
 		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
 	}
-	// conn.SetMaxOpenConns(1)
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
 }
@@ -69,13 +69,22 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		return updated, logger.Err(err)
 	}
 	var res sql.Result
+	compositeID := []string{}
 	rIDField := r.GetIDField()
 	rmap := r.GetMap()
+	rIDFieldValue := rmap[rIDField]
 	stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
+	if strings.Contains(rIDField, ".") {
+		compositeID = strings.Split(rIDField, ".")
+		if rmap[compositeID[0]] != nil {
+			rIDFieldValue = rmap[compositeID[0]].(map[string]interface{})[compositeID[1]]
+			stmt = tx.Select(compositeID[1]).From(tblNameTick).Where(compositeID[1]+" = ?", rIDFieldValue)
+		}
+	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	exists, err := stmt.ReturnString()
-	logger.InfoFmt("[SELECT]: %s\n%s: %s = %s", buf.String(), rIDField, rmap[rIDField], exists)
+	logger.InfoFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
@@ -113,8 +122,10 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 		logger.InfoFmt("[INSERT]: %s", buf.String())
 		res, err = is.Exec()
 	} else {
-		us := tx.Update(tblName).
-			Where(rIDField+" = ?", rmap[rIDField])
+		us := tx.Update(tblName).Where(rIDField+" = ?", rmap[rIDField])
+		if len(compositeID) > 0 {
+			us = tx.Update(tblName).Where(compositeID[1]+" = ?", rIDFieldValue)
+		}
 		switch r.GetEntityType() {
 		case models.TypeDecode:
 			us = us.SetMap(rmap)
@@ -150,14 +161,19 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	// Logging of the created insert command
 	if err != nil {
-		return updated, logger.ErrFmt("[csql.Write.Exec] %v#", err)
+		errorito := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		// TODO: remove this conditional for HH
+		if r.GetTablename() != models.TblHousehold {
+			return updated, errorito
+		}
+		return true, nil
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
 	logger.InfoFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
-		return updated, logger.ErrFmt("[csql.Write.Commit] %v#", err)
+		return updated, logger.ErrFmt("[csql.Write.Commit] %#v", err)
 	}
 	return updated, err
 }
@@ -184,7 +200,19 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	defer tx.RollbackUnlessCommitted()
 	stmt := tx.Select(r.GetSelectColumnList()...).From(tblName)
 	if len(opts.Joins) > 0 {
-		// No need for joins now, but placeholder.
+		// TODO : Optimize joins, sprintf the tablename and the j.Tablename into `On`
+		for _, j := range opts.Joins {
+			switch j.Type {
+			case "left":
+				stmt = stmt.LeftJoin(j.Table, j.On)
+			case "right":
+				stmt = stmt.RightJoin(j.Table, j.On)
+			case "full":
+				stmt = stmt.FullJoin(j.Table, j.On)
+			default:
+				stmt = stmt.Join(j.Table, j.On)
+			}
+		}
 	}
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
@@ -192,6 +220,8 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 			return or, logger.ErrFmt("[csql.Read.ParsingFilters]: %#v", err)
 		}
 		if len(pfs) > 0 {
+			var vals []interface{}
+			buf := dbr.NewBuffer()
 			for _, pf := range pfs {
 				for i := 0; i < len(pf.ParamNames); i++ {
 					var v interface{}
@@ -203,21 +233,29 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 							for _, vv := range v.([]interface{}) {
 								tmp = append(tmp, fmt.Sprint(vv))
 							}
-							v = strings.Join(tmp, ",")
-							logger.InfoFmt("readq array: [%s] %#v - type: %T", pf.ParamNames[i], t, t)
+							switch pf.Op {
+							case models.OperationBetween:
+								dbr.Expr(pf.ParsedCondition, tmp[0], tmp[1]).Build(stmt.Dialect, buf)
+							default:
+								v = strings.Join(tmp, ",")
+								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
+							}
+							logger.InfoFmt("read param array: [%s] %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
-							logger.InfoFmt("readq: [%s] %#v - type: %T", pf.ParamNames[i], t, t)
+							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
+							logger.InfoFmt("read param [%s] %#v - type: %T\n", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
 					}
 					if v == nil {
-						stmt = stmt.Where(pf.ParsedCondition)
+						dbr.Expr(pf.ParsedCondition).Build(stmt.Dialect, buf)
 					} else {
-						stmt = stmt.Where(pf.ParsedCondition, v)
+						vals = append(vals, v)
 					}
 				}
 			}
+			stmt = stmt.Where(buf.String(), vals...)
 		}
 		oBy := models.ParseOrderBy(opts.Filters, false)
 		if oBy != "" {
@@ -258,15 +296,15 @@ func Delete(dsn string, r models.Record) error {
 		return logger.ErrFmt("[csql.Delete.createTbl]: %#v", err)
 	}
 	stmt := tx.DeleteFrom(tblName)
-	if len(opts.Joins) > 0 {
-		// No need for joins now, but placeholder.
-	}
+
 	if len(opts.Filters) > 0 {
 		pfs, err := models.ParseFilters(opts.Filters, false, "", "record")
 		if err != nil {
 			return logger.ErrFmt("[csql.Delete.ParsingFilters]: %#v", err)
 		}
 		if len(pfs) > 0 {
+			var vals []interface{}
+			buf := dbr.NewBuffer()
 			for _, pf := range pfs {
 				for i := 0; i < len(pf.ParamNames); i++ {
 					var v interface{}
@@ -278,21 +316,29 @@ func Delete(dsn string, r models.Record) error {
 							for _, vv := range v.([]interface{}) {
 								tmp = append(tmp, fmt.Sprint(vv))
 							}
-							v = strings.Join(tmp, ",")
-							// logger.InfoFmt("param: %#v - type: %T", t, t)
+							switch pf.Op {
+							case models.OperationBetween:
+								dbr.Expr(pf.ParsedCondition, tmp[0], tmp[1]).Build(stmt.Dialect, buf)
+							default:
+								v = strings.Join(tmp, ",")
+								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
+							}
+							logger.InfoFmt("delete param array [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
-							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], t, t)
+							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
+							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
 					}
 					if v == nil {
-						stmt = stmt.Where(pf.ParsedCondition)
+						dbr.Expr(pf.ParsedCondition).Build(stmt.Dialect, buf)
 					} else {
-						stmt = stmt.Where(pf.ParsedCondition, v)
+						vals = append(vals, v)
 					}
 				}
 			}
+			stmt = stmt.Where(buf.String(), vals...)
 		}
 	} else {
 		return errDeleteNotPossible

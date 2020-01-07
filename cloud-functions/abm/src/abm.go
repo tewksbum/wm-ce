@@ -460,18 +460,18 @@ func Main(ctx context.Context, m PubSubMessage) error {
 			Country:  getFrom360Slice("COUNTRY", r360filteredmk).Value,
 		}
 		output.Household = &household
-		common.PermE = getFrom360Slice("PermE", r360filteredmk).Value
-		common.PermM = getFrom360Slice("PermM", r360filteredmk).Value
-		common.PermS = getFrom360Slice("PermS", r360filteredmk).Value
-		common.ADTYPE = getFrom360Slice("ADTYPE", r360filteredmk).Value
-		common.ADBOOK = getFrom360Slice("ADBOOK", r360filteredmk).Value
-		common.ADPARSER = getFrom360Slice("ADPARSER", r360filteredmk).Value
-		common.ADCORRECT = getFrom360Slice("ADCORRECT", r360filteredmk).Value
-		common.ADVALID = getFrom360Slice("ADVALID", r360filteredmk).Value
-		common.ZIPTYPE = getFrom360Slice("ZIPTYPE", r360filteredmk).Value
-		common.RECORDTYPE = getFrom360Slice("RECORDTYPE", r360filteredmk).Value
-		common.DOB = getFrom360Slice("DOB", r360filteredmk).Value
-		common.STATUS = getFrom360Slice("STATUS", r360filteredmk).Value
+		output.Common.PermE = getFrom360Slice("PermE", r360filteredmk).Value
+		output.Common.PermM = getFrom360Slice("PermM", r360filteredmk).Value
+		output.Common.PermS = getFrom360Slice("PermS", r360filteredmk).Value
+		output.Common.ADTYPE = getFrom360Slice("ADTYPE", r360filteredmk).Value
+		output.Common.ADBOOK = getFrom360Slice("ADBOOK", r360filteredmk).Value
+		output.Common.ADPARSER = getFrom360Slice("ADPARSER", r360filteredmk).Value
+		output.Common.ADCORRECT = getFrom360Slice("ADCORRECT", r360filteredmk).Value
+		output.Common.ADVALID = getFrom360Slice("ADVALID", r360filteredmk).Value
+		output.Common.ZIPTYPE = getFrom360Slice("ZIPTYPE", r360filteredmk).Value
+		output.Common.RECORDTYPE = getFrom360Slice("RECORDTYPE", r360filteredmk).Value
+		output.Common.DOB = getFrom360Slice("DOB", r360filteredmk).Value
+		output.Common.STATUS = getFrom360Slice("STATUS", r360filteredmk).Value
 	}
 
 	jsonStrOutput, err := json.Marshal(output)

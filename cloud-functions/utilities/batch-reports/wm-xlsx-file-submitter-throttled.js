@@ -1,21 +1,11 @@
 const fs = require("fs");
 const { Storage } = require("@google-cloud/storage");
-const { Datastore } = require("@google-cloud/datastore");
 const Excel = require("exceljs");
 const request = require("sync-request");
 const storage = new Storage();
-const datastore = new Datastore();
 const schoolCodes = require("./schoolCodes.json");
-const sponsorSchools = require("./sponsorSchools.json");
-// TODO
-// Should we just make the files public? or should we copy them and reupload?
-// Make it actually submit a file
-// Maybe log file url aswell
+const { getOwners } = require("./utils");
 
-// Name of the folder iterate through
-const folder = "./input";
-// Name of the bucket to upload the rawfile to
-const bucket = "ocm_school_raw_files";
 const today = new Date();
 const streamerURL =
   "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-file-api";
@@ -23,7 +13,6 @@ const logFile = `./logs/xsubmitter-log-${today.toISOString()}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
-var responses = [];
 console.log(`Starting wm-file submmiter`);
 console.log(`Pushing files to ${streamerURL}`);
 console.log(`Logging results in ${logFile}`);
@@ -60,32 +49,35 @@ var skippedSchoolCodes = [];
   let index = 2;
   let seq = 1;
 
-  console.log(`starting file scan... files: `, worksheet.rowCount);
+  // console.log(`starting file scan... files: `, worksheet.rowCount);
   // for (let seq = 1; seq < 6; seq++) {
-  while (seq < 6) {
+  while (seq < 10) {
     console.log(`checking for sequence: `, seq);
-    while (index < lfiles) {
-    // for (index; index < lfiles; index++) {
+    while (index <= lfiles) {
+      const currentRow = worksheet.getRow(index);
+      // for (index; index < lfiles; index++) {
       console.log(`current row seq: `, worksheet.getRow(index).values[10]);
-      if (seq == worksheet.getRow(index).values[10]) {
+      if (seq == currentRow.values[10]) {
         console.log(`classYear: `, worksheet.getRow(index).values[11]);
         console.log(`processing file...`);
-        await sendRequest(worksheet.getRow(index), worksheet.getRow(index).values[11]);
+        await sendRequest(currentRow, currentRow.values[11]);
         wroteFlag = true;
       }
-      index++
+      currentRow.hidden = false;
+      index++;
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(5000)
+      await nap(2500);
     }
     console.log(`reset wait`);
     wroteFlag = false;
     index = 2;
-    seq++
+    seq++;
   }
 
   // await workbook.xlsx.writeFile("input.xlsx");
+  //To avoid corrupting files we should only save them if there was any change.
   await workbook.xlsx.writeFile(inputFilename);
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
@@ -95,7 +87,6 @@ var skippedSchoolCodes = [];
 })();
 
 async function sendRequest(row, classYear) {
-  row.hidden = false;
   const enabled = row.values[3] ? row.values[3] : false;
   if (enabled !== true) if (enabled.formula !== "TRUE()") return;
   const file = row.getCell(2).value;
@@ -106,8 +97,7 @@ async function sendRequest(row, classYear) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
-  console.log("ClassYear: ", classYear)
-  console.log(schoolName);
+  var titleYear = row.values[12];
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
     console.log(error);
@@ -126,7 +116,8 @@ async function sendRequest(row, classYear) {
     skippedSchoolCodes.push(schoolcode);
     return;
   }
-  if (sponsorSchools[schoolcode] == undefined) {
+  const owners = await getOwners("dev");
+  if (owners[schoolcode] == undefined) {
     let error = `skipped, invalid schoolCode ${schoolcode}`;
     console.log(error);
     row.getCell(4).value = "false";
@@ -143,29 +134,8 @@ async function sendRequest(row, classYear) {
     sep = sep === "" ? ",\n" : sep;
     return;
   }
-  var sponsorName = sponsorSchools[schoolcode][0];
-  //Get customer data
-  const query = datastore
-    .createQuery("Customer")
-    .filter("Owner", sponsorName)
-    .limit(1);
-  query.namespace = "wemade-dev";
-  var accessKey = "";
-  var owner = "";
-
-  await datastore
-    .runQuery(query)
-    .then(results => {
-      const customers = results[0];
-      customers.forEach(customer => {
-        accessKey = customer.AccessKey;
-        owner = customer.Owner;
-        const cusKey = customer[datastore.KEY];
-      });
-    })
-    .catch(err => {
-      console.error("ERROR:", err);
-    });
+  const accessKey = owners[schoolcode].AccessKey;
+  const owner = owners[schoolcode].Owner;
 
   const bucketName = "oncampusmarketing";
   const options = {
@@ -191,7 +161,8 @@ async function sendRequest(row, classYear) {
     attributes: {
       Organization: schoolcode,
       CampaignName: programName,
-      Title: classYear.toString()
+      Title: classYear.toString(),
+      TitleYear: titleYear.toString()
     }
   };
 
@@ -241,13 +212,11 @@ async function sendRequest(row, classYear) {
 
 function sleep(time) {
   var stop = new Date().getTime();
-  while(new Date().getTime() < stop + time) {
-      ;
-  }
+  while (new Date().getTime() < stop + time) {}
 }
 
-function nap(ms){
-  return new Promise(resolve=>{
-      setTimeout(resolve,ms)
-  })
+function nap(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
 }
