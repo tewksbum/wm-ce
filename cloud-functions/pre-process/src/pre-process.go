@@ -988,13 +988,17 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
 	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
+	if err.Address2 == 0 && err.ContainsAddress == 0 && strings.Contains(key, "street") {
+		err.ContainsAddress = 1
+	}
+
 	if strings.Contains(key, "city") {
 		err.ContainsCity = 1
 	}
