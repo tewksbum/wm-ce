@@ -259,13 +259,13 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 
 				if cpSheet > -1 {
-					log.Printf("procesing cp sheet")
+					log.Printf("Processing cp sheet %v", cpSheet)
 					allrows = sheetData[cpSheet]
 				} else if wcSheet > -1 {
-					log.Printf("Processing wc sheet")
+					log.Printf("Processing wc sheet %v", wcSheet)
 					allrows = sheetData[wcSheet]
 				} else if origSheet > -1 {
-					log.Printf("Processing original sheet")
+					log.Printf("Processing original sheet %v", origSheet)
 					allrows = sheetData[origSheet]
 				} else {
 					// take the first sheet if we don't find something more interesting
@@ -437,11 +437,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				psresult := topic.Publish(ctx, &pubsub.Message{
 					Data: outputJSON,
 				})
-				psid, err := psresult.Get(ctx)
+				_, err := psresult.Get(ctx)
 				if err != nil {
 					log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
 				} else {
-					log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+					// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 					recordCount++
 				}
 			}
