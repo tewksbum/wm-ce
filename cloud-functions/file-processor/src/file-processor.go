@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -407,6 +408,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			SetRedisValueWithExpiration([]string{input.Signature.EventID, "fibers-deleted"}, 0)
 
 			recordCount := 0
+
+			sort.Slice(records, func(i, j int) bool {
+				return rand.Int() < rand.Int()
+			})
+
 			for r, d := range records {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {

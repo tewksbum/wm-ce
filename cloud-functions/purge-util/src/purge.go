@@ -28,8 +28,8 @@ var bq *bigquery.Client
 
 var allowedOperations = map[string]map[string]map[string]bool{
 	"datastore": map[string]map[string]bool{
-		"namespace": map[string]bool{"delete": true},
-		"kind":      map[string]bool{"delete": true},
+		"namespace": map[string]bool{"delete": true, "count": true},
+		"kind":      map[string]bool{"delete": true, "count": true},
 	},
 	"bigquery": map[string]map[string]bool{
 		"dataset": map[string]bool{"delete": true},
@@ -97,9 +97,16 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if strings.EqualFold(input.TargetType, "datastore") {
-					n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
-					w.WriteHeader(http.StatusOK)
-					fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					if strings.ToLower(input.Operation) == "delete" {
+						n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					} else if strings.ToLower(input.Operation) == "count" {
+						n, k, e := countDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+						w.WriteHeader(http.StatusOK)
+						fmt.Fprintf(w, "{\"success\": true, \"message\": \"counted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+					}
+
 					return
 				}
 			} else {
@@ -118,6 +125,72 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+}
+
+func countDataStore(level string, filter string, subfilter string) (int, int, int) {
+	countNS := 0
+	countKind := 0
+	countEntity := 0
+	switch level {
+	case "namespace":
+		query := datastore.NewQuery("__namespace__").KeysOnly()
+		namespaces, err := ds.GetAll(ctx, query, nil)
+		if err != nil {
+			return countNS, countKind, countEntity
+		}
+		rens, _ := regexp.Compile("^" + env + "-" + filter)
+
+		for _, n := range namespaces {
+			if rens.MatchString(n.Name) {
+				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
+				kinds, err := ds.GetAll(ctx, query, nil)
+				if err != nil {
+					return countNS, countKind, countEntity
+				}
+				if len(subfilter) > 0 {
+					rekind, _ := regexp.Compile(subfilter)
+					for _, k := range kinds {
+						if rekind.MatchString(k.Name) {
+							countKind++
+							countEntity += countDS(n.Name, k.Name)
+						}
+					}
+				} else {
+					for _, k := range kinds {
+						countKind++
+						countEntity += countDS(n.Name, k.Name)
+					}
+				}
+				countNS++
+			}
+		}
+	case "kind":
+		query := datastore.NewQuery("__kind__").Namespace(filter).KeysOnly()
+		if filter == "[default]" { // remove the namespace filter if [default]
+			query = datastore.NewQuery("__kind__").KeysOnly()
+		}
+		keys, err := ds.GetAll(ctx, query, nil)
+		if err != nil {
+			return countNS, countKind, countEntity
+		}
+		if len(subfilter) > 0 {
+
+			regex, _ := regexp.Compile(subfilter)
+			for _, k := range keys {
+				if regex.MatchString(k.Name) {
+					countKind++
+					countEntity += countDS(filter, k.Name)
+				}
+			}
+		} else {
+			for _, k := range keys {
+				countKind++
+				countEntity += countDS(filter, k.Name)
+			}
+		}
+		countNS++
+	}
+	return countNS, countKind, countEntity
 }
 
 func purgeDataStore(level string, filter string, subfilter string) (int, int, int) {
@@ -188,6 +261,19 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 
 func purgeBigQuery(level string, filter string) {
 
+}
+
+func countDS(ns string, kind string) int {
+	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
+		return 0
+	}
+	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
+	if ns == "[default]" {
+		query = datastore.NewQuery(kind).KeysOnly()
+	}
+	keys, _ := ds.GetAll(ctx, query, nil)
+
+	return len(keys)
 }
 
 func deleteDS(ns string, kind string) int {
