@@ -212,6 +212,10 @@ func TestProcessRequest5(t *testing.T) {
 }
 
 func TestProcessRequestXXX(t *testing.T) {
+	// "targetSelection": "dev-bru-dar",
+	// "targetSelection": "dev-uga-aa",
+	// "targetSelection": "dev-ott-rsa",
+	// "targetSelection": "dev-jsu-ra",
 	json := `
 	{
 		"clientID": "wemade",

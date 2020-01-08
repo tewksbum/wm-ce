@@ -475,7 +475,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
-		} else if (column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || column.PeopleERR.ContainsTitle == 1 {
+		} else if (column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || (column.PeopleERR.ContainsTitle == 1 && !reNameTitle.MatchString(column.Value)) {
 			column.MatchKey1 = "TITLE"
 			column.MatchKey2 = "STATUS"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
