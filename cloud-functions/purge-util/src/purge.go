@@ -152,13 +152,13 @@ func countDataStore(level string, filter string, subfilter string) (int, int, in
 					for _, k := range kinds {
 						if rekind.MatchString(k.Name) {
 							countKind++
-							countEntity += deleteDS(n.Name, k.Name)
+							countEntity += countDS(n.Name, k.Name)
 						}
 					}
 				} else {
 					for _, k := range kinds {
 						countKind++
-						countEntity += deleteDS(n.Name, k.Name)
+						countEntity += countDS(n.Name, k.Name)
 					}
 				}
 				countNS++

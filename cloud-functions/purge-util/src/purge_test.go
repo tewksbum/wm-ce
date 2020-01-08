@@ -224,7 +224,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetLevel": "kind",
 		"operation": "delete",
 		"targetSelection": "dev-uga-aa",
-		"targetSubSelection": ""
+		"targetSubSelection": "people-fiber"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
@@ -246,7 +246,7 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-ark-rl",
+		"targetSelection": "dev-uga-aa",
 		"targetSubSelection": ""
 	}`
 
@@ -269,8 +269,8 @@ func TestProcessRequestCount(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "count",
-		"targetSelection": "dev-acv-cv",
-		"targetSubSelection": ""
+		"targetSelection": "dev-uga-aa",
+		"targetSubSelection": "people-fiber"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
