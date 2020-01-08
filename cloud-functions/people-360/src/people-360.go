@@ -329,6 +329,7 @@ var DSKindFiber = os.Getenv("DSKINDFIBER")
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var redisTransientExpiration = 3600 * 24
+var redisTemporaryExpiration = 3600
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -475,20 +476,42 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedSets := []PeopleSetDS{}
 		queriedSets := []PeopleSetDS{}
 
+		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
+		SetRedisKeyIfNotExists(append(redisMatchValue0, "retry"))
+		redisMatchFound0 := GetRedisIntValue(redisMatchValue0)
+		SetRedisTempKey(redisMatchValue0)
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
 		} else {
+			if redisMatchFound0 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+				retryCount := GetRedisIntValue(append(redisMatchValue0, "retry"))
+				if retryCount < 30 {
+					IncrRedisValue(append(redisMatchValue0, "retry"))
+					return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+				}
+			}
 			for _, s := range queriedSets {
 				matchedSets = append(matchedSets, s)
 			}
 			LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
 		}
 		if len(MatchByValue1) > 0 {
+			redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue1, "retry"))
+			redisMatchFound1 := GetRedisIntValue(redisMatchValue1)
+			SetRedisTempKey(redisMatchValue1)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
 			} else {
+				if redisMatchFound1 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+					retryCount := GetRedisIntValue(append(redisMatchValue1, "retry"))
+					if retryCount < 30 {
+						IncrRedisValue(append(redisMatchValue1, "retry"))
+						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					}
+				}
 				for _, s := range queriedSets {
 					matchedSets = append(matchedSets, s)
 				}
@@ -496,10 +519,21 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 		if len(MatchByValue2) > 0 {
+			redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue2, "retry"))
+			redisMatchFound2 := GetRedisIntValue(redisMatchValue2)
+			SetRedisTempKey([]string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"})
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
 			} else {
+				if redisMatchFound2 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+					retryCount := GetRedisIntValue(append(redisMatchValue2, "retry"))
+					if retryCount < 30 {
+						IncrRedisValue(append(redisMatchValue2, "retry"))
+						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					}
+				}
 				for _, s := range queriedSets {
 					matchedSets = append(matchedSets, s)
 				}
@@ -507,12 +541,23 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+			redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue3, "retry"))
+			redisMatchFound3 := GetRedisIntValue(redisMatchValue3)
+			SetRedisTempKey(redisMatchValue3)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 				Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
 				Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
 			} else {
+				if redisMatchFound3 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+					retryCount := GetRedisIntValue(append(redisMatchValue3, "retry"))
+					if retryCount < 30 {
+						IncrRedisValue(append(redisMatchValue3, "retry"))
+						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					}
+				}
 				for _, s := range queriedSets {
 					matchedSets = append(matchedSets, s)
 				}
@@ -520,6 +565,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
+			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue5, "retry"))
+			redisMatchFound5 := GetRedisIntValue(redisMatchValue5)
+			SetRedisTempKey(redisMatchValue5)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 				Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
 				Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
@@ -530,6 +579,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
 			} else {
+				if redisMatchFound5 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+					retryCount := GetRedisIntValue(append(redisMatchValue5, "retry"))
+					if retryCount < 30 {
+						IncrRedisValue(append(redisMatchValue5, "retry"))
+						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					}
+				}
 				for _, s := range queriedSets {
 					matchedSets = append(matchedSets, s)
 				}
@@ -1041,6 +1097,26 @@ func SetRedisValueWithExpiration(keyparts []string, value int) {
 	}
 }
 
+func SetRedisTempKey(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, 1)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisKeyIfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
 func IncrRedisValue(keyparts []string) { // no need to update expiration
 	ms := msp.Get()
 	defer ms.Close()
@@ -1060,7 +1136,7 @@ func GetRedisIntValue(keyparts []string) int {
 	defer ms.Close()
 	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
 	return value
 }
