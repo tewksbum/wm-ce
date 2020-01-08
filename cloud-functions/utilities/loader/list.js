@@ -3,7 +3,7 @@ const xlsx = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 const {Storage} = require('@google-cloud/storage');
-const config = require( "./config.json" );
+const config = require( "./config.json.js" );
 
 const storage = new Storage();
 const storageBucket = config.gcp.bucket;
