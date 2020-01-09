@@ -381,7 +381,7 @@ function toColumnName(num) {
   }
   worksheet.columns.forEach(c => (c.hidden = false));
   worksheet.getRow(1).hidden = false;
-  const xlsFileName = "report.xlsx";
+  const xlsFileName = "./output/report.xlsx";
   workBook.xlsx.writeFile(xlsFileName).then(function() {
     console.log(`Saved xls file as ${xlsFileName}`);
   });

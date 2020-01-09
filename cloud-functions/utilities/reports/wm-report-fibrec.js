@@ -89,7 +89,7 @@ const Excel = require("exceljs");
 
     worksheet.getRow(index).values[10]
 
-    const xlsFileName = `${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
+    const xlsFileName = `./output/${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
     await workBookTarget.xlsx.writeFile(xlsFileName).then(function() {
       console.log(`Saved xls file as ${xlsFileName}`);
     });

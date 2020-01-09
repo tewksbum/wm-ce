@@ -1,0 +1,13 @@
+{
+    "gcp": {
+        "bucket": "oncampusmarketing",
+        "filter": "dd-1920/",
+        "recursive": false
+    },
+    "local": {
+        "xlsx": {
+            "fileName": "input-dd1920.xlsx",
+            "sheetName": "Files"
+        }
+    }
+}
