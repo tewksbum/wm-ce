@@ -212,10 +212,6 @@ func TestProcessRequest5(t *testing.T) {
 }
 
 func TestProcessRequestXXX(t *testing.T) {
-	// "targetSelection": "dev-bru-dar",
-	// "targetSelection": "dev-uga-aa",
-	// "targetSelection": "dev-ott-rsa",
-	// "targetSelection": "dev-jsu-ra",
 	json := `
 	{
 		"clientID": "wemade",
@@ -223,8 +219,8 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-uga-aa",
-		"targetSubSelection": "people-fiber"
+		"targetSelection": "dev-aub-ab",
+		"targetSubSelection": ""
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
@@ -246,7 +242,7 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-uga-aa",
+		"targetSelection": "dev-ark-rl",
 		"targetSubSelection": ""
 	}`
 
@@ -261,28 +257,6 @@ func TestProcessRequestArkRl(t *testing.T) {
 	fmt.Println(got)
 }
 
-func TestProcessRequestCount(t *testing.T) {
-	json := `
-	{
-		"clientID": "wemade",
-		"clientSecret": "cool_works",
-		"targetType": "datastore",
-		"targetLevel": "kind",
-		"operation": "count",
-		"targetSelection": "dev-uga-aa",
-		"targetSubSelection": "people-fiber"
-	}`
-
-	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
-	req.Header.Add("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	ProcessRequest(rr, req)
-
-	got := rr.Body.String()
-
-	fmt.Println(got)
-}
 func TestProcessRequestB(t *testing.T) {
 	json := []string{
 		`{
