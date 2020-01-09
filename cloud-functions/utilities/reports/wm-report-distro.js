@@ -1,24 +1,24 @@
-const fs = require('fs');
 const excel = require("exceljs");
 const cli = require('yargs');
 const chalk = require('chalk');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const ObjectsToCsv = require('objects-to-csv')
 
-const {Storage} = require('@google-cloud/storage');
+const { Storage } = require('@google-cloud/storage');
 const { Datastore } = require("@google-cloud/datastore");
 
 const options = cli
- .usage("Usage: node wm-list [ -b <bucket>] [ -f <folder>] -x <xlsx file> -s <sheet> [ -p <pause>]")
- .option("b", { alias: "bucket", describe: "google storage bucket name", type: "string", default: "oncampusmarketing", demandOption: true })
- .option("f", { alias: "folder", describe: "google storage bucket folder", type: "string", default: "dd-1920/", demandOption: true })
- .option("x", { alias: "xlsx", describe: "path to instruction xlsx", type: "string", demandOption: true })
- .option("s", { alias: "sheet", describe: "sheet name", type: "string", demandOption: true })
- .option("o", { alias: "outpath", describe: "output path", type: "string", demandOption: true })
- .option("p", { alias: "pause", describe: "pause ", type: "number", default: 60, demandOption: false })
- .option("e", { alias: "env", describe: "environment", type: "string", default: "dev", demandOption: true })
- .help()
- .argv;
+    .usage("Usage: node wm-list [ -b <bucket>] [ -f <folder>] -x <xlsx file> -s <sheet> [ -p <pause>]")
+    .option("b", { alias: "bucket", describe: "google storage bucket name", type: "string", default: "oncampusmarketing", demandOption: true })
+    .option("f", { alias: "folder", describe: "google storage bucket folder", type: "string", default: "dd-1920/", demandOption: true })
+    .option("x", { alias: "xlsx", describe: "path to instruction xlsx", type: "string", demandOption: true })
+    .option("s", { alias: "sheet", describe: "sheet name", type: "string", demandOption: true })
+    .option("o", { alias: "outpath", describe: "output path", type: "string", demandOption: true })
+    .option("p", { alias: "pause", describe: "pause ", type: "number", default: 60, demandOption: false })
+    .option("e", { alias: "env", describe: "environment", type: "string", default: "dev", demandOption: true, choices: ["dev", "prod"] })
+    .help()
+    .argv;
 
 var env = options.env;
 
@@ -32,40 +32,51 @@ const datastore = new Datastore();
 var ProgressBar = require('progress');
 console.log(`Running Excel file ${chalk.blue(options.xlsx)} sheet ${chalk.yellow(options.sheet)}`);
 
-var ListColumns =  [
-    {key: "SALUTATION SLUG"},
-    {key: "FIRST NAME"},
-    {key: "LAST NAME"},
-    {key: "STREET ADDRESS 1"},
-    {key: "STREET ADDRESS 2"},
-    {key: "CITY"},
-    {key: "STATE"},
-    {key: "ZIPCODE"},
-    {key: "SCHOOL CODE"},
-    {key: "PROGRAM"},
-    {key: "MAILER TYPE"},
-    {key: "FILE OUTPUT DATE"},
-    {key: "GENDER"},
-    {key: "DISTRIBUTION"},
+var ListColumns = [
+    { key: "SALUTATION SLUG" },
+    { key: "FIRST NAME" },
+    { key: "LAST NAME" },
+    { key: "STREET ADDRESS 1" },
+    { key: "STREET ADDRESS 2" },
+    { key: "CITY" },
+    { key: "STATE" },
+    { key: "ZIPCODE" },
+    { key: "SCHOOL CODE" },
+    { key: "PROGRAM" },
+    { key: "MAILER TYPE" },
+    { key: "FILE OUTPUT DATE" },
+    { key: "GENDER" },
+    { key: "DISTRIBUTION" },
 ];
 ListColumns.forEach(function (item, index) {
     item.header = item.key;
 });
 
 var ReportColumns = [
-    {key: "Name", width: 30},
-    {key: "Value", width: 15},
+    { key: "Name", width: 30 },
+    { key: "Value", width: 15 },
 ];
 
-async function main () {
+var TargetFilter = {
+    "allgrads": " and title <= '2019'",
+    "allsen": " and title = '2019'",
+    "gradboth": " and title <= '2019'",
+    "gradgrad": " and title <= '2019'",
+    "gradsen": " and title = '2019'",
+};
+
+
+async function main() {
     // first get a list of all files in the bucket
-    const storageOptions = {prefix: options.folder, delimiter: "/", };
+    const storageOptions = { prefix: options.folder, delimiter: "/", };
+
+    var segmentdb = env === "dev" ? "segment_dev" : "segment";
     var cloudsql = await mysql.createConnection({
-        host     : '35.222.83.59',
-        user     : 'jyang',
-        password : 'jyang',
-        database : 'segment_' + env
-      });
+        host: '35.222.83.59',
+        user: 'jyang',
+        password: 'jyang',
+        database: segmentdb
+    });
 
     // const [sbfiles] = await storage.bucket(options.bucket).getFiles(storageOptions);
 
@@ -111,17 +122,17 @@ async function main () {
         for (var r = 1; r < worksheet.rowCount; r++) {
             var row = worksheet.getRow(r + 1);
             if (!row.hidden) {
-                var schoolcode = cellValue(worksheet.getCell(r +1, columns["School Code"]).value);
-                var program = cellValue(worksheet.getCell(r +1, columns["Program"]).value);
-                var year = cellValue(worksheet.getCell(r +1, columns["Year"]).value);
-                var targetgroup = cellValue(worksheet.getCell(r +1, columns["Anticipated Target Group"]).value);
-                var salutation = cellValue(worksheet.getCell(r +1, columns["Salutation"]).value);
-                var distribution = cellValue(worksheet.getCell(r +1, columns["Distribution"]).value);
-                var schoolname = cellValue(worksheet.getCell(r +1, columns["School"]).value);
-                var dropdate = cellValue(worksheet.getCell(r +1, columns["Ant Drop Dte (Yellow = Date Moved Earlier)"]).value);
-                var adcode = cellValue(worksheet.getCell(r +1, columns["Adcode"]).value);
-                var output = cellValue(worksheet.getCell(r +1, columns["Output File Name"]).value);
-                var printsize = cellValue(worksheet.getCell(r +1, columns["Print Size"]).value);
+                var schoolcode = cellValue(worksheet.getCell(r + 1, columns["School Code"]).value);
+                var program = cellValue(worksheet.getCell(r + 1, columns["Program"]).value);
+                var year = cellValue(worksheet.getCell(r + 1, columns["Year"]).value);
+                var targetgroup = cellValue(worksheet.getCell(r + 1, columns["Anticipated Target Group"]).value);
+                var salutation = cellValue(worksheet.getCell(r + 1, columns["Salutation"]).value);
+                var distribution = cellValue(worksheet.getCell(r + 1, columns["Distribution"]).value);
+                var schoolname = cellValue(worksheet.getCell(r + 1, columns["School"]).value);
+                var dropdate = cellValue(worksheet.getCell(r + 1, columns["Ant Drop Dte (Yellow = Date Moved Earlier)"]).value);
+                var adcode = cellValue(worksheet.getCell(r + 1, columns["Adcode"]).value);
+                var output = cellValue(worksheet.getCell(r + 1, columns["Output File Name"]).value);
+                var printsize = cellValue(worksheet.getCell(r + 1, columns["Print Size"]).value);
 
                 if (schoolcode) {
                     schools.push({
@@ -149,95 +160,125 @@ async function main () {
             total: schools.length
         });
 
-        const owners = await getOwners();     
+        const owners = await getOwners();
         var errors = [];
         for (var s in schools) {
             var school = schools[s];
             bar.tick(1);
-            const [results, fields] = await cloudsql.query('SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `seg_people_oku-rha` LIMIT 10');
 
-            if (results) {
-                var file = new excel.Workbook();
-                var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
-                var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
-                var nameAlpha = "", nameOmega = "";
-                
-                // populate first sheet
-                sheetList.columns = ListColumns;
-                var outputDate = new Date().toLocaleDateString('en-US');
-                // add row 2
-                var row2 = {};
-                ListColumns.forEach(function (item, index) {
-                    row2[item.key] = school.schoolname;
-                });
-                sheetList.addRow(row2);
-                results.forEach(function(row, index) {
-                    sheetList.addRow({
-                        "SALUTATION SLUG": school.salutation,
-                        "FIRST NAME": row["firstName"],
-                        "LAST NAME": row["lastName"],
-                        "STREET ADDRESS 1": row["address1"],
-                        "STREET ADDRESS 2": row["address2"],
-                        "CITY": row["city"],
-                        "STATE": row["state"],
-                        "ZIPCODE": row["zip"],
-                        "SCHOOL CODE": school.schoolcode,
-                        "PROGRAM": programs[school.program.toLowerCase()],
-                        "MAILER TYPE": "",
-                        "FILE OUTPUT DATE": outputDate,
-                        "GENDER": row["gender"],
-                        "DISTRIBUTION": school.distribution
+            if (!owners[school.schoolcode.toUpperCase()]) {
+                errors.push(`${chalk.redBright(school.schoolcode.toUpperCase())}: no owner found in wemade customer DS for this school code`);
+                continue;
+            }
+            var titleFilter = "";
+            if (TargetFilter[school.targetgroup.toLowerCase()]) {
+                titleFilter = TargetFilter[school.targetgroup.toLowerCase()];
+            }
+            titleFilter = "";
+            var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
+            try {
+                var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "` WHERE role != 'Parent'"; // WHERE role = 'student'" + titleFilter;
+                const [results, fields] = await cloudsql.query(query);
+
+                if (results && results.length) {
+
+                    var file = new excel.Workbook();
+                    var sheetList = file.addWorksheet("DM_LIST", { views: [{ ySplit: 1 }] });
+                    var sheetReport = file.addWorksheet("DM_LIST_REPORT", { properties: { tabColor: { argb: 'FFC0000' } } });
+                    var nameAlpha = "", nameOmega = "";
+
+                    // populate first sheet
+                    sheetList.columns = ListColumns;
+                    var outputDate = new Date().toLocaleDateString('en-US');
+                    var csvs = [];
+                    // add row 2
+                    var row2 = {};
+                    ListColumns.forEach(function (item, index) {
+                        row2[item.key] = school.schoolname;
                     });
-                });
-                sheetList.getRow(1).font = {bold: true};
+                    csvs.push(row2);
+                    sheetList.addRow(row2);
+                    results.forEach(function (row, index) {
+                        var row = {
+                            "SALUTATION SLUG": school.salutation,
+                            "FIRST NAME": row["firstName"],
+                            "LAST NAME": row["lastName"],
+                            "STREET ADDRESS 1": row["address1"],
+                            "STREET ADDRESS 2": row["address2"],
+                            "CITY": row["city"],
+                            "STATE": row["state"],
+                            "ZIPCODE": row["zip"],
+                            "SCHOOL CODE": school.schoolcode,
+                            "PROGRAM": programs[school.program.toLowerCase()],
+                            "MAILER TYPE": "",
+                            "FILE OUTPUT DATE": outputDate,
+                            "GENDER": row["gender"],
+                            "DISTRIBUTION": school.distribution
+                        }
+                        sheetList.addRow(row);
+                        csvs.push(row);
+                    });
+                    sheetList.getRow(1).font = { bold: true };
 
-                nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
-                nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
-                sheetReport.columns = ReportColumns;
-                sheetReport.addRows([
-                    ["OCM Mailing List Form", ""],
-                    ["School Name:", school.schoolname],
-                    ["School Code:", school.schoolcode],
-                    ["Program:", programs[school.program.toLowerCase()]],
-                    ["Adcode:", school.adcode],
-                    ["Best Drop Date", school.dropdate],
-                    ["", ""],
-                    ["", ""],
-                    ["", ""],
-                    ["List Type:", "S"],
-                    ["First Name on List", nameAlpha],
-                    ["Last Name on List", nameOmega],
-                    ["Quantity Output", results.length],
-                    ["Print Size", school.printsize],
-                    ["Importe"],
-                    ["Imported Date"],
-                    ["Used"],
-                    ["Used Date"],
-                    ["SJ1 Label Amount"],
-                    ["SJ1 Last Record Name/Number:"],
-                    [" ", ""],
-                    ["SJ2 Label Amount"],
-                    ["SJ2 Last Record Name/Number:"],
-                    [" ", ""],
-                    ["SJ3 Label Amount"],
-                    ["SJ3 Last Record Name/Number:"]
-                ]);
+                    nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
+                    nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
+                    sheetReport.columns = ReportColumns;
+                    sheetReport.addRows([
+                        ["OCM Mailing List Form", ""],
+                        ["School Name:", school.schoolname],
+                        ["School Code:", school.schoolcode],
+                        ["Program:", programs[school.program.toLowerCase()]],
+                        ["Adcode:", school.adcode],
+                        ["Best Drop Date", school.dropdate],
+                        ["Distribution", school.distribution],
+                        ["File Name", school.output],
+                        ["", ""],
+                        ["List Type:", "S"],
+                        ["First Name on List", nameAlpha],
+                        ["Last Name on List", nameOmega],
+                        ["Quantity Output", results.length],
+                        ["Print Size", school.printsize],
+                        ["Importe"],
+                        ["Imported Date"],
+                        ["Used"],
+                        ["Used Date"],
+                        ["SJ1 Label Amount"],
+                        ["SJ1 Last Record Name/Number:"],
+                        [" ", ""],
+                        ["SJ2 Label Amount"],
+                        ["SJ2 Last Record Name/Number:"],
+                        [" ", ""],
+                        ["SJ3 Label Amount"],
+                        ["SJ3 Last Record Name/Number:"]
+                    ]);
 
-                var filename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
-                await file.xlsx.writeFile(filename);
+                    var xlsxFilename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
+                    var csvFilename = path.join(options.outpath, ensureSuffix(school.output, ".csv"));
+                    await file.xlsx.writeFile(xlsxFilename);
+
+                    var csvFile = new ObjectsToCsv(csvs);
+                    await csvFile.toDisk(csvFilename);
+
+                }
+                else {
+                    errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
+                }
             }
-            else {
-                errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
+            catch (error) {
+                errors.push(`${chalk.redBright(school.schoolcode)}: error occurred - ${error}`);
             }
-        };
-        if (errors.length > 0 ) {
+
+        }
+        if (errors.length > 0) {
             errors.forEach(function (t, i) {
                 console.log(t);
             });
         }
-        process.exit();
-    }
+    };
+
+    process.exit();
 }
+
 
 async function getOwners() {
     datastore.namespace = `wemade-${env}`;
@@ -267,7 +308,7 @@ function msleep(n) {
 }
 
 function sleep(n) {
-    msleep(n*1000);
+    msleep(n * 1000);
 }
 
 function cellValue(v) {
