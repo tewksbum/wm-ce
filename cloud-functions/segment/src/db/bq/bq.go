@@ -78,7 +78,7 @@ func Write(projectID string, r models.Record) (updated bool, err error) {
 func converInterfaceBQ(i interface{}) (o interface{}) {
 	defer func() {
 		if err := recover(); err != nil {
-			logger.InfoFmt("recovering from: %q", err)
+			logger.DebugFmt("recovering from: %q", err)
 			o = i.(interface{})
 		}
 	}()
@@ -116,9 +116,9 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecord, err error)
 						tmp = append(tmp, fmt.Sprint(vv))
 					}
 					v = strings.Join(tmp, ",")
-					logger.InfoFmt("param: %q - type: %T", v, t)
+					logger.DebugFmt("param: %q - type: %T", v, t)
 				default:
-					logger.InfoFmt("param: %q - type: %T", v, t)
+					logger.DebugFmt("param: %q - type: %T", v, t)
 				}
 				params = append(params, bigquery.QueryParameter{
 					// Converting pfValues[i] which is interface{} to .(*interface{})
@@ -129,7 +129,7 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecord, err error)
 		}
 		querystr += models.ParseOrderBy(opts.Filters, true)
 	}
-	logger.InfoFmt("Query: %s\n%#v", querystr, params)
+	logger.DebugFmt("Query: %s\n%#v", querystr, params)
 	ctx := context.Background()
 	bqClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
@@ -142,9 +142,9 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecord, err error)
 		return or, logger.ErrFmt("[bq.Read.Query.Read]: %#v", err)
 	}
 	totalrows := int(ri.TotalRows)
-	logger.InfoFmt("Total records: %d", totalrows)
+	logger.DebugFmt("Total records: %d", totalrows)
 	rec := models.GetRecordType(r.GetEntityType())
-	logger.InfoFmt("rec: %#v", rec)
+	logger.DebugFmt("rec: %#v", rec)
 	or.Count = totalrows
 	for i := 1; i <= totalrows; i++ {
 		ri.Next(rec)
@@ -156,7 +156,7 @@ func Read(projectID string, r models.Record) (or wemade.OutputRecord, err error)
 // Delete the interfae from BQ
 func Delete(projectID string, r models.Record) error {
 	for _, filter := range r.GetDBOptions().Filters {
-		logger.InfoFmt("filter: %#v", filter)
+		logger.DebugFmt("filter: %#v", filter)
 	}
 	return nil
 }

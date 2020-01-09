@@ -30,14 +30,14 @@ var (
 func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
 	if _conn == nil {
-		logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
+		logger.DebugFmt("[csql.%s.initDB] Using a new connection.", method)
 		_conn, err = dbr.Open(dialect, dsn, nil)
 		if err != nil {
 			return nil, logger.Err(err)
 		}
 		_conn.SetMaxOpenConns(1)
 	} else {
-		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
+		logger.DebugFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
 	}
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
@@ -84,7 +84,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	exists, err := stmt.ReturnString()
-	logger.InfoFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
+	logger.DebugFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
 	if err != nil {
 		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
 			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
@@ -114,12 +114,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			// }
 			rec := utils.StructToMap(r, r.GetColumnBlackList())
 			j, _ := json.Marshal(rec["record"])
-			// logger.InfoFmt("value: %#v", string(j))
+			// logger.DebugFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
-		logger.InfoFmt("[INSERT]: %s", buf.String())
+		logger.DebugFmt("[INSERT]: %s", buf.String())
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).Where(rIDField+" = ?", rmap[rIDField])
@@ -148,12 +148,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			// }
 			rec := utils.StructToMap(r, r.GetColumnBlackList())
 			j, _ := json.Marshal(rec["record"])
-			// logger.InfoFmt("value: %#v", string(j))
+			// logger.DebugFmt("value: %#v", string(j))
 			us = us.Set("record", string(j))
 		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
-		logger.InfoFmt("[UPDATE]: %s", buf.String())
+		logger.DebugFmt("[UPDATE]: %s", buf.String())
 		res, err = us.Exec()
 		if err == nil {
 			updated = true
@@ -170,7 +170,7 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
-	logger.InfoFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
+	logger.DebugFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
 		return updated, logger.ErrFmt("[csql.Write.Commit] %#v", err)
@@ -240,10 +240,10 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 								v = strings.Join(tmp, ",")
 								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
 							}
-							logger.InfoFmt("read param array: [%s] %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("read param array: [%s] %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
 							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
-							logger.InfoFmt("read param [%s] %#v - type: %T\n", pf.ParamNames[i], v, t)
+							logger.DebugFmt("read param [%s] %#v - type: %T\n", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
@@ -266,7 +266,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.InfoFmt("Query: %s", buf.String())
+	logger.DebugFmt("Query: %s", buf.String())
 	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList())
 }
 
@@ -323,10 +323,10 @@ func Delete(dsn string, r models.Record) error {
 								v = strings.Join(tmp, ",")
 								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
 							}
-							logger.InfoFmt("delete param array [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("delete param array [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
 							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
-							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
@@ -345,7 +345,7 @@ func Delete(dsn string, r models.Record) error {
 	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.InfoFmt("[DELETE]: %s", buf.String())
+	logger.DebugFmt("[DELETE]: %s", buf.String())
 	res, err := stmt.Exec()
 	if err != nil {
 		tx.Rollback()
@@ -353,7 +353,7 @@ func Delete(dsn string, r models.Record) error {
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
-	logger.InfoFmt("[csql.Delete] rows affected: %d - last inserted id: %d", ra, lid)
+	logger.DebugFmt("[csql.Delete] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
 		return logger.ErrFmt("[csql.Delete.Commit] %v#", err)

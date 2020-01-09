@@ -1,15 +1,15 @@
 package db
 
 import (
-	// "fmt"
-	// "segment/utils"
-	// "strings"
+	"os"
 	"segment/db/bq"
 	"segment/db/csql"
 	"segment/models"
 	"segment/utils/logger"
 	"segment/wemade"
 )
+
+var appEnv string = os.Getenv("APP_ENV")
 
 const (
 	recordSignature  string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
@@ -30,7 +30,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 	case models.TypeOrderDetail:
 		break
 	case models.TypeHousehold:
-		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" {
+		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" && appEnv == "dev" {
 			logger.Info("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
 		}
 		// Cleanup
@@ -85,8 +85,22 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		}
 	case models.TypePeople:
 		// Cleanup
+		for _, s := range r.GetExpiredSets() {
+			pid = s
+			recopy := *r.(*models.PeopleRecord)
+			recopy.AddDBFilter(
+				models.QueryFilter{
+					Field: peopleIDField,
+					Op:    models.OperationEquals,
+					Value: &pid,
+				},
+			)
+			err = csql.Delete(csqlDSN, &recopy)
+			if err != nil {
+				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %#v", err)
+			}
+		}
 		// recopy := *r.(*models.PeopleRecord)
-		// rrec := buildPeopleDecode(r.(*models.PeopleRecord), "")
 		// rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, peopleIDField, peopleIDField)})
 		// lop := models.OperationLinkAnd
 		// pop := models.OperationLinkOr

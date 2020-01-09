@@ -41,11 +41,11 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	}
 	ignoreUniqueFields := false
 	accessKey := input.AccessKey
-	logger.InfoFmt("RawInputJSON: %s", string(data))
+	logger.DebugFmt("RawInputJSON: %s", string(data))
 
 	if tempfixFixedAccesskey != "" && useFixedAccessKey {
 		// When using fixed access key also will ignore unique index
-		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
+		logger.DebugFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
 		accessKey = tempfixFixedAccesskey
 		ignoreUniqueFields = true
 	}
@@ -85,8 +85,8 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 
 	// idata, _ := json.Marshal(input)
 	// brdata, _ := json.Marshal(br)
-	// logger.InfoFmt("APIInput: %s", string(idata))
-	// logger.InfoFmt("BaseRecord: %s", string(brdata))
+	// logger.DebugFmt("APIInput: %s", string(idata))
+	// logger.DebugFmt("BaseRecord: %s", string(brdata))
 
 	entityType := strings.ToLower(input.EntityType)
 
@@ -164,9 +164,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		record.Organization = organization
 		json.Unmarshal(data, &record)
 		return &models.PeopleRecord{
-			BaseRecord: br,
-			Signatures: input.Signatures,
-			Record:     record,
+			BaseRecord:  br,
+			Signatures:  input.Signatures,
+			ExpiredSets: input.ExpiredSets,
+			Record:      record,
 		}, nil
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{

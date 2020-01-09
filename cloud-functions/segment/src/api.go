@@ -92,7 +92,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 		errToHTTP(w, r, err)
 		return
 	}
-	// logger.InfoFmt("record(s): %+v", rec)
+	logger.DebugFmt("record(s): %+v", rec)
 
 	// Write to db
 	or, err := db.Read(projectID, csqlDSN, rec)
@@ -102,8 +102,6 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	}
 	// If all goes well...
 	w.WriteHeader(http.StatusOK)
-	// foo := apiOutputWithRecords(true, successMsg, &or)
-	// logger.InfoFmt("POO!: %#v", foo)
 	HTTPWriteOutput(w, apiOutputWithRecords(true, successReadMsg, &or))
 }
 
@@ -125,7 +123,7 @@ func Delete(w http.ResponseWriter, r *http.Request) {
 		errToHTTP(w, r, err)
 		return
 	}
-	// logger.InfoFmt("record(s): %+v", rec)
+	logger.DebugFmt("record(s): %+v", rec)
 
 	// Write to db
 	err = db.Delete(projectID, csqlDSN, rec)
