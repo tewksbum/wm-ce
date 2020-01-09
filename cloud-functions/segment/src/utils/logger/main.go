@@ -4,8 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
+)
+
+var (
+	appEnv = os.Getenv("APP_ENV")
 )
 
 // Fatal logs error level messages, returns the error so it can be chained
@@ -41,6 +46,13 @@ func Info(msg ...string) {
 // InfoFmt logs info level formatted messages
 func InfoFmt(fmtstr string, args ...interface{}) {
 	Log("Info", fmtstr, args...)
+}
+
+// DebugFmt logs Debug level formatted messages
+func DebugFmt(fmtstr string, args ...interface{}) {
+	if appEnv == "dev" {
+		Log("Debug", fmtstr, args...)
+	}
 }
 
 // Log main logging func, returns the formatted message string

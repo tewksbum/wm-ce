@@ -52,7 +52,7 @@ func apiOutputWithRecords(success bool, msg string, records *wemade.OutputRecord
 
 // CheckAllowedMethod check if the method is not a OPTIONS - reasons? ask Jie.
 func CheckAllowedMethod(w http.ResponseWriter, r *http.Request, method string) error {
-	logger.InfoFmt("Client IP: [%s] - UserAgent: [%s] - Headers: %q", r.RemoteAddr, r.UserAgent(), r.Header)
+	// logger.DebugFmt("Client IP: [%s] - UserAgent: [%s] - Headers: %q", r.RemoteAddr, r.UserAgent(), r.Header)
 	if r.Method == http.MethodOptions || r.Method != method {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", method)

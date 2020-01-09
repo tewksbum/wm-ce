@@ -41,7 +41,7 @@ var (
 	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}
 	DecodeIDField           = "signature"
 	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
-	DecodeBlackList         = []string{"source", "passthrough", "attributes",
+	DecodeBlackList         = []string{"source", "passthrough", "attributes", "expiredSets",
 		"ownerId", "owner", "entityType", "timestamp", "signatures"}
 )
 

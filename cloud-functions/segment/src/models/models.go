@@ -67,6 +67,7 @@ type Record interface {
 	GetTimestamp() time.Time
 	GetDBOptions() Options
 	GetSignatures() []string
+	GetExpiredSets() []string
 	GetColumnList() []string
 	GetColumnBlackList() []string
 	GetSelectColumnList() []string
@@ -84,6 +85,7 @@ type DecodeRecord struct {
 	BaseRecord
 	Signature   string    `json:"signature" bigquery:"signature" sql:"signature"`
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	ExpiredSets []string  `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
 	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"peopleId"`
 	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"householdId"`
 	CreatedAt   time.Time `json:"-" bigquery:"created_at" sql:"created_at"`
@@ -109,6 +111,11 @@ func (r *DecodeRecord) GetSignatures() []string {
 	return sigs
 }
 
+// GetExpiredSets gets the decode expired sets
+func (r *DecodeRecord) GetExpiredSets() []string {
+	return r.ExpiredSets
+}
+
 // Passthrough360 defines a passthrough object
 type Passthrough360 struct {
 	Name  string `json:"name"`
@@ -122,6 +129,7 @@ type BaseRecord struct {
 	Source           string           `json:"source" bigquery:"-" sql:"-"`
 	Owner            string           `json:"owner" bigquery:"-" sql:"-"`
 	Passthrough      []Passthrough360 `json:"passthrough" bigquery:"passthrough" sql:"passthrough"`
+	ExpiredSets      []string         `json:"expiredSets,omitifempty" bigquery:"expiredsets" sql:"expiredSets"`
 	Attributes       string           `json:"attributes" bigquery:"-" sql:"-"`
 	Timestamp        time.Time        `json:"timestamp" bigquery:"timestamp" sql:"timestamp"`
 	DBopts           Options          `json:"-" bigquery:"-" sql:"-"`
@@ -221,6 +229,11 @@ func (r *BaseRecord) GetIDField() string {
 // GetSignatures gets the record signatures (always empty on base record)
 func (r *BaseRecord) GetSignatures() []string {
 	return []string{}
+}
+
+// GetExpiredSets gets the decode expired sets
+func (r *BaseRecord) GetExpiredSets() []string {
+	return r.ExpiredSets
 }
 
 // GetSurrogateID gets an invalid surrogate ID (BaseRecord)
@@ -352,9 +365,10 @@ func (r *OrderDetailRecord) GetSurrogateID() string {
 // PeopleRecord a event type record
 type PeopleRecord struct {
 	BaseRecord
-	Signatures []string `json:"signatures" bigquery:"signatures" sql:"signatures"`
 	// SurrogateID string   `json:"surrogateId" bigquery:"surrogateid"`
-	Record People `json:"record" bigquery:"record" sql:"record"`
+	Signatures  []string `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	ExpiredSets []string `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
+	Record      People   `json:"record" bigquery:"record" sql:"record"`
 }
 
 // GetMap gets the column list for DecodeRecord
@@ -365,6 +379,11 @@ func (r *PeopleRecord) GetMap() map[string]interface{} {
 // GetSignatures gets the person signatures
 func (r *PeopleRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetExpiredSets gets the person ExpiredSets
+func (r *PeopleRecord) GetExpiredSets() []string {
+	return r.ExpiredSets
 }
 
 // // GetSurrogateID gets the person surrogateID
