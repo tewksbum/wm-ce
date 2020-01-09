@@ -10,7 +10,7 @@ steps:
     "--memory", "1024MB",
     "--trigger-http", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "300",
+    "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']
