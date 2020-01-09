@@ -3,7 +3,10 @@ const cli = require('yargs');
 const chalk = require('chalk');
 const path = require('path');
 const mysql = require('mysql2/promise');
-const ObjectsToCsv = require('objects-to-csv')
+const ObjectsToCsv = require('objects-to-csv');
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+
 
 const { Storage } = require('@google-cloud/storage');
 const { Datastore } = require("@google-cloud/datastore");
@@ -223,17 +226,17 @@ async function main() {
                     nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
                     nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
                     sheetReport.columns = ReportColumns;
-                    sheetReport.addRows([
+                    var report = [
                         ["OCM Mailing List Form", ""],
-                        ["School Name:", school.schoolname],
-                        ["School Code:", school.schoolcode],
-                        ["Program:", programs[school.program.toLowerCase()]],
+                        ["School Name", school.schoolname],
+                        ["School Code", school.schoolcode],
+                        ["Program", programs[school.program.toLowerCase()]],
                         ["Adcode:", school.adcode],
-                        ["Best Drop Date", school.dropdate],
+                        ["Best Drop Date", school.dropdate ? school.dropdate.toLocaleDateString() : ""],
                         ["Distribution", school.distribution],
                         ["File Name", school.output],
                         ["", ""],
-                        ["List Type:", "S"],
+                        ["List Type", "S"],
                         ["First Name on List", nameAlpha],
                         ["Last Name on List", nameOmega],
                         ["Quantity Output", results.length],
@@ -243,21 +246,35 @@ async function main() {
                         ["Used"],
                         ["Used Date"],
                         ["SJ1 Label Amount"],
-                        ["SJ1 Last Record Name/Number:"],
-                        [" ", ""],
+                        ["SJ1 Last Record Name/Number"],
+                        ["", ""],
                         ["SJ2 Label Amount"],
-                        ["SJ2 Last Record Name/Number:"],
-                        [" ", ""],
+                        ["SJ2 Last Record Name/Number"],
+                        ["", ""],
                         ["SJ3 Label Amount"],
-                        ["SJ3 Last Record Name/Number:"]
-                    ]);
+                        ["SJ3 Last Record Name/Number"]
+                    ];
+                    sheetReport.addRows(report);
 
                     var xlsxFilename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
                     var csvFilename = path.join(options.outpath, ensureSuffix(school.output, ".csv"));
+                    var pdfFilename = path.join(options.outpath, ensureSuffix(school.output, ".pdf"));
                     await file.xlsx.writeFile(xlsxFilename);
 
                     var csvFile = new ObjectsToCsv(csvs);
                     await csvFile.toDisk(csvFilename);
+
+                    const pdf = new PDFDocument();
+                    pdf.pipe(fs.createWriteStream(pdfFilename)); 
+                    report.forEach(function(item, index) {
+                        if (item[0]) {
+                            pdf.text(`${item[0]}: ${item[1] ? item[1] : ""}`);
+                        }
+                        else {
+                            pdf.text(" ");
+                        }
+                    });
+                    pdf.end();
 
                 }
                 else {
