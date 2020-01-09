@@ -340,6 +340,7 @@ var AddressParserPath = os.Getenv("ADDRESSPATH")
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -349,7 +350,7 @@ var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|I
 var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
-var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|mr.|ms.|miss|mrs.|Mr.|Ms.|Mrs.|MR|MRS|MS)$`)
+var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|miss|mrs\.|Mr\.|Ms\.|Mrs\.|MR|MRS|MS)$`)
 
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
 
@@ -474,7 +475,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
-		} else if ((column.PeopleERR.Title == 1 && reNameTitle.MatchString(column.Value)) || column.PeopleERR.ContainsTitle == 1) {
+		} else if (column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || (column.PeopleERR.ContainsTitle == 1 && !reNameTitle.MatchString(column.Value)) {
 			column.MatchKey1 = "TITLE"
 			column.MatchKey2 = "STATUS"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
@@ -929,6 +930,12 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			}
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			if len(a[0].Components.SecondaryDesignator) > 0 && len(a[0].Components.SecondaryNumber) > 0 {
+				mkOutput.AD2.Value = a[0].Components.SecondaryDesignator + " " + a[0].Components.SecondaryNumber
+				if strings.HasSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value) {
+					mkOutput.AD1.Value = strings.TrimSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value)
+				}
+			}
 			if mkOutput.CITY.Value != a[0].Components.CityName {
 				mkOutput.ADCORRECT.Value = "TRUE"
 			}
@@ -1489,6 +1496,11 @@ func CalcClassYear(cy string) string {
 	log.Printf("have classyear: %v", cy)
 	if reGraduationYear.MatchString(cy) {
 		return cy
+	} else if reClassYearFY1.MatchString(cy) { // FY1617
+		twodigityear, err := strconv.Atoi(cy[2:4])
+		if err == nil {
+			return strconv.Itoa(2000 + twodigityear + 4)
+		}
 	}
 
 	switch strings.ToLower(cy) {

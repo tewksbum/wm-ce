@@ -1,0 +1,3250 @@
+{
+  "ABC": [
+    "abc-sl",
+    "abc-hou"
+  ],
+  "ABR": [
+    "abr-sa"
+  ],
+  "ACA": [
+    "aca-opec"
+  ],
+  "ACV": [
+    "acv-cv"
+  ],
+  "ADC": [
+    "adc-rl"
+  ],
+  "ADE": [
+    "ade-rsa"
+  ],
+  "ADS": [
+    "ads-as",
+    "ads-cec"
+  ],
+  "AFU": [
+    "afu-rl",
+    "afu-rhc"
+  ],
+  "AGC": [
+    "agc-cl"
+  ],
+  "ALA": [
+    "ala-hrl"
+  ],
+  "ALB": [
+    "alb-rha",
+    "alb-bcb",
+    "alb-rl"
+  ],
+  "ALC": [
+    "alc-bacb"
+  ],
+  "ALF": [
+    "alf-aces"
+  ],
+  "ALM": [
+    "alm-afe"
+  ],
+  "ALS": [
+    "als-fheg"
+  ],
+  "ALV": [
+    "alv-rl"
+  ],
+  "AMU": [
+    "amu-fheg",
+    "amu-hrl"
+  ],
+  "ANG": [
+    "ang-hrp"
+  ],
+  "ANW": [
+    "anw-enac"
+  ],
+  "APH": [
+    "aph-rha"
+  ],
+  "APP": [
+    "app-rha",
+    "app-aaa"
+  ],
+  "APU": [
+    "apu-saa"
+  ],
+  "AQU": [
+    "aqu-rha"
+  ],
+  "ARF": [
+    "arf-hrl"
+  ],
+  "ARK": [
+    "ark-rha",
+    "ARK-RL"
+  ],
+  "ARL": [
+    "arl-cl"
+  ],
+  "ASB": [
+    "asb-rl"
+  ],
+  "ASH": [
+    "ash-aub"
+  ],
+  "ASP": [
+    "asp-hlds"
+  ],
+  "AST": [
+    "ast-harl"
+  ],
+  "ASU": [
+    "asu-rha"
+  ],
+  "ASY": [
+    "asy-rl",
+    "asy-jc"
+  ],
+  "ATU": [
+    "atu-rha",
+    "atu-bn"
+  ],
+  "ATX": [
+    "atx-urha"
+  ],
+  "AUB": [
+    "aub-ab",
+    "aub-hrl"
+  ],
+  "AUG": [
+    "aug-rha"
+  ],
+  "AUM": [
+    "aum-hrl"
+  ],
+  "AUS": [
+    "aus-seed"
+  ],
+  "AVC": [
+    "avc-sl"
+  ],
+  "AVO": [
+    "avo-rl"
+  ],
+  "AZO": [
+    "azo-och"
+  ],
+  "AZP": [
+    "azp-hs"
+  ],
+  "AZU": [
+    "azu-rha"
+  ],
+  "AZW": [
+    "azw-rha"
+  ],
+  "BAC": [
+    "bac-rl"
+  ],
+  "BAL": [
+    "bal-rha"
+  ],
+  "BAR": [
+    "bar-hrl"
+  ],
+  "BAY": [
+    "bay-cll"
+  ],
+  "BCC": [
+    "bcc-rha"
+  ],
+  "BCK": [
+    "bck-drl"
+  ],
+  "BCL": [
+    "bcl-rha",
+    "bcl-fheg"
+  ],
+  "BCM": [
+    "bcm-hrl"
+  ],
+  "BCO": [
+    "bco-rha"
+  ],
+  "BDC": [
+    "bdc-rlh"
+  ],
+  "BDW": [
+    "bdw-rl"
+  ],
+  "BEC": [
+    "bec-rl"
+  ],
+  "BEL": [
+    "bel-rl",
+    "bel-bn"
+  ],
+  "BEM": [
+    "bem-drl"
+  ],
+  "BEN": [
+    "ben-bn"
+  ],
+  "BER": [
+    "ber-rl"
+  ],
+  "BFC": [
+    "bfc-hou"
+  ],
+  "BGA": [
+    "bga-bn"
+  ],
+  "BGS": [
+    "bgs-rsa",
+    "bgs-nrhh",
+    "bgs-sp"
+  ],
+  "BHS": [
+    "bhs-rha",
+    "bhs-rlo"
+  ],
+  "BKU": [
+    "bku-rl"
+  ],
+  "null": [
+    "bku-rl",
+    "brn-bsa",
+    "chw-rl",
+    "fch-hrs",
+    "jul-rl",
+    "ldi-rs",
+    "mer-nrhh",
+    "mic-apr",
+    "scl-rha",
+    "smm-rl",
+    "sru-nrhh"
+  ],
+  "BLF": [
+    "blf-rl"
+  ],
+  "BLM": [
+    "blm-rha",
+    "blm-dsp"
+  ],
+  "BLU": [
+    "blu-us"
+  ],
+  "BMC": [
+    "bmc-bmcb"
+  ],
+  "BNG": [
+    "bng-bn"
+  ],
+  "BOU": [
+    "bou-bn"
+  ],
+  "BOW": [
+    "bow-fheg"
+  ],
+  "BPT": [
+    "bpt-rl"
+  ],
+  "BRC": [
+    "brc-hrl"
+  ],
+  "BRD": [
+    "brd-rha",
+    "brd-apo"
+  ],
+  "BRN": [
+    "brn-bsa"
+  ],
+  "BRU": [
+    "bru-ssb",
+    "bru-dar"
+  ],
+  "BRY": [
+    "bry-fheg"
+  ],
+  "BSC": [
+    "bsc-rha"
+  ],
+  "BSU": [
+    "bsu-rha",
+    "bsu-hsa"
+  ],
+  "BTC": [
+    "btc-sab"
+  ],
+  "BTU": [
+    "btu-rl"
+  ],
+  "BUI": [
+    "bui-oo"
+  ],
+  "BUT": [
+    "but-rha",
+    "but-rl"
+  ],
+  "BUV": [
+    "buv-bn"
+  ],
+  "BWU": [
+    "bwu-sl"
+  ],
+  "BYS": [
+    "bys-sa"
+  ],
+  "BYU": [
+    "byu-bs",
+    "byu-ds"
+  ],
+  "CAA": [
+    "caa-ihc",
+    "caa-ar"
+  ],
+  "CAB": [
+    "cab-fheg"
+  ],
+  "CAM": [
+    "cam-rha"
+  ],
+  "CAN": [
+    "can-sl"
+  ],
+  "CAR": [
+    "car-rlp"
+  ],
+  "CAT": [
+    "cat-rl",
+    "cat-miht"
+  ],
+  "CAU": [
+    "cau-drl"
+  ],
+  "CAZ": [
+    "caz-rl"
+  ],
+  "CBA": [
+    "cba-rha"
+  ],
+  "CBS": [
+    "cbs-csrl"
+  ],
+  "CBU": [
+    "cbu-rhlo"
+  ],
+  "CCF": [
+    "ccf-aa"
+  ],
+  "CCH": [
+    "cch-rha",
+    "CCH-RL"
+  ],
+  "CCI": [
+    "cci-rha"
+  ],
+  "CCM": [
+    "ccm-cl"
+  ],
+  "CCN": [
+    "ccn-saa"
+  ],
+  "CCO": [
+    "cco-rha"
+  ],
+  "CCT": [
+    "cct-bn"
+  ],
+  "CCU": [
+    "ccu-rha",
+    "ccu-saa"
+  ],
+  "CDE": [
+    "cde-rha"
+  ],
+  "CDH": [
+    "cdh-uh"
+  ],
+  "CEC": [
+    "cec-rl",
+    "cec-drl"
+  ],
+  "CEN": [
+    "cen-slo",
+    "cen-afe"
+  ],
+  "CFC": [
+    "cfc-rl"
+  ],
+  "CFU": [
+    "cfu-hre"
+  ],
+  "CGB": [
+    "cgb-rl"
+  ],
+  "CHA": [
+    "cha-rla"
+  ],
+  "CHC": [
+    "chc-rl",
+    "chc-aa"
+  ],
+  "CHL": [
+    "chl-rl"
+  ],
+  "CHM": [
+    "chm-rl"
+  ],
+  "CHO": [
+    "cho-ch"
+  ],
+  "CHS": [
+    "chs-bn",
+    "chs-wb"
+  ],
+  "CHT": [
+    "cht-rl"
+  ],
+  "CHU": [
+    "chu-rha"
+  ],
+  "CHW": [
+    "chw-rl"
+  ],
+  "CIA": [
+    "cia-rl"
+  ],
+  "CKE": [
+    "cke-cs"
+  ],
+  "CLA": [
+    "cla-hrl"
+  ],
+  "CLB": [
+    "clb-rha"
+  ],
+  "CLD": [
+    "cld-rl"
+  ],
+  "CLK": [
+    "clk-clrl"
+  ],
+  "CLS": [
+    "cls-rl"
+  ],
+  "CLT": [
+    "clt-rlo"
+  ],
+  "CLU": [
+    "clu-rha",
+    "clu-stfp",
+    "clu-twcc"
+  ],
+  "CLV": [
+    "clv-fheg"
+  ],
+  "CLY": [
+    "cly-ls",
+    "cly-hrl"
+  ],
+  "CMB": [
+    "cmb-rha"
+  ],
+  "CMD": [
+    "cmd-rl"
+  ],
+  "CMI": [
+    "cmi-rha",
+    "cmi-rl",
+    "cmi-ar"
+  ],
+  "CMJ": [
+    "cmj-rhc"
+  ],
+  "CMS": [
+    "cms-hlt",
+    "cms-usha"
+  ],
+  "CMU": [
+    "cmu-hfh"
+  ],
+  "CND": [
+    "cnd-sa"
+  ],
+  "CNJ": [
+    "cnj-ct"
+  ],
+  "CNL": [
+    "cnl-rl"
+  ],
+  "CNM": [
+    "cnm-rlo"
+  ],
+  "CNP": [
+    "cnp-rha",
+    "cnp-rl"
+  ],
+  "CNU": [
+    "cnu-cm",
+    "cnu-bcm"
+  ],
+  "CNW": [
+    "cnw-rha"
+  ],
+  "COB": [
+    "cob-rha"
+  ],
+  "COC": [
+    "coc-bn"
+  ],
+  "COD": [
+    "cod-srl"
+  ],
+  "COE": [
+    "coe-drl"
+  ],
+  "COK": [
+    "cok-bn",
+    "cok-hac",
+    "cok-nrhh"
+  ],
+  "COL": [
+    "col-cb"
+  ],
+  "COV": [
+    "cov-pc"
+  ],
+  "CPA": [
+    "cpa-ho"
+  ],
+  "CPP": [
+    "cpp-hs",
+    "cpp-ww",
+    "cpp-uhs"
+  ],
+  "CRD": [
+    "crd-sl"
+  ],
+  "CRL": [
+    "crl-rl",
+    "crl-cab"
+  ],
+  "CRT": [
+    "crt-rl"
+  ],
+  "CRU": [
+    "cru-irhg"
+  ],
+  "CSA": [
+    "csa-rha"
+  ],
+  "CSC": [
+    "csc-rha"
+  ],
+  "CSF": [
+    "csf-fssh",
+    "csf-uc"
+  ],
+  "CSH": [
+    "csh-rha"
+  ],
+  "CSL": [
+    "csl-uh"
+  ],
+  "CSN": [
+    "csn-rha"
+  ],
+  "CSP": [
+    "csp-rha"
+  ],
+  "CSS": [
+    "css-rha",
+    "css-hre"
+  ],
+  "CSU": [
+    "csu-rha",
+    "csu-aa"
+  ],
+  "CTC": [
+    "ctc-rel"
+  ],
+  "CTL": [
+    "ctl-rla",
+    "ctl-rha",
+    "CTL-CAB"
+  ],
+  "CTW": [
+    "ctw-fheg"
+  ],
+  "CTY": [
+    "cty-rl"
+  ],
+  "CUA": [
+    "cua-hs"
+  ],
+  "CUI": [
+    "cui-rl"
+  ],
+  "CUO": [
+    "cuo-ck"
+  ],
+  "CUP": [
+    "cup-ic"
+  ],
+  "CUQ": [
+    "cuq-sar"
+  ],
+  "CUR": [
+    "cur-rl",
+    "cur-sga"
+  ],
+  "CWC": [
+    "cwc-rl"
+  ],
+  "CWM": [
+    "cwm-aa",
+    "cwm-rl"
+  ],
+  "CWR": [
+    "cwr-nrhh"
+  ],
+  "CWU": [
+    "cwu-hnsp",
+    "cwu-rha"
+  ],
+  "CZT": [
+    "czt-rl",
+    "czt-char"
+  ],
+  "DCM": [
+    "dcm-rsa"
+  ],
+  "DCO": [
+    "dco-rl"
+  ],
+  "DEL": [
+    "del-hre"
+  ],
+  "DIC": [
+    "dic-dcb"
+  ],
+  "DKU": [
+    "dku-wa",
+    "dku-ck"
+  ],
+  "DMC": [
+    "dmc-nstc"
+  ],
+  "DNY": [
+    "dny-rl",
+    "dny-dpm"
+  ],
+  "DPL": [
+    "dpl-rhc"
+  ],
+  "DRK": [
+    "drk-rha",
+    "drk-saa",
+    "drk-duna"
+  ],
+  "DRU": [
+    "dru-rl"
+  ],
+  "DRW": [
+    "drw-rl"
+  ],
+  "DSL": [
+    "dsl-rl"
+  ],
+  "DST": [
+    "dst-hrl",
+    "dst-aa"
+  ],
+  "DTC": [
+    "dtc-rl",
+    "dtc-sdt"
+  ],
+  "DTU": [
+    "dtu-rl"
+  ],
+  "DUQ": [
+    "duq-bn"
+  ],
+  "DVU": [
+    "dvu-rl",
+    "dvu-nama"
+  ],
+  "DWU": [
+    "dwu-rl"
+  ],
+  "DXU": [
+    "dxu-bn"
+  ],
+  "EAS": [
+    "eas-sd"
+  ],
+  "ECA": [
+    "eca-ehc"
+  ],
+  "ECK": [
+    "eck-rlo"
+  ],
+  "ECN": [
+    "ecn-bk"
+  ],
+  "ECS": [
+    "ecs-bn",
+    "ecs-sc"
+  ],
+  "ECU": [
+    "ecu-rha"
+  ],
+  "EDB": [
+    "edb-rha"
+  ],
+  "EDM": [
+    "edm-ho"
+  ],
+  "EHU": [
+    "ehu-rha"
+  ],
+  "EIU": [
+    "eiu-rha",
+    "eiu-nrhh"
+  ],
+  "EKU": [
+    "eku-rha",
+    "eku-saa"
+  ],
+  "ELC": [
+    "elc-ic"
+  ],
+  "ELM": [
+    "elm-rl"
+  ],
+  "EMA": [
+    "ema-fheg"
+  ],
+  "EMC": [
+    "emc-rha"
+  ],
+  "EME": [
+    "eme-rl"
+  ],
+  "EMI": [
+    "emi-rha"
+  ],
+  "EMU": [
+    "emu-rha"
+  ],
+  "ENM": [
+    "enm-bn"
+  ],
+  "EOU": [
+    "eou-rl"
+  ],
+  "ERA": [
+    "era-rha"
+  ],
+  "ERU": [
+    "eru-rsa"
+  ],
+  "ESM": [
+    "esm-bn"
+  ],
+  "EST": [
+    "est-rha",
+    "est-pa"
+  ],
+  "ESU": [
+    "esu-rl"
+  ],
+  "ETC": [
+    "etc-cs"
+  ],
+  "ETN": [
+    "etn-nrhh",
+    "etn-rha"
+  ],
+  "EVC": [
+    "evc-ho"
+  ],
+  "FAH": [
+    "fah-mrs"
+  ],
+  "FAI": [
+    "fai-rhcc",
+    "fai-rha"
+  ],
+  "FAM": [
+    "fam-rha"
+  ],
+  "FAU": [
+    "fau-hre",
+    "fau-rsa"
+  ],
+  "FCH": [
+    "fch-hrs",
+    "fch-asbt"
+  ],
+  "FDK": [
+    "fdk-ho"
+  ],
+  "FDM": [
+    "fdm-rl"
+  ],
+  "FDU": [
+    "fdu-rha"
+  ],
+  "FEL": [
+    "fel-rl"
+  ],
+  "FER": [
+    "fer-rlh"
+  ],
+  "FFU": [
+    "ffu-fheg"
+  ],
+  "FGC": [
+    "fgc-rha"
+  ],
+  "FGH": [
+    "fgh-ad"
+  ],
+  "FHS": [
+    "fhs-rha"
+  ],
+  "FIT": [
+    "fit-cs"
+  ],
+  "FIU": [
+    "fiu-nrhh",
+    "fiu-oapp"
+  ],
+  "FLA": [
+    "fla-men"
+  ],
+  "FLC": [
+    "flc-rha"
+  ],
+  "FLD": [
+    "fld-rha"
+  ],
+  "FLS": [
+    "fls-bn"
+  ],
+  "FLT": [
+    "flt-rl"
+  ],
+  "FLU": [
+    "flu-irhc",
+    "flu-nrhh"
+  ],
+  "FMG": [
+    "fmg-rlo"
+  ],
+  "FMS": [
+    "fms-rl"
+  ],
+  "FMU": [
+    "fmu-rsa"
+  ],
+  "FNC": [
+    "fnc-hrl"
+  ],
+  "FNM": [
+    "fnm-bn"
+  ],
+  "FRN": [
+    "frn-nrhh",
+    "frn-rha"
+  ],
+  "FRP": [
+    "frp-stdi"
+  ],
+  "FRU": [
+    "fru-fub"
+  ],
+  "FST": [
+    "fst-nrhh",
+    "FST-RHA"
+  ],
+  "FUR": [
+    "fur-hrl",
+    "fur-rlc"
+  ],
+  "FVC": [
+    "fvc-fheg"
+  ],
+  "FYU": [
+    "fyu-rha"
+  ],
+  "GAN": [
+    "gan-rha"
+  ],
+  "GAT": [
+    "gat-rha",
+    "gat-aa"
+  ],
+  "GAW": [
+    "gaw-hre"
+  ],
+  "GCC": [
+    "gcc-mab"
+  ],
+  "GCP": [
+    "gcp-rl"
+  ],
+  "GCU": [
+    "gcu-ho"
+  ],
+  "GDC": [
+    "gdc-cb"
+  ],
+  "GEO": [
+    "geo-rl"
+  ],
+  "GFU": [
+    "gfu-sl"
+  ],
+  "GGS": [
+    "ggs-saa"
+  ],
+  "GGW": [
+    "ggw-bn"
+  ],
+  "GLC": [
+    "glc-reh"
+  ],
+  "GLD": [
+    "gld-rlh",
+    "gld-ca"
+  ],
+  "GMA": [
+    "gma-fheg"
+  ],
+  "GMU": [
+    "gmu-aa"
+  ],
+  "GNC": [
+    "gnc-bn"
+  ],
+  "GON": [
+    "gon-rha"
+  ],
+  "GOU": [
+    "gou-rl"
+  ],
+  "GPC": [
+    "gpc-cct"
+  ],
+  "GRA": [
+    "gra-rlo"
+  ],
+  "GSA": [
+    "gsa-uh"
+  ],
+  "GSU": [
+    "gsu-rha"
+  ],
+  "GSW": [
+    "gsw-rha"
+  ],
+  "GTU": [
+    "gtu-ic"
+  ],
+  "GVS": [
+    "gvs-rha"
+  ],
+  "GWU": [
+    "gwu-fheg",
+    "gwu-wg"
+  ],
+  "GWY": [
+    "gwy-rha"
+  ],
+  "HAM": [
+    "ham-rha"
+  ],
+  "HBP": [
+    "hbp-rl"
+  ],
+  "HBT": [
+    "hbt-haa",
+    "hbt-aa"
+  ],
+  "HCI": [
+    "hci-bn"
+  ],
+  "HEI": [
+    "hei-rl"
+  ],
+  "HEN": [
+    "hen-rb",
+    "hen-rha"
+  ],
+  "HFU": [
+    "hfu-bn"
+  ],
+  "HHC": [
+    "hhc-cs"
+  ],
+  "HIR": [
+    "hir-reo"
+  ],
+  "HLG": [
+    "hlg-sl"
+  ],
+  "HMC": [
+    "hmc-mmad"
+  ],
+  "HML": [
+    "hml-rl"
+  ],
+  "HMP": [
+    "hmp-fs"
+  ],
+  "HNU": [
+    "hnu-hrl"
+  ],
+  "HOF": [
+    "hof-rp",
+    "hof-sle"
+  ],
+  "HOP": [
+    "hop-hcb"
+  ],
+  "HOW": [
+    "how-rl",
+    "how-ss"
+  ],
+  "HRK": [
+    "hrk-bhc"
+  ],
+  "HSN": [
+    "hsn-fheg"
+  ],
+  "HSU": [
+    "hsu-fheg"
+  ],
+  "HUA": [
+    "hua-hnbs"
+  ],
+  "HVC": [
+    "hvc-sc"
+  ],
+  "HWC": [
+    "hwc-rlh",
+    "hwc-bn"
+  ],
+  "HWS": [
+    "hws-re"
+  ],
+  "IAS": [
+    "ias-adm"
+  ],
+  "IAT": [
+    "iat-ar"
+  ],
+  "IHU": [
+    "ihu-gc"
+  ],
+  "IIT": [
+    "iit-rgl"
+  ],
+  "ILU": [
+    "ilu-arh"
+  ],
+  "ILW": [
+    "ilw-rha"
+  ],
+  "IMG": [
+    "img-sa"
+  ],
+  "IMM": [
+    "imm-rlh"
+  ],
+  "IND": [
+    "ind-rha"
+  ],
+  "ION": [
+    "ion-rl"
+  ],
+  "IPX": [
+    "ipx-rl"
+  ],
+  "ISU": [
+    "isu-rha"
+  ],
+  "ITC": [
+    "itc-es"
+  ],
+  "ITH": [
+    "ith-rha"
+  ],
+  "IUP": [
+    "iup-rha",
+    "iup-npc"
+  ],
+  "IWU": [
+    "iwu-ub"
+  ],
+  "JAU": [
+    "jau-rlh",
+    "jau-rha"
+  ],
+  "JAW": [
+    "jaw-fheg"
+  ],
+  "JCS": [
+    "jcs-rlo"
+  ],
+  "JCU": [
+    "jcu-rha"
+  ],
+  "JEF": [
+    "jef-rl"
+  ],
+  "JHU": [
+    "jhu-bn",
+    "jhu-tjaa"
+  ],
+  "JMU": [
+    "jmu-cspa",
+    "jmu-sh"
+  ],
+  "JOH": [
+    "joh-rl",
+    "joh-bab"
+  ],
+  "JPO": [
+    "jpo-nc"
+  ],
+  "JSU": [
+    "jsu-ar"
+  ],
+  "JUL": [
+    "jul-rl"
+  ],
+  "JUN": [
+    "jun-spa"
+  ],
+  "JWC": [
+    "jwc-fheg",
+    "jwc-rl"
+  ],
+  "JWD": [
+    "jwd-rha"
+  ],
+  "JWH": [
+    "jwh-fheg"
+  ],
+  "JWU": [
+    "jwu-fheg"
+  ],
+  "KCA": [
+    "kca-ds"
+  ],
+  "KCN": [
+    "kcn-rss"
+  ],
+  "KEN": [
+    "ken-nrhh",
+    "ken-kic",
+    "ken-ar"
+  ],
+  "KET": [
+    "ket-rl",
+    "ket-rha"
+  ],
+  "KIN": [
+    "kin-rl"
+  ],
+  "KKC": [
+    "kkc-sap"
+  ],
+  "KNS": [
+    "kns-rha"
+  ],
+  "KRS": [
+    "krs-rl",
+    "krs-chrs"
+  ],
+  "KSC": [
+    "ksc-rho",
+    "ksc-bn"
+  ],
+  "KST": [
+    "kst-arh",
+    "kst-nrhh"
+  ],
+  "KTZ": [
+    "ktz-ssi",
+    "ktz-rha"
+  ],
+  "KWC": [
+    "kwc-rl"
+  ],
+  "KYC": [
+    "kyc-cac"
+  ],
+  "LAF": [
+    "laf-rhc",
+    "laf-aa"
+  ],
+  "LAS": [
+    "las-rsa"
+  ],
+  "LAT": [
+    "lat-ckc",
+    "lat-dbaa"
+  ],
+  "LAW": [
+    "law-lucc",
+    "law-sa"
+  ],
+  "LCM": [
+    "lcm-rha"
+  ],
+  "LCN": [
+    "lcn-rl",
+    "lcn-hrl"
+  ],
+  "LDI": [
+    "ldi-rs"
+  ],
+  "LEC": [
+    "lec-rl",
+    "lec-mb"
+  ],
+  "LEE": [
+    "lee-rlh"
+  ],
+  "LFC": [
+    "lfc-rl"
+  ],
+  "LGU": [
+    "lgu-fheg"
+  ],
+  "LGW": [
+    "lgw-rclm"
+  ],
+  "LHI": [
+    "lhi-rs",
+    "lhi-bn"
+  ],
+  "LHU": [
+    "lhu-rha"
+  ],
+  "LIB": [
+    "lib-rlh"
+  ],
+  "LIP": [
+    "lip-ho",
+    "lip-pp"
+  ],
+  "LIU": [
+    "liu-cl"
+  ],
+  "LMC": [
+    "lmc-cll"
+  ],
+  "LMR": [
+    "lmr-sdo"
+  ],
+  "LMU": [
+    "lmu-sho"
+  ],
+  "LOC": [
+    "loc-drl"
+  ],
+  "LOM": [
+    "lom-rha"
+  ],
+  "LON": [
+    "lon-rha"
+  ],
+  "LOR": [
+    "lor-rl"
+  ],
+  "LRH": [
+    "lrh-hrl"
+  ],
+  "LRM": [
+    "lrm-rl"
+  ],
+  "LRU": [
+    "lru-rl"
+  ],
+  "LSC": [
+    "lsc-lab",
+    "lsc-sl"
+  ],
+  "LSE": [
+    "lse-bn"
+  ],
+  "LSS": [
+    "lss-ho",
+    "lss-bn"
+  ],
+  "LSU": [
+    "lsu-rha"
+  ],
+  "LTU": [
+    "ltu-pa"
+  ],
+  "LUC": [
+    "luc-rl"
+  ],
+  "LUI": [
+    "lui-rl"
+  ],
+  "LUV": [
+    "luv-bn"
+  ],
+  "LWU": [
+    "lwu-uh"
+  ],
+  "LYC": [
+    "lyc-rlo"
+  ],
+  "LYD": [
+    "lyd-raab",
+    "lyd-lsci"
+  ],
+  "LYN": [
+    "lyn-hrl"
+  ],
+  "MAA": [
+    "maa-rha",
+    "maa-sga"
+  ],
+  "MAB": [
+    "mab-hrl"
+  ],
+  "MAD": [
+    "mad-rsa"
+  ],
+  "MAN": [
+    "man-rha"
+  ],
+  "MAR": [
+    "mar-rhc",
+    "mar-hrl",
+    "mar-nd"
+  ],
+  "MAT": [
+    "mat-rl"
+  ],
+  "MCA": [
+    "mca-rha",
+    "mca-rlo"
+  ],
+  "MCD": [
+    "mcd-rha"
+  ],
+  "MCM": [
+    "mcm-rl"
+  ],
+  "MCO": [
+    "mco-kkgm"
+  ],
+  "MCY": [
+    "mcy-rl",
+    "mcy-sc"
+  ],
+  "MDL": [
+    "mdl-cb"
+  ],
+  "MDM": [
+    "mdm-cs"
+  ],
+  "MDN": [
+    "mdn-rl"
+  ],
+  "MDU": [
+    "mdu-bn"
+  ],
+  "MEC": [
+    "mec-rl"
+  ],
+  "MER": [
+    "mer-rl",
+    "mer-nrhh"
+  ],
+  "MES": [
+    "mes-st"
+  ],
+  "MFL": [
+    "mfl-hrl"
+  ],
+  "MGC": [
+    "mgc-cs"
+  ],
+  "MGE": [
+    "mge-cs"
+  ],
+  "MGR": [
+    "mgr-rl"
+  ],
+  "MHD": [
+    "mhd-saa"
+  ],
+  "MHE": [
+    "mhe-rha"
+  ],
+  "MHU": [
+    "mhu-rl"
+  ],
+  "MIA": [
+    "mia-tbs",
+    "mia-mmgc",
+    "mia-nrhh"
+  ],
+  "MIC": [
+    "mic-apr"
+  ],
+  "MID": [
+    "mid-rha"
+  ],
+  "MIL": [
+    "mil-shc"
+  ],
+  "MIN": [
+    "min-sl"
+  ],
+  "MIT": [
+    "mit-pa"
+  ],
+  "MIW": [
+    "miw-drl"
+  ],
+  "MKC": [
+    "mkc-cans"
+  ],
+  "MKN": [
+    "mkn-rl",
+    "mkn-apo"
+  ],
+  "MLG": [
+    "mlg-vt"
+  ],
+  "MLO": [
+    "mlo-rl"
+  ],
+  "MLR": [
+    "mlr-hrp",
+    "mlr-pcs",
+    "mlr-aa"
+  ],
+  "MLS": [
+    "mls-fheg"
+  ],
+  "MMC": [
+    "mmc-mcb"
+  ],
+  "MMU": [
+    "mmu-rha"
+  ],
+  "MMY": [
+    "mmy-rl"
+  ],
+  "MNC": [
+    "mnc-cs"
+  ],
+  "MNR": [
+    "mnr-rl"
+  ],
+  "MNS": [
+    "mns-rl"
+  ],
+  "MNV": [
+    "mnv-rl"
+  ],
+  "MOB": [
+    "mob-rha"
+  ],
+  "MOC": [
+    "moc-rha",
+    "moc-nrhh"
+  ],
+  "MOL": [
+    "mol-sa",
+    "mol-rlc"
+  ],
+  "MON": [
+    "mon-rha"
+  ],
+  "MOO": [
+    "moo-rha"
+  ],
+  "MOR": [
+    "mor-rha"
+  ],
+  "MPC": [
+    "mpc-mvt"
+  ],
+  "MQU": [
+    "mqu-rha"
+  ],
+  "MRT": [
+    "mrt-mmcb",
+    "mrt-rl"
+  ],
+  "MRU": [
+    "mru-hrl",
+    "mru-rha"
+  ],
+  "MRV": [
+    "mrv-mcb"
+  ],
+  "MSA": [
+    "msa-rha"
+  ],
+  "MSE": [
+    "mse-rha",
+    "mse-sl"
+  ],
+  "MSM": [
+    "msm-rl"
+  ],
+  "MSN": [
+    "msn-sl"
+  ],
+  "MSO": [
+    "mso-rha"
+  ],
+  "MSS": [
+    "mss-saa"
+  ],
+  "MST": [
+    "mst-uab"
+  ],
+  "MSV": [
+    "msv-dsa"
+  ],
+  "MTD": [
+    "mtd-rha"
+  ],
+  "MTH": [
+    "mth-hrl",
+    "mth-cki",
+    "mth-hfh"
+  ],
+  "MTL": [
+    "mtl-rl"
+  ],
+  "MTS": [
+    "mts-pfa"
+  ],
+  "MTU": [
+    "mtu-rl"
+  ],
+  "MUW": [
+    "muw-bn"
+  ],
+  "MVL": [
+    "mvl-cs",
+    "mvl-rl"
+  ],
+  "MYC": [
+    "myc-dso"
+  ],
+  "MYP": [
+    "myp-hrl"
+  ],
+  "NAS": [
+    "nas-rps"
+  ],
+  "NAT": [
+    "nat-sd"
+  ],
+  "NAV": [
+    "nav-aa"
+  ],
+  "NCB": [
+    "ncb-rld"
+  ],
+  "NCC": [
+    "ncc-rl",
+    "ncc-rha"
+  ],
+  "NCG": [
+    "ncg-asb",
+    "ncg-aa"
+  ],
+  "NCH": [
+    "nch-rha",
+    "nch-obt"
+  ],
+  "NCP": [
+    "ncp-hrl"
+  ],
+  "NCR": [
+    "ncr-bn"
+  ],
+  "NCS": [
+    "ncs-ic"
+  ],
+  "NCT": [
+    "nct-rsa",
+    "nct-bn"
+  ],
+  "NCU": [
+    "ncu-nsfp"
+  ],
+  "NDC": [
+    "ndc-drl"
+  ],
+  "NDO": [
+    "ndo-rlo"
+  ],
+  "NDS": [
+    "nds-rha"
+  ],
+  "NEU": [
+    "neu-rsa",
+    "neu-saa"
+  ],
+  "NFI": [
+    "nfi-nfui"
+  ],
+  "NFK": [
+    "nfk-rha"
+  ],
+  "NGC": [
+    "ngc-ngus"
+  ],
+  "NIC": [
+    "nic-bn"
+  ],
+  "NIU": [
+    "niu-rha"
+  ],
+  "NJI": [
+    "nji-rha"
+  ],
+  "NKU": [
+    "nku-rha"
+  ],
+  "NMA": [
+    "nma-rl",
+    "nma-bn"
+  ],
+  "NMS": [
+    "nms-rha"
+  ],
+  "NMU": [
+    "nmu-bn"
+  ],
+  "NNY": [
+    "nny-rl"
+  ],
+  "NOR": [
+    "nor-cfce"
+  ],
+  "NPC": [
+    "npc-rlh"
+  ],
+  "NRS": [
+    "nrs-rl"
+  ],
+  "NST": [
+    "nst-rasa"
+  ],
+  "NSU": [
+    "nsu-bn",
+    "nsu-aa"
+  ],
+  "NTA": [
+    "nta-rl"
+  ],
+  "NTD": [
+    "ntd-bn"
+  ],
+  "NUV": [
+    "nuv-hrl"
+  ],
+  "NVU": [
+    "nvu-rlh"
+  ],
+  "NWM": [
+    "nwm-nrhh"
+  ],
+  "NWN": [
+    "nwn-cs"
+  ],
+  "NWO": [
+    "nwo-nss"
+  ],
+  "NWU": [
+    "nwu-rs"
+  ],
+  "NYC": [
+    "nyc-rl"
+  ],
+  "NYO": [
+    "nyo-rl"
+  ],
+  "NYU": [
+    "nyu-irhc"
+  ],
+  "NZU": [
+    "nzu-rha"
+  ],
+  "OAK": [
+    "oak-rha"
+  ],
+  "OBE": [
+    "obe-aa"
+  ],
+  "OCS": [
+    "ocs-rl"
+  ],
+  "OCU": [
+    "ocu-si"
+  ],
+  "ODU": [
+    "odu-rha"
+  ],
+  "OHD": [
+    "ohd-bn"
+  ],
+  "OHU": [
+    "ohu-trac",
+    "ohu-aa"
+  ],
+  "OIT": [
+    "oit-rha"
+  ],
+  "OKE": [
+    "oke-rl",
+    "oke-chrs"
+  ],
+  "OKU": [
+    "oku-rha"
+  ],
+  "OLI": [
+    "oli-rl"
+  ],
+  "OLL": [
+    "oll-rl"
+  ],
+  "OLN": [
+    "oln-onuc"
+  ],
+  "ONO": [
+    "ono-bn"
+  ],
+  "ONU": [
+    "onu-bn"
+  ],
+  "ORL": [
+    "rl-fheg"
+  ],
+  "ORS": [
+    "ors-rha"
+  ],
+  "OSU": [
+    "osu-rhac"
+  ],
+  "OSW": [
+    "osw-cs"
+  ],
+  "OTA": [
+    "ota-rl"
+  ],
+  "OTT": [
+    "ott-rsa"
+  ],
+  "OWU": [
+    "owu-nrhh"
+  ],
+  "OXF": [
+    "oxf-res"
+  ],
+  "OXY": [
+    "oxy-rha",
+    "oxy-ocb"
+  ],
+  "PAC": [
+    "pac-rha"
+  ],
+  "PAP": [
+    "pap-rha"
+  ],
+  "PAU": [
+    "pau-hrl"
+  ],
+  "PBA": [
+    "pba-fheg"
+  ],
+  "PCN": [
+    "pcn-sl"
+  ],
+  "PCS": [
+    "pcs-si"
+  ],
+  "PDM": [
+    "pdm-bn"
+  ],
+  "PDU": [
+    "pdu-hfh"
+  ],
+  "PER": [
+    "per-ho"
+  ],
+  "PFW": [
+    "pfw-re"
+  ],
+  "PKV": [
+    "pkv-fc"
+  ],
+  "PLC": [
+    "plc-bn"
+  ],
+  "PLS": [
+    "pls-rl"
+  ],
+  "PLU": [
+    "plu-rha"
+  ],
+  "PNT": [
+    "pnt-rl"
+  ],
+  "PNW": [
+    "pnw-rha"
+  ],
+  "POS": [
+    "pos-hrl"
+  ],
+  "POT": [
+    "pot-cs"
+  ],
+  "POU": [
+    "pou-rha"
+  ],
+  "PPC": [
+    "ppc-bn",
+    "ppc-uhp"
+  ],
+  "PPU": [
+    "ppu-rhl"
+  ],
+  "PRT": [
+    "prt-rlh"
+  ],
+  "PRU": [
+    "pru-df"
+  ],
+  "PRV": [
+    "prv-rl",
+    "prv-rha"
+  ],
+  "PSA": [
+    "psa-rha"
+  ],
+  "PSC": [
+    "psc-rl",
+    "psc-bk"
+  ],
+  "PSE": [
+    "pse-bn"
+  ],
+  "PSH": [
+    "psh-rha"
+  ],
+  "PSU": [
+    "psu-arhs",
+    "psu-nrhh"
+  ],
+  "PUR": [
+    "pur-fheg"
+  ],
+  "QPC": [
+    "qpc-rl"
+  ],
+  "RAD": [
+    "rad-rha",
+    "rad-amb"
+  ],
+  "RCC": [
+    "rcc-rl"
+  ],
+  "RCH": [
+    "rch-rl"
+  ],
+  "RCN": [
+    "rcn-fheg",
+    "rcn-rha"
+  ],
+  "RDC": [
+    "rdc-rcb"
+  ],
+  "RDR": [
+    "rdr-rl",
+    "rdr-rlo",
+    "rdr-rha"
+  ],
+  "REG": [
+    "reg-as",
+    "reg-rlh"
+  ],
+  "RGC": [
+    "rgc-sc"
+  ],
+  "RHR": [
+    "rhr-rl",
+    "rhr-chrs"
+  ],
+  "RIC": [
+    "ric-fyp"
+  ],
+  "RID": [
+    "rid-rlo"
+  ],
+  "RIN": [
+    "rin-rl"
+  ],
+  "RIP": [
+    "rip-bt"
+  ],
+  "RIT": [
+    "rit-bn"
+  ],
+  "RIV": [
+    "riv-rls"
+  ],
+  "RKC": [
+    "rkc-us"
+  ],
+  "RMC": [
+    "rmc-rl",
+    "rmc-ras"
+  ],
+  "RMT": [
+    "rmt-hrl",
+    "rmt-pafr"
+  ],
+  "ROA": [
+    "roa-ra"
+  ],
+  "ROL": [
+    "rol-rl"
+  ],
+  "ROO": [
+    "roo-rl"
+  ],
+  "ROW": [
+    "row-bn",
+    "row-rl"
+  ],
+  "RPI": [
+    "rpi-sll",
+    "rpi-rsa"
+  ],
+  "RSS": [
+    "rss-rha"
+  ],
+  "RSU": [
+    "rsu-bn"
+  ],
+  "RUN": [
+    "run-hrl"
+  ],
+  "RUT": [
+    "rut-nrhh",
+    "rut-rha",
+    "rut-sa"
+  ],
+  "RWU": [
+    "rwu-drlh",
+    "rwu-irha"
+  ],
+  "SAA": [
+    "saa-rha"
+  ],
+  "SAC": [
+    "sac-rha"
+  ],
+  "SAG": [
+    "sag-rlo"
+  ],
+  "SAL": [
+    "sal-bk",
+    "sal-rha"
+  ],
+  "SAN": [
+    "san-fheg"
+  ],
+  "SAQ": [
+    "saq-rl"
+  ],
+  "SAR": [
+    "sar-sds"
+  ],
+  "SAS": [
+    "sas-ss"
+  ],
+  "SAT": [
+    "sat-rl"
+  ],
+  "SAU": [
+    "sau-hrha"
+  ],
+  "SAV": [
+    "sav-drlh"
+  ],
+  "SBC": [
+    "sbc-rha",
+    "sbc-ss"
+  ],
+  "SBD": [
+    "sbd-rha"
+  ],
+  "SBU": [
+    "sbu-ad",
+    "sbu-da"
+  ],
+  "SCA": [
+    "sca-rsg",
+    "sca-rha"
+  ],
+  "SCH": [
+    "sch-ss"
+  ],
+  "SCI": [
+    "sci-rl",
+    "sci-odk"
+  ],
+  "SCL": [
+    "scl-rha"
+  ],
+  "SCO": [
+    "sco-rlh"
+  ],
+  "SCP": [
+    "scp-rha"
+  ],
+  "SCR": [
+    "scr-rl",
+    "scr-chrs"
+  ],
+  "SCS": [
+    "scs-ar"
+  ],
+  "SCT": [
+    "sct-rl",
+    "sct-sild"
+  ],
+  "SDG": [
+    "sdg-ts"
+  ],
+  "SDL": [
+    "sdl-rhsa"
+  ],
+  "SDT": [
+    "sdt-rl"
+  ],
+  "SEG": [
+    "seg-ca"
+  ],
+  "SEL": [
+    "sel-uh"
+  ],
+  "SEM": [
+    "sem-rha"
+  ],
+  "SEO": [
+    "seo-rac"
+  ],
+  "SEP": [
+    "sep-spe"
+  ],
+  "SET": [
+    "set-rsa"
+  ],
+  "SFA": [
+    "sfa-nrhh",
+    "sfa-rha"
+  ],
+  "SFL": [
+    "sfl-hre"
+  ],
+  "SFP": [
+    "sfp-rha"
+  ],
+  "SFS": [
+    "sfs-rha",
+    "sfs-aa"
+  ],
+  "SGC": [
+    "sgc-rlo"
+  ],
+  "SHC": [
+    "shc-rl"
+  ],
+  "SHD": [
+    "shd-reh"
+  ],
+  "SHR": [
+    "shr-pa"
+  ],
+  "SHU": [
+    "shu-irc"
+  ],
+  "SIA": [
+    "sia-cl",
+    "sia-sald"
+  ],
+  "SIE": [
+    "sie-rha",
+    "sie-ar"
+  ],
+  "SIM": [
+    "sim-fht"
+  ],
+  "SIT": [
+    "sit-rl"
+  ],
+  "SJJ": [
+    "sjj-fheg"
+  ],
+  "SJO": [
+    "sjo-rl",
+    "sjo-ama"
+  ],
+  "SJS": [
+    "sjs-rha"
+  ],
+  "SJU": [
+    "sju-rlh"
+  ],
+  "SKD": [
+    "skd-ss"
+  ],
+  "SLA": [
+    "sla-bn"
+  ],
+  "SLO": [
+    "slo-ihc"
+  ],
+  "SLP": [
+    "slp-tt",
+    "slp-aa"
+  ],
+  "SLU": [
+    "slu-pd",
+    "slu-ck"
+  ],
+  "SMA": [
+    "sma-fheg"
+  ],
+  "SMC": [
+    "smc-rha"
+  ],
+  "SMI": [
+    "smi-ose"
+  ],
+  "SMM": [
+    "smm-rl",
+    "smm-sc"
+  ],
+  "SMT": [
+    "smt-nrhh"
+  ],
+  "SMU": [
+    "smu-hub",
+    "smu-nrhh"
+  ],
+  "SMW": [
+    "smw-bn"
+  ],
+  "SNC": [
+    "snc-wtt",
+    "snc-wbt",
+    "snc-mbt",
+    "snc-ad"
+  ],
+  "SNH": [
+    "snh-rl"
+  ],
+  "SNU": [
+    "snu-us"
+  ],
+  "SOC": [
+    "soc-rl"
+  ],
+  "SOD": [
+    "sod-rha",
+    "sod-hero"
+  ],
+  "SOM": [
+    "som-sh"
+  ],
+  "SON": [
+    "son-rsa"
+  ],
+  "SOR": [
+    "sor-sh"
+  ],
+  "SOS": [
+    "sos-rh",
+    "sos-rha"
+  ],
+  "SOW": [
+    "sow-rl"
+  ],
+  "SPC": [
+    "spc-rl"
+  ],
+  "SPD": [
+    "spd-rl"
+  ],
+  "SPI": [
+    "spi-bn"
+  ],
+  "SQH": [
+    "sqh-sa"
+  ],
+  "SRE": [
+    "sre-rl",
+    "sre-saa"
+  ],
+  "SRS": [
+    "srs-rl"
+  ],
+  "SRU": [
+    "sru-nrhh"
+  ],
+  "SSB": [
+    "ssb-rha"
+  ],
+  "SSC": [
+    "ssc-rsc"
+  ],
+  "SSU": [
+    "ssu-rha"
+  ],
+  "STA": [
+    "sta-rl"
+  ],
+  "STC": [
+    "stc-rha"
+  ],
+  "STE": [
+    "ste-rl"
+  ],
+  "STF": [
+    "stf-sse"
+  ],
+  "STH": [
+    "sth-rl"
+  ],
+  "STL": [
+    "stl-rha",
+    "stl-saa"
+  ],
+  "STM": [
+    "stm-cho"
+  ],
+  "STN": [
+    "stn-reh",
+    "stn-rha"
+  ],
+  "STU": [
+    "stu-rll"
+  ],
+  "STX": [
+    "stx-rha"
+  ],
+  "SUA": [
+    "sua-rl"
+  ],
+  "SUT": [
+    "sut-ia"
+  ],
+  "SVA": [
+    "sva-rld"
+  ],
+  "SVE": [
+    "sve-rha"
+  ],
+  "SVG": [
+    "svg-rl"
+  ],
+  "SVS": [
+    "svs-nrhh"
+  ],
+  "SWB": [
+    "swb-rld"
+  ],
+  "SWC": [
+    "swc-rla"
+  ],
+  "SWO": [
+    "swo-apa"
+  ],
+  "SWU": [
+    "swu-rlc",
+    "swu-hrl"
+  ],
+  "SWY": [
+    "swy-rl"
+  ],
+  "SYA": [
+    "sya-uas"
+  ],
+  "SYB": [
+    "syb-rha"
+  ],
+  "SYG": [
+    "syg-nrhh",
+    "syg-irc"
+  ],
+  "SYN": [
+    "syn-rhsa"
+  ],
+  "SYO": [
+    "syo-rso",
+    "syo-ad"
+  ],
+  "SYP": [
+    "syp-cs"
+  ],
+  "SYR": [
+    "syr-ub"
+  ],
+  "TAC": [
+    "tac-bn",
+    "TAC-FHEG"
+  ],
+  "TAK": [
+    "tak-rha"
+  ],
+  "TAM": [
+    "tam-rhsc",
+    "tam-rha"
+  ],
+  "TAR": [
+    "tar-rl"
+  ],
+  "TCB": [
+    "tcb-rs"
+  ],
+  "TCM": [
+    "tcm-rll"
+  ],
+  "TCN": [
+    "tcn-bn",
+    "tcn-rha"
+  ],
+  "TCU": [
+    "tcu-hrl"
+  ],
+  "TCW": [
+    "tcw-trhl"
+  ],
+  "TEM": [
+    "tem-hrl"
+  ],
+  "TEX": [
+    "tex-rl"
+  ],
+  "TGA": [
+    "tga-rha",
+    "tga-cll"
+  ],
+  "THI": [
+    "thi-rl"
+  ],
+  "TIU": [
+    "tiu-rl"
+  ],
+  "TJC": [
+    "tjc-rha"
+  ],
+  "TLN": [
+    "tln-hrl"
+  ],
+  "TLU": [
+    "tlu-akp"
+  ],
+  "TMP": [
+    "tmp-rl",
+    "tmp-rha",
+    "TMP-BN"
+  ],
+  "TNS": [
+    "tns-fys"
+  ],
+  "TNT": [
+    "tnt-rha"
+  ],
+  "TNW": [
+    "tnw-rl"
+  ],
+  "TOU": [
+    "tou-rg",
+    "tou-nrhh"
+  ],
+  "TPH": [
+    "tph-pha"
+  ],
+  "TRI": [
+    "tri-fheg"
+  ],
+  "TRS": [
+    "trs-bn"
+  ],
+  "TRU": [
+    "tru-nrhh",
+    "tru-rha"
+  ],
+  "TSK": [
+    "tsk-rac"
+  ],
+  "TSM": [
+    "tsm-tsrh"
+  ],
+  "TSV": [
+    "tsv-sga"
+  ],
+  "TTU": [
+    "ttu-rha",
+    "ttu-rho",
+    "ttu-aa"
+  ],
+  "TUL": [
+    "tul-rha",
+    "tul-pfa"
+  ],
+  "TWU": [
+    "twu-hrl"
+  ],
+  "TXA": [
+    "txa-rhad"
+  ],
+  "TXW": [
+    "txw-rl"
+  ],
+  "TYC": [
+    "tyc-hfh",
+    "tyc-csce"
+  ],
+  "UAA": [
+    "uaa-rha"
+  ],
+  "UAB": [
+    "uab-rha"
+  ],
+  "UAF": [
+    "uaf-rl"
+  ],
+  "UAH": [
+    "uah-rha",
+    "uah-ra"
+  ],
+  "UAK": [
+    "uak-bn"
+  ],
+  "UAM": [
+    "uam-rha",
+    "uam-rl"
+  ],
+  "UAS": [
+    "uas-sl"
+  ],
+  "UAT": [
+    "uat-hrc",
+    "uat-naa"
+  ],
+  "UAZ": [
+    "uaz-rha",
+    "uaz-us"
+  ],
+  "UBR": [
+    "ubr-rlsc",
+    "ubr-drl"
+  ],
+  "UCA": [
+    "uca-rha"
+  ],
+  "UCB": [
+    "ucb-rha",
+    "ucb-rssp"
+  ],
+  "UCC": [
+    "ucc-rl",
+    "ucc-chrs"
+  ],
+  "UCD": [
+    "ucd-sh",
+    "ucd-apfa"
+  ],
+  "UCF": [
+    "ucf-hrl",
+    "ucf-alu"
+  ],
+  "UCG": [
+    "ucg-rl"
+  ],
+  "UCH": [
+    "uch-bn"
+  ],
+  "UCI": [
+    "uci-rha"
+  ],
+  "UCL": [
+    "ucl-us",
+    "ucl-ochc"
+  ],
+  "UCM": [
+    "ucm-rl",
+    "ucm-chrs"
+  ],
+  "UCN": [
+    "ucn-hfs",
+    "ucn-pfa"
+  ],
+  "UCO": [
+    "uco-rl",
+    "uco-chrs"
+  ],
+  "UCP": [
+    "ucp-rl",
+    "ucp-chrs"
+  ],
+  "UCR": [
+    "ucr-saa"
+  ],
+  "UCS": [
+    "ucs-rl",
+    "ucs-chrs"
+  ],
+  "UCT": [
+    "uct-uf"
+  ],
+  "UCU": [
+    "ucu-bn"
+  ],
+  "UDA": [
+    "uda-sga",
+    "uda-fr"
+  ],
+  "UDB": [
+    "udb-rha"
+  ],
+  "UDE": [
+    "ude-rsa"
+  ],
+  "UDT": [
+    "udt-rl"
+  ],
+  "UDU": [
+    "udu-pkpf"
+  ],
+  "UEV": [
+    "uev-rsa"
+  ],
+  "UFL": [
+    "ufl-irha",
+    "ufl-pfa"
+  ],
+  "UGA": [
+    "uga-hero",
+    "uga-aa"
+  ],
+  "UHA": [
+    "uha-rl",
+    "uha-rha"
+  ],
+  "UHM": [
+    "uhm-shs"
+  ],
+  "UHO": [
+    "uho-rha"
+  ],
+  "UHV": [
+    "uhv-rl"
+  ],
+  "UIA": [
+    "uia-arh",
+    "uia-nrhh"
+  ],
+  "UIC": [
+    "uic-rha"
+  ],
+  "UID": [
+    "uid-rha"
+  ],
+  "UIL": [
+    "uil-hslc"
+  ],
+  "UIS": [
+    "uis-rha",
+    "uis-nso"
+  ],
+  "UIU": [
+    "uiu-arh"
+  ],
+  "UJT": [
+    "ujt-rl"
+  ],
+  "UKC": [
+    "ukc-nrhh"
+  ],
+  "UKS": [
+    "uks-nrhh"
+  ],
+  "UKY": [
+    "uky-rsa",
+    "uky-aa"
+  ],
+  "ULB": [
+    "ulb-rl",
+    "ulb-sa"
+  ],
+  "ULL": [
+    "ull-rha"
+  ],
+  "ULM": [
+    "ulm-ae"
+  ],
+  "ULO": [
+    "ulo-rsa"
+  ],
+  "UMA": [
+    "uma-rlo"
+  ],
+  "UMB": [
+    "umb-rsa",
+    "umb-psa"
+  ],
+  "UMD": [
+    "umd-rha",
+    "umd-drf",
+    "umd-aa"
+  ],
+  "UME": [
+    "ume-sshs"
+  ],
+  "UMI": [
+    "umi-rha"
+  ],
+  "UML": [
+    "uml-rl"
+  ],
+  "UMM": [
+    "umm-drh",
+    "umm-ab"
+  ],
+  "UMN": [
+    "umn-hrl"
+  ],
+  "UMP": [
+    "ump-fheg"
+  ],
+  "UMR": [
+    "umr-bt"
+  ],
+  "UMS": [
+    "ums-bn",
+    "ums-rha",
+    "ums-aa"
+  ],
+  "UMU": [
+    "umu-rl",
+    "umu-apo"
+  ],
+  "UMW": [
+    "umw-bk"
+  ],
+  "UNA": [
+    "una-fheg"
+  ],
+  "UNB": [
+    "unb-hrl"
+  ],
+  "UNC": [
+    "unc-rha",
+    "unc-nrhh"
+  ],
+  "UND": [
+    "und-ho",
+    "und-int",
+    "und-nrhh"
+  ],
+  "UNE": [
+    "une-hrl"
+  ],
+  "UNF": [
+    "unf-rha"
+  ],
+  "UNG": [
+    "ung-rha"
+  ],
+  "UNH": [
+    "unh-musa",
+    "unh-cla"
+  ],
+  "UNI": [
+    "uni-rha",
+    "uni-cfme"
+  ],
+  "UNK": [
+    "unk-rha"
+  ],
+  "UNL": [
+    "unl-rha",
+    "unl-nrhh"
+  ],
+  "UNM": [
+    "unm-rha"
+  ],
+  "UNN": [
+    "unn-rl"
+  ],
+  "UNO": [
+    "uno-rl"
+  ],
+  "UNR": [
+    "unr-nws"
+  ],
+  "UNT": [
+    "unt-rha"
+  ],
+  "UOC": [
+    "uoc-rl",
+    "uoc-sab"
+  ],
+  "UOF": [
+    "uof-rl",
+    "uof-rha"
+  ],
+  "UOK": [
+    "uok-hfs",
+    "uok-hcsa"
+  ],
+  "UOR": [
+    "uor-rha"
+  ],
+  "UPA": [
+    "upa-psa"
+  ],
+  "UPB": [
+    "upb-rlh"
+  ],
+  "UPD": [
+    "upd-sa"
+  ],
+  "UPG": [
+    "upg-rsc"
+  ],
+  "UPJ": [
+    "upj-hrl"
+  ],
+  "UPS": [
+    "ups-rsa"
+  ],
+  "UPT": [
+    "upt-rsa",
+    "upt-nrhh"
+  ],
+  "URA": [
+    "ura-ura"
+  ],
+  "URI": [
+    "uri-cs"
+  ],
+  "URL": [
+    "url-drlh",
+    "url-mb"
+  ],
+  "URO": [
+    "uro-bn",
+    "uro-nrhh",
+    "uro-qb"
+  ],
+  "USA": [
+    "usa-rha"
+  ],
+  "USC": [
+    "usc-rha"
+  ],
+  "USE": [
+    "use-bk"
+  ],
+  "USF": [
+    "usf-rha"
+  ],
+  "USI": [
+    "usi-pfa",
+    "usi-saa"
+  ],
+  "USM": [
+    "usm-rha",
+    "usm-aa"
+  ],
+  "USP": [
+    "usp-rl"
+  ],
+  "USR": [
+    "usr-rha"
+  ],
+  "UST": [
+    "ust-rl",
+    "ust-rha"
+  ],
+  "USU": [
+    "usu-rha"
+  ],
+  "UTA": [
+    "uta-rha"
+  ],
+  "UTC": [
+    "utc-sac",
+    "utc-rha",
+    "UTC-RL"
+  ],
+  "UTI": [
+    "uti-rha"
+  ],
+  "UTK": [
+    "utk-urhc"
+  ],
+  "UTM": [
+    "utm-rha"
+  ],
+  "UTO": [
+    "uto-rha",
+    "uto-aa"
+  ],
+  "UTP": [
+    "utp-rha"
+  ],
+  "UTT": [
+    "utt-prc"
+  ],
+  "UUT": [
+    "uut-rha"
+  ],
+  "UVA": [
+    "uva-bk",
+    "uva-sc"
+  ],
+  "UVM": [
+    "uvm-vc"
+  ],
+  "UVW": [
+    "uvw-rha"
+  ],
+  "UWA": [
+    "uwa-rcsa"
+  ],
+  "UWG": [
+    "uwg-rha"
+  ],
+  "UWS": [
+    "uws-nrhh"
+  ],
+  "UWY": [
+    "uwy-rha"
+  ],
+  "VAL": [
+    "val-ho"
+  ],
+  "VAS": [
+    "vas-vcs"
+  ],
+  "VAT": [
+    "vat-rhf"
+  ],
+  "VCU": [
+    "vcu-rha",
+    "vcu-nsp"
+  ],
+  "VIL": [
+    "vil-rl"
+  ],
+  "VIT": [
+    "vit-rl"
+  ],
+  "VLD": [
+    "vld-rha"
+  ],
+  "VNU": [
+    "vnu-rha",
+    "vnu-sga",
+    "vnu-bc"
+  ],
+  "VSA": [
+    "vsa-rl"
+  ],
+  "VTC": [
+    "vtc-fheg"
+  ],
+  "VUU": [
+    "vuu-rlh"
+  ],
+  "VWU": [
+    "vwu-rl",
+    "VWU-US"
+  ],
+  "WAG": [
+    "wag-re"
+  ],
+  "WAL": [
+    "wal-rha",
+    "wal-rl"
+  ],
+  "WAS": [
+    "was-bn"
+  ],
+  "WAU": [
+    "wau-con"
+  ],
+  "WAY": [
+    "way-rha"
+  ],
+  "WBG": [
+    "wbg-bn"
+  ],
+  "WCC": [
+    "wcc-bn"
+  ],
+  "WCG": [
+    "wcg-rl"
+  ],
+  "WCH": [
+    "wch-rlhs",
+    "wch-rha",
+    "wch-aa"
+  ],
+  "WCM": [
+    "wcm-fheg"
+  ],
+  "WCN": [
+    "wcn-wo"
+  ],
+  "WCS": [
+    "wcs-hrl"
+  ],
+  "WCT": [
+    "wct-hrl",
+    "wct-fheg"
+  ],
+  "WCU": [
+    "wcu-rsa"
+  ],
+  "WDC": [
+    "wdc-rl"
+  ],
+  "WDN": [
+    "wdn-se",
+    "wdn-ae"
+  ],
+  "WEC": [
+    "wec-rha",
+    "wec-nrhh",
+    "wec-amb",
+    "wec-aa"
+  ],
+  "WFU": [
+    "wfu-rsa"
+  ],
+  "WGB": [
+    "wgb-rhaa"
+  ],
+  "WHC": [
+    "whc-rlo"
+  ],
+  "WIC": [
+    "wic-hrl",
+    "wic-psp"
+  ],
+  "WIN": [
+    "win-nrhh",
+    "win-rsa"
+  ],
+  "WIS": [
+    "wis-hrl"
+  ],
+  "WIT": [
+    "wit-rlh"
+  ],
+  "WIU": [
+    "wiu-ihc",
+    "wiu-nrhh",
+    "wiu-saa"
+  ],
+  "WJE": [
+    "wje-rl"
+  ],
+  "WJU": [
+    "wju-rl"
+  ],
+  "WKU": [
+    "wku-wkus",
+    "wku-rsa"
+  ],
+  "WLB": [
+    "wlb-bn"
+  ],
+  "WLC": [
+    "wlc-rhac",
+    "wlc-cki",
+    "wlc-nrhh"
+  ],
+  "WLH": [
+    "wlh-bn"
+  ],
+  "WLM": [
+    "wlm-rsa",
+    "wlm-ic"
+  ],
+  "WLU": [
+    "wlu-rl",
+    "wlu-ivcf"
+  ],
+  "WMC": [
+    "wmc-saa"
+  ],
+  "WMD": [
+    "wmd-uh",
+    "wmd-apo",
+    "wmd-wasb"
+  ],
+  "WML": [
+    "wml-shac"
+  ],
+  "WMU": [
+    "wmu-rha",
+    "wmu-rl"
+  ],
+  "WNE": [
+    "wne-sa"
+  ],
+  "WOF": [
+    "wof-rl"
+  ],
+  "WOK": [
+    "wok-usrh",
+    "wok-nrhh"
+  ],
+  "WOO": [
+    "woo-rl"
+  ],
+  "WOS": [
+    "wos-rha"
+  ],
+  "WPC": [
+    "wpc-fheg",
+    "wpc-rl"
+  ],
+  "WPI": [
+    "wpi-rs",
+    "wpi-bn"
+  ],
+  "WPK": [
+    "wpk-rha"
+  ],
+  "WPL": [
+    "wpl-rha",
+    "wpl-uaa"
+  ],
+  "WRF": [
+    "wrf-nrhh"
+  ],
+  "WRI": [
+    "wri-rlh",
+    "wri-bn",
+    "wri-ar"
+  ],
+  "WRT": [
+    "wrt-cst"
+  ],
+  "WSC": [
+    "wsc-rlh"
+  ],
+  "WSH": [
+    "wsh-wrc"
+  ],
+  "WSL": [
+    "wsl-drl"
+  ],
+  "WSN": [
+    "wsn-rl"
+  ],
+  "WSP": [
+    "wsp-rha"
+  ],
+  "WSR": [
+    "wsr-rl",
+    "wsr-rha"
+  ],
+  "WSS": [
+    "wss-rha"
+  ],
+  "WST": [
+    "wst-nsop",
+    "wst-rha"
+  ],
+  "WSU": [
+    "wsu-rha"
+  ],
+  "WSY": [
+    "wsy-rha"
+  ],
+  "WTT": [
+    "wtt-rl"
+  ],
+  "WTX": [
+    "wtx-rha"
+  ],
+  "WUM": [
+    "wum-rha"
+  ],
+  "WVU": [
+    "wvu-rha",
+    "wvu-hfh"
+  ],
+  "WVW": [
+    "wvw-clo"
+  ],
+  "WWA": [
+    "wwa-apr"
+  ],
+  "WWH": [
+    "wwh-nrhh",
+    "wwh-rha"
+  ],
+  "WWU": [
+    "wwu-ur",
+    "wwu-aa"
+  ],
+  "WYC": [
+    "wyc-fheg"
+  ],
+  "WYN": [
+    "wyn-rl"
+  ],
+  "WYO": [
+    "wyo-hd"
+  ],
+  "XAV": [
+    "xav-rsa",
+    "xav-rl"
+  ],
+  "XLA": [
+    "xla-rl"
+  ],
+  "YCP": [
+    "ycp-rlh",
+    "ycp-ycb",
+    "ycp-sna"
+  ],
+  "YES": [
+    "yes-hrl"
+  ],
+  "YLU": [
+    "ylu-yasa",
+    "ylu-ycca"
+  ],
+  "YSU": [
+    "ysu-rha"
+  ],
+  "YVP": [
+    "yvp-cl"
+  ],
+  "AAM": [
+    "aam-rlh"
+  ],
+  "AMC": [
+    "amc-rl"
+  ],
+  "BLN": [
+    "bln-cbk"
+  ],
+  "BSO": [
+    "bso-rl"
+  ],
+  "COR": [
+    "cor-cs"
+  ],
+  "CYI": [
+    "cyi-rl"
+  ],
+  "DYO": [
+    "dyo-dos"
+  ],
+  "EOK": [
+    "eok-bk"
+  ],
+  "GOC": [
+    "goc-fheg"
+  ],
+  "GRM": [
+    "grm-clh"
+  ],
+  "LAN": [
+    "lan-rhc"
+  ],
+  "LUP": [
+    "lup-sld"
+  ],
+  "MVC": [
+    "mvc-rha"
+  ],
+  "NEW": [
+    "new-wb"
+  ],
+  "OKC": [
+    "okc-hrl"
+  ],
+  "QUI": [
+    "qui-sd"
+  ],
+  "SAO": [
+    "sao-bk"
+  ],
+  "STK": [
+    "stk-sa"
+  ],
+  "SWF": [
+    "swf-rl"
+  ],
+  "SYI": [
+    "syi-raab"
+  ],
+  "TUF": [
+    "tuf-rll"
+  ],
+  "TXU": [
+    "txu-bk"
+  ],
+  "UIW": [
+    "uiw-rl"
+  ],
+  "URS": [
+    "urs-cbk"
+  ],
+  "UTD": [
+    "utd-fheg"
+  ],
+  "VSU": [
+    "vsu-rlh"
+  ],
+  "WIL": [
+    "wil-fheg"
+  ],
+  "WTR": [
+    "wtr-cs"
+  ],
+  "CBP": [
+    "CBP-APR"
+  ],
+  "SLC": [
+    "SLC-SA"
+  ]
+}

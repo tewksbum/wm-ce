@@ -57,14 +57,6 @@ var ReportColumns = [
     {key: "Value", width: 15},
 ];
 
-var TargetFilter = {
-    "allgrads": " and title <= '2019'",
-    "allsen": " and title = '2019'",
-    "gradboth": " and title <= '2019'",
-    "gradgrad": " and title <= '2019'",
-    "gradsen": " and title = '2019'",
-};
-
 async function main () {
     // first get a list of all files in the bucket
     const storageOptions = {prefix: options.folder, delimiter: "/", };
@@ -162,96 +154,80 @@ async function main () {
         for (var s in schools) {
             var school = schools[s];
             bar.tick(1);
-            if (!owners[school.schoolcode.toUpperCase()]) {
-                errors.push(`${chalk.redBright(school.schoolcode.toUpperCase())}: no owner found in wemade customer DS for this school code`);
-                continue;
-            }
-            var titleFilter = "";
-            if (TargetFilter[school.targetgroup.toLowerCase()]) {
-                titleFilter = TargetFilter[school.targetgroup.toLowerCase()];
-            }
-            titleFilter = "";
-            var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
-            try {
-                var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "`"; // WHERE role = 'student'" + titleFilter;
-                const [results, fields] = await cloudsql.query(query);
+            const [results, fields] = await cloudsql.query('SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `seg_people_oku-rha` LIMIT 10');
 
-                if (results && results.length) {
-                    var file = new excel.Workbook();
-                    var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
-                    var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
-                    var nameAlpha = "", nameOmega = "";
-                    
-                    // populate first sheet
-                    sheetList.columns = ListColumns;
-                    var outputDate = new Date().toLocaleDateString('en-US');
-                    // add row 2
-                    var row2 = {};
-                    ListColumns.forEach(function (item, index) {
-                        row2[item.key] = school.schoolname;
+            if (results) {
+                var file = new excel.Workbook();
+                var sheetList = file.addWorksheet("DM_LIST", {views:[{ ySplit : 1}]} );
+                var sheetReport = file.addWorksheet("DM_LIST_REPORT", {properties:{tabColor:{argb:'FFC0000'}}});
+                var nameAlpha = "", nameOmega = "";
+                
+                // populate first sheet
+                sheetList.columns = ListColumns;
+                var outputDate = new Date().toLocaleDateString('en-US');
+                // add row 2
+                var row2 = {};
+                ListColumns.forEach(function (item, index) {
+                    row2[item.key] = school.schoolname;
+                });
+                sheetList.addRow(row2);
+                results.forEach(function(row, index) {
+                    sheetList.addRow({
+                        "SALUTATION SLUG": school.salutation,
+                        "FIRST NAME": row["firstName"],
+                        "LAST NAME": row["lastName"],
+                        "STREET ADDRESS 1": row["address1"],
+                        "STREET ADDRESS 2": row["address2"],
+                        "CITY": row["city"],
+                        "STATE": row["state"],
+                        "ZIPCODE": row["zip"],
+                        "SCHOOL CODE": school.schoolcode,
+                        "PROGRAM": programs[school.program.toLowerCase()],
+                        "MAILER TYPE": "",
+                        "FILE OUTPUT DATE": outputDate,
+                        "GENDER": row["gender"],
+                        "DISTRIBUTION": school.distribution
                     });
-                    sheetList.addRow(row2);
-                    
-                    results.forEach(function(row, index) {
-                        sheetList.addRow({
-                            "SALUTATION SLUG": school.salutation,
-                            "FIRST NAME": row["firstName"],
-                            "LAST NAME": row["lastName"],
-                            "STREET ADDRESS 1": row["address1"],
-                            "STREET ADDRESS 2": row["address2"],
-                            "CITY": row["city"],
-                            "STATE": row["state"],
-                            "ZIPCODE": row["zip"],
-                            "SCHOOL CODE": school.schoolcode,
-                            "PROGRAM": programs[school.program.toLowerCase()],
-                            "MAILER TYPE": "",
-                            "FILE OUTPUT DATE": outputDate,
-                            "GENDER": row["gender"],
-                            "DISTRIBUTION": school.distribution
-                        });
-                    });
-                    sheetList.getRow(1).font = {bold: true};
-                    nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
-                    nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
-                    sheetReport.columns = ReportColumns;
-                    sheetReport.addRows([
-                        ["OCM Mailing List Form", ""],
-                        ["School Name:", school.schoolname],
-                        ["School Code:", school.schoolcode],
-                        ["Program:", programs[school.program.toLowerCase()]],
-                        ["Adcode:", school.adcode],
-                        ["Best Drop Date", school.dropdate],
-                        ["", ""],
-                        ["", ""],
-                        ["", ""],
-                        ["List Type:", "S"],
-                        ["First Name on List", nameAlpha],
-                        ["Last Name on List", nameOmega],
-                        ["Quantity Output", results.length],
-                        ["Print Size", school.printsize],
-                        ["Importe"],
-                        ["Imported Date"],
-                        ["Used"],
-                        ["Used Date"],
-                        ["SJ1 Label Amount"],
-                        ["SJ1 Last Record Name/Number:"],
-                        [" ", ""],
-                        ["SJ2 Label Amount"],
-                        ["SJ2 Last Record Name/Number:"],
-                        [" ", ""],
-                        ["SJ3 Label Amount"],
-                        ["SJ3 Last Record Name/Number:"]
-                    ]);
+                });
+                sheetList.getRow(1).font = {bold: true};
 
-                    var filename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
-                    await file.xlsx.writeFile(filename);
-                }
-                else {
-                    errors.push(`${chalk.redBright(school.schoolcode)}: no recordsd returned from segment query`);
-                }
+                nameAlpha = results[0]["firstName"] + " " + results[0]["lastName"];
+                nameOmega = results[results.length - 1]["firstName"] + " " + results[results.length - 1]["lastName"];
+                sheetReport.columns = ReportColumns;
+                sheetReport.addRows([
+                    ["OCM Mailing List Form", ""],
+                    ["School Name:", school.schoolname],
+                    ["School Code:", school.schoolcode],
+                    ["Program:", programs[school.program.toLowerCase()]],
+                    ["Adcode:", school.adcode],
+                    ["Best Drop Date", school.dropdate],
+                    ["", ""],
+                    ["", ""],
+                    ["", ""],
+                    ["List Type:", "S"],
+                    ["First Name on List", nameAlpha],
+                    ["Last Name on List", nameOmega],
+                    ["Quantity Output", results.length],
+                    ["Print Size", school.printsize],
+                    ["Importe"],
+                    ["Imported Date"],
+                    ["Used"],
+                    ["Used Date"],
+                    ["SJ1 Label Amount"],
+                    ["SJ1 Last Record Name/Number:"],
+                    [" ", ""],
+                    ["SJ2 Label Amount"],
+                    ["SJ2 Last Record Name/Number:"],
+                    [" ", ""],
+                    ["SJ3 Label Amount"],
+                    ["SJ3 Last Record Name/Number:"]
+                ]);
+
+                var filename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
+                await file.xlsx.writeFile(filename);
             }
-            catch (error) {
-                errors.push(`${chalk.redBright(school.schoolcode)}: error occurred - ${error}`);
+            else {
+                errors.push(`${chalk.redBright(school)}: no recordsd returned from segment query`);
             }
         };
         if (errors.length > 0 ) {

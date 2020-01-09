@@ -1,2 +1,9 @@
 bin/
 pkg/
+utilities/_input
+utilities/_output
+logs/
+output/
+*.xlsx
+node_modules/
+input/

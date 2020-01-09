@@ -1,3 +1,4 @@
+#!/usr/bin/node
 const fs = require("fs");
 const { Storage } = require("@google-cloud/storage");
 const Excel = require("exceljs");
@@ -13,14 +14,13 @@ const logFile = `./logs/xsubmitter-log-${today.toISOString()}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
-var responses = [];
 console.log(`Starting wm-file submmiter`);
 console.log(`Pushing files to ${streamerURL}`);
 console.log(`Logging results in ${logFile}`);
 var sep = "";
 var skippedSchoolCodes = [];
 (async () => {
-  let inputFilename = "input.xlsx";
+  let inputFilename = "../_input/input.xlsx";
   if (process.argv.length === 2) {
     console.error(`Using default input file ${inputFilename}`);
   } else {
@@ -50,21 +50,26 @@ var skippedSchoolCodes = [];
   let index = 2;
   let seq = 1;
 
-  console.log(`starting file scan... files: `, worksheet.rowCount);
-  while (seq < 16) {
+  // console.log(`starting file scan... files: `, worksheet.rowCount);
+  // for (let seq = 1; seq < 6; seq++) {
+  while (seq < 10) {
     console.log(`checking for sequence: `, seq);
     while (index <= lfiles) {
+      const currentRow = worksheet.getRow(index);
+      // for (index; index < lfiles; index++) {
       console.log(`current row seq: `, worksheet.getRow(index).values[10]);
-      if (seq == worksheet.getRow(index).values[10]) {
+      if (seq == currentRow.values[10]) {
+        console.log(`classYear: `, worksheet.getRow(index).values[11]);
         console.log(`processing file...`);
-        await sendRequest(worksheet.getRow(index));
+        await sendRequest(currentRow, currentRow.values[11]);
         wroteFlag = true;
       }
+      currentRow.hidden = false;
       index++;
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(15000);
+      await nap(2500);
     }
     console.log(`reset wait`);
     wroteFlag = false;
@@ -72,6 +77,8 @@ var skippedSchoolCodes = [];
     seq++;
   }
 
+  // await workbook.xlsx.writeFile("input.xlsx");
+  //To avoid corrupting files we should only save them if there was any change.
   await workbook.xlsx.writeFile(inputFilename);
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
@@ -80,8 +87,7 @@ var skippedSchoolCodes = [];
   });
 })();
 
-async function sendRequest(row) {
-  row.hidden = false;
+async function sendRequest(row, classYear) {
   const enabled = row.values[3] ? row.values[3] : false;
   if (enabled !== true) if (enabled.formula !== "TRUE()") return;
   const file = row.getCell(2).value;
@@ -92,9 +98,7 @@ async function sendRequest(row) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
-  console.log(schoolName);
   var titleYear = row.values[12];
-  var classYear = row.values[11];
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
     console.log(error);
@@ -131,10 +135,8 @@ async function sendRequest(row) {
     sep = sep === "" ? ",\n" : sep;
     return;
   }
-
-  //Get customer data
-  var accessKey = owners[schoolcode].AccessKey;
-  var owner = owners[schoolcode].Owner;
+  const accessKey = owners[schoolcode].AccessKey;
+  const owner = owners[schoolcode].Owner;
 
   const bucketName = "oncampusmarketing";
   const options = {
@@ -153,6 +155,7 @@ async function sendRequest(row) {
   var streamerData = {
     accessKey: `${accessKey}`,
     fileUrl: url,
+    maxRows: 30,
     owner: `${owner}`,
     source: "RHA",
     passthrough: {},
