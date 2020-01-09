@@ -32,6 +32,7 @@
       "username": "segment"
     }
   ],
+  "go.testTimeout": "30m",
   "go.testEnvVars": {
     "APP_ENV": "test",
     "PROJECTID": "wemade-core",
@@ -42,6 +43,13 @@
     "CSQL_USER": "segment",
     "CSQL_PASS": "1D6ed69da19441c0a238da288c3cb8e2!",
     "CSQL_CNN": "%s:%s@tcp(localhost:3306)/segment_dev?charset=utf8mb4,utf8&parseTime=true",
-    "TEMP_FIXED_ACCESS_KEY": "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3"
+    "TEMP_FIXED_ACCESS_KEY": "4ZFGVumXw9043yH1SKFd9vubWHxMBAt3",
+
+    "ENVIRONMENT": "dev",
+    "DATASTORENS": "wemade-dev",
+    "DSKINDRECORD": "record",
+    "DSKINDFIBER": "people-fiber",
+    "DSKINDSET": "people-set",
+    "DSKINDGOLDEN": "people-golden",    
   }
 }
