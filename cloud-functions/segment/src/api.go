@@ -43,16 +43,20 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		errToHTTP(w, r, err)
 	}
+	logger.DebugFmt("[API.Upsert] Start Build Record From Input")
 	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data, false)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
+	logger.DebugFmt("[API.Upsert] Finished Build Record From Input")
 	// Set the CSQL env vars to the record's db options
 	rec.SetCSQLConnStr(csqlCnn)
 	rec.SetCSQLSchemaName(csqlSchema)
 	// Write to db
+	logger.DebugFmt("[API.Upsert] Start DB writing")
 	updated, err := db.Write(projectID, csqlDSN, rec)
+	logger.DebugFmt("[API.Upsert] Finished DB writing")
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
@@ -64,11 +68,15 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
+	logger.DebugFmt("[API.Upsert.OwnerDWH] Start Build Record From Input")
 	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
+	logger.DebugFmt("[API.Upsert.OwnerDWH] Finished Build Record From Input")
+	logger.DebugFmt("[API.Upsert.OwnerDWH] Start DB writing")
 	db.Write(projectID, csqlDSN, rec)
 	if err != nil {
-		logger.ErrFmt("[API.Upsert.MainOwnerCopy.Error]: %v", err)
+		logger.ErrFmt("[API.Upsert.OwnerDWH.Error]: %v", err)
 	}
+	logger.DebugFmt("[API.Upsert.OwnerDWH] Finished DB writing")
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
 }

@@ -44,7 +44,7 @@ func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 }
 
 // Write the interface into CSQL
-func Write(dsn string, r models.Record) (updated bool, err error) {
+func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err error) {
 	sess, err := initDB(dsn, "Write")
 	if err != nil {
 		return false, logger.Err(errUnableToConnect)
@@ -73,21 +73,24 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	rIDField := r.GetIDField()
 	rmap := r.GetMap()
 	rIDFieldValue := rmap[rIDField]
-	stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
-	if strings.Contains(rIDField, ".") {
-		compositeID = strings.Split(rIDField, ".")
-		if rmap[compositeID[0]] != nil {
-			rIDFieldValue = rmap[compositeID[0]].(map[string]interface{})[compositeID[1]]
-			stmt = tx.Select(compositeID[1]).From(tblNameTick).Where(compositeID[1]+" = ?", rIDFieldValue)
+	exists := ""
+	if !skipUpdate {
+		stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
+		if strings.Contains(rIDField, ".") {
+			compositeID = strings.Split(rIDField, ".")
+			if rmap[compositeID[0]] != nil {
+				rIDFieldValue = rmap[compositeID[0]].(map[string]interface{})[compositeID[1]]
+				stmt = tx.Select(compositeID[1]).From(tblNameTick).Where(compositeID[1]+" = ?", rIDFieldValue)
+			}
 		}
-	}
-	buf := dbr.NewBuffer()
-	_ = stmt.Build(stmt.Dialect, buf)
-	exists, err := stmt.ReturnString()
-	logger.DebugFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
-	if err != nil {
-		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
-			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
+		buf := dbr.NewBuffer()
+		_ = stmt.Build(stmt.Dialect, buf)
+		exists, err = stmt.ReturnString()
+		logger.DebugFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
+		if err != nil {
+			if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
+				return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
+			}
 		}
 	}
 	if len(exists) < 1 {
