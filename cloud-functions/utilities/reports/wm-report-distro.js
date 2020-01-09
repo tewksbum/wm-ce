@@ -3,7 +3,7 @@ const cli = require('yargs');
 const chalk = require('chalk');
 const path = require('path');
 const mysql = require('mysql2/promise');
-const ObjectsToCsv = require('objects-to-csv');
+const csv = require('async-csv');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
@@ -257,12 +257,12 @@ async function main() {
                     sheetReport.addRows(report);
 
                     var xlsxFilename = path.join(options.outpath, ensureSuffix(school.output, ".xlsx"));
-                    var csvFilename = path.join(options.outpath, ensureSuffix(school.output, ".csv"));
+                    var csvFilename = path.join(options.outpath, ensureSuffix(school.output, ".txt"));
                     var pdfFilename = path.join(options.outpath, ensureSuffix(school.output, ".pdf"));
                     await file.xlsx.writeFile(xlsxFilename);
 
-                    var csvFile = new ObjectsToCsv(csvs);
-                    await csvFile.toDisk(csvFilename);
+                    var csvData = await convertToTabDelimited(csvs);
+                    fs.writeFileSync(csvFilename, csvData);
 
                     const pdf = new PDFDocument();
                     pdf.pipe(fs.createWriteStream(pdfFilename)); 
@@ -341,3 +341,36 @@ function ensureSuffix(a, b) {
     }
     return a;
 }
+
+async function convertToTabDelimited(data, header = true, allColumns = false) {
+    if (data.length === 0) {
+      return '';
+    }
+  
+    const columnNames =
+      allColumns
+        ? [...data
+          .reduce((columns, row) => { // check each object to compile a full list of column names
+            Object.keys(row).map(rowKey => columns.add(rowKey));
+            return columns;
+          }, new Set())]
+        : Object.keys(data[0]); // just figure out columns from the first item in array
+  
+    if (allColumns) {
+      columnNames.sort(); // for predictable order of columns
+    }
+  
+    // This will hold data in the format that `async-csv` can accept, i.e.
+    // an array of arrays.
+    let csvInput = [];
+    if (header) {
+      csvInput.push(columnNames);
+    }
+  
+    // Add all other rows:
+    csvInput.push(
+      ...data.map(row => columnNames.map(column => row[column])),
+    );
+  
+    return await csv.stringify(csvInput, {delimiter: "\t"} );
+  }
