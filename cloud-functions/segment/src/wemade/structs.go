@@ -24,6 +24,7 @@ type APIInput struct {
 	Owner        string                  `json:"owner"`
 	Organization string                  `json:"organization,omitifempty"`
 	Signatures   []string                `json:"signatures,omitifempty"`
+	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
 	Passthrough  []models.Passthrough360 `json:"passthrough"`
 	Attributes   map[string]string       `json:"attributes"`
 	Filters      []models.QueryFilter    `json:"filters"`

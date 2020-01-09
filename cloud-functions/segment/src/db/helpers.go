@@ -4,7 +4,7 @@ import (
 	"segment/models"
 )
 
-func buildPeopleDecode(r *models.PeopleRecord, signature string) models.Record {
+func buildPeopleDecode(r *models.PeopleRecord, signature string /*, setPeopleID bool*/) models.Record {
 	rs := &models.DecodeRecord{}
 	rs.BaseRecord = models.BaseRecord{
 		OwnerID:     r.GetOwnerID(),
@@ -29,7 +29,9 @@ func buildPeopleDecode(r *models.PeopleRecord, signature string) models.Record {
 		HasTablenameSuffix: true,
 		HasTablenamePrefix: true,
 	}
+	// if setPeopleID {
 	rs.PeopleID = r.Record.PeopleID
+	// }
 	rs.Signature = signature
 	return rs
 }
