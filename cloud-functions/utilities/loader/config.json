@@ -6,7 +6,7 @@
     },
     "local": {
         "xlsx": {
-            "fileName": "input-dd1920.xlsx",
+            "fileName": "../output/input-dd-1920.xlsx",
             "sheetName": "Files"
         }
     }

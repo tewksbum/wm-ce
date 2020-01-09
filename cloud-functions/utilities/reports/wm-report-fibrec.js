@@ -1,10 +1,11 @@
+#!/usr/bin/node
 const request = require("sync-request");
 const fs = require("fs");
 const Excel = require("exceljs");
 (async () => {
   const reportURL =
     "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-report-api";
-  let inputFilename = "input.xlsx";
+  let inputFilename = "../_input/input.xlsx";
   if (process.argv.length === 2) {
     console.error(`Using default input file ${inputFilename}`);
   } else {
@@ -89,7 +90,7 @@ const Excel = require("exceljs");
 
     worksheet.getRow(index).values[10]
 
-    const xlsFileName = `./output/${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
+    const xlsFileName = `../_output/${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
     await workBookTarget.xlsx.writeFile(xlsFileName).then(function() {
       console.log(`Saved xls file as ${xlsFileName}`);
     });

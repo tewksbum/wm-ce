@@ -1,21 +1,11 @@
 const fs = require("fs");
 const { Storage } = require("@google-cloud/storage");
-const { Datastore } = require("@google-cloud/datastore");
 const Excel = require("exceljs");
 const request = require("sync-request");
 const storage = new Storage();
-const datastore = new Datastore();
 const schoolCodes = require("./schoolCodes.json");
-const sponsorSchools = require("./sponsorSchools.json");
-// TODO
-// Should we just make the files public? or should we copy them and reupload?
-// Make it actually submit a file
-// Maybe log file url aswell
+const { getOwners } = require("./utils");
 
-// Name of the folder iterate through
-const folder = "./input";
-// Name of the bucket to upload the rawfile to
-const bucket = "ocm_school_raw_files";
 const today = new Date();
 const streamerURL =
   "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-file-api";
@@ -30,7 +20,7 @@ console.log(`Logging results in ${logFile}`);
 var sep = "";
 var skippedSchoolCodes = [];
 (async () => {
-  let inputFilename = "input.xlsx";
+  let inputFilename = "../_input/input.xlsx";
   if (process.argv.length === 2) {
     console.error(`Using default input file ${inputFilename}`);
   } else {
@@ -61,25 +51,25 @@ var skippedSchoolCodes = [];
   let seq = 1;
 
   console.log(`starting file scan... files: `, worksheet.rowCount);
-  while (seq < 10) {
+  while (seq < 16) {
     console.log(`checking for sequence: `, seq);
-    while (index < lfiles) {
+    while (index <= lfiles) {
       console.log(`current row seq: `, worksheet.getRow(index).values[10]);
       if (seq == worksheet.getRow(index).values[10]) {
         console.log(`processing file...`);
         await sendRequest(worksheet.getRow(index));
         wroteFlag = true;
       }
-      index++
+      index++;
     }
     if (wroteFlag) {
       console.log(`waiting for files to process`);
-      await nap(15000)
+      await nap(15000);
     }
     console.log(`reset wait`);
     wroteFlag = false;
     index = 2;
-    seq++
+    seq++;
   }
 
   await workbook.xlsx.writeFile(inputFilename);
@@ -100,7 +90,7 @@ async function sendRequest(row) {
   console.log("Processing " + file);
   const programName = file.substring(0, 3);
   // var schoolcode = file.substring(4, 7);
-  var schoolcode = row.values[5]
+  var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
   var titleYear = row.values[12];
@@ -123,7 +113,8 @@ async function sendRequest(row) {
     skippedSchoolCodes.push(schoolcode);
     return;
   }
-  if (sponsorSchools[schoolcode] == undefined) {
+  const owners = await getOwners("dev");
+  if (owners[schoolcode] == undefined) {
     let error = `skipped, invalid schoolCode ${schoolcode}`;
     console.log(error);
     row.getCell(4).value = "false";
@@ -140,29 +131,10 @@ async function sendRequest(row) {
     sep = sep === "" ? ",\n" : sep;
     return;
   }
-  var sponsorName = sponsorSchools[schoolcode][0];
-  //Get customer data
-  const query = datastore
-    .createQuery("Customer")
-    .filter("Owner", sponsorName)
-    .limit(1);
-  query.namespace = "wemade-dev";
-  var accessKey = "";
-  var owner = "";
 
-  await datastore
-    .runQuery(query)
-    .then(results => {
-      const customers = results[0];
-      customers.forEach(customer => {
-        accessKey = customer.AccessKey;
-        owner = customer.Owner;
-        const cusKey = customer[datastore.KEY];
-      });
-    })
-    .catch(err => {
-      console.error("ERROR:", err);
-    });
+  //Get customer data
+  var accessKey = owners[schoolcode].AccessKey;
+  var owner = owners[schoolcode].Owner;
 
   const bucketName = "oncampusmarketing";
   const options = {
@@ -238,13 +210,11 @@ async function sendRequest(row) {
 
 function sleep(time) {
   var stop = new Date().getTime();
-  while(new Date().getTime() < stop + time) {
-      ;
-  }
+  while (new Date().getTime() < stop + time) {}
 }
 
-function nap(ms){
-  return new Promise(resolve=>{
-      setTimeout(resolve,ms)
-  })
+function nap(ms) {
+  return new Promise(resolve => {
+    setTimeout(resolve, ms);
+  });
 }
