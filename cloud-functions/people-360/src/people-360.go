@@ -178,12 +178,9 @@ type People360Output struct {
 	Signatures   []Signature      `json:"signatures"`
 	CreatedAt    time.Time        `json:"createdAt"`
 	Fibers       []string         `json:"fibers"`
+	ExpiredSets  []string         `json:"expiredSets"`
 	Passthroughs []Passthrough360 `json:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
-}
-
-type PeoplePurgeOutput struct {
-	ExpiredSets []string `json:"expiredSets"`
 }
 
 type PeopleSetDS struct {
@@ -339,7 +336,6 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var status *pubsub.Topic
-var purge *pubsub.Topic
 var ds *datastore.Client
 var msp *redis.Pool
 
@@ -352,7 +348,6 @@ func init() {
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
-	purge = ps.Topic(os.Getenv("PSPURGE"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -846,6 +841,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// push into pubsub
+	output.ExpiredSets = expiredSetCollection
 	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
@@ -861,18 +857,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	} else {
 		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
-
-	purged := PeoplePurgeOutput{
-		ExpiredSets: expiredSetCollection,
-	}
-	purgeJSON, _ := json.Marshal(purged)
-	purge.Publish(ctx, &pubsub.Message{
-		Data: purgeJSON,
-		Attributes: map[string]string{
-			"type":   "people",
-			"source": "purge",
-		},
-	})
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
