@@ -930,6 +930,12 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			}
 			mkOutput.AD1.Value = a[0].DeliveryLine1
 			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			if len(a[0].Components.SecondaryDesignator) > 0 && len(a[0].Components.SecondaryNumber) > 0 {
+				mkOutput.AD2.Value = a[0].Components.SecondaryDesignator + " " + a[0].Components.SecondaryNumber
+				if strings.HasSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value) {
+					mkOutput.AD1.Value = strings.TrimSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value)
+				}
+			}
 			if mkOutput.CITY.Value != a[0].Components.CityName {
 				mkOutput.ADCORRECT.Value = "TRUE"
 			}

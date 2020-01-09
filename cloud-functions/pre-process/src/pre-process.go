@@ -949,7 +949,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first", "addressee":
+	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -966,7 +966,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee":
 		err.Junk = 1
 	case "perme", "permission email":
 		err.PermE = 1

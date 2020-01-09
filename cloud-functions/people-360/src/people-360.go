@@ -182,6 +182,10 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
 }
 
+type PeoplePurgeOutput struct {
+	ExpiredSets []string `json:"expiredSets"`
+}
+
 type PeopleSetDS struct {
 	ID                     *datastore.Key `datastore:"__key__"`
 	OwnerID                []string       `datastore:"ownerid"`
@@ -335,6 +339,7 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var status *pubsub.Topic
+var purge *pubsub.Topic
 var ds *datastore.Client
 var msp *redis.Pool
 
@@ -347,6 +352,7 @@ func init() {
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
+	purge = ps.Topic(os.Getenv("PSPURGE"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -488,7 +494,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				retryCount := GetRedisIntValue(append(redisMatchValue0, "retry"))
 				if retryCount < 30 {
 					IncrRedisValue(append(redisMatchValue0, "retry"))
-					return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue0, retryCount)
 				}
 			}
 			for _, s := range queriedSets {
@@ -509,7 +515,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue1, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue1, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue1, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -531,7 +537,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue2, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue2, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue2, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -555,7 +561,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue3, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue3, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue3, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -583,7 +589,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue5, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue5, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue5, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -855,6 +861,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	} else {
 		LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 	}
+
+	purged := PeoplePurgeOutput{
+		ExpiredSets: expiredSetCollection,
+	}
+	purgeJSON, _ := json.Marshal(purged)
+	purge.Publish(ctx, &pubsub.Message{
+		Data: purgeJSON,
+		Attributes: map[string]string{
+			"type":   "people",
+			"source": "purge",
+		},
+	})
 
 	topic2.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
