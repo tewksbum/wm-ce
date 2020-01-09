@@ -488,7 +488,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				retryCount := GetRedisIntValue(append(redisMatchValue0, "retry"))
 				if retryCount < 30 {
 					IncrRedisValue(append(redisMatchValue0, "retry"))
-					return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+					return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue0, retryCount)
 				}
 			}
 			for _, s := range queriedSets {
@@ -509,7 +509,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue1, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue1, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue1, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -531,7 +531,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue2, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue2, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue2, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -555,7 +555,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue3, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue3, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue3, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
@@ -583,7 +583,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					retryCount := GetRedisIntValue(append(redisMatchValue5, "retry"))
 					if retryCount < 30 {
 						IncrRedisValue(append(redisMatchValue5, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS, retryn count  %v < max of 30, wait for retry", retryCount)
+						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue5, retryCount)
 					}
 				}
 				for _, s := range queriedSets {
