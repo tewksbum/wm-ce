@@ -205,31 +205,19 @@ func SweepExpiredSets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.DebugFmt("[SweepExpiredSets] Start Build Record From Input")
-	rec, err := wemade.BuildRecordFromInput(projectID, namespace, data, false)
+	input, err := wemade.BuildInputFromData(data)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
-	// logger.DebugFmt("tablename: %s\nrecord(s): %#v", rec.GetTablename(), rec)
-	logger.DebugFmt("[SweepExpiredSets] Finished Build Record From Input")
 
-	// Sweep expired sets in the db
-	logger.DebugFmt("[SweepExpiredSets] Start DB hijinks")
-	if db.SweepExpiredSets(projectID, csqlDSN, rec) != nil {
+	logger.DebugFmt("[SweepExpiredSets] Start DB works")
+	if db.SweepExpiredSets(projectID, csqlDSN, input.EntityType) != nil {
 		errToHTTP(w, r, err)
 		return
 	}
-	logger.DebugFmt("[SweepExpiredSets] Finished DB hijinks")
 
-	logger.DebugFmt("[SweepExpiredSets.OwnerDWH] Start Build Record From Input")
-	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
-	logger.DebugFmt("[SweepExpiredSets.OwnerDWH] Finished Build Record From Input")
-	logger.DebugFmt("[SweepExpiredSets.OwnerDWH] Start DB hijinks")
-	if db.SweepExpiredSets(projectID, csqlDSN, rec) != nil {
-		logger.ErrFmt("[SweepExpiredSets.OwnerDWH.Error]: %v", err)
-	}
-	logger.DebugFmt("[SweepExpiredSets.OwnerDWH] Finished DB hijinks")
+	logger.DebugFmt("[SweepExpiredSets] finished DB works")
 
 	// // If all goes well...
 	w.WriteHeader(http.StatusOK)
@@ -239,5 +227,5 @@ func SweepExpiredSets(w http.ResponseWriter, r *http.Request) {
 // // SweepEntry the database
 // func SweepEntry(ctx context.Context, m wemade.PubSubMessage) error {
 // 	// Does nothing right now
-// 	return nil
+// 	return
 // }
