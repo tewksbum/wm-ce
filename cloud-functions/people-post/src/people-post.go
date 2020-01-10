@@ -901,28 +901,28 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
 
 		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
-		SetRedisKeyIfNotExists(append(redisMatchValue0, "retry"))
-		SetRedisTempKey(redisMatchValue0)
+		SetRedisTempKey(append(redisMatchValue0, "retry"))
+		// SetRedisTempKey(redisMatchValue0)
 
 		if len(MatchByValue1) > 0 {
 			redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
-			SetRedisKeyIfNotExists(append(redisMatchValue1, "retry"))
-			SetRedisTempKey(redisMatchValue1)
+			SetRedisTempKey(append(redisMatchValue1, "retry"))
+			// SetRedisTempKey(redisMatchValue1)
 		}
 		if len(MatchByValue2) > 0 {
 			redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
-			SetRedisKeyIfNotExists(append(redisMatchValue2, "retry"))
-			SetRedisTempKey(redisMatchValue2)
+			SetRedisTempKey(append(redisMatchValue2, "retry"))
+			// SetRedisTempKey(redisMatchValue2)
 		}
 		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
 			redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
-			SetRedisKeyIfNotExists(append(redisMatchValue3, "retry"))
-			SetRedisTempKey(redisMatchValue3)
+			SetRedisTempKey(append(redisMatchValue3, "retry"))
+			// SetRedisTempKey(redisMatchValue3)
 		}
 		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
 			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
-			SetRedisKeyIfNotExists(append(redisMatchValue5, "retry"))
-			SetRedisTempKey(redisMatchValue5)
+			SetRedisTempKey(append(redisMatchValue5, "retry"))
+			// SetRedisTempKey(redisMatchValue5)
 		}
 
 		pubQueue = append(pubQueue, PubQueue{
@@ -1678,6 +1678,16 @@ func SetRedisKeyIfNotExists(keyparts []string) {
 	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisKeyTo0IfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 0)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 0, err)
 	}
 }
 
