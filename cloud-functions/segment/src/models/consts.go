@@ -38,6 +38,8 @@ var (
 
 // Default variables
 var (
+	PeopleIDField           = "peopleId"
+	HouseholdIDField        = "householdId"
 	IDField                 = "id"
 	DefaultSelectColumnList = []string{"record"}
 	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}

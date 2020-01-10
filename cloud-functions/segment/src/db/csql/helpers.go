@@ -26,6 +26,7 @@ const (
 		expiredId VARCHAR(128) NOT NULL,
 		entity VARCHAR(32) NOT NULL,
 		INDEX(expiredId),
+		INDEX(entity),
 		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,

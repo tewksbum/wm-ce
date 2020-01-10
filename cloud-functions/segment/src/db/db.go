@@ -12,10 +12,8 @@ import (
 var appEnv string = os.Getenv("APP_ENV")
 
 const (
-	recordSignature  string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
-	recordDistinctC  string = `DISTINCT JSON_OBJECT("%s", %s)`
-	peopleIDField    string = "peopleId"
-	householdIDField string = "householdId"
+	recordSignature string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
+	recordDistinctC string = `DISTINCT JSON_OBJECT("%s", %s)`
 )
 
 // Write decides where the data will be stored, and does so.
@@ -40,7 +38,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
 		(r.(*models.HouseholdRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: householdIDField,
+				Field: models.HouseholdIDField,
 				Op:    models.OperationEquals,
 				Value: &pid,
 			},
@@ -64,7 +62,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		pid = (r.(*models.PeopleRecord)).Record.PeopleID
 		(r.(*models.PeopleRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: peopleIDField,
+				Field: models.PeopleIDField,
 				Op:    models.OperationEquals,
 				Value: &pid,
 			},
@@ -75,7 +73,7 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		} else {
 			logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleted peopleId: %s", pid.(string))
 		}
-		(r.(*models.PeopleRecord)).IDField = peopleIDField
+		(r.(*models.PeopleRecord)).IDField = models.PeopleIDField
 		for _, sig := range r.GetSignatures() {
 			rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs, !skipUpdate); err != nil {
@@ -112,6 +110,17 @@ func Delete(projectID string, csqlDSN string, r models.Record) (err error) {
 		err = csql.Delete(csqlDSN, r)
 	case models.BQ:
 		err = bq.Delete(projectID, r)
+	}
+	return err
+}
+
+// SweepExpiredSets gets where the data is stored and deletes it acording to filters
+func SweepExpiredSets(projectID string, csqlDSN string, r models.Record) (err error) {
+	switch r.GetDBType() {
+	case models.CSQL:
+		err = csql.SweepExpiredSets(csqlDSN, r)
+	case models.BQ:
+		// 	err = bq.SweepExpiredSets(projectID, r)
 	}
 	return err
 }

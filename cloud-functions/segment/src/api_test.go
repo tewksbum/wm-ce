@@ -44,10 +44,10 @@ func TestUpsert(t *testing.T) {
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
 		"entityType":  "people",
-		"age":         "99",
-		"peopleId":    "c67f2e2a-9507-4154-8863-2e70d89e9519", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"age":         "108",
+		"peopleId":    "poop", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"householdId": "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"firstName":   "poop", "lastName": "Ali",
+		"firstName":   "KAKA", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
 		"emails": []map[string]string{
 			{"email": "email@ocm.com", "type": "work"},
@@ -204,3 +204,46 @@ func TestUpsert(t *testing.T) {
 // // 		})
 // // 	}
 // // }
+
+func TestSweepExpiredSets(t *testing.T) {
+	type args struct {
+		w http.ResponseWriter
+		r *http.Request
+	}
+	data := models.DecodeRecord{ // map[string]interface{}{
+		// URL:     "https://wemade.io",
+		// Browser: "faek browser 1.0.8",
+		// "":       "",,
+	}
+	data.OwnerID = 5648073946562560
+
+	input, _ := json.Marshal(map[string]interface{}{
+		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType": "people",
+	})
+	// logger.DebugFmt("input: %s", input)
+	// w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)
+	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "API SWEEPER OK 200",
+			args: args{
+				w: w1, r: r1,
+			},
+		},
+		// {
+		// 	name: "API Options",
+		// 	args: args{
+		// 		w: w2, r: r2,
+		// 	},
+		// },
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SweepExpiredSets(tt.args.w, tt.args.r)
+		})
+	}
+}

@@ -368,3 +368,71 @@ func Delete(dsn string, r models.Record) error {
 	}
 	return nil
 }
+
+// SweepExpiredSets the interface from CSQL
+func SweepExpiredSets(dsn string, r models.Record) error {
+	opts := r.GetDBOptions()
+	tblExpiredSets := models.TblExpiredSet
+	setField := models.IDField
+	switch r.GetEntityType() {
+	case models.TypePeople:
+		setField = models.PeopleIDField
+	case models.TypeHousehold:
+		setField = models.HouseholdIDField
+	}
+	expiredSets := []string{}
+	if opts.HasTablenamePrefix {
+		tblExpiredSets = r.GetTablenamePrefix() + tblExpiredSets
+	}
+	if opts.HasTablenameSuffix {
+		tblExpiredSets += r.GetTablenameSuffix()
+	}
+	tblTarget := opts.Tablename
+	if opts.HasTablenamePrefix {
+		tblTarget = r.GetTablenamePrefix() + tblTarget
+	}
+	if opts.HasTablenameSuffix {
+		tblTarget += r.GetTablenameSuffix()
+	}
+	tblExpiredSetsTicked := fmt.Sprintf(tblNameFormatTick, tblExpiredSets)
+	tblTargetTicked := fmt.Sprintf(tblNameFormatTick, tblTarget)
+
+	sess, err := initDB(dsn, "SweepExpiredSets")
+	if err != nil {
+		return logger.Err(errUnableToConnect)
+	}
+	tx, err := sess.Begin()
+	if err != nil {
+		return logger.Err(err)
+	}
+	defer tx.RollbackUnlessCommitted()
+	logger.DebugFmt("Tablenames: %s - %s - %s -%s", tblExpiredSets, tblExpiredSetsTicked, tblTarget, tblTargetTicked)
+	tx.Select(models.ExpiredSetIDField).From(tblExpiredSetsTicked).
+		Where("entity = ?", r.GetEntityType()).
+		Load(&expiredSets)
+	logger.DebugFmt("ExpiredSets: %#v", expiredSets)
+	for _, id := range expiredSets {
+		res, err := tx.DeleteFrom(tblTarget).Where(setField+" = ?", id).Exec()
+		rat, _ := res.RowsAffected()
+		if err != nil {
+			logger.ErrFmt("[csql.SweepExpiredSets.DeleteFrom.tblTarget] %v#", err)
+			continue
+		}
+		if rat > 0 {
+			logger.DebugFmt("DELETED %s: [%s] FROM [%s]", setField, id, tblTarget)
+			res, err := tx.DeleteFrom(tblExpiredSets).Where("expiredId = ? AND entity = ?", id, r.GetEntityType()).Exec()
+			if err != nil {
+				logger.ErrFmt("[csql.SweepExpiredSets.DeleteFrom.tblExpiredSets] %v#", err)
+			}
+			ra, _ := res.RowsAffected()
+			if ra > 0 {
+				logger.DebugFmt("DELETED expiredId: [%s] FROM [%s]", id, tblExpiredSets)
+			}
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return logger.ErrFmt("[csql.SweepExpiredSets.Commit] %v#", err)
+	}
+	return nil
+}
