@@ -115,8 +115,8 @@ func Delete(projectID string, csqlDSN string, r models.Record) (err error) {
 }
 
 // SweepExpiredSets gets where the data is stored and deletes it acording to filters
-func SweepExpiredSets(projectID string, csqlDSN string, entityType string) (err error) {
-	return csql.SweepExpiredSets(csqlDSN, entityType)
+func SweepExpiredSets(projectID string, csqlDSN string, entityType string, entityBlacklist []string) (err error) {
+	return csql.SweepExpiredSets(csqlDSN, entityType, entityBlacklist)
 	// switch r.GetDBType() {
 	// case models.CSQL:
 	// err = csql.SweepExpiredSets(csqlDSN, entityType)
