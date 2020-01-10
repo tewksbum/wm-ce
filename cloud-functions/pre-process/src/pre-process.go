@@ -650,13 +650,13 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
 		}
 	}
-	// if we don't have ANY columns... throw it to people to try out ver...
-	if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
-		flags.People = true
-		if dev {
-			log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
-		}
-	}
+	// // if we don't have ANY columns... throw it to people to try out ver...
+	// if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
+	// 	flags.People = true
+	// 	if dev {
+	// 		log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
+	// 	}
+	// }
 
 	if columnFlags.ProductID && columnFlags.ProductName {
 		flags.Product = true
@@ -667,6 +667,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.OrderID {
 		flags.Order = true
 	}
+
 	// skip consignments
 	// if columnFlags.ConsignmentID && columnFlags.OrderID {
 	// 	flags.Consignment = true
@@ -674,6 +675,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
+
+	// unset order if order detail is set
+	if flags.OrderDetail {
+		flags.Order = false
+	}
+
 	if dev {
 		log.Printf("entity flags %v %v", flags, input.Signature.EventID)
 	}
