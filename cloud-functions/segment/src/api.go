@@ -115,9 +115,6 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	b, _ := ioutil.ReadAll(resp.Body)
-	logger.DebugFmt(string(b))
-
 	decoder := json.NewDecoder(resp.Body)
 	var sr wemade.APIOutput
 	err = decoder.Decode(&sr)
@@ -126,6 +123,8 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	}
 	if sr.Success != true {
 		logger.ErrFmt("[Upsert.Sweeper.not_successful.Error]: %v", err)
+	} else {
+		logger.DebugFmt("[Upsert.Sweeper.POST] success!")
 	}
 
 }

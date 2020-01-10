@@ -169,13 +169,14 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	}
 	// Logging of the created insert command
 	if err != nil {
-		errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
 		switch r.GetEntityType() {
 		// TODO: remove this conditional for HH
 		case models.TypeHousehold:
+			errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
 			return updated, errw
 		case models.TypeExpiredSet:
-			if !strings.Contains(errw.Error(), "1062") && !strings.Contains(err.Error(), "PRIMARY") {
+			if !strings.Contains(err.Error(), "1062") && !strings.Contains(err.Error(), "PRIMARY") {
+				errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
 				return updated, errw
 			}
 		}
