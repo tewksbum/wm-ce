@@ -1,8 +1,6 @@
 package segment
 
 import (
-	"bytes"
-	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -98,34 +96,34 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
 
-	input := map[string]string{
-		"accessKey":  rec.GetAccessKey(),
-		"entityType": rec.GetEntityType(),
-	}
-	jInput, err := json.Marshal(input)
-	if err != nil {
-		logger.ErrFmt("[Upsert.Sweeper.json.Marshall.Error]: %v", err)
-	}
-	req, err := http.NewRequest("POST", sweeperEndpoint, bytes.NewBuffer(jInput))
-	req.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		logger.ErrFmt("[Upsert.Sweeper.client.Do.Error]: %v", err)
-	}
-	defer resp.Body.Close()
+	// input := map[string]string{
+	// 	"accessKey":  rec.GetAccessKey(),
+	// 	"entityType": rec.GetEntityType(),
+	// }
+	// jInput, err := json.Marshal(input)
+	// if err != nil {
+	// 	logger.ErrFmt("[Upsert.Sweeper.json.Marshall.Error]: %v", err)
+	// }
+	// req, err := http.NewRequest("POST", sweeperEndpoint, bytes.NewBuffer(jInput))
+	// req.Header.Set("Content-Type", "application/json")
+	// client := &http.Client{}
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	logger.ErrFmt("[Upsert.Sweeper.client.Do.Error]: %v", err)
+	// }
+	// defer resp.Body.Close()
 
-	decoder := json.NewDecoder(resp.Body)
-	var sr wemade.APIOutput
-	err = decoder.Decode(&sr)
-	if err != nil {
-		logger.ErrFmt("[Upsert.Sweeper.decode.Decode.Error]: %v", err)
-	}
-	if sr.Success != true {
-		logger.ErrFmt("[Upsert.Sweeper.not_successful.Error]: %v", err)
-	} else {
-		logger.DebugFmt("[Upsert.Sweeper.POST] success!")
-	}
+	// decoder := json.NewDecoder(resp.Body)
+	// var sr wemade.APIOutput
+	// err = decoder.Decode(&sr)
+	// if err != nil {
+	// 	logger.ErrFmt("[Upsert.Sweeper.decode.Decode.Error]: %v", err)
+	// }
+	// if sr.Success != true {
+	// 	logger.ErrFmt("[Upsert.Sweeper.not_successful.Error]: %v", err)
+	// } else {
+	// 	logger.DebugFmt("[Upsert.Sweeper.POST] success!")
+	// }
 
 }
 
