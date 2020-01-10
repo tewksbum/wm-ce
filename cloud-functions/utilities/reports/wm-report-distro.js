@@ -48,9 +48,16 @@ var ListColumns = [
     { key: "PROGRAM" },
     { key: "MAILER TYPE" },
     { key: "FILE OUTPUT DATE" },
+    { key: "CRM" },
+    { key: "COM" },
     { key: "GENDER" },
-    { key: "DISTRIBUTION" },
+    { key: "DISTRIBUTION DESIGNATION" },
+    { key: "Q DISTRIBUTION" },
+    { key: "B DISTRIBUTION" },
+    { key: "C DISTRIBUTION" },
+    { key: "SEGMENT" },
 ];
+
 ListColumns.forEach(function (item, index) {
     item.header = item.key;
 });
@@ -215,8 +222,14 @@ async function main() {
                             "PROGRAM": programs[school.program.toLowerCase()],
                             "MAILER TYPE": "",
                             "FILE OUTPUT DATE": outputDate,
+                            "CRM": "",
+                            "COM": "",
                             "GENDER": row["gender"],
-                            "DISTRIBUTION": school.distribution
+                            "DISTRIBUTION DESIGNATION": "",
+                            "Q DISTRIBUTION": school.distribution,
+                            "B DISTRIBUTION": "",
+                            "C DISTRIBUTION": "",
+                            "SEGMENT": "",
                         }
                         sheetList.addRow(row);
                         csvs.push(row);
