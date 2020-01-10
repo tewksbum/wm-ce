@@ -218,8 +218,9 @@ func TestSweepExpiredSets(t *testing.T) {
 	data.OwnerID = 5648073946562560
 
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType": "people",
+		"accessKey":       "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType":      "people",
+		"entityBlacklist": []string{"564807"},
 	})
 	// logger.DebugFmt("input: %s", input)
 	// w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)

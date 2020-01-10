@@ -205,14 +205,14 @@ func SweepExpiredSets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	input, err := wemade.BuildInputFromData(data)
+	input, err := wemade.BuildSweeperInputFromData(data)
 	if err != nil {
 		errToHTTP(w, r, err)
 		return
 	}
 
 	logger.DebugFmt("[SweepExpiredSets] Start DB works")
-	if db.SweepExpiredSets(projectID, csqlDSN, input.EntityType) != nil {
+	if db.SweepExpiredSets(projectID, csqlDSN, input.EntityType, input.EntityBlacklist) != nil {
 		errToHTTP(w, r, err)
 		return
 	}

@@ -21,20 +21,28 @@ type PubSubMessage struct {
 	Attributes map[string]string `json:"attributes"`
 }
 
+// SweeperInput input for the Sweeper Segment API
+type SweeperInput struct {
+	AccessKey       string   `json:"accessKey"`
+	EntityType      string   `json:"entityType"`
+	EntityBlacklist []string `json:"entityBlacklist"`
+}
+
 // APIInput input for the Segment API
 type APIInput struct {
-	OwnerID      int64                   `json:"ownerId"`
-	AccessKey    string                  `json:"accessKey"`
-	EntityType   string                  `json:"entityType"`
-	Source       string                  `json:"source"`
-	Owner        string                  `json:"owner"`
-	Organization string                  `json:"organization,omitifempty"`
-	Signatures   []string                `json:"signatures,omitifempty"`
-	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
-	Passthrough  []models.Passthrough360 `json:"passthrough"`
-	Attributes   map[string]string       `json:"attributes"`
-	Filters      []models.QueryFilter    `json:"filters"`
-	Columns      []string                `json:"columns"`
+	OwnerID       int64                   `json:"ownerId"`
+	AccessKey     string                  `json:"accessKey"`
+	EntityType    string                  `json:"entityType"`
+	Source        string                  `json:"source"`
+	Owner         string                  `json:"owner"`
+	Organization  string                  `json:"organization,omitifempty"`
+	Signatures    []string                `json:"signatures,omitifempty"`
+	ExpiredSets   []string                `json:"expiredSets,omitifempty"`
+	Passthrough   []models.Passthrough360 `json:"passthrough"`
+	Attributes    map[string]string       `json:"attributes"`
+	Filters       []models.QueryFilter    `json:"filters"`
+	Columns       []string                `json:"columns"`
+	SweeperIgnore []string                `json:"sweeperIgnore"`
 	// Passthrough  map[string]string    `json:"passthrough"`
 	// InputData    interface{}          `json:"inputData"`
 }

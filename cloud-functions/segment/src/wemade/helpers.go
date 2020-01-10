@@ -31,6 +31,17 @@ func BuildInputFromData(data []byte) (APIInput, error) {
 	return input, nil
 }
 
+// BuildSweeperInputFromData serializes the json into the SweeperInput struct and returns
+func BuildSweeperInputFromData(data []byte) (SweeperInput, error) {
+	var input SweeperInput
+
+	err := json.Unmarshal(data, &input)
+	if err != nil {
+		return input, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+	return input, nil
+}
+
 // BuildRecordFromInput serialize a json into a Request struct, checks the API key and
 func BuildRecordFromInput(projectID string, namespace string, data []byte, useFixedAccessKey bool) (models.Record, error) {
 	ctx := context.Background()

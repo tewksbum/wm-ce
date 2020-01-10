@@ -376,7 +376,7 @@ func Delete(dsn string, r models.Record) error {
 }
 
 // SweepExpiredSets the interface from CSQL
-func SweepExpiredSets(dsn string, entityType string) error {
+func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string) error {
 
 	sess, err := initDB(dsn, "SweepExpiredSets")
 	if err != nil {
@@ -387,7 +387,17 @@ func SweepExpiredSets(dsn string, entityType string) error {
 	entities := []string{}
 	sess.SelectBySql(queryExpiredSetsTables).Load(&entities)
 	for _, e := range entities {
-		// logger.DebugFmt("entity: %s", e)
+		bl := false
+		for _, b := range entityBlacklist {
+			if strings.Contains(e, b) {
+				bl = true
+				break
+			}
+		}
+		if bl {
+			continue
+		}
+		logger.DebugFmt("entity: %s", e)
 		setField := models.IDField
 		switch entityType {
 		case models.TypePeople:
