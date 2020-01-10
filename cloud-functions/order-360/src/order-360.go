@@ -61,6 +61,7 @@ type OrderFiberDS struct {
 	SUBTOTAL    MatchKeyField    `datastore:"subtotal"`
 	SHIPPING    MatchKeyField    `datastore:"shipping"`
 	DISCOUNT    MatchKeyField    `datastore:"discount"`
+	CHANNEL     MatchKeyField    `datastore:"channel"`
 	TAX         MatchKeyField    `datastore:"tax"`
 	TOTAL       MatchKeyField    `datastore:"total"`
 	Passthrough []Passthrough360 `datastore:"passthrough"`
@@ -82,6 +83,7 @@ type OrderOutput struct {
 	DISCOUNT    MatchKeyField `json:"discount"`
 	TAX         MatchKeyField `json:"tax"`
 	TOTAL       MatchKeyField `json:"total"`
+	CHANNEL     MatchKeyField `json:"total"`
 }
 
 type Signature360 struct {
@@ -142,6 +144,8 @@ type OrderSetDS struct {
 	TAXNormalized         []string       `datastore:"taxnormalized"`
 	TOTAL                 []string       `datastore:"total"`
 	TOTALNormalized       []string       `datastore:"totalnormalized"`
+	CHANNEL               []string       `datastore:"channel"`
+	CHANNELNormalized     []string       `datastore:"channelnormalized"`
 }
 
 type OrderGoldenDS struct {
@@ -156,6 +160,7 @@ type OrderGoldenDS struct {
 	DISCOUNT    string         `datastore:"discount"`
 	TAX         string         `datastore:"tax"`
 	TOTAL       string         `datastore:"total"`
+	CHANNEL     string         `datastore:"channel"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")

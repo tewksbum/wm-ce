@@ -63,6 +63,7 @@ type OrderDetailOutput struct {
 	PRODUCTSKU      MatchKeyField `json:"productsku"`
 	PRODUCTUPC      MatchKeyField `json:"productupc"`
 	PRODUCTQUANTITY MatchKeyField `json:"productquantity"`
+	MASTERCATEGORY  MatchKeyField `json:"mastercategory"`
 }
 
 type OrderDetailERR struct {
@@ -74,6 +75,7 @@ type OrderDetailERR struct {
 	ProductSKU      int `json:"ProductSKU"`
 	ProductUPC      int `json:"ProductUPC"`
 	ProductQuantity int `json:"ProductQuantity"`
+	MasterCategory  int `json:"MasterCategory"`
 }
 
 type NER struct {
@@ -166,6 +168,12 @@ func PostProcessOrderDetail(ctx context.Context, m PubSubMessage) error {
 		}
 		if column.OrderDetailERR.ProductQuantity == 1 {
 			matchKey := "PRODUCTQUANTITY"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderDetailERR.MasterCategory == 1 {
+			matchKey := "MASTERCATEGORY"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}
