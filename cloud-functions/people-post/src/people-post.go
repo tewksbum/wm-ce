@@ -355,6 +355,7 @@ var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|mis
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
 
 var redisTransientExpiration = 3600 * 24
+var redisTemporaryExpiration = 3600
 
 // var StateList = map[string]string{
 // 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
@@ -880,6 +881,48 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+		}
+
+		if len(v.Output.FNAME.Value) > 0 {
+			v.Output.FINITIAL = MatchKeyField{
+				Value: v.Output.FNAME.Value[0:1],
+			}
+		}
+
+		MatchByValue1 := strings.Replace(v.Output.TRUSTEDID.Value, "'", `''`, -1)
+		MatchByValue2 := strings.Replace(v.Output.EMAIL.Value, "'", `''`, -1)
+		MatchByValue3A := strings.Replace(v.Output.PHONE.Value, "'", `''`, -1)
+		MatchByValue3B := strings.Replace(v.Output.FINITIAL.Value, "'", `''`, -1)
+		MatchByValue5A := strings.Replace(v.Output.CITY.Value, "'", `''`, -1)
+		MatchByValue5B := strings.Replace(v.Output.STATE.Value, "'", `''`, -1)
+		MatchByValue5C := strings.Replace(v.Output.LNAME.Value, "'", `''`, -1)
+		MatchByValue5D := strings.Replace(v.Output.FNAME.Value, "'", `''`, -1)
+		MatchByValue5E := strings.Replace(v.Output.AD1.Value, "'", `''`, -1)
+		MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
+
+		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
+		SetRedisKeyIfNotExists(append(redisMatchValue0, "retry"))
+		SetRedisTempKey(redisMatchValue0)
+
+		if len(MatchByValue1) > 0 {
+			redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue1, "retry"))
+			SetRedisTempKey(redisMatchValue1)
+		}
+		if len(MatchByValue2) > 0 {
+			redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue2, "retry"))
+			SetRedisTempKey(redisMatchValue2)
+		}
+		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+			redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue3, "retry"))
+			SetRedisTempKey(redisMatchValue3)
+		}
+		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
+			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
+			SetRedisKeyIfNotExists(append(redisMatchValue5, "retry"))
+			SetRedisTempKey(redisMatchValue5)
 		}
 
 		pubQueue = append(pubQueue, PubQueue{
@@ -1618,6 +1661,26 @@ func SetRedisValueWithExpiration(keyparts []string, value int) {
 	}
 }
 
+func SetRedisTempKey(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, 1)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisKeyIfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
 func IncrRedisValue(keyparts []string) { // no need to update expiration
 	ms := msp.Get()
 	defer ms.Close()
@@ -1637,7 +1700,7 @@ func GetRedisIntValue(keyparts []string) int {
 	defer ms.Close()
 	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
 	return value
 }
@@ -1651,7 +1714,7 @@ func GetRedisIntValues(keys [][]string) []int {
 		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
 	}
 
-	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys[0], formattedKeys[1], formattedKeys[2], formattedKeys[3], formattedKeys[4]))
 	if err != nil {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
