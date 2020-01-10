@@ -54,17 +54,18 @@ type MatchKeyField struct {
 }
 
 type OrderOutput struct {
-	ID     MatchKeyField `json:"id"         bigquery:"id"`
-	NUMBER MatchKeyField `json:"number"     bigquery:"number"`
-	DATE   MatchKeyField `json:"date"       bigquery:"date"`
+	ID     MatchKeyField `json:"id"`
+	NUMBER MatchKeyField `json:"number"`
+	DATE   MatchKeyField `json:"date"`
 
-	CUSTOMERID MatchKeyField `json:"customerId" bigquery:"customerId"`
+	CUSTOMERID MatchKeyField `json:"customerId"`
 
-	SUBTOTAL MatchKeyField `json:"subtotal"   bigquery:"subtotal"`
-	SHIPPING MatchKeyField `json:"shipping"   bigquery:"shipping"`
-	DISCOUNT MatchKeyField `json:"discount"   bigquery:"discount"`
-	TAX      MatchKeyField `json:"tax" 	    bigquery:"tax"`
-	TOTAL    MatchKeyField `json:"total"      bigquery:"total"`
+	SUBTOTAL MatchKeyField `json:"subtotal"`
+	SHIPPING MatchKeyField `json:"shipping"`
+	DISCOUNT MatchKeyField `json:"discount"`
+	TAX      MatchKeyField `json:"tax"`
+	TOTAL    MatchKeyField `json:"total"`
+	CHANNEL  MatchKeyField `json:"channel"`
 }
 
 type OrderERR struct {
@@ -77,6 +78,7 @@ type OrderERR struct {
 	Discount   int `json:"Tax"`
 	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
+	Channel    int `json:"Channel"`
 }
 
 type NER struct {
@@ -176,6 +178,12 @@ func PostProcessOrder(ctx context.Context, m PubSubMessage) error {
 		}
 		if column.OrderERR.Total == 1 {
 			matchKey := "TOTAL"
+			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
+				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
+			}
+		}
+		if column.OrderERR.Channel == 1 {
+			matchKey := "CHANNEL"
 			if len(GetMkField(&mkOutput, matchKey).Value) == 0 {
 				SetMkField(&mkOutput, matchKey, column.Value, column.Name)
 			}

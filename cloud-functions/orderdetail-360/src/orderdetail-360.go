@@ -61,6 +61,7 @@ type OrderDetailFiberDS struct {
 	PRODUCTSKU      MatchKeyField    `datastore:"productsku"`
 	PRODUCTUPC      MatchKeyField    `datastore:"productupc"`
 	PRODUCTQUANTITY MatchKeyField    `datastore:"productquantity"`
+	MASTERCATEGORY  MatchKeyField    `datastore:"mastercategory"`
 	Passthrough     []Passthrough360 `datastore:"passthrough"`
 }
 
@@ -79,6 +80,7 @@ type OrderDetailOutput struct {
 	PRODUCTSKU      MatchKeyField `json:"productsku"`
 	PRODUCTUPC      MatchKeyField `json:"productupc"`
 	PRODUCTQUANTITY MatchKeyField `json:"productquantity"`
+	MASTERCATEGORY  MatchKeyField `json:"mastercategory"`
 }
 
 type Signature360 struct {
@@ -135,6 +137,8 @@ type OrderDetailSetDS struct {
 	PRODUCTUPCNormalized      []string       `datastore:"productupcnormalized"`
 	PRODUCTQUANTITY           []string       `datastore:"productquantity"`
 	PRODUCTQUANTITYNormalized []string       `datastore:"productquantitynormalized"`
+	MASTERCATEGORY            []string       `datastore:"mastercategory"`
+	MASTERCATEGORYNormalized  []string       `datastore:"mastercategorynormalized"`
 }
 
 type OrderDetailGoldenDS struct {
@@ -147,6 +151,7 @@ type OrderDetailGoldenDS struct {
 	PRODUCTSKU      string         `datastore:"productsku"`
 	PRODUCTUPC      string         `datastore:"productupc"`
 	PRODUCTQUANTITY string         `datastore:"productquantity"`
+	MASTERCATEGORY  string         `datastore:"mastercategory"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")

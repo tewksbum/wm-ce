@@ -118,6 +118,7 @@ type OrderERR struct {
 	Discount   int `json:"Tax"`
 	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
+	Channel    int `json:"Channel"`
 }
 
 type OrderDetailERR struct {
@@ -129,6 +130,7 @@ type OrderDetailERR struct {
 	ProductSKU      int `json:"ProductSKU"`
 	ProductUPC      int `json:"ProductUPC"`
 	ProductQuantity int `json:"ProductQuantity"`
+	MasterCategory  int `json:"MasterCategory"`
 }
 
 type PeopleERR struct {
@@ -1195,6 +1197,8 @@ func GetOrderERR(column string) OrderERR {
 		err.Tax = 1
 	case "order.total":
 		err.Total = 1
+	case "order.channel":
+		err.Channel = 1
 	}
 
 	return err
@@ -1226,6 +1230,9 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	}
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
 		err.ProductQuantity = 1
+	}
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemlob") {
+		err.MasterCategory = 1
 	}
 
 	return err
