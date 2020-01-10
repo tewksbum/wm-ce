@@ -169,10 +169,15 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	}
 	// Logging of the created insert command
 	if err != nil {
-		errorito := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		switch r.GetEntityType() {
 		// TODO: remove this conditional for HH
-		if r.GetTablename() != models.TblHousehold {
-			return updated, errorito
+		case models.TypeHousehold:
+			return updated, errw
+		case models.TypeExpiredSet:
+			if !strings.Contains(errw.Error(), "1062") && !strings.Contains(err.Error(), "PRIMARY") {
+				return updated, errw
+			}
 		}
 		return true, nil
 	}
@@ -401,17 +406,16 @@ func SweepExpiredSets(dsn string, r models.Record) error {
 	if err != nil {
 		return logger.Err(errUnableToConnect)
 	}
-	tx, err := sess.Begin()
-	if err != nil {
-		return logger.Err(err)
-	}
-	defer tx.RollbackUnlessCommitted()
 	logger.DebugFmt("Tablenames: %s - %s - %s -%s", tblExpiredSets, tblExpiredSetsTicked, tblTarget, tblTargetTicked)
-	tx.Select(models.ExpiredSetIDField).From(tblExpiredSetsTicked).
+	sess.Select(models.ExpiredSetIDField).From(tblExpiredSetsTicked).
 		Where("entity = ?", r.GetEntityType()).
 		Load(&expiredSets)
 	logger.DebugFmt("ExpiredSets: %#v", expiredSets)
 	for _, id := range expiredSets {
+		tx, err := sess.Begin()
+		if err != nil {
+			return logger.Err(err)
+		}
 		res, err := tx.DeleteFrom(tblTarget).Where(setField+" = ?", id).Exec()
 		rat, _ := res.RowsAffected()
 		if err != nil {
@@ -429,10 +433,11 @@ func SweepExpiredSets(dsn string, r models.Record) error {
 				logger.DebugFmt("DELETED expiredId: [%s] FROM [%s]", id, tblExpiredSets)
 			}
 		}
-	}
-	err = tx.Commit()
-	if err != nil {
-		return logger.ErrFmt("[csql.SweepExpiredSets.Commit] %v#", err)
+		err = tx.Commit()
+		if err != nil {
+			tx.RollbackUnlessCommitted()
+			return logger.ErrFmt("[csql.SweepExpiredSets.Commit] %v#", err)
+		}
 	}
 	return nil
 }

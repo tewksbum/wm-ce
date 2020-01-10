@@ -83,6 +83,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Passthrough:      input.Passthrough,
 		Attributes:       utils.FlattenMap(input.Attributes),
 		Timestamp:        time.Now(),
+		AccessKey:        accessKey,
 	}
 
 	// idata, _ := json.Marshal(input)

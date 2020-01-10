@@ -60,6 +60,7 @@ type Record interface {
 	GetSurrogateID() string
 	GetSource() string
 	GetOwner() string
+	GetAccessKey() string
 	GetPassthrough() []Passthrough360
 	GetAttributes() string
 	GetDBType() string
@@ -138,6 +139,12 @@ type BaseRecord struct {
 	ColumnList       []string         `json:"-" sql:"-" bigquery:"-"`
 	ColumnBlackList  []string         `json:"-" sql:"-" bigquery:"-"`
 	SelectColumnList []string         `json:"-" sql:"-" bigquery:"-"`
+	AccessKey        string           `json:"-" sql:"-" bigquery:"-"`
+}
+
+// GetAccessKey get the access key
+func (r *BaseRecord) GetAccessKey() string {
+	return r.AccessKey
 }
 
 // GetOwnerID gets the Customer id
@@ -396,6 +403,7 @@ type HouseholdRecord struct {
 	BaseRecord
 	SurrogateID string    `json:"surrogateId" bigquery:"surrogateid"`
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	ExpiredSets []string  `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
 	Record      Household `json:"record" bigquery:"record" sql:"record"`
 }
 
@@ -407,6 +415,11 @@ func (r *HouseholdRecord) GetMap() map[string]interface{} {
 // GetSignatures gets the person signatures
 func (r *HouseholdRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetExpiredSets gets the household ExpiredSets
+func (r *HouseholdRecord) GetExpiredSets() []string {
+	return r.ExpiredSets
 }
 
 // FallbackRecord a fallback type record

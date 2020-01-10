@@ -1,6 +1,8 @@
 package segment
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -14,17 +16,18 @@ import (
 
 // Environment variables
 var (
-	projectID      = os.Getenv("PROJECTID")
-	namespace      = os.Getenv("NAMESPACE")
-	csqlRegion     = os.Getenv("CSQL_REGION")
-	csqlInstanceID = os.Getenv("CSQL_INSTANCEID")
-	csqlUser       = os.Getenv("CSQL_USER")
-	csqlPass       = os.Getenv("CSQL_PASS")
-	csqlSchema     = os.Getenv("CSQL_SCHEMA")
-	csqlCnn        = os.Getenv("CSQL_CNN")
-	csqlDSN        = utils.TruncatingSprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
-	// PubSubTopicInput  = os.Getenv("PS_SWEEPER_INPUT")
-	// PubSubTopicOutput = os.Getenv("PS_SWEEEER_OUTPUT")
+	projectID       = os.Getenv("PROJECTID")
+	namespace       = os.Getenv("NAMESPACE")
+	csqlRegion      = os.Getenv("CSQL_REGION")
+	csqlInstanceID  = os.Getenv("CSQL_INSTANCEID")
+	csqlUser        = os.Getenv("CSQL_USER")
+	csqlPass        = os.Getenv("CSQL_PASS")
+	csqlSchema      = os.Getenv("CSQL_SCHEMA")
+	csqlCnn         = os.Getenv("CSQL_CNN")
+	csqlDSN         = utils.TruncatingSprintf(csqlCnn, csqlUser, csqlPass, projectID, csqlRegion, csqlInstanceID, csqlSchema)
+	sweeperEndpoint = os.Getenv("SWEEPER_API_ENDPOINT")
+	// PubSubTopicInput  = os.Getenv("SWEEPER_PS_INPUT")
+	// PubSubTopicOutput = os.Getenv("SWEEEER_PS_OUTPUT")
 	// ps                *pubsub.Client
 	// topicInput        *pubsub.Topic
 	// topicOutput       *pubsub.Topic
@@ -94,6 +97,37 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 	logger.DebugFmt("[Upsert.OwnerDWH] Finished DB writing")
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
+
+	input := map[string]string{
+		"accessKey":  rec.GetAccessKey(),
+		"entityType": rec.GetEntityType(),
+	}
+	jInput, err := json.Marshal(input)
+	if err != nil {
+		logger.ErrFmt("[Upsert.Sweeper.json.Marshall.Error]: %v", err)
+	}
+	req, err := http.NewRequest("POST", sweeperEndpoint, bytes.NewBuffer(jInput))
+	req.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.ErrFmt("[Upsert.Sweeper.client.Do.Error]: %v", err)
+	}
+	defer resp.Body.Close()
+
+	b, _ := ioutil.ReadAll(resp.Body)
+	logger.DebugFmt(string(b))
+
+	decoder := json.NewDecoder(resp.Body)
+	var sr wemade.APIOutput
+	err = decoder.Decode(&sr)
+	if err != nil {
+		logger.ErrFmt("[Upsert.Sweeper.decode.Decode.Error]: %v", err)
+	}
+	if sr.Success != true {
+		logger.ErrFmt("[Upsert.Sweeper.not_successful.Error]: %v", err)
+	}
+
 }
 
 // Read api entry point for getting a (list of) resource(s)
@@ -202,7 +236,7 @@ func SweepExpiredSets(w http.ResponseWriter, r *http.Request) {
 
 	// // If all goes well...
 	w.WriteHeader(http.StatusOK)
-	HTTPWriteOutput(w, apiOutput(true, successReadMsg))
+	HTTPWriteOutput(w, apiOutput(true, successMsg))
 }
 
 // // SweepEntry the database
