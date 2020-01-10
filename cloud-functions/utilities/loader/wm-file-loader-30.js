@@ -57,7 +57,7 @@ var skippedSchoolCodes = [];
     while (index <= lfiles) {
       const currentRow = worksheet.getRow(index);
       // for (index; index < lfiles; index++) {
-      console.log(`current row seq: `, worksheet.getRow(index).values[10]);
+      // console.log(`current row seq: `, worksheet.getRow(index).values[10]);
       if (seq == currentRow.values[10]) {
         console.log(`classYear: `, worksheet.getRow(index).values[11]);
         console.log(`processing file...`);
@@ -68,10 +68,10 @@ var skippedSchoolCodes = [];
       index++;
     }
     if (wroteFlag) {
-      console.log(`waiting for files to process`);
+      // console.log(`waiting for files to process`);
       await nap(2500);
     }
-    console.log(`reset wait`);
+    // console.log(`reset wait`);
     wroteFlag = false;
     index = 2;
     seq++;
