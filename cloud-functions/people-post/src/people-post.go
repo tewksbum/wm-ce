@@ -639,7 +639,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// AD type
 		if column.MatchKey1 == "AD1" || column.MatchKey == "AD1" {
-			if column.Value == "true" || column.Value == "false" || column.Value == "0001-01-01T00:00:00+00:0" || column.Value == "0.000000" {
+			if column.Value == "true" || column.Value == "false" || column.Value == "0001-01-01T00:00:00+00:00" || column.Value == "0.000000" {
 				column.MatchKey = ""
 				column.MatchKey1 = ""
 				column.MatchKey2 = ""
