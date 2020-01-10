@@ -22,6 +22,11 @@ const (
 		INDEX(peopleId),
 		INDEX(householdId),
 		PRIMARY KEY (signature));`
+	tblExpiredSetsCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
+		expiredId VARCHAR(128) NOT NULL,
+		entity VARCHAR(32) NOT NULL,
+		INDEX(expiredId),
+		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
 		signatures JSON NULL,
@@ -148,6 +153,8 @@ func appendList(rows interface{}, totalrows int, entityType string, blacklist []
 
 func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFields bool) string {
 	switch entityType {
+	case models.TypeExpiredSet:
+		return fmt.Sprintf(tblExpiredSetsCreateStmt, tblName)
 	case models.TypeDecode:
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
 	case models.TypePeople:

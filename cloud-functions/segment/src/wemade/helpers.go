@@ -50,7 +50,9 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		ignoreUniqueFields = true
 	}
 
+	logger.DebugFmt("Start Validating Customer: %s - %s -%s", projectID, namespace, accessKey)
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
+	logger.DebugFmt("Finished Validating Customer: %s - %s -%s", projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err
 	}

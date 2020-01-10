@@ -65,3 +65,29 @@ func buildHouseholdDecode(r *models.HouseholdRecord, signature string) models.Re
 	rs.Signature = signature
 	return rs
 }
+
+func buildExpiredSet(r models.Record, expiredID string, entity string) models.Record {
+	rs := &models.ExpiredSetRecord{}
+	rs.BaseRecord = models.BaseRecord{
+		OwnerID:    r.GetOwnerID(),
+		EntityType: models.TypeExpiredSet,
+		Owner:      r.GetOwner(),
+	}
+	rs.IDField = models.ExpiredSetIDField
+	rs.ColumnList = models.ExpiredSetColumnList
+	rs.ColumnBlackList = models.ExpiredSetBlackList
+	rs.SelectColumnList = models.ExpiredSetColumnList
+	rs.DBopts = models.Options{
+		Type:               models.CSQL,
+		TablenamePrefix:    models.TblnamePrefix,
+		Tablename:          models.TblExpiredSet,
+		TablenameSuffix:    rs.GetStrOwnerID(),
+		SchemaName:         r.GetDBOptions().SchemaName,
+		IsPartitioned:      false,
+		HasTablenameSuffix: true,
+		HasTablenamePrefix: true,
+	}
+	rs.ExpiredID = expiredID
+	rs.Entity = entity
+	return rs
+}

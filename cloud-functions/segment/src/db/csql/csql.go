@@ -96,8 +96,13 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	if len(exists) < 1 {
 		is := tx.InsertInto(tblName)
 		switch r.GetEntityType() {
+		case models.TypeExpiredSet:
+			fallthrough
 		case models.TypeDecode:
-			is = is.Columns(r.GetColumnList()...).Record(r)
+			for _, c := range r.GetColumnList() {
+				is = is.Pair(c, rmap[c])
+			}
+			// is = is.Columns(r.GetColumnList()...).Record(r)
 		default:
 			sigs := `[`
 			for _, s := range r.GetSignatures() {
@@ -122,7 +127,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
-		logger.DebugFmt("[INSERT]: %s", buf.String())
+		logger.DebugFmt("[INSERT]: %s\n[VALUES]: %#v", buf.String(), buf.Value())
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).Where(rIDField+" = ?", rmap[rIDField])
@@ -156,7 +161,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
-		logger.DebugFmt("[UPDATE]: %s", buf.String())
+		logger.DebugFmt("[UPDATE]: %s\n[VALUES]: %#v", buf.String(), buf.Value())
 		res, err = us.Exec()
 		if err == nil {
 			updated = true

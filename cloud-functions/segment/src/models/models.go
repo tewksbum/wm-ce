@@ -362,7 +362,7 @@ func (r *OrderDetailRecord) GetSurrogateID() string {
 	return r.SurrogateID
 }
 
-// PeopleRecord a event type record
+// PeopleRecord a people type record
 type PeopleRecord struct {
 	BaseRecord
 	// SurrogateID string   `json:"surrogateId" bigquery:"surrogateid"`
@@ -414,6 +414,18 @@ type FallbackRecord struct {
 	BaseRecord
 	SurrogateID string       `json:"surrogateId" bigquery:"surrogateid"`
 	Record      FallbackData `json:"record" bigquery:"record"`
+}
+
+// ExpiredSetRecord a expired type record
+type ExpiredSetRecord struct {
+	ExpiredID string `json:"expiredId" bigquery:"expiredid" sql:"expiredId"`
+	Entity    string `json:"entity" bigquery:"entity" sql:"entity"`
+	BaseRecord
+}
+
+// GetMap gets the column list for DecodeRecord
+func (r *ExpiredSetRecord) GetMap() map[string]interface{} {
+	return utils.StructToMap(r, r.ColumnBlackList)
 }
 
 // Data Structs
