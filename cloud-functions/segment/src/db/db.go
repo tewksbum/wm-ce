@@ -12,18 +12,18 @@ import (
 var appEnv string = os.Getenv("APP_ENV")
 
 const (
-	recordSignature  string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
-	recordDistinctC  string = `DISTINCT JSON_OBJECT("%s", %s)`
-	peopleIDField    string = "peopleId"
-	householdIDField string = "householdId"
+	recordSignature string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
+	recordDistinctC string = `DISTINCT JSON_OBJECT("%s", %s)`
 )
 
 // Write decides where the data will be stored, and does so.
 func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err error) {
-	// var one interface{} = 1
 	skipUpdate := false
+	// var one interface{} = 1
 	var pid interface{}
 	switch r.GetEntityType() {
+	case models.TypeExpiredSet:
+		skipUpdate = true
 	case models.TypeOrderHeader:
 		break
 	case models.TypeOrderConsignment:
@@ -31,46 +31,14 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 	case models.TypeOrderDetail:
 		break
 	case models.TypeHousehold:
+		skipUpdate = true
 		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" && appEnv == "dev" {
 			logger.Info("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
 		}
-		skipUpdate = true
-		// Cleanup
-		// recopy := *r.(*models.HouseholdRecord)
-		// rrec := buildHouseholdDecode(r.(*models.HouseholdRecord), "")
-		// rrec.SetSelectColumnList([]string{fmt.Sprintf(recordDistinctC, householdIDField, householdIDField)})
-		// rrec.AddDBFilter(
-		// 	models.QueryFilter{
-		// 		Field: fmt.Sprintf(recordSignature, strings.Join(r.GetSignatures(), `", "`)),
-		// 		Op:    models.OperationEquals,
-		// 		Value: &one,
-		// 	},
-		// )
-		// or, err := csql.Read(csqlDSN, rrec)
-		// if err != nil {
-		// 	logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup.Read]: %#v", err)
-		// }
-		// for _, cr := range or.List {
-		// 	jr := utils.StructToMap(cr, nil)
-		// 	pid := jr[householdIDField]
-		// 	recopy.AddDBFilter(
-		// 		models.QueryFilter{
-		// 			Field: householdIDField,
-		// 			Op:    models.OperationEquals,
-		// 			Value: &pid,
-		// 		},
-		// 	)
-		// 	err = csql.Delete(csqlDSN, &recopy)
-		// 	if err != nil {
-		// 		logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %#v", err)
-		// 	}
-		// }
-		// Cleanup end
-		// Cleanup by ID
 		pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
 		(r.(*models.HouseholdRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: householdIDField,
+				Field: models.HouseholdIDField,
 				Op:    models.OperationEquals,
 				Value: &pid,
 			},
@@ -89,35 +57,23 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		skipUpdate = true
 		// Cleanup
 		for _, s := range r.GetExpiredSets() {
-			pid = s
-			logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleting peopleId: %s", s)
-			recopy := *r.(*models.PeopleRecord)
-			recopy.AddDBFilter(
-				models.QueryFilter{
-					Field: peopleIDField,
-					Op:    models.OperationEquals,
-					Value: &pid,
-				},
-			)
-			err = csql.Delete(csqlDSN, &recopy)
-			if err != nil {
-				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %#v", err)
-			}
+			csql.Write(csqlDSN, buildExpiredSet(r.(*models.PeopleRecord), s, models.TblPeople), skipUpdate)
 		}
 		pid = (r.(*models.PeopleRecord)).Record.PeopleID
 		(r.(*models.PeopleRecord)).AddDBFilter(
 			models.QueryFilter{
-				Field: peopleIDField,
+				Field: models.PeopleIDField,
 				Op:    models.OperationEquals,
 				Value: &pid,
 			},
 		)
-		logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleting peopleId: %s", pid.(string))
 		err = csql.Delete(csqlDSN, (r.(*models.PeopleRecord)))
 		if err != nil {
 			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
+		} else {
+			logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleted peopleId: %s", pid.(string))
 		}
-		(r.(*models.PeopleRecord)).IDField = peopleIDField
+		(r.(*models.PeopleRecord)).IDField = models.PeopleIDField
 		for _, sig := range r.GetSignatures() {
 			rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs, !skipUpdate); err != nil {
@@ -125,14 +81,14 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 			}
 		}
 	}
-	if err == nil {
-		switch r.GetDBType() {
-		case models.CSQL:
-			updated, err = csql.Write(csqlDSN, r, skipUpdate)
-		case models.BQ:
-			updated, err = bq.Write(projectID, r)
-		}
+	// if err == nil {
+	switch r.GetDBType() {
+	case models.CSQL:
+		updated, err = csql.Write(csqlDSN, r, skipUpdate)
+	case models.BQ:
+		updated, err = bq.Write(projectID, r)
 	}
+	// }
 	return updated, err
 }
 
@@ -154,6 +110,17 @@ func Delete(projectID string, csqlDSN string, r models.Record) (err error) {
 		err = csql.Delete(csqlDSN, r)
 	case models.BQ:
 		err = bq.Delete(projectID, r)
+	}
+	return err
+}
+
+// SweepExpiredSets gets where the data is stored and deletes it acording to filters
+func SweepExpiredSets(projectID string, csqlDSN string, r models.Record) (err error) {
+	switch r.GetDBType() {
+	case models.CSQL:
+		err = csql.SweepExpiredSets(csqlDSN, r)
+	case models.BQ:
+		// 	err = bq.SweepExpiredSets(projectID, r)
 	}
 	return err
 }

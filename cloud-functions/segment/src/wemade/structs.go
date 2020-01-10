@@ -15,6 +15,12 @@ var (
 	ErrStatusNoContent      = "Method [%s] is not allowed"
 )
 
+// PubSubMessage is the payload of a Pub/Sub event.
+type PubSubMessage struct {
+	Data       []byte            `json:"data"`
+	Attributes map[string]string `json:"attributes"`
+}
+
 // APIInput input for the Segment API
 type APIInput struct {
 	OwnerID      int64                   `json:"ownerId"`
