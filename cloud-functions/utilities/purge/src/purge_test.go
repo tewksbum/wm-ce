@@ -241,9 +241,9 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"clientSecret": "cool_works",
 		"targetType": "datastore",
 		"targetLevel": "kind",
-		"operation": "delete",
-		"targetSelection": "dev-ark-rl",
-		"targetSubSelection": ""
+		"operation": "count",
+		"targetSelection": "dev-acv-cv",
+		"targetSubSelection": "people-fiber"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
