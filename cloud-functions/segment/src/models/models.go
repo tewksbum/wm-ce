@@ -61,6 +61,7 @@ type Record interface {
 	GetSource() string
 	GetOwner() string
 	GetAccessKey() string
+	GetWriteToOwner() bool
 	GetPassthrough() []Passthrough360
 	GetAttributes() string
 	GetDBType() string
@@ -140,6 +141,12 @@ type BaseRecord struct {
 	ColumnBlackList  []string         `json:"-" sql:"-" bigquery:"-"`
 	SelectColumnList []string         `json:"-" sql:"-" bigquery:"-"`
 	AccessKey        string           `json:"-" sql:"-" bigquery:"-"`
+	WriteToOwner     bool             `json:"-" sql:"-" bigquery:"-"`
+}
+
+// GetWriteToOwner get write to owner
+func (r *BaseRecord) GetWriteToOwner() bool {
+	return r.WriteToOwner
 }
 
 // GetAccessKey get the access key

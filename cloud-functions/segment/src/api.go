@@ -84,15 +84,17 @@ func Upsert(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	logger.DebugFmt("[Upsert.OwnerDWH] Start Build Record From Input")
-	rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
-	logger.DebugFmt("[Upsert.OwnerDWH] Finished Build Record From Input")
-	logger.DebugFmt("[Upsert.OwnerDWH] Start DB writing")
-	db.Write(projectID, csqlDSN, rec)
-	if err != nil {
-		logger.ErrFmt("[Upsert.OwnerDWH.Error]: %v", err)
+	if rec.GetWriteToOwner() {
+		logger.DebugFmt("[Upsert.OwnerDWH] Start Build Record From Input")
+		rec, err = wemade.BuildRecordFromInput(projectID, namespace, data, true)
+		logger.DebugFmt("[Upsert.OwnerDWH] Finished Build Record From Input")
+		logger.DebugFmt("[Upsert.OwnerDWH] Start DB writing")
+		db.Write(projectID, csqlDSN, rec)
+		if err != nil {
+			logger.ErrFmt("[Upsert.OwnerDWH.Error]: %v", err)
+		}
+		logger.DebugFmt("[Upsert.OwnerDWH] Finished DB writing")
 	}
-	logger.DebugFmt("[Upsert.OwnerDWH] Finished DB writing")
 
 	HTTPWriteOutput(w, apiOutput(true, successMsg))
 

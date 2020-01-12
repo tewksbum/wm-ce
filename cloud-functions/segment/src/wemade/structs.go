@@ -30,19 +30,19 @@ type SweeperInput struct {
 
 // APIInput input for the Segment API
 type APIInput struct {
-	OwnerID       int64                   `json:"ownerId"`
-	AccessKey     string                  `json:"accessKey"`
-	EntityType    string                  `json:"entityType"`
-	Source        string                  `json:"source"`
-	Owner         string                  `json:"owner"`
-	Organization  string                  `json:"organization,omitifempty"`
-	Signatures    []string                `json:"signatures,omitifempty"`
-	ExpiredSets   []string                `json:"expiredSets,omitifempty"`
-	Passthrough   []models.Passthrough360 `json:"passthrough"`
-	Attributes    map[string]string       `json:"attributes"`
-	Filters       []models.QueryFilter    `json:"filters"`
-	Columns       []string                `json:"columns"`
-	SweeperIgnore []string                `json:"sweeperIgnore"`
+	OwnerID      int64                   `json:"ownerId"`
+	AccessKey    string                  `json:"accessKey"`
+	EntityType   string                  `json:"entityType"`
+	Source       string                  `json:"source"`
+	Owner        string                  `json:"owner"`
+	Organization string                  `json:"organization,omitifempty"`
+	Signatures   []string                `json:"signatures,omitifempty"`
+	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
+	Passthrough  []models.Passthrough360 `json:"passthrough"`
+	Attributes   map[string]string       `json:"attributes"`
+	Filters      []models.QueryFilter    `json:"filters"`
+	Columns      []string                `json:"columns"`
+	WriteToOwner bool                    `json:"writeToOwner"`
 	// Passthrough  map[string]string    `json:"passthrough"`
 	// InputData    interface{}          `json:"inputData"`
 }

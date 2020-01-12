@@ -42,12 +42,13 @@ func TestUpsert(t *testing.T) {
 	data.OwnerID = 5648073946562560
 
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType":  "people",
-		"age":         "108",
-		"peopleId":    "poop", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
-		"householdId": "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"firstName":   "KAKA", "lastName": "Ali",
+		"accessKey":    "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType":   "people",
+		"age":          "108",
+		"writeToOwner": false,  //true
+		"peopleId":     "poop", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"householdId":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"firstName":    "KAKA", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
 		"emails": []map[string]string{
 			{"email": "email@ocm.com", "type": "work"},
@@ -220,7 +221,7 @@ func TestSweepExpiredSets(t *testing.T) {
 	input, _ := json.Marshal(map[string]interface{}{
 		"accessKey":       "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
 		"entityType":      "people",
-		"entityBlacklist": []string{"564807"},
+		"entityBlacklist": []string{"57"},
 	})
 	// logger.DebugFmt("input: %s", input)
 	// w2, r2 := createReqRes("OPTIONS", "https://wemade.io/foo", nil)

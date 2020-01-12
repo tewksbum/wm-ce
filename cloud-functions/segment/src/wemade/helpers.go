@@ -50,6 +50,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	if err != nil {
 		return nil, err
 	}
+	writeToOwner := input.WriteToOwner
 	ignoreUniqueFields := false
 	accessKey := input.AccessKey
 	logger.DebugFmt("RawInputJSON: %s", string(data))
@@ -95,6 +96,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Attributes:       utils.FlattenMap(input.Attributes),
 		Timestamp:        time.Now(),
 		AccessKey:        accessKey,
+		WriteToOwner: writeToOwner,
 	}
 
 	// idata, _ := json.Marshal(input)
