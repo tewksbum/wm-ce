@@ -340,6 +340,7 @@ var AddressParserPath = os.Getenv("ADDRESSPATH")
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
 var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -1489,21 +1490,21 @@ func ParseAddress(address string) LibPostalParsed {
 // }
 
 func AssignAddressType(column *InputColumn) string {
-	if column.PeopleERR.AddressBookBill == 1 {
-		return "Bill"
-	} else if column.PeopleERR.AddressBookShip == 1 {
-		return "Ship"
-	}
-	return ""
-}
-
-func AssignAddressBook(column *InputColumn) string {
 	if column.PeopleERR.AddressTypeBusiness == 1 {
 		return "Business"
 	} else if column.PeopleERR.AddressTypeCampus == 1 {
 		return "Campus"
 	} else if column.PeopleERR.AddressTypeResidence == 1 {
 		return "Residence"
+	}
+	return ""
+}
+
+func AssignAddressBook(column *InputColumn) string {
+	if column.PeopleERR.AddressBookBill == 1 {
+		return "Bill"
+	} else if column.PeopleERR.AddressBookShip == 1 {
+		return "Ship"
 	}
 	return ""
 }
@@ -1614,6 +1615,11 @@ func CalcClassYear(cy string) string {
 		twodigityear, err := strconv.Atoi(cy[2:4])
 		if err == nil {
 			return strconv.Itoa(2000 + twodigityear + 4)
+		}
+	} else if reGraduationYear2.MatchString(cy) { // given us a 2 year like "20"
+		twodigityear, err := strconv.Atoi(cy)
+		if err == nil {
+			return strconv.Itoa(2000 + twodigityear)
 		}
 	}
 
