@@ -503,9 +503,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") {
+	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setdetail") {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner or detail\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail or setdetail\"}")
 		return
 	}
 
