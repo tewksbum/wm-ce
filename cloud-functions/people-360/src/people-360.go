@@ -479,7 +479,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
 		redisMatchFound0 := GetRedisIntValue(redisMatchValue0)
-		SetRedisTempKey(redisMatchValue0)
+		//SetRedisTempKey(redisMatchValue0)
 		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
 		if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 			log.Fatalf("Error querying sets query 1: %v", err)
@@ -499,7 +499,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(MatchByValue1) > 0 {
 			redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
 			redisMatchFound1 := GetRedisIntValue(redisMatchValue1)
-			SetRedisTempKey(redisMatchValue1)
+			//SetRedisTempKey(redisMatchValue1)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
@@ -520,7 +520,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(MatchByValue2) > 0 {
 			redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
 			redisMatchFound2 := GetRedisIntValue(redisMatchValue2)
-			SetRedisTempKey(redisMatchValue2)
+			//SetRedisTempKey(redisMatchValue2)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
 			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
@@ -541,7 +541,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
 			redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
 			redisMatchFound3 := GetRedisIntValue(redisMatchValue3)
-			SetRedisTempKey(redisMatchValue3)
+			//SetRedisTempKey(redisMatchValue3)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 				Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
 				Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
@@ -564,7 +564,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
 			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
 			redisMatchFound5 := GetRedisIntValue(redisMatchValue5)
-			SetRedisTempKey(redisMatchValue5)
+			//SetRedisTempKey(redisMatchValue5)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 				Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
 				Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
