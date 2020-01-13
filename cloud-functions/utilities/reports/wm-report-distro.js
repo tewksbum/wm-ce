@@ -48,14 +48,8 @@ var ListColumns = [
     { key: "PROGRAM" },
     { key: "MAILER TYPE" },
     { key: "FILE OUTPUT DATE" },
-    { key: "CRM" },
-    { key: "COM" },
     { key: "GENDER" },
-    { key: "DISTRIBUTION DESIGNATION" },
-    { key: "Q DISTRIBUTION" },
-    { key: "B DISTRIBUTION" },
-    { key: "C DISTRIBUTION" },
-    { key: "SEGMENT" },
+    { key: "DISTRIBUTION" }
 ];
 
 ListColumns.forEach(function (item, index) {
@@ -222,14 +216,8 @@ async function main() {
                             "PROGRAM": programs[school.program.toLowerCase()],
                             "MAILER TYPE": "",
                             "FILE OUTPUT DATE": outputDate,
-                            "CRM": "",
-                            "COM": "",
                             "GENDER": row["gender"],
-                            "DISTRIBUTION DESIGNATION": "",
-                            "Q DISTRIBUTION": school.distribution,
-                            "B DISTRIBUTION": "",
-                            "C DISTRIBUTION": "",
-                            "SEGMENT": "",
+                            "DISTRIBUTION": school.distribution
                         }
                         sheetList.addRow(row);
                         csvs.push(row);
@@ -385,5 +373,5 @@ async function convertToTabDelimited(data, header = true, allColumns = false) {
       ...data.map(row => columnNames.map(column => row[column])),
     );
   
-    return await csv.stringify(csvInput, {delimiter: "\t"} );
+    return await csv.stringify(csvInput, {delimiter: "\t", record_delimiter: "windows"} );
   }
