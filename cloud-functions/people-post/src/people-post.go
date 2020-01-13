@@ -948,9 +948,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	for _, p := range pubQueue {
 		// if ((p.Type == "mar") && (i > 1)) {
-		if (p.Type == "mar") {
-			time.Sleep(1 * time.Second)		
-		} 
+		// if (p.Type == "mar") {
+		// 	time.Sleep(1 * time.Second)		
+		// } 
 		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
 	}
 	return nil
@@ -1538,7 +1538,7 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 
 	outputJSON, _ := json.Marshal(output)
 	if recordType == "mar" {
-		// time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Second)
 		psresult := martopic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
 			Attributes: map[string]string{
