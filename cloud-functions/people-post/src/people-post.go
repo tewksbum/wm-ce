@@ -1534,7 +1534,7 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 
 	outputJSON, _ := json.Marshal(output)
 	if recordType == "mar" {
-		mrtSleep
+		time.Sleep(1 * time.Second)
 		psresult := martopic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
 			Attributes: map[string]string{
@@ -1566,10 +1566,6 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 		}
 	}
 
-}
-
-func mrtSleep() {
-	time.Sleep(1 * time.Second)
 }
 
 func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
