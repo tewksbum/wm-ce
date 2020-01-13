@@ -397,7 +397,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
 	martopic = ps.Topic(PubSubTopic)
-	martopic.PublishSettings.DelayThreshold = 1 * time.Second
+	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sb, _ := storage.NewClient(ctx)
 	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
@@ -949,8 +949,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	for _, p := range pubQueue {
 		// if ((p.Type == "mar") && (i > 1)) {
 		// if (p.Type == "mar") {
-		// 	time.Sleep(1 * time.Second)		
-		// } 
+		// 	time.Sleep(1 * time.Second)
+		// }
 		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
 	}
 	return nil
