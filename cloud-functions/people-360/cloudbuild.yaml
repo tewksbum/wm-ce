@@ -9,7 +9,7 @@ steps:
     "--project", "${PROJECT_ID}", 
     "--timeout", "30",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "100",
+    "--max-instances", "1",
     "--vpc-connector", "${_VPC_CONNECTOR}",
     "--retry"
     ]
