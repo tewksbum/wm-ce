@@ -503,9 +503,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") {
+	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setdetail") {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner or detail\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail or setdetail\"}")
 		return
 	}
 
@@ -1157,6 +1157,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		summary.ColumnCount = len(columns)
 		report.Summary = summary
 
+		output = report
+	} else if strings.EqualFold(input.ReportType, "setdetail") {
+		var sets []PeopleSet
+		report := DetailReport{}
+		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "FiberID"})
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
+			return
+		}
+		log.Printf("sets retrieved: %v", len(sets))
+		for _, r := range sets {
+			for _, f := range r.Fibers {
+				var rowRecord []interface{}
+				rowRecord = append(rowRecord, r.ID.Name)
+				rowRecord = append(rowRecord, f)
+				report.GridRecords = append(report.GridRecords, rowRecord)
+			}
+		}
 		output = report
 	} else {
 		report := OwnerReport{}
