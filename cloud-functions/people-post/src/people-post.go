@@ -946,7 +946,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
-	for i, p := range pubQueue {
+	for _, p := range pubQueue {
 		// if ((p.Type == "mar") && (i > 1)) {
 		if (p.Type == "mar") {
 			time.Sleep(1 * time.Second)		
