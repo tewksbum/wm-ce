@@ -385,6 +385,7 @@ var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var martopic *pubsub.Topic
 var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
@@ -395,6 +396,8 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	martopic = ps.Topic(PubSubTopic)
+	martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sb, _ := storage.NewClient(ctx)
 	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
@@ -1530,20 +1533,38 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 	output.MatchKeys = mkOutput
 
 	outputJSON, _ := json.Marshal(output)
-	psresult := topic.Publish(ctx, &pubsub.Message{
-		Data: outputJSON,
-		Attributes: map[string]string{
-			"type":   "people",
-			"source": "post",
-		},
-	})
-	psid, err := psresult.Get(ctx)
-	_, err = psresult.Get(ctx)
-	if err != nil {
-		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+	if recordType == "mar" {
+		psresult := martopic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+			Attributes: map[string]string{
+				"type":   "people",
+				"source": "post",
+			},
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		}
 	} else {
-		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+			Attributes: map[string]string{
+				"type":   "people",
+				"source": "post",
+			},
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		}
 	}
+
 }
 
 func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
