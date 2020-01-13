@@ -1626,7 +1626,7 @@ func CalcClassYear(cy string) string {
 		return strconv.Itoa(TitleYear + 2)
 	case "senior", "sr":
 		return strconv.Itoa(TitleYear + 1)
-	case "graduate", "undergraduate over 23 (archive)":
+	case "graduate", "undergraduate over 23 (archive)", "gr":
 		return strconv.Itoa(TitleYear - 1)
 	case "allfresh":
 		return strconv.Itoa(TitleYear + 4)
