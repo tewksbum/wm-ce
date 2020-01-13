@@ -946,13 +946,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
-	for _, p := range pubQueue {
-		// if ((p.Type == "mar") && (i > 1)) {
-		// if (p.Type == "mar") {
-		// 	time.Sleep(1 * time.Second)
-		// }
-		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
-	}
+	PubAll(ctx, &input, pubQueue)
+	// for _, p := range pubQueue {
+	// 	PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
+	// }
 	return nil
 }
 
@@ -1525,6 +1522,37 @@ func ExtractMPRCounter(columnName string) int {
 	return 0
 }
 
+func PubAll(ctx context.Context, input *Input, queue []PubQueue) {
+	var outputs []Output
+	for _, p := range queue {
+		var output Output
+		output.Signature = input.Signature
+		output.Signature.FiberType = p.Type
+		if len(p.Suffix) > 0 {
+			output.Signature.RecordID += p.Suffix
+		}
+		output.Passthrough = input.Passthrough
+		output.MatchKeys = p.Output
+
+		outputs = append(outputs, output)
+	}
+	outputJSON, _ := json.Marshal(outputs)
+	psresult := topic.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+		Attributes: map[string]string{
+			"type":   "people",
+			"source": "post",
+		},
+	})
+	psid, err := psresult.Get(ctx)
+	_, err = psresult.Get(ctx)
+	if err != nil {
+		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+	} else {
+		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+	}
+}
+
 func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
 	var output Output
 	output.Signature = input.Signature
@@ -1538,7 +1566,6 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 
 	outputJSON, _ := json.Marshal(output)
 	if recordType == "mar" {
-		time.Sleep(1 * time.Second)
 		psresult := martopic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
 			Attributes: map[string]string{
