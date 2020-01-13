@@ -925,6 +925,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// SetRedisTempKey(redisMatchValue5)
 		}
 
+		allMatchKeys := []string{input.Signature.EventID, "dupe"}
+		for _, f := range structs.Names(&PeopleOutput{}) {
+			allMatchKeys = append(allMatchKeys, strings.ToUpper(GetMkField(&(v.Output), f).Value))
+		}
+		if GetRedisIntValue(allMatchKeys) > 0 {
+			LogDev(fmt.Sprintf("Detected Dupe value %v", allMatchKeys))
+			v.Type = "dupe"
+		} else {
+			SetRedisTempKey(allMatchKeys)
+		}
+
 		pubQueue = append(pubQueue, PubQueue{
 			Output: v.Output,
 			Suffix: suffix,

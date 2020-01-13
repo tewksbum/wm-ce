@@ -422,7 +422,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				len(input.MatchKeys.ADBOOK.Value) > 0) {
 			matchable = true
 		}
-	} else {
+	} else if input.Signature.FiberType != "dupe" {
 		// MAR and MPR are matchable always
 		matchable = true
 	}
@@ -676,7 +676,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 	}
 	if !matchable {
-		dsFiber.Disposition = "purge"
+		if input.Signature.FiberType == "dupe" {
+			dsFiber.Disposition = "dupe"
+		} else {
+			dsFiber.Disposition = "purge"
+		}
 	} else if matchedDefaultFiber == 0 {
 		dsFiber.Disposition = "new"
 	} else if !HasNewValues {
