@@ -9,7 +9,10 @@ import (
 	"segment/wemade"
 )
 
-var appEnv string = os.Getenv("APP_ENV")
+var (
+	appEnv         string = os.Getenv("APP_ENV")
+	cleanupEnabled bool   = os.Getenv("ENABLE_CLEANUP") == "yes"
+)
 
 const (
 	recordSignature string = `JSON_CONTAINS('["%s"]', JSON_ARRAY(signature))`
@@ -32,20 +35,22 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		break
 	case models.TypeHousehold:
 		skipUpdate = true
-		if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" && appEnv == "dev" {
-			logger.Info("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
-		}
-		pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
-		(r.(*models.HouseholdRecord)).AddDBFilter(
-			models.QueryFilter{
-				Field: models.HouseholdIDField,
-				Op:    models.OperationEquals,
-				Value: &pid,
-			},
-		)
-		err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
-		if err != nil {
-			logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
+		if cleanupEnabled {
+			if (r.(*models.HouseholdRecord)).Record.HouseholdID == "" && appEnv == "dev" {
+				logger.Info("[db.Write.HouseholdSignatureUpsert]: householdId is empty, skipping")
+			}
+			pid = (r.(*models.HouseholdRecord)).Record.HouseholdID
+			(r.(*models.HouseholdRecord)).AddDBFilter(
+				models.QueryFilter{
+					Field: models.HouseholdIDField,
+					Op:    models.OperationEquals,
+					Value: &pid,
+				},
+			)
+			err = csql.Delete(csqlDSN, (r.(*models.HouseholdRecord)))
+			if err != nil {
+				logger.ErrFmt("[db.Write.HouseholdSignatureUpsert.Cleanup]: %q", err)
+			}
 		}
 		for _, sig := range r.GetSignatures() {
 			rs := buildHouseholdDecode(r.(*models.HouseholdRecord), sig)
@@ -59,21 +64,23 @@ func Write(projectID string, csqlDSN string, r models.Record) (updated bool, err
 		for _, s := range r.GetExpiredSets() {
 			csql.Write(csqlDSN, buildExpiredSet(r.(*models.PeopleRecord), s, models.TblPeople), skipUpdate)
 		}
-		pid = (r.(*models.PeopleRecord)).Record.PeopleID
-		(r.(*models.PeopleRecord)).AddDBFilter(
-			models.QueryFilter{
-				Field: models.PeopleIDField,
-				Op:    models.OperationEquals,
-				Value: &pid,
-			},
-		)
-		err = csql.Delete(csqlDSN, (r.(*models.PeopleRecord)))
-		if err != nil {
-			logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
-		} else {
-			logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleted peopleId: %s", pid.(string))
+		if cleanupEnabled {
+			pid = (r.(*models.PeopleRecord)).Record.PeopleID
+			(r.(*models.PeopleRecord)).AddDBFilter(
+				models.QueryFilter{
+					Field: models.PeopleIDField,
+					Op:    models.OperationEquals,
+					Value: &pid,
+				},
+			)
+			err = csql.Delete(csqlDSN, (r.(*models.PeopleRecord)))
+			if err != nil {
+				logger.ErrFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: %q", err)
+			} else {
+				logger.DebugFmt("[db.Write.PeopleSignatureUpsert.Cleanup]: Deleted peopleId: %s", pid.(string))
+			}
+			(r.(*models.PeopleRecord)).IDField = models.PeopleIDField
 		}
-		(r.(*models.PeopleRecord)).IDField = models.PeopleIDField
 		for _, sig := range r.GetSignatures() {
 			rs := buildPeopleDecode(r.(*models.PeopleRecord), sig)
 			if _, err := csql.Write(csqlDSN, rs, !skipUpdate); err != nil {

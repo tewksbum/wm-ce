@@ -9,6 +9,7 @@ steps:
     "--trigger-http",
     "--project", "${PROJECT_ID}",
     "--timeout", "120",
+    "--memory", "512MB",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "100"
     ]
