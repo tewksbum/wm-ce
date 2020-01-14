@@ -71,6 +71,7 @@ type KVP struct {
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
@@ -183,10 +184,10 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Detail:      input.FileURL,
 		RowLimit:    input.MaxRows,
 	}
-
+	fsClient, err := datastore.NewClient(ctx, DSProjectID)
 	eventKey := datastore.IncompleteKey("Event", nil)
 	eventKey.Namespace = NameSpace
-	if _, err := dsClient.Put(ctx, eventKey, event); err != nil {
+	if _, err := fsClient.Put(ctx, eventKey, event); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error logging event: %v", err)
 		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -3\"}")

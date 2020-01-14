@@ -192,12 +192,11 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			phones               JSON AS (record->'$.phones')        STORED,
 		`
 		key := "INDEX(peopleId),"
-		if !ignoreUniqueFields {
-			key = "UNIQUE KEY(peopleId),"
-		}
+		// if !ignoreUniqueFields {
+		// 	key = "UNIQUE KEY(peopleId),"
+		// }
 		idxs := fmt.Sprintf(`,
 			%s
-			UNIQUE KEY(peopleId),
 			INDEX(firstName),
 			INDEX(lastName),
 			INDEX(gender),

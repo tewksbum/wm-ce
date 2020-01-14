@@ -94,6 +94,7 @@ type NERentry map[string]interface{}
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")

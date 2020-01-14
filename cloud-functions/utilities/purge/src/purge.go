@@ -11,12 +11,12 @@ import (
 	"regexp"
 	"strings"
 
-	"cloud.google.com/go/bigquery"
 	"cloud.google.com/go/datastore"
 )
 
 // ProjectID is the env var of project id
 var pid = os.Getenv("PROJECTID")
+var did = os.Getenv("DSPROJECTID")
 var env = os.Getenv("ENVIRONMENT")
 var uid = os.Getenv("CLIENTID")
 var pwd = os.Getenv("CLIENTSECRET")
@@ -24,7 +24,7 @@ var pwd = os.Getenv("CLIENTSECRET")
 // global vars
 var ctx context.Context
 var ds *datastore.Client
-var bq *bigquery.Client
+var fs *datastore.Client
 
 var allowedOperations = map[string]map[string]map[string]bool{
 	"datastore": map[string]map[string]bool{
@@ -40,7 +40,7 @@ var allowedOperations = map[string]map[string]map[string]bool{
 func init() {
 	ctx = context.Background()
 	ds, _ = datastore.NewClient(ctx, pid)
-	bq, _ = bigquery.NewClient(ctx, pid)
+	fs, _ = datastore.NewClient(ctx, did)
 
 	log.Printf("init completed")
 }
@@ -134,7 +134,7 @@ func countDataStore(level string, filter string, subfilter string) (int, int, in
 	switch level {
 	case "namespace":
 		query := datastore.NewQuery("__namespace__").KeysOnly()
-		namespaces, err := ds.GetAll(ctx, query, nil)
+		namespaces, err := fs.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
 		}
@@ -143,7 +143,7 @@ func countDataStore(level string, filter string, subfilter string) (int, int, in
 		for _, n := range namespaces {
 			if rens.MatchString(n.Name) {
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
-				kinds, err := ds.GetAll(ctx, query, nil)
+				kinds, err := fs.GetAll(ctx, query, nil)
 				if err != nil {
 					return countNS, countKind, countEntity
 				}
@@ -169,7 +169,7 @@ func countDataStore(level string, filter string, subfilter string) (int, int, in
 		if filter == "[default]" { // remove the namespace filter if [default]
 			query = datastore.NewQuery("__kind__").KeysOnly()
 		}
-		keys, err := ds.GetAll(ctx, query, nil)
+		keys, err := fs.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
 		}
@@ -200,7 +200,7 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 	switch level {
 	case "namespace":
 		query := datastore.NewQuery("__namespace__").KeysOnly()
-		namespaces, err := ds.GetAll(ctx, query, nil)
+		namespaces, err := fs.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
 		}
@@ -209,7 +209,7 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 		for _, n := range namespaces {
 			if rens.MatchString(n.Name) {
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
-				kinds, err := ds.GetAll(ctx, query, nil)
+				kinds, err := fs.GetAll(ctx, query, nil)
 				if err != nil {
 					return countNS, countKind, countEntity
 				}
@@ -235,7 +235,7 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 		if filter == "[default]" { // remove the namespace filter if [default]
 			query = datastore.NewQuery("__kind__").KeysOnly()
 		}
-		keys, err := ds.GetAll(ctx, query, nil)
+		keys, err := fs.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
 		}
@@ -271,7 +271,7 @@ func countDS(ns string, kind string) int {
 	if ns == "[default]" {
 		query = datastore.NewQuery(kind).KeysOnly()
 	}
-	keys, _ := ds.GetAll(ctx, query, nil)
+	keys, _ := fs.GetAll(ctx, query, nil)
 
 	return len(keys)
 }
@@ -284,7 +284,7 @@ func deleteDS(ns string, kind string) int {
 	if ns == "[default]" {
 		query = datastore.NewQuery(kind).KeysOnly()
 	}
-	keys, _ := ds.GetAll(ctx, query, nil)
+	keys, _ := fs.GetAll(ctx, query, nil)
 
 	l := len(keys) / 500
 	if len(keys)%500 > 0 {
@@ -300,7 +300,7 @@ func deleteDS(ns string, kind string) int {
 		log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
 		if r%10 == 0 {
 			log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
-			err := ds.DeleteMulti(ctx, keys[s:e])
+			err := fs.DeleteMulti(ctx, keys[s:e])
 
 			if err != nil {
 				log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
@@ -308,7 +308,7 @@ func deleteDS(ns string, kind string) int {
 		} else {
 			c := make(chan bool)
 			go func() {
-				err := ds.DeleteMulti(ctx, keys[s:e])
+				err := fs.DeleteMulti(ctx, keys[s:e])
 
 				if err != nil {
 					log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)

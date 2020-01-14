@@ -315,6 +315,7 @@ type PeopleGoldenDS struct {
 }
 
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 var SetTableName = os.Getenv("SETTABLE")
 var FiberTableName = os.Getenv("FIBERTABLE")
 var ESUrl = os.Getenv("ELASTICURL")
@@ -337,6 +338,7 @@ var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var status *pubsub.Topic
 var ds *datastore.Client
+var fs *datastore.Client
 var msp *redis.Pool
 
 // var setSchema bigquery.Schema
@@ -345,6 +347,7 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
@@ -482,7 +485,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			redisMatchFound0 := GetRedisIntValue(redisMatchValue0)
 			//SetRedisTempKey(redisMatchValue0)
 			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
-			if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 				log.Fatalf("Error querying sets query 1: %v", err)
 			} else {
 				if redisMatchFound0 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
@@ -502,7 +505,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				redisMatchFound1 := GetRedisIntValue(redisMatchValue1)
 				//SetRedisTempKey(redisMatchValue1)
 				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
-				if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 					log.Fatalf("Error querying sets query 1: %v", err)
 				} else {
 					if redisMatchFound1 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
@@ -523,7 +526,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				redisMatchFound2 := GetRedisIntValue(redisMatchValue2)
 				//SetRedisTempKey(redisMatchValue2)
 				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
-				if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 					log.Fatalf("Error querying sets query 1: %v", err)
 				} else {
 					if redisMatchFound2 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
@@ -546,7 +549,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
 					Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
 					Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
-				if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 					log.Fatalf("Error querying sets query 1: %v", err)
 				} else {
 					if redisMatchFound3 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
@@ -573,7 +576,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
 					Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E)).
 					Filter(strings.ToLower(MatchByKey5F)+"normalized =", strings.ToUpper(MatchByValue5F))
-				if _, err := ds.GetAll(ctx, setQuery, &queriedSets); err != nil {
+				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 					log.Fatalf("Error querying sets query 1: %v", err)
 				} else {
 					if redisMatchFound5 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
@@ -618,7 +621,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Fibers = append(Fibers, PeopleFiberDS{})
 			}
 			if len(FiberKeys) > 0 {
-				if err := ds.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
+				if err := fs.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
 					log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
 				}
 			}
@@ -691,7 +694,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// store the fiber
-		if _, err := ds.Put(ctx, dsKey, &dsFiber); err != nil {
+		if _, err := fs.Put(ctx, dsKey, &dsFiber); err != nil {
 			log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
 		}
 
@@ -750,7 +753,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		setDS.CreatedAt = output.CreatedAt
 		PopulateSetOutputSignatures(&setDS, output.Signatures)
 		PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
-		if _, err := ds.Put(ctx, setKey, &setDS); err != nil {
+		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
 
@@ -760,7 +763,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenDS.ID = goldenKey
 		goldenDS.CreatedAt = output.CreatedAt
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
-		if _, err := ds.Put(ctx, goldenKey, &goldenDS); err != nil {
+		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
 
@@ -778,10 +781,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			GoldenKeys = append(GoldenKeys, goldenKey)
 		}
 		LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
-		if err := ds.DeleteMulti(ctx, SetKeys); err != nil {
+		if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
 			log.Printf("Error: deleting expired sets: %v", err)
 		}
-		if err := ds.DeleteMulti(ctx, GoldenKeys); err != nil {
+		if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
 			log.Printf("Error: deleting expired golden records: %v", err)
 		}
 

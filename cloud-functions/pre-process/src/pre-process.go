@@ -324,6 +324,7 @@ type OutputFlag struct {
 }
 
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 var PSPeople = os.Getenv("PSOUTPUTPEOPLE")
 var PSEvent = os.Getenv("PSOUTPUTEVENT")
@@ -356,6 +357,7 @@ var ai *ml.Service
 var cs *storage.Client
 var msp *redis.Pool
 var ds *datastore.Client
+var fs *datastore.Client
 
 var listCities map[string]bool
 var listStates map[string]bool
@@ -393,6 +395,7 @@ func init() {
 	ai, _ := ml.NewService(ctx)
 	cs, _ = storage.NewClient(ctx)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 
 	msp = &redis.Pool{
 		MaxIdle:     3,
@@ -461,7 +464,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 	// see if the record already exists, discard if it is
 	var existing []datastore.Key
-	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
 		log.Printf("Error querying existing records: %v", err)
 	}
 	if len(existing) > 0 {
@@ -494,7 +497,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// 		query := datastore.NewQuery(DSKind).Namespace(DSNameSpace)
 	// 		query.Order("-created").Limit(100)
 
-	// 		if _, err := ds.GetAll(ctx, query, &entities); err != nil {
+	// 		if _, err := fs.GetAll(ctx, query, &entities); err != nil {
 	// 			// TODO: address field fluctuations
 	// 			NERInput := make(map[string][]string)
 	// 			for _, e := range entities {
@@ -761,7 +764,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// 	}
 	// }
 
-	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
 		log.Printf("Error querying existing records: %v", err)
 	}
 	if len(existing) > 0 {
@@ -791,7 +794,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 		dsKey := datastore.IncompleteKey(DSKind, nil)
 		dsKey.Namespace = dsNamespace
-		if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
+		if _, err := fs.Put(ctx, dsKey, &immutableDS); err != nil {
 			log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
 		}
 
