@@ -1615,13 +1615,13 @@ func CalcClassYear(cy string) string {
 	}
 
 	switch strings.ToLower(cy) {
-	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident":
+	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident", "1st year":
 		return strconv.Itoa(TitleYear + 4)
-	case "sophomore", "soph", "so", "sophomore/transfer":
+	case "sophomore", "soph", "so", "sophomore/transfer", "2nd year":
 		return strconv.Itoa(TitleYear + 3)
-	case "junior", "jr", "junior/senior":
+	case "junior", "jr", "junior/senior", "3rd year":
 		return strconv.Itoa(TitleYear + 2)
-	case "senior", "sr":
+	case "senior", "sr", "4th year":
 		return strconv.Itoa(TitleYear + 1)
 	case "graduate", "undergraduate over 23 (archive)", "gr":
 		return strconv.Itoa(TitleYear - 1)
