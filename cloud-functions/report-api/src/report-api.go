@@ -503,9 +503,9 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setdetail") {
+	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setfiber") && !strings.EqualFold(input.ReportType, "setrecord") {
 		w.WriteHeader(http.StatusBadRequest)
-		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail or setdetail\"}")
+		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail, setfiber or setrecord\"}")
 		return
 	}
 
@@ -1158,7 +1158,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.Summary = summary
 
 		output = report
-	} else if strings.EqualFold(input.ReportType, "setdetail") {
+	} else if strings.EqualFold(input.ReportType, "setfiber") {
 		var sets []PeopleSet
 		report := DetailReport{}
 		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "FiberID"})
@@ -1169,6 +1169,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("sets retrieved: %v", len(sets))
 		for _, r := range sets {
 			for _, f := range r.Fibers {
+				var rowRecord []interface{}
+				rowRecord = append(rowRecord, r.ID.Name)
+				rowRecord = append(rowRecord, f)
+				report.GridRecords = append(report.GridRecords, rowRecord)
+			}
+		}
+		output = report
+	} else if strings.EqualFold(input.ReportType, "setrecord") {
+		var sets []PeopleSet
+		report := DetailReport{}
+		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "RecordID"})
+		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
+			return
+		}
+		log.Printf("sets retrieved: %v", len(sets))
+		for _, r := range sets {
+			for _, f := range r.RecordID {
 				var rowRecord []interface{}
 				rowRecord = append(rowRecord, r.ID.Name)
 				rowRecord = append(rowRecord, f)
