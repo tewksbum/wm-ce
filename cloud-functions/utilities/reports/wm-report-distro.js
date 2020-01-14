@@ -7,6 +7,7 @@ const csv = require('async-csv');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
+// node wm-report-distro -x "../_input/spring-fep-instructions.xlsx" -s "Request" -o ../_output/extract
 // node wm-report-distro -x "../_input/spring-frames-2020-3.0.xlsx" -s "Jan Endorsed B_2" -o ../_output/extract
 
 const { Storage } = require('@google-cloud/storage');
@@ -27,8 +28,9 @@ const options = cli
 var env = options.env;
 
 const programs = {
-    "frames": "DD",
+    "fep": "FEP",
 }
+// "frames": "DD",
 
 const storage = new Storage();
 const datastore = new Datastore();
@@ -68,6 +70,7 @@ var TargetFilter = {
     "gradboth": " and title <= '2019'",
     "gradgrad": " and title <= '2019'",
     "gradsen": " and title = '2019'",
+    "ungrad": " and title > 2020",
 };
 
 

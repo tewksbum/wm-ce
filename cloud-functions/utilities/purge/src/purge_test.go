@@ -219,9 +219,11 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-utk-urhc",
+		"targetSelection": "dev-wmd-apo",
 		"targetSubSelection": ""
 	}`
+	// "targetSelection": "dev-wmd-apo",
+	// "targetSelection": "dev-wos-rha",
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
 	req.Header.Add("Content-Type", "application/json")
