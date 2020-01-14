@@ -181,7 +181,7 @@ async function main() {
             titleFilter = "";
             var tablename = `seg_people_${owners[school.schoolcode.toUpperCase()].Owner}`;
             try {
-                var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "` WHERE role != 'Parent'"; // WHERE role = 'student'" + titleFilter;
+                var query = "SELECT firstName, lastName, address1, address2, city, state, zip, gender  FROM `" + tablename + "` WHERE role != 'Parent' AND advalid = 'TRUE' "; // WHERE role = 'student'" + titleFilter;
                 const [results, fields] = await cloudsql.query(query);
 
                 if (results && results.length) {
@@ -294,7 +294,7 @@ async function main() {
         }
     };
 
-    process.exit();
+    // process.exit();
 }
 
 

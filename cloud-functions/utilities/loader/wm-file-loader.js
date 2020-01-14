@@ -88,13 +88,19 @@ async function sendRequest(row) {
   const source = row.getCell(1).value;
   console.log(`${source}/${file}`);
   console.log("Processing " + file);
-  const programName = file.substring(0, 3);
+  const programName = file.substring(0, 4); //4x for FEP, 3x for DD
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
   var titleYear = row.values[12];
+  if (typeof titleYear == "undefined") {
+    titleYear = ""
+  }
   var classYear = row.values[11];
+  if (typeof classYear == "undefined") {
+    classYear = ""
+  }
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
     console.log(error);

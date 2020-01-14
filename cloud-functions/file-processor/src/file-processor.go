@@ -250,11 +250,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				origSheet, wcSheet, cpSheet := -1, -1, -1
 				for i, sheet := range xlsxFile.Sheets {
 					switch strings.ToLower(sheet.Name) {
-					case "original":
+					case "original", "page1", "sheet1":
 						origSheet = i
 					case "wc", "working copy", "workingcopy", "working":
 						wcSheet = i
-					case "cp", "upload", "cp upload":
+					case "cp", "upload", "cp upload", "dm_list":
 						cpSheet = i
 					}
 				}
