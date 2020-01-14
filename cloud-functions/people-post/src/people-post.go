@@ -351,6 +351,8 @@ var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|I
 var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
+var reFullName2 = regexp.MustCompile(`^(.*), (.*) (.{1})\.$`) // Wilson, Lauren K.
+var reFullName3 = regexp.MustCompile(`^(.*), (.*)$`)          // Wilson, Lauren K.
 var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|miss|mrs\.|Mr\.|Ms\.|Mrs\.|MR|MRS|MS)$`)
 
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
@@ -506,7 +508,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var parsedName NameParsed
 		// this might be a full name, try to parse it and see if we have first and last names
 		// || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
-		if (column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0)))) {
+		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
 			parsedName = ParseName(column.Value)
 			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 && column.PeopleERR.Address == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.ContainsAddress == 0 && column.PeopleERR.City == 0 && column.PeopleERR.ContainsCity == 0 {
 				column.MatchKey1 = "FULLNAME"
@@ -622,12 +624,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		if reMilityBaseCity(column.Value) {
 			column.MatchKey1 = "CITY"
-			LogDev(fmt.Sprintf("overriding city by military base: &v", column.Value))
+			LogDev(fmt.Sprintf("overriding city by military base: %v", column.Value))
 		}
 
 		if reOverseasBaseState.MatchString(column.Value) {
 			column.MatchKey1 = "STATE"
-			LogDev(fmt.Sprintf("overriding state by USPS base designation: &v", column.Value))
+			LogDev(fmt.Sprintf("overriding state by USPS base designation: %v", column.Value))
 		}
 
 		// fix zip code that has leading 0 stripped out
@@ -1656,9 +1658,21 @@ func ParseName(v string) NameParsed {
 		lname := result[2]
 		suffix := result[3]
 
-		if strings.HasSuffix(fname, ",") {
-			fname = result[2]
-			lname = strings.TrimSuffix(result[1], ",")
+		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") {
+			parsed1 := reFullName2.FindStringSubmatch(v)
+			if len(parsed1) >= 3 {
+				lname = parsed1[1]
+				fname = parsed1[2]
+				suffix = ""
+
+			} else {
+				parsed2 := reFullName3.FindStringSubmatch(v)
+				if len(parsed2) >= 2 {
+					lname = parsed2[1]
+					fname = parsed2[2]
+					suffix = ""
+				}
+			}
 		}
 		return NameParsed{
 			FNAME:  fname,
