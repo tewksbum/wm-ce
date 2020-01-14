@@ -63,6 +63,7 @@ type KVP struct {
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
@@ -71,10 +72,12 @@ var Environment = os.Getenv("ENVIRONMENT")
 // global vars
 var ctx context.Context
 var ds *datastore.Client
+var fs *datastore.Client
 
 func init() {
 	ctx = context.Background()
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	log.Printf("init completed")
 }
 
@@ -159,7 +162,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 	eventKey := datastore.IncompleteKey("Event", nil)
 	eventKey.Namespace = NameSpace
-	if _, err := ds.Put(ctx, eventKey, event); err != nil {
+	if _, err := fs.Put(ctx, eventKey, event); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error logging event: %v", err)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
@@ -172,7 +175,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	var requests []Event
 	var request Event
 	eventQuery := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
-	if _, err := ds.GetAll(ctx, eventQuery, &requests); err != nil {
+	if _, err := fs.GetAll(ctx, eventQuery, &requests); err != nil {
 		log.Fatalf("Error querying event: %v", err)
 		return
 	} else if len(requests) > 0 {

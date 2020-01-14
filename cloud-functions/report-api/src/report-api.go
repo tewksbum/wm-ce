@@ -423,6 +423,7 @@ type PeopleGolden struct {
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
@@ -437,10 +438,12 @@ var DSKGolden = os.Getenv("DSKINDGOLDEN")
 // global vars
 var ctx context.Context
 var ds *datastore.Client
+var fs *datastore.Client
 
 func init() {
 	ctx = context.Background()
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	log.Printf("init completed")
 }
 
@@ -533,7 +536,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 	eventKey := datastore.IncompleteKey("Event", nil)
 	eventKey.Namespace = NameSpace
-	if _, err := ds.Put(ctx, eventKey, event); err != nil {
+	if _, err := fs.Put(ctx, eventKey, event); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Fatalf("Error logging event: %v", err)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
@@ -554,19 +557,19 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// var setIDs []string
 		// var golden []PeopleGolden
 
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
 			return
 		}
 		log.Printf("records retrieved: %v", len(records))
 
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
 		log.Printf("fibers retrieved: %v", len(fibers))
 
-		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+		// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
 		// 	log.Fatalf("Error querying sets: %v", err)
 		// 	return
 		// }
@@ -577,7 +580,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// 	setIDs = append(setIDs, s.ID.Name)
 		// }
 
-		// if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
+		// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSetMember).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &setMembers); err != nil {
 		// 	log.Fatalf("Error querying set members: %v", err)
 		// 	return
 		// }
@@ -612,7 +615,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		// 		gk := goldenKeys[s:e]
 		// 		gd := golden[s:e]
 
-		// 		if err := ds.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+		// 		if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
 		// 			log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", OwnerNamespace, DSKGolden, len(goldenKeys), err)
 		// 		}
 
@@ -945,7 +948,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
 
-		if _, err := ds.GetAll(ctx, query, &requests); err != nil {
+		if _, err := fs.GetAll(ctx, query, &requests); err != nil {
 			log.Fatalf("Error querying event: %v", err)
 			return
 		} else if len(requests) > 0 {
@@ -960,7 +963,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Found %v matching events", len(requests))
 
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKRecord).Namespace(OwnerNamespace).Filter("EventID =", input.RequestID), &records); err != nil {
 			log.Fatalf("Error querying records: %v", err)
 			return
 		}
@@ -970,7 +973,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			return records[i].RowNumber < records[j].RowNumber
 		})
 
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
 			log.Fatalf("Error querying fibers: %v", err)
 			return
 		}
@@ -1162,7 +1165,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var sets []PeopleSet
 		report := DetailReport{}
 		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "FiberID"})
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
 			log.Fatalf("Error querying sets: %v", err)
 			return
 		}
@@ -1180,7 +1183,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		var sets []PeopleSet
 		report := DetailReport{}
 		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "RecordID"})
-		if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
 			log.Fatalf("Error querying sets: %v", err)
 			return
 		}
