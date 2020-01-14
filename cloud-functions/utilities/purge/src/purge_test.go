@@ -219,7 +219,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-amu-fheg",
+		"targetSelection": "dev-utk-urhc",
 		"targetSubSelection": ""
 	}`
 

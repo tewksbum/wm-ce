@@ -273,7 +273,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("processing first sheet")
 					allrows = sheetData[0]
 				}
-				allrows = sheetData[0]
+				// allrows = sheetData[0]
 			} else {
 				// open a csv reader
 				fileReader := bytes.NewReader(fileBytes)

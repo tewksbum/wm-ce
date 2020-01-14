@@ -7,6 +7,7 @@ const csv = require('async-csv');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 
+// node wm-report-distro -x "../_input/spring-frames-2020-3.0.xlsx" -s "Jan Endorsed B_2" -o ../_output/extract
 
 const { Storage } = require('@google-cloud/storage');
 const { Datastore } = require("@google-cloud/datastore");
