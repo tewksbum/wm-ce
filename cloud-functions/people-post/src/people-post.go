@@ -505,10 +505,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		var parsedName NameParsed
 		if 	(
-				column.PeopleERR.ContainsRole == 1 || 
-				column.PeopleERR.FullName == 1 || 
-				(column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) ||
-				(column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
+				column.PeopleERR.ContainsRole == 1 
+				|| column.PeopleERR.FullName == 1 
+				|| (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) 
+				// || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
 			) {
 			// this might be a full name, try to parse it and see if we have first and last names
 			parsedName = ParseName(column.Value)
@@ -891,6 +891,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
 		}
+
+		if v.Output.ADBOOK.Value == "" {
+			v.Output.ADBOOK.Value = "Bill"
+		}
+
+		// SetMkField(&(currentOutput.Output), "ADBOOK", AssignAddressBook(&column), column.Name)
 
 		if len(v.Output.FNAME.Value) > 0 {
 			v.Output.FINITIAL = MatchKeyField{
@@ -1478,22 +1484,6 @@ func ParseAddress(address string) LibPostalParsed {
 	return result
 }
 
-// err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
-// if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
-// 	// default to home address
-// 	err.AddressBookBill = 1
-// 	if strings.Contains(key, "consignment") {
-// 		err.AddressBookShip = 1
-// 	} else if strings.Contains(key, "order") {
-// 		err.AddressBookBill = 1
-// 	} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
-// 		err.AddressTypeResidence = 1
-// 		err.AddressBookBill = 1
-// 	} else if err.Dorm == 1 {
-// 		err.AddressTypeCampus = 1
-// 	}
-// }
-
 func AssignAddressType(column *InputColumn) string {
 	if column.PeopleERR.AddressTypeBusiness == 1 {
 		return "Business"
@@ -1511,7 +1501,7 @@ func AssignAddressBook(column *InputColumn) string {
 	} else if column.PeopleERR.AddressBookShip == 1 {
 		return "Ship"
 	}
-	return ""
+	return "Bill"
 }
 
 func ExtractMPRCounter(columnName string) int {
