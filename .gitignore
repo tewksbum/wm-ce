@@ -8,3 +8,4 @@ cloud-functions/utilities/batch-reports/detail-report.xlsx
 cloud-functions/utilities/batch-reports/~$detail-report.xlsx
 .vscode/settings.json
 *Session.sql
+debug.test
