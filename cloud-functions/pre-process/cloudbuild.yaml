@@ -11,7 +11,7 @@ steps:
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--vpc-connector", "${_VPC_CONNECTOR}",
-    "--max-instances", "20"
+    "--max-instances", "1"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'

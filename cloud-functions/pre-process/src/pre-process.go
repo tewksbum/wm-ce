@@ -463,14 +463,19 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
 
 	// see if the record already exists, discard if it is
-	var existing []datastore.Key
-	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
-		log.Printf("Error querying existing records: %v", err)
-	}
-	if len(existing) > 0 {
+	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	if existingCheck > 0 {
 		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
 		return nil
 	}
+	// var existing []datastore.Key
+	// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	// 	log.Printf("Error querying existing records: %v", err)
+	// }
+	// if len(existing) > 0 {
+	// 	LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+	// 	return nil
+	// }
 
 	if len(input.Fields) > 0 {
 		for k, v := range input.Fields {
@@ -764,15 +769,16 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// 	}
 	// }
 
-	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
-		log.Printf("Error querying existing records: %v", err)
-	}
-	if len(existing) > 0 {
-		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
-		return nil
-	}
+	// no longer need this as it is done in redis
+	// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	// 	log.Printf("Error querying existing records: %v", err)
+	// }
+	// if len(existing) > 0 {
+	// 	LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+	// 	return nil
+	// }
 
-	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
 	if existingCheck == 0 {
 		// store RECORD in DS
 		immutableDS := RecordDS{
