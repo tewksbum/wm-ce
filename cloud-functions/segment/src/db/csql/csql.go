@@ -359,7 +359,7 @@ func Delete(dsn string, r models.Record) error {
 	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.DebugFmt("[DELETE]: %s", buf.String())
+	logger.DebugFmt("[DELETE]: %s - %s", buf.String(), buf.Value())
 	res, err := stmt.Exec()
 	if err != nil {
 		tx.Rollback()
