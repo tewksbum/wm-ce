@@ -120,6 +120,7 @@ func init() {
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	// topic.PublishSettings.DelayThreshold = 200 * time.Millisecond
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	// status.PublishSettings.DelayThreshold = 5 * time.Minute
 	msp = &redis.Pool{
