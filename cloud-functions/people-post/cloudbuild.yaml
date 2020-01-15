@@ -10,7 +10,7 @@ steps:
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "1",
+    "--max-instances", "5",
     "--vpc-connector", "${_VPC_CONNECTOR}"
     ]
     env: ['GOPATH=/gopath']
