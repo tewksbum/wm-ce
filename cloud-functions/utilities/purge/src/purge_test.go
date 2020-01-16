@@ -157,7 +157,7 @@ func TestProcessRequest4(t *testing.T) {
 	}
 }
 
-func TestProcessRequest5(t *testing.T) {
+func TestProcessRequestFEP18(t *testing.T) {
 	json := []string{
 		`
 		{
@@ -296,7 +296,147 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "dev-aub-ab",
+			"targetSelection": "dev-css-hre",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uci-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-amu-fheg",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ucl-ochc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-cmi-ar",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-css-hre",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ucr-saa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uga-aa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unc-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unl-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uor-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-utk-urhc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wmd-apo",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-tln-hrl",
 			"targetSubSelection": ""
 		}`,
 	}
