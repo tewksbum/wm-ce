@@ -164,8 +164,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "2-Testing"
+			"targetSelection": "dev-uci-rha",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -174,8 +174,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Admission"
+			"targetSelection": "dev-ucl-ochc",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -184,8 +184,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Test"
+			"targetSelection": "dev-ucr-saa",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -194,8 +194,108 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Testing"
+			"targetSelection": "dev-uga-aa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unc-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unl-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uor-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-utk-urhc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wmd-apo",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-cob-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-bal-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-aub-ab",
+			"targetSubSelection": ""
 		}`,
 	}
 	for _, j := range json {
@@ -219,7 +319,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-wmd-apo",
+		"targetSelection": "dev-uci-rha",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",
