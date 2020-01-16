@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// export GOOGLE_APPLICATION_CREDENTIALS=/Users/mtewksbury/tewks-wemade.json"
+
 // TestProcessRequest run purge locally
 // complete go.testEnvVars in vscode settings before running
 // "go.testEnvVars": {
