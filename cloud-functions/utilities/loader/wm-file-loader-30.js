@@ -94,7 +94,10 @@ async function sendRequest(row, classYear) {
   const source = row.getCell(1).value;
   console.log(`${source}/${file}`);
   console.log("Processing " + file);
-  const programName = file.substring(0, (file.search("-")-1));
+  var programName = ""
+  // if (file.search("-") > 0) {
+  //   programName = file.substring(0, (file.search("-")-1));
+  // } 
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
