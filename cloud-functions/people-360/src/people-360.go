@@ -740,6 +740,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				mk.Value = GetSmallestYear(mk.Values)
 			}
 
+			if name == "ADVALID" {
+				mk.Value = GetAdValid(mk.Values)
+			}			
+
 			OutputMatchKeys = append(OutputMatchKeys, *mk)
 		}
 		output.MatchKeys = OutputMatchKeys
@@ -889,6 +893,18 @@ func GetSmallestYear(values []string) string {
 	} else {
 		return ""
 	}
+}
+
+func GetAdValid(values []string) string {
+	if len(values) == 0 {
+		return "FALSE"
+	}
+	for _, v := range values {
+		if v == "TRUE" {
+			return "TRUE"
+		}
+	}
+	return "FALSE"
 }
 
 func GetMatchKeyFieldFromStruct(v *PeopleOutput, field string) MatchKeyField {
