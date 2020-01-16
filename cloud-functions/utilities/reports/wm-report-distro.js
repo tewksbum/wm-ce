@@ -29,8 +29,8 @@ var env = options.env;
 
 const programs = {
     "fep": "FEP",
+    "frames": "DD",
 }
-// "frames": "DD",
 
 const storage = new Storage();
 const datastore = new Datastore();
