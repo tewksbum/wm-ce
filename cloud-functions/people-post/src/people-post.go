@@ -880,12 +880,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: Jie can you look at this poop...
 			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
 		}
-
-		v.Output.ADVALID.Value = "FALSE"
-		v.Output.ADCORRECT.Value = "FALSE"
+			
 		// IF we believe it to NOT be an international address...
 		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
+			v.Output.ADVALID.Value = "FALSE"
+			v.Output.ADCORRECT.Value = "FALSE"
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
 		}
