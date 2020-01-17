@@ -1089,3 +1089,95 @@ func TestProcessRequestC(t *testing.T) {
 		fmt.Println(got)
 	}
 }
+
+func TestPurgeList(t *testing.T) {
+	list := `
+	oit-rha
+	uci-rha
+	unn-rl
+	bcl-fheg
+	bcm-hrl
+	eru-rsa
+	pcs-si
+	smm-rl
+	uab-rha
+	utm-rha
+	uwy-rha
+	ucr-saa
+	wos-rha
+	amu-fheg
+	atu-bn
+	bku-rl
+	chc-aa
+	cmi-ar
+	elm-rl
+	emc-rha
+	lee-rlh
+	nwo-nss
+	saa-rha
+	sdt-rl
+	shd-reh
+	ste-rl
+	tln-hrl
+	ujt-rl
+	unl-nrhh
+	uof-rha
+	utk-urhc
+	way-rha
+	wcs-hrl
+	css-hre
+	ucl-ochc
+	uor-rha
+	ash-aub
+	bfc-hou
+	`
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "count",
+		"targetSelection": "dev-@sponsor@",
+		"targetSubSelection": ""
+	}`
+	lines := strings.Split(list, "\n")
+	for _, line := range lines {
+		sponsor := strings.TrimSpace(line)
+		if len(sponsor) > 0 {
+			sponsorJson := strings.ReplaceAll(json, "@sponsor@", sponsor)
+			req := httptest.NewRequest("POST", "/", strings.NewReader(sponsorJson))
+			req.Header.Add("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			ProcessRequest(rr, req)
+			got := rr.Body.String()
+			fmt.Println(got)
+		}
+	}
+}
+
+func PlayingWSubTarget(t *testing.T) {
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "dev-tln-hrl",
+		"targetSubSelection": "people-set",
+		"targetSubSelection": "people-golden"
+	}`
+	// "targetSelection": "dev-wmd-apo",
+	// "targetSelection": "dev-wos-rha",
+
+	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	ProcessRequest(rr, req)
+
+	got := rr.Body.String()
+
+	fmt.Println(got)
+}
