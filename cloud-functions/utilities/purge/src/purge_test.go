@@ -1093,43 +1093,41 @@ func TestProcessRequestC(t *testing.T) {
 func TestPurgeList(t *testing.T) {
 	list := `
 	oit-rha
-	uci-rha
-	unn-rl
-	bcl-fheg
-	bcm-hrl
-	eru-rsa
-	pcs-si
-	smm-rl
-	uab-rha
-	utm-rha
-	uwy-rha
-	ucr-saa
-	wos-rha
-	amu-fheg
-	atu-bn
-	bku-rl
-	chc-aa
-	cmi-ar
-	elm-rl
-	emc-rha
-	lee-rlh
-	nwo-nss
-	saa-rha
-	sdt-rl
-	shd-reh
-	ste-rl
-	tln-hrl
-	ujt-rl
-	unl-nrhh
-	uof-rha
-	utk-urhc
-	way-rha
-	wcs-hrl
-	css-hre
-	ucl-ochc
-	uor-rha
-	ash-aub
-	bfc-hou
+unn-rl
+bcl-fheg
+eru-rsa
+pcs-si
+smm-rl
+uab-rha
+utm-rha
+uwy-rha
+ucr-saa
+wos-rha
+amu-fheg
+atu-bn
+bku-rl
+chc-aa
+cmi-ar
+elm-rl
+emc-rha
+lee-rlh
+nwo-nss
+saa-rha
+sdt-rl
+shd-reh
+ste-rl
+tln-hrl
+ujt-rl
+unl-nrhh
+uof-rha
+utk-urhc
+way-rha
+wcs-hrl
+css-hre
+ucl-ochc
+uor-rha
+ash-aub
+bfc-hou
 	`
 	json := `
 	{

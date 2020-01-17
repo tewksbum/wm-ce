@@ -932,11 +932,11 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address1 = 1
 	case "city", "city ", "street city", "home city", "city_pr", "pa city", "current city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince":
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4":
 		err.ZipCode = 1
-	case "citystzip", "city/st/zip ", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated":
+	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated":
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
@@ -967,7 +967,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
