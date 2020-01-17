@@ -912,21 +912,21 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.ToLower(column)
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "name preferred", "chosen name", "patron.first name":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid":
 		err.MiddleName = 1
-	case "suffix", "jr., iii, etc.", "sfix":
+	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address street line 1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2":
 		err.Address2 = 1
-	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3":
+	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3":
 		err.Address3 = 1
-	case "ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4":
+	case "ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4", "address street line 4":
 		err.Address4 = 1
 	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
 		err.Address1 = 1
@@ -936,13 +936,13 @@ func GetPeopleERR(column string) PeopleERR {
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4":
 		err.ZipCode = 1
-	case "citystzip", "city/st/zip ":
+	case "citystzip", "city/st/zip ", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated":
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -967,7 +967,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -977,16 +977,16 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton":
+	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid":
+	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde":
 		err.Junk = 1
-	case "level":
+	case "level", "room location description 1":
 		// may want to unjunk the degree level things...
 		err.Junk = 1
 	case "perme", "permission email":
@@ -1009,11 +1009,11 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
 	if err.Address2 == 0 && err.ContainsAddress == 0 && strings.Contains(key, "street") {
