@@ -241,8 +241,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
 					})
-					_, err = psresult.Get(ctx)
-					if err != nil {
+					_, pserr := psresult.Get(ctx)
+					if pserr != nil {
 						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 					}
 
