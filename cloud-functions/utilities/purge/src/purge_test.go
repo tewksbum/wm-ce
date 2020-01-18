@@ -502,7 +502,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-tln-hrl",
+		"targetSelection": "dev-amu-fheg",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",
@@ -1092,42 +1092,39 @@ func TestProcessRequestC(t *testing.T) {
 
 func TestPurgeList(t *testing.T) {
 	list := `
-	oit-rha
-unn-rl
-bcl-fheg
-eru-rsa
-pcs-si
-smm-rl
-uab-rha
-utm-rha
-uwy-rha
-ucr-saa
-wos-rha
-amu-fheg
+	amu-fheg
+ash-aub
 atu-bn
+bcl-fheg
 bku-rl
 chc-aa
 cmi-ar
 elm-rl
 emc-rha
+eru-rsa
 lee-rlh
 nwo-nss
+oit-rha
+pcs-si
 saa-rha
 sdt-rl
 shd-reh
+smm-rl
 ste-rl
 tln-hrl
+uab-rha
+ucr-saa
+uct-uf
 ujt-rl
 unl-nrhh
+unn-rl
 uof-rha
 utk-urhc
+utm-rha
+uwy-rha
 way-rha
 wcs-hrl
-css-hre
-ucl-ochc
-uor-rha
-ash-aub
-bfc-hou
+wos-rha
 	`
 	json := `
 	{
@@ -1135,7 +1132,7 @@ bfc-hou
 		"clientSecret": "cool_works",
 		"targetType": "datastore",
 		"targetLevel": "kind",
-		"operation": "count",
+		"operation": "delete",
 		"targetSelection": "dev-@sponsor@",
 		"targetSubSelection": ""
 	}`
