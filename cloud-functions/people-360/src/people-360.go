@@ -422,8 +422,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					(len(input.MatchKeys.STATE.Value) > 0 || (len(input.MatchKeys.COUNTRY.Value) > 0 && input.MatchKeys.COUNTRY.Value != "US")) &&
 					len(input.MatchKeys.LNAME.Value) > 0 &&
 					len(input.MatchKeys.FNAME.Value) > 0 &&
-					len(input.MatchKeys.AD1.Value) > 0 &&
-					len(input.MatchKeys.ADBOOK.Value) > 0) {
+					len(input.MatchKeys.AD1.Value) > 0) {
 				matchable = true
 			}
 		} else if input.Signature.FiberType != "dupe" {
@@ -475,8 +474,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
 			MatchByKey5E := "AD1"
 			MatchByValue5E := strings.Replace(input.MatchKeys.AD1.Value, "'", `''`, -1)
-			MatchByKey5F := "ADBOOK"
-			MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
+			// MatchByKey5F := "ADBOOK"
+			// MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
 
 			matchedSets := []PeopleSetDS{}
 			queriedSets := []PeopleSetDS{}
@@ -565,8 +564,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
 				}
 			}
-			if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
-				redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
+			if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+				redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
 				redisMatchFound5 := GetRedisIntValue(redisMatchValue5)
 				//SetRedisTempKey(redisMatchValue5)
 				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
@@ -574,8 +573,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
 					Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
 					Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
-					Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E)).
-					Filter(strings.ToLower(MatchByKey5F)+"normalized =", strings.ToUpper(MatchByValue5F))
+					Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E))
 				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
 					log.Fatalf("Error querying sets query 1: %v", err)
 				} else {
@@ -592,7 +590,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
 				}
 			} else {
-				LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E, MatchByValue5F))
+				LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E))
 			}
 
 			for _, s := range matchedSets {
@@ -742,7 +740,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			if name == "ADVALID" {
 				mk.Value = GetAdValid(mk.Values)
-			}			
+			}
 
 			OutputMatchKeys = append(OutputMatchKeys, *mk)
 		}
