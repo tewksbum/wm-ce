@@ -355,9 +355,10 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			for i, h := range headers {
 				if len(h) > 0 {
-					for _, r := range records {
+					for y, r := range records {
 						if len(r) > i && h == r[i] {
 							headerlessTest1 = true
+							log.Printf("%v file has a repeated value row column value: %v %v %v", input.Signature.EventID, y, i, r[i])
 							break
 						}
 					}
