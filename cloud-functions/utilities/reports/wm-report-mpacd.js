@@ -134,7 +134,9 @@ function toColumnName(num) {
 
   //report logging
   const today = new Date();
-  const logFile = `./logs/xreport-log-${today.toISOString()}.json`;
+  const logFile = `./logs/xreport-log-${today
+    .toISOString()
+    .replace(":", "")}.json`;
   const stream = fs.createWriteStream(logFile, { flags: "a" });
   stream.write("[\n");
   let sep = "";

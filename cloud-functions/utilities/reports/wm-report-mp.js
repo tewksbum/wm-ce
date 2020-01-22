@@ -19,7 +19,7 @@ function toColumnName(num) {
   }
   var workBook = new Excel.Workbook();
   workBook = await workBook.xlsx.readFile(inputFilename);
-  
+
   let lastRCC = 0;
   let maxCol = 0;
 
@@ -118,7 +118,9 @@ function toColumnName(num) {
 
   //report logging
   const today = new Date();
-  const logFile = `./logs/xreport-log-${today.toISOString()}.json`;
+  const logFile = `./logs/xreport-log-${today
+    .toISOString()
+    .replace(":", "")}.json`;
   const stream = fs.createWriteStream(logFile, { flags: "a" });
   stream.write("[\n");
   let sep = "";
@@ -179,7 +181,7 @@ function toColumnName(num) {
     }
     let sheetIndex = index + 1;
     //This will add the necesary columns
-   
+
     //Mergepush sheet
     let MergeRow = [
       currentUL.schoolcode,
@@ -215,7 +217,7 @@ function toColumnName(num) {
   stream.write("\n]", () => {
     stream.end();
   });
- 
+
   //Create hyperlinks
   MergeSheet.getColumn(2).eachCell(cell => {
     if (cell.value === null || !cell.value.startsWith("http")) {
@@ -227,7 +229,7 @@ function toColumnName(num) {
       tooltip: cell.value
     };
   });
- 
+
   worksheet.columns.forEach(c => (c.hidden = false));
   worksheet.getRow(1).hidden = false;
   const xlsFileName = "../_output/report.xlsx";

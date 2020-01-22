@@ -9,7 +9,9 @@ const { getOwners } = require("./utils");
 const today = new Date();
 const streamerURL =
   "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-file-api";
-const logFile = `./logs/xsubmitter-log-${today.toISOString()}.json`;
+const logFile = `./logs/xsubmitter-log-${today
+  .toISOString()
+  .replace(":", "")}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
@@ -88,21 +90,21 @@ async function sendRequest(row) {
   const source = row.getCell(1).value;
   console.log(`${source}/${file}`);
   console.log("Processing " + file);
-  var programName = ""
+  var programName = "";
   // if (file.search("-") > 0) {
   //   programName = file.substring(0, (file.search("-")-1));
-  // } 
+  // }
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
   var titleYear = row.values[12];
   if (typeof titleYear == "undefined") {
-    titleYear = ""
+    titleYear = "";
   }
   var classYear = row.values[11];
   if (typeof classYear == "undefined") {
-    classYear = ""
+    classYear = "";
   }
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;

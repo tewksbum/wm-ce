@@ -16,7 +16,9 @@ const Excel = require("exceljs");
 
   //report logging
   const today = new Date();
-  const logFile = `./logs/xdetailreport-log-${today.toISOString()}.json`;
+  const logFile = `./logs/xdetailreport-log-${today
+    .toISOString()
+    .replace(":", "")}.json`;
   const stream = fs.createWriteStream(logFile, { flags: "a" });
   stream.write("[\n");
   let sep = "";
@@ -27,7 +29,6 @@ const Excel = require("exceljs");
   // const reportStatic = JSON.parse(rawData);
   const worksheet = workBook.getWorksheet(1);
   for (let index = 2; index <= worksheet.rowCount; index++) {
-    
     var workBookTarget = new Excel.Workbook();
     var DetailSheet1 = workBookTarget.addWorksheet("Records");
     var DetailSheet2 = workBookTarget.addWorksheet("Fibers");
@@ -88,9 +89,11 @@ const Excel = require("exceljs");
     await report.GridRecords.forEach(r => DetailSheet1.addRow(r));
     await report.GridFibers.forEach(r => DetailSheet2.addRow(r));
 
-    worksheet.getRow(index).values[10]
+    worksheet.getRow(index).values[10];
 
-    const xlsFileName = `../_output/${currentUL.owner}-detail-report-${currentRow.getCell(2).value}-${currentUL.requestId}.xlsx`;
+    const xlsFileName = `../_output/${currentUL.owner}-detail-report-${
+      currentRow.getCell(2).value
+    }-${currentUL.requestId}.xlsx`;
     await workBookTarget.xlsx.writeFile(xlsFileName).then(function() {
       console.log(`Saved xls file as ${xlsFileName}`);
     });
@@ -99,5 +102,4 @@ const Excel = require("exceljs");
   stream.write("\n]", () => {
     stream.end();
   });
-
 })();
