@@ -880,7 +880,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: Jie can you look at this poop...
 			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
 		}
-			
+
 		// IF we believe it to NOT be an international address...
 		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
@@ -911,7 +911,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		MatchByValue5C := strings.Replace(v.Output.LNAME.Value, "'", `''`, -1)
 		MatchByValue5D := strings.Replace(v.Output.FNAME.Value, "'", `''`, -1)
 		MatchByValue5E := strings.Replace(v.Output.AD1.Value, "'", `''`, -1)
-		MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
+		// MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
 
 		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
 		SetRedisTempKey(append(redisMatchValue0, "retry"))
@@ -932,8 +932,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			SetRedisTempKey(append(redisMatchValue3, "retry"))
 			// SetRedisTempKey(redisMatchValue3)
 		}
-		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 && len(MatchByValue5F) > 0 {
-			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), strings.ToUpper(MatchByValue5F), "match"}
+		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
 			SetRedisTempKey(append(redisMatchValue5, "retry"))
 			// SetRedisTempKey(redisMatchValue5)
 		}
