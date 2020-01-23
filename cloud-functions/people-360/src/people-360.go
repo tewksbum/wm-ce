@@ -478,9 +478,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Matched %+v sets", len(setKeys))
 
 			matchedSets := make([]PeopleSetDS, len(setKeys))
+
 			if len(setKeys) > 0 {
-				for _, key := range setKeys {
+				for i, key := range setKeys {
 					key.Namespace = dsNameSpace
+					setKeys[i] = key
 				}
 
 				if err := ds.GetMulti(ctx, setKeys, matchedSets); err != nil && err != datastore.ErrNoSuchEntity {
