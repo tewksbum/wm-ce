@@ -466,30 +466,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", input.MatchKeys.FNAME.Value, input.MatchKeys.LNAME.Value, input.MatchKeys.AD1.Value, input.MatchKeys.CITY.Value, input.MatchKeys.STATE.Value))
 			}
 
-			var setKeys []*datastore.Key
+			matchedSets := []PeopleSetDS{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
 					searchValue := strings.Replace(search, "'", `''`, -1)
-					setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue).KeysOnly()
-					keys, _ := fs.GetAll(ctx, setQuery, nil)
+					setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue)
+					querySets := []PeopleSetDS{}
+					keys, _ := fs.GetAll(ctx, setQuery, &querySets)
 					log.Printf("Search %v found %+v", search, keys)
-					setKeys = append(setKeys, keys...)
+					matchedSets = append(matchedSets, querySets...)
 				}
 			}
-			log.Printf("Matched %+v sets", len(setKeys))
-
-			matchedSets := make([]PeopleSetDS, len(setKeys))
-
-			if len(setKeys) > 0 {
-				for i, key := range setKeys {
-					key.Namespace = dsNameSpace
-					setKeys[i] = key
-				}
-
-				if err := ds.GetMulti(ctx, setKeys, matchedSets); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Fatalf("Error fetching sets ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindSet, setKeys, err)
-				}
-			}
+			log.Printf("Matched %+v sets", len(matchedSets))
 
 			// MatchByValue0 := input.Signature.RecordID
 
