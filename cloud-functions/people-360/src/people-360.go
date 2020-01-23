@@ -449,7 +449,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var existingSearchFields []string
 
 		if matchable {
-
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
 				// ensure record id is not blank or we'll have problem
@@ -476,6 +475,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					setKeys = append(setKeys, keys...)
 				}
 			}
+			log.Printf("Matched %+v sets", len(setKeys))
 
 			var matchedSets []PeopleSetDS
 			if err := ds.GetMulti(ctx, setKeys, matchedSets); err != nil && err != datastore.ErrNoSuchEntity {
