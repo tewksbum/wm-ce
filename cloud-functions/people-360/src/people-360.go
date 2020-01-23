@@ -811,7 +811,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		if len(dsFiber.Search) > 0 {
-			for _, search := range goldenDS.Search {
+			for _, search := range dsFiber.Search {
 				if !Contains(setDS.Search, search) {
 					setDS.Search = append(setDS.Search, search)
 				}
@@ -1004,6 +1004,7 @@ func GetPeopleFiberSearchFields(v *PeopleFiberDS) []string {
 }
 
 func GetPeopleGoldenSearchFields(v *PeopleGoldenDS) []string {
+	log.Printf("golden record: %+v", v)
 	var searchFields []string
 	if len(v.EMAIL) > 0 {
 		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", v.EMAIL))
