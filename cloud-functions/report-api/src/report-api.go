@@ -197,9 +197,9 @@ type Fiber struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
-	PermE        MatchKeyField    `datastore:"PermE"`
-	PermM        MatchKeyField    `datastore:"PermM"`
-	PermS        MatchKeyField    `datastore:"PermS"`
+	PermE        MatchKeyField    `datastore:"perme"`
+	PermM        MatchKeyField    `datastore:"permm"`
+	PermS        MatchKeyField    `datastore:"perms"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
 }
 

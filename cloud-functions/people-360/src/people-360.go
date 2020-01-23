@@ -101,10 +101,11 @@ type PeopleFiberDS struct {
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
 	STATUS       MatchKeyField    `datastore:"status"`
-	PermE        MatchKeyField    `datastore:"PermE"`
-	PermM        MatchKeyField    `datastore:"PermM"`
-	PermS        MatchKeyField    `datastore:"PermS"`
+	PermE        MatchKeyField    `datastore:"perme"`
+	PermM        MatchKeyField    `datastore:"permm"`
+	PermS        MatchKeyField    `datastore:"perms"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
+	Search       []string         `datastore:"search"`
 }
 
 type MatchKeyField struct {
@@ -264,12 +265,13 @@ type PeopleSetDS struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
-	PermE                  []string       `json:"perme"`
-	PermENormalized        []string       `json:"permenormalized"`
-	PermM                  []string       `json:"permm"`
-	PermMNormalized        []string       `json:"permmnormalized"`
-	PermS                  []string       `json:"perms"`
-	PermSNormalized        []string       `json:"permsnormalized"`
+	PermE                  []string       `datastore:"perme"`
+	PermENormalized        []string       `datastore:"permenormalized"`
+	PermM                  []string       `datastore:"permm"`
+	PermMNormalized        []string       `datastore:"permmnormalized"`
+	PermS                  []string       `datastore:"perms"`
+	PermSNormalized        []string       `datastore:"permsnormalized"`
+	Search                 []string       `datastore:"search"`
 }
 
 type PeopleGoldenDS struct {
@@ -312,6 +314,7 @@ type PeopleGoldenDS struct {
 	PermE        string         `datastore:"perme"`
 	PermM        string         `datastore:"permm"`
 	PermS        string         `datastore:"perms"`
+	Search       []string       `datastore:"search"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -443,6 +446,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var matchedFibers []string
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
+		var existingSearchFields []string
 
 		if matchable {
 
@@ -451,147 +455,174 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				// ensure record id is not blank or we'll have problem
 				input.Signature.RecordID = uuid.New().String()
 			}
-			MatchByValue0 := input.Signature.RecordID
-
-			MatchByKey1 := "TRUSTEDID"
-			MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", `''`, -1)
-
-			MatchByKey2 := "EMAIL"
-			MatchByValue2 := strings.Replace(input.MatchKeys.EMAIL.Value, "'", `''`, -1)
-
-			MatchByKey3A := "PHONE"
-			MatchByValue3A := strings.Replace(input.MatchKeys.PHONE.Value, "'", `''`, -1)
-			MatchByKey3B := "FINITIAL"
-			MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
-
-			MatchByKey5A := "CITY"
-			MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", `''`, -1)
-			MatchByKey5B := "STATE"
-			MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", `''`, -1)
-			MatchByKey5C := "LNAME"
-			MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
-			MatchByKey5D := "FNAME"
-			MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
-			MatchByKey5E := "AD1"
-			MatchByValue5E := strings.Replace(input.MatchKeys.AD1.Value, "'", `''`, -1)
-			// MatchByKey5F := "ADBOOK"
-			// MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
-
-			matchedSets := []PeopleSetDS{}
-			queriedSets := []PeopleSetDS{}
-
-			redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
-			redisMatchFound0 := GetRedisIntValue(redisMatchValue0)
-			//SetRedisTempKey(redisMatchValue0)
-			setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
-			if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
-				log.Fatalf("Error querying sets query 1: %v", err)
-			} else {
-				if redisMatchFound0 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
-					retryCount := GetRedisIntValue(append(redisMatchValue0, "retry"))
-					if retryCount < 30 {
-						IncrRedisValue(append(redisMatchValue0, "retry"))
-						return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue0, retryCount)
-					}
-				}
-				for _, s := range queriedSets {
-					matchedSets = append(matchedSets, s)
-				}
-				LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
+			var searchFields []string
+			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+			if len(input.MatchKeys.EMAIL.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", input.MatchKeys.EMAIL.Value))
 			}
-			if len(MatchByValue1) > 0 {
-				redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
-				redisMatchFound1 := GetRedisIntValue(redisMatchValue1)
-				//SetRedisTempKey(redisMatchValue1)
-				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
-				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
-					log.Fatalf("Error querying sets query 1: %v", err)
-				} else {
-					if redisMatchFound1 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
-						retryCount := GetRedisIntValue(append(redisMatchValue1, "retry"))
-						if retryCount < 30 {
-							IncrRedisValue(append(redisMatchValue1, "retry"))
-							return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue1, retryCount)
-						}
-					}
-					for _, s := range queriedSets {
-						matchedSets = append(matchedSets, s)
-					}
-					LogDev(fmt.Sprintf("Matched %v sets with condition 2", len(queriedSets)))
+			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", input.MatchKeys.PHONE.Value, input.MatchKeys.FINITIAL.Value))
+			}
+			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", input.MatchKeys.FNAME.Value, input.MatchKeys.LNAME.Value, input.MatchKeys.AD1.Value, input.MatchKeys.CITY.Value, input.MatchKeys.STATE.Value))
+			}
+
+			var setKeys []*datastore.Key
+			if len(searchFields) > 0 {
+				for _, search := range searchFields {
+					searchValue := strings.Replace(search, "'", `''`, -1)
+					setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue).KeysOnly()
+					keys, _ := fs.GetAll(ctx, setQuery, nil)
+					setKeys = append(setKeys, keys...)
 				}
 			}
-			if len(MatchByValue2) > 0 {
-				redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
-				redisMatchFound2 := GetRedisIntValue(redisMatchValue2)
-				//SetRedisTempKey(redisMatchValue2)
-				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
-				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
-					log.Fatalf("Error querying sets query 1: %v", err)
-				} else {
-					if redisMatchFound2 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
-						retryCount := GetRedisIntValue(append(redisMatchValue2, "retry"))
-						if retryCount < 30 {
-							IncrRedisValue(append(redisMatchValue2, "retry"))
-							return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue2, retryCount)
-						}
-					}
-					for _, s := range queriedSets {
-						matchedSets = append(matchedSets, s)
-					}
-					LogDev(fmt.Sprintf("Matched %v sets with condition 3", len(queriedSets)))
-				}
+
+			var matchedSets []PeopleSetDS
+			if err := ds.GetMulti(ctx, setKeys, matchedSets); err != nil && err != datastore.ErrNoSuchEntity {
+				log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, setKeys, err)
 			}
-			if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
-				redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
-				redisMatchFound3 := GetRedisIntValue(redisMatchValue3)
-				//SetRedisTempKey(redisMatchValue3)
-				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-					Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
-					Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
-				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
-					log.Fatalf("Error querying sets query 1: %v", err)
-				} else {
-					if redisMatchFound3 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
-						retryCount := GetRedisIntValue(append(redisMatchValue3, "retry"))
-						if retryCount < 30 {
-							IncrRedisValue(append(redisMatchValue3, "retry"))
-							return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue3, retryCount)
-						}
-					}
-					for _, s := range queriedSets {
-						matchedSets = append(matchedSets, s)
-					}
-					LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
-				}
-			}
-			if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
-				redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
-				redisMatchFound5 := GetRedisIntValue(redisMatchValue5)
-				//SetRedisTempKey(redisMatchValue5)
-				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
-					Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
-					Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
-					Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
-					Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
-					Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E))
-				if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
-					log.Fatalf("Error querying sets query 1: %v", err)
-				} else {
-					if redisMatchFound5 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
-						retryCount := GetRedisIntValue(append(redisMatchValue5, "retry"))
-						if retryCount < 30 {
-							IncrRedisValue(append(redisMatchValue5, "retry"))
-							return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue5, retryCount)
-						}
-					}
-					for _, s := range queriedSets {
-						matchedSets = append(matchedSets, s)
-					}
-					LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
-				}
-			} else {
-				LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E))
-			}
+
+			// MatchByValue0 := input.Signature.RecordID
+
+			// MatchByKey1 := "TRUSTEDID"
+			// MatchByValue1 := strings.Replace(input.MatchKeys.TRUSTEDID.Value, "'", `''`, -1)
+
+			// MatchByKey2 := "EMAIL"
+			// MatchByValue2 := strings.Replace(input.MatchKeys.EMAIL.Value, "'", `''`, -1)
+
+			// MatchByKey3A := "PHONE"
+			// MatchByValue3A := strings.Replace(input.MatchKeys.PHONE.Value, "'", `''`, -1)
+			// MatchByKey3B := "FINITIAL"
+			// MatchByValue3B := strings.Replace(input.MatchKeys.FINITIAL.Value, "'", `''`, -1)
+
+			// MatchByKey5A := "CITY"
+			// MatchByValue5A := strings.Replace(input.MatchKeys.CITY.Value, "'", `''`, -1)
+			// MatchByKey5B := "STATE"
+			// MatchByValue5B := strings.Replace(input.MatchKeys.STATE.Value, "'", `''`, -1)
+			// MatchByKey5C := "LNAME"
+			// MatchByValue5C := strings.Replace(input.MatchKeys.LNAME.Value, "'", `''`, -1)
+			// MatchByKey5D := "FNAME"
+			// MatchByValue5D := strings.Replace(input.MatchKeys.FNAME.Value, "'", `''`, -1)
+			// MatchByKey5E := "AD1"
+			// MatchByValue5E := strings.Replace(input.MatchKeys.AD1.Value, "'", `''`, -1)
+			// // MatchByKey5F := "ADBOOK"
+			// // MatchByValue5F := strings.Replace(input.MatchKeys.ADBOOK.Value, "'", `''`, -1)
+
+			// matchedSets := []PeopleSetDS{}
+			// queriedSets := []PeopleSetDS{}
+
+			// redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
+			// redisMatchFound0 := GetRedisIntValue(redisMatchValue0)
+			// //SetRedisTempKey(redisMatchValue0)
+			// setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("recordid =", MatchByValue0)
+			// if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			// 	log.Fatalf("Error querying sets query 1: %v", err)
+			// } else {
+			// 	if redisMatchFound0 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+			// 		retryCount := GetRedisIntValue(append(redisMatchValue0, "retry"))
+			// 		if retryCount < 30 {
+			// 			IncrRedisValue(append(redisMatchValue0, "retry"))
+			// 			return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue0, retryCount)
+			// 		}
+			// 	}
+			// 	for _, s := range queriedSets {
+			// 		matchedSets = append(matchedSets, s)
+			// 	}
+			// 	LogDev(fmt.Sprintf("Matched %v sets with condition 1", len(queriedSets)))
+			// }
+			// if len(MatchByValue1) > 0 {
+			// 	redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
+			// 	redisMatchFound1 := GetRedisIntValue(redisMatchValue1)
+			// 	//SetRedisTempKey(redisMatchValue1)
+			// 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey1)+"normalized =", strings.ToUpper(MatchByValue1))
+			// 	if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			// 		log.Fatalf("Error querying sets query 1: %v", err)
+			// 	} else {
+			// 		if redisMatchFound1 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+			// 			retryCount := GetRedisIntValue(append(redisMatchValue1, "retry"))
+			// 			if retryCount < 30 {
+			// 				IncrRedisValue(append(redisMatchValue1, "retry"))
+			// 				return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue1, retryCount)
+			// 			}
+			// 		}
+			// 		for _, s := range queriedSets {
+			// 			matchedSets = append(matchedSets, s)
+			// 		}
+			// 		LogDev(fmt.Sprintf("Matched %v sets with condition 2", len(queriedSets)))
+			// 	}
+			// }
+			// if len(MatchByValue2) > 0 {
+			// 	redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
+			// 	redisMatchFound2 := GetRedisIntValue(redisMatchValue2)
+			// 	//SetRedisTempKey(redisMatchValue2)
+			// 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter(strings.ToLower(MatchByKey2)+"normalized =", strings.ToUpper(MatchByValue2))
+			// 	if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			// 		log.Fatalf("Error querying sets query 1: %v", err)
+			// 	} else {
+			// 		if redisMatchFound2 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+			// 			retryCount := GetRedisIntValue(append(redisMatchValue2, "retry"))
+			// 			if retryCount < 30 {
+			// 				IncrRedisValue(append(redisMatchValue2, "retry"))
+			// 				return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue2, retryCount)
+			// 			}
+			// 		}
+			// 		for _, s := range queriedSets {
+			// 			matchedSets = append(matchedSets, s)
+			// 		}
+			// 		LogDev(fmt.Sprintf("Matched %v sets with condition 3", len(queriedSets)))
+			// 	}
+			// }
+			// if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+			// 	redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
+			// 	redisMatchFound3 := GetRedisIntValue(redisMatchValue3)
+			// 	//SetRedisTempKey(redisMatchValue3)
+			// 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			// 		Filter(strings.ToLower(MatchByKey3A)+"normalized =", strings.ToUpper(MatchByValue3A)).
+			// 		Filter(strings.ToLower(MatchByKey3B)+"normalized =", strings.ToUpper(MatchByValue3B))
+			// 	if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			// 		log.Fatalf("Error querying sets query 1: %v", err)
+			// 	} else {
+			// 		if redisMatchFound3 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+			// 			retryCount := GetRedisIntValue(append(redisMatchValue3, "retry"))
+			// 			if retryCount < 30 {
+			// 				IncrRedisValue(append(redisMatchValue3, "retry"))
+			// 				return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue3, retryCount)
+			// 			}
+			// 		}
+			// 		for _, s := range queriedSets {
+			// 			matchedSets = append(matchedSets, s)
+			// 		}
+			// 		LogDev(fmt.Sprintf("Matched %v sets with condition 4", len(queriedSets)))
+			// 	}
+			// }
+			// if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+			// 	redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
+			// 	redisMatchFound5 := GetRedisIntValue(redisMatchValue5)
+			// 	//SetRedisTempKey(redisMatchValue5)
+			// 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).
+			// 		Filter(strings.ToLower(MatchByKey5A)+"normalized =", strings.ToUpper(MatchByValue5A)).
+			// 		Filter(strings.ToLower(MatchByKey5B)+"normalized =", strings.ToUpper(MatchByValue5B)).
+			// 		Filter(strings.ToLower(MatchByKey5C)+"normalized =", strings.ToUpper(MatchByValue5C)).
+			// 		Filter(strings.ToLower(MatchByKey5D)+"normalized =", strings.ToUpper(MatchByValue5D)).
+			// 		Filter(strings.ToLower(MatchByKey5E)+"normalized =", strings.ToUpper(MatchByValue5E))
+			// 	if _, err := fs.GetAll(ctx, setQuery, &queriedSets); err != nil {
+			// 		log.Fatalf("Error querying sets query 1: %v", err)
+			// 	} else {
+			// 		if redisMatchFound5 > 0 && len(queriedSets) == 0 { //there should be matches but none was returned from DS
+			// 			retryCount := GetRedisIntValue(append(redisMatchValue5, "retry"))
+			// 			if retryCount < 30 {
+			// 				IncrRedisValue(append(redisMatchValue5, "retry"))
+			// 				return fmt.Errorf("Expected Fiber not returned by DS for %v, retryn count  %v < max of 30, wait for retry", redisMatchValue5, retryCount)
+			// 			}
+			// 		}
+			// 		for _, s := range queriedSets {
+			// 			matchedSets = append(matchedSets, s)
+			// 		}
+			// 		LogDev(fmt.Sprintf("Matched %v sets with condition 5", len(queriedSets)))
+			// 	}
+			// } else {
+			// 	LogDev(fmt.Sprintf("condition 5 not triggered: %v, %v, %v, %v, %v", MatchByValue5A, MatchByValue5B, MatchByValue5C, MatchByValue5D, MatchByValue5E))
+			// }
 
 			for _, s := range matchedSets {
 				if !Contains(expiredSetCollection, s.ID.Name) {
@@ -604,6 +635,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 				}
+				existingSearchFields = append(existingSearchFields, s.Search...)
 			}
 
 			LogDev(fmt.Sprintf("Fiber Collection: %v, Matched Set Collection: %v", matchedFibers, matchedSets))
@@ -690,6 +722,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			dsFiber.Disposition = "update"
 		}
+		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
 		// store the fiber
 		if _, err := fs.Put(ctx, dsKey, &dsFiber); err != nil {
@@ -755,18 +788,44 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		setDS.CreatedAt = output.CreatedAt
 		PopulateSetOutputSignatures(&setDS, output.Signatures)
 		PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
-		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
-			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
-		}
 
 		var goldenDS PeopleGoldenDS
 		goldenKey := datastore.NameKey(DSKindGolden, output.ID, nil)
 		goldenKey.Namespace = dsNameSpace
 		goldenDS.ID = goldenKey
 		goldenDS.CreatedAt = output.CreatedAt
+		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
+		}
+
+		// populate search fields for set from a) existing sets b) new fiber c) golden
+		if len(existingSearchFields) > 0 {
+			for _, search := range existingSearchFields {
+				if !Contains(setDS.Search, search) {
+					setDS.Search = append(setDS.Search, search)
+				}
+			}
+		}
+
+		if len(dsFiber.Search) > 0 {
+			for _, search := range goldenDS.Search {
+				if !Contains(setDS.Search, search) {
+					setDS.Search = append(setDS.Search, search)
+				}
+			}
+		}
+		if len(goldenDS.Search) > 0 {
+			for _, search := range goldenDS.Search {
+				if !Contains(setDS.Search, search) {
+					setDS.Search = append(setDS.Search, search)
+				}
+			}
+		}
+		// setDS.Search = append(setDS.Search, goldenDS.Search...)
+		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
+			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
 
 		// remove expired sets and setmembers from DS
@@ -924,6 +983,35 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 		}
 	}
 	return &MatchKey360{}
+}
+
+func GetPeopleFiberSearchFields(v *PeopleFiberDS) []string {
+	var searchFields []string
+	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
+	if len(v.EMAIL.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", v.EMAIL.Value))
+	}
+	if len(v.PHONE.Value) > 0 && len(v.FINITIAL.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", v.PHONE.Value, v.FINITIAL.Value))
+	}
+	if len(v.CITY.Value) > 0 && len(v.STATE.Value) > 0 && len(v.LNAME.Value) > 0 && len(v.FNAME.Value) > 0 && len(v.AD1.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", v.FNAME.Value, v.LNAME.Value, v.AD1.Value, v.CITY.Value, v.STATE.Value))
+	}
+	return searchFields
+}
+
+func GetPeopleGoldenSearchFields(v *PeopleGoldenDS) []string {
+	var searchFields []string
+	if len(v.EMAIL) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", v.EMAIL))
+	}
+	if len(v.PHONE) > 0 && len(v.FINITIAL) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", v.PHONE, v.FINITIAL))
+	}
+	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.LNAME) > 0 && len(v.FNAME) > 0 && len(v.AD1) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", v.FNAME, v.LNAME, v.AD1, v.CITY, v.STATE))
+	}
+	return searchFields
 }
 
 func Contains(slice []string, item string) bool {
