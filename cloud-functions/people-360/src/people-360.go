@@ -67,6 +67,8 @@ type PeopleFiberDS struct {
 	RecordID     string           `datastore:"recordid"`
 	FiberType    string           `datastore:"fibertype"`
 	Disposition  string           `datastore:"disposition"`
+	Search       []string         `datastore:"search"`
+	Passthrough  []Passthrough360 `datastore:"passthrough"`
 	SALUTATION   MatchKeyField    `datastore:"salutation"`
 	NICKNAME     MatchKeyField    `datastore:"nickname"`
 	FNAME        MatchKeyField    `datastore:"fname"`
@@ -104,8 +106,6 @@ type PeopleFiberDS struct {
 	PermE        MatchKeyField    `datastore:"perme"`
 	PermM        MatchKeyField    `datastore:"permm"`
 	PermS        MatchKeyField    `datastore:"perms"`
-	Passthrough  []Passthrough360 `datastore:"passthrough"`
-	Search       []string         `datastore:"search"`
 }
 
 type MatchKeyField struct {
@@ -195,6 +195,7 @@ type PeopleSetDS struct {
 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
+	Search                 []string       `datastore:"search"`
 	SALUTATION             []string       `datastore:"salutation"`
 	SALUTATIONNormalized   []string       `datastore:"salutationnormalized"`
 	NICKNAME               []string       `datastore:"nickname"`
@@ -271,12 +272,12 @@ type PeopleSetDS struct {
 	PermMNormalized        []string       `datastore:"permmnormalized"`
 	PermS                  []string       `datastore:"perms"`
 	PermSNormalized        []string       `datastore:"permsnormalized"`
-	Search                 []string       `datastore:"search"`
 }
 
 type PeopleGoldenDS struct {
 	ID           *datastore.Key `datastore:"__key__"`
 	CreatedAt    time.Time      `datastore:"createdat"`
+	Search       []string       `datastore:"search"`
 	SALUTATION   string         `datastore:"salutation"`
 	NICKNAME     string         `datastore:"nickname"`
 	FNAME        string         `datastore:"fname"`
@@ -314,7 +315,6 @@ type PeopleGoldenDS struct {
 	PermE        string         `datastore:"perme"`
 	PermM        string         `datastore:"permm"`
 	PermS        string         `datastore:"perms"`
-	Search       []string       `datastore:"search"`
 }
 
 var ProjectID = os.Getenv("PROJECTID")
