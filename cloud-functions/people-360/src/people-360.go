@@ -479,7 +479,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			matchedSets := make([]PeopleSetDS, len(setKeys))
 			if err := ds.GetMulti(ctx, setKeys, matchedSets); err != nil && err != datastore.ErrNoSuchEntity {
-				log.Fatalf("Error fetching sets ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, setKeys, err)
+				log.Fatalf("Error fetching sets ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindSet, setKeys, err)
 			}
 
 			// MatchByValue0 := input.Signature.RecordID
