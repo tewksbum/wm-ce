@@ -106,6 +106,7 @@ var NERApi = os.Getenv("NERAPI")
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
+//TEst
 
 var redisTransientExpiration = 3600 * 24
 
