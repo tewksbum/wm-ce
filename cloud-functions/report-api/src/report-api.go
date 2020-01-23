@@ -201,6 +201,7 @@ type Fiber struct {
 	PermM        MatchKeyField    `datastore:"permm"`
 	PermS        MatchKeyField    `datastore:"perms"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
+	Search       []string         `datastore:"search"`
 }
 
 type Signature struct {
@@ -371,12 +372,13 @@ type PeopleSet struct {
 	ROLENormalized         []string       `datastore:"rolenormalized"`
 	STATUS                 []string       `datastore:"status"`
 	STATUSNormalized       []string       `datastore:"statusnormalized"`
-	PermE                  []string       `json:"perme"`
-	PermENormalized        []string       `json:"permenormalized"`
-	PermM                  []string       `json:"permm"`
-	PermMNormalized        []string       `json:"permmnormalized"`
-	PermS                  []string       `json:"perms"`
-	PermSNormalized        []string       `json:"permsnormalized"`
+	PermE                  []string       `datastore:"perme"`
+	PermENormalized        []string       `datastore:"permenormalized"`
+	PermM                  []string       `datastore:"permm"`
+	PermMNormalized        []string       `datastore:"permmnormalized"`
+	PermS                  []string       `datastore:"perms"`
+	PermSNormalized        []string       `datastore:"permsnormalized"`
+	Search                 []string       `datastore:"search"`
 }
 
 type PeopleGolden struct {
@@ -419,6 +421,7 @@ type PeopleGolden struct {
 	PermE        string         `datastore:"perme"`
 	PermM        string         `datastore:"permm"`
 	PermS        string         `datastore:"perms"`
+	Search       []string       `datastore:"search"`
 }
 
 // ProjectID is the env var of project id
