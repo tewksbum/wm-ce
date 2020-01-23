@@ -31,7 +31,7 @@ import (
 )
 
 // BLACKLIST is a list of json nodes that will be ignored
-var BLACKLIST = []string{"VENDOR"}
+var BLACKLIST = []string{"VENDOR", "1st", "2nd", "3rd"}
 
 // PubSubMessage is the payload of a pubsub event
 type PubSubMessage struct {
@@ -333,8 +333,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headerlessTest1 := false
 			for _, h := range headers {
 				if len(h) > 0 && reStartsWithNumber.MatchString(h) {
-					headerlessTest2 = true
-					break
+					if !IsBlacklist(h) {
+						log.Printf("The header column starts with a number: ", h)
+						headerlessTest2 = true
+						break
+					}
 				}
 			}
 			if headerlessTest2 {
@@ -688,4 +691,13 @@ func GetRedisIntValues(keys [][]string) []int {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
 	return values
+}
+
+func IsBlacklist(word string) bool {
+	for _, k := range BLACKLIST {
+		if strings.HasPrefix(word, k) {
+			return true
+		}
+	}
+	return false
 }
