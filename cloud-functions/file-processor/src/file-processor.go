@@ -357,6 +357,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				if len(h) > 0 {
 					for y, r := range records {
 						if len(r) > i && h == r[i] {
+							// trying to spit out specific thing that was an issue...
 							headerlessTest1 = true
 							log.Printf("%v file has a repeated value row column value: %v %v %v", input.Signature.EventID, y, i, r[i])
 							break
