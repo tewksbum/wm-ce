@@ -795,6 +795,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenDS.ID = goldenKey
 		goldenDS.CreatedAt = output.CreatedAt
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
+		log.Printf("golden search: %+v", goldenDS.Search)
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
@@ -823,6 +824,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+
+		log.Printf("set search: %+v", setDS.Search)
 		// setDS.Search = append(setDS.Search, goldenDS.Search...)
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
