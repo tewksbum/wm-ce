@@ -472,6 +472,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					searchValue := strings.Replace(search, "'", `''`, -1)
 					setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue).KeysOnly()
 					keys, _ := fs.GetAll(ctx, setQuery, nil)
+					log.Printf("Search %v found %+v", search, keys)
 					setKeys = append(setKeys, keys...)
 				}
 			}
