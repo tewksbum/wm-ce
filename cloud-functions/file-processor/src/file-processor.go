@@ -31,7 +31,7 @@ import (
 )
 
 // BLACKLIST is a list of json nodes that will be ignored
-var BLACKLIST = []string{"VENDOR", "1st", "2nd", "3rd"}
+var BLACKLIST = []string{"VENDOR"}
 
 // PubSubMessage is the payload of a pubsub event
 type PubSubMessage struct {
@@ -106,7 +106,7 @@ var NERApi = os.Getenv("NERAPI")
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
-//TEst
+var reStartsWithOrdinalNumber = regexp.MustCompile(`^(?i)(1st|2nd|3rd)`)
 
 var redisTransientExpiration = 3600 * 24
 
@@ -333,12 +333,10 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headerlessTest2 := false
 			headerlessTest1 := false
 			for _, h := range headers {
-				if len(h) > 0 && reStartsWithNumber.MatchString(h) {
-					if !IsBlacklist(h) {
-						log.Printf("The header column starts with a number: ", h)
-						headerlessTest2 = true
-						break
-					}
+				if len(h) > 0 && reStartsWithNumber.MatchString(h) && !reStartsWithOrdinalNumber.MatchString(h) {
+					log.Printf("The header column starts with a number: ", h)
+					headerlessTest2 = true
+					break
 				}
 			}
 			if headerlessTest2 {
@@ -692,13 +690,4 @@ func GetRedisIntValues(keys [][]string) []int {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
 	return values
-}
-
-func IsBlacklist(word string) bool {
-	for _, k := range BLACKLIST {
-		if strings.HasPrefix(word, k) {
-			return true
-		}
-	}
-	return false
 }
