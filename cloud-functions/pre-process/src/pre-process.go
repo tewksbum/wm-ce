@@ -118,6 +118,7 @@ type OrderERR struct {
 	Discount   int `json:"Tax"`
 	Tax        int `json:"Discount"`
 	Total      int `json:"Total"`
+	Channel    int `json:"Channel"`
 }
 
 type OrderDetailERR struct {
@@ -129,6 +130,7 @@ type OrderDetailERR struct {
 	ProductSKU      int `json:"ProductSKU"`
 	ProductUPC      int `json:"ProductUPC"`
 	ProductQuantity int `json:"ProductQuantity"`
+	MasterCategory  int `json:"MasterCategory"`
 }
 
 type PeopleERR struct {
@@ -322,6 +324,7 @@ type OutputFlag struct {
 }
 
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 var PSPeople = os.Getenv("PSOUTPUTPEOPLE")
 var PSEvent = os.Getenv("PSOUTPUTEVENT")
@@ -354,6 +357,7 @@ var ai *ml.Service
 var cs *storage.Client
 var msp *redis.Pool
 var ds *datastore.Client
+var fs *datastore.Client
 
 var listCities map[string]bool
 var listStates map[string]bool
@@ -391,6 +395,7 @@ func init() {
 	ai, _ := ml.NewService(ctx)
 	cs, _ = storage.NewClient(ctx)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 
 	msp = &redis.Pool{
 		MaxIdle:     3,
@@ -458,14 +463,19 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("received input with signature: %v", input.Signature))
 
 	// see if the record already exists, discard if it is
-	var existing []datastore.Key
-	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
-		log.Printf("Error querying existing records: %v", err)
-	}
-	if len(existing) > 0 {
+	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	if existingCheck > 0 {
 		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
 		return nil
 	}
+	// var existing []datastore.Key
+	// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	// 	log.Printf("Error querying existing records: %v", err)
+	// }
+	// if len(existing) > 0 {
+	// 	LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+	// 	return nil
+	// }
 
 	if len(input.Fields) > 0 {
 		for k, v := range input.Fields {
@@ -492,7 +502,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// 		query := datastore.NewQuery(DSKind).Namespace(DSNameSpace)
 	// 		query.Order("-created").Limit(100)
 
-	// 		if _, err := ds.GetAll(ctx, query, &entities); err != nil {
+	// 		if _, err := fs.GetAll(ctx, query, &entities); err != nil {
 	// 			// TODO: address field fluctuations
 	// 			NERInput := make(map[string][]string)
 	// 			for _, e := range entities {
@@ -650,13 +660,13 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
 		}
 	}
-	// if we don't have ANY columns... throw it to people to try out ver...
-	if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
-		flags.People = true
-		if dev {
-			log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
-		}
-	}
+	// // if we don't have ANY columns... throw it to people to try out ver...
+	// if !columnFlags.OrderID && !columnFlags.CampaignID && !columnFlags.ProductID && !columnFlags.PeopleClientID && !columnFlags.PeopleEmail && !columnFlags.PeopleFirstName && !columnFlags.PeoplePhone && !columnFlags.PeopleLastName && !columnFlags.PeopleZip {
+	// 	flags.People = true
+	// 	if dev {
+	// 		log.Printf("have a people entity >>> Headless %v", input.Signature.EventID)
+	// 	}
+	// }
 
 	if columnFlags.ProductID && columnFlags.ProductName {
 		flags.Product = true
@@ -667,6 +677,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if columnFlags.OrderID {
 		flags.Order = true
 	}
+
 	// skip consignments
 	// if columnFlags.ConsignmentID && columnFlags.OrderID {
 	// 	flags.Consignment = true
@@ -674,6 +685,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.OrderDetailID && columnFlags.OrderID) || ((columnFlags.ProductID || columnFlags.ProductSKU) && columnFlags.OrderID) {
 		flags.OrderDetail = true
 	}
+
+	// unset order if order detail is set
+	if flags.OrderDetail {
+		flags.Order = false
+	}
+
 	if dev {
 		log.Printf("entity flags %v %v", flags, input.Signature.EventID)
 	}
@@ -752,15 +769,16 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// 	}
 	// }
 
-	if _, err := ds.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
-		log.Printf("Error querying existing records: %v", err)
-	}
-	if len(existing) > 0 {
-		LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
-		return nil
-	}
+	// no longer need this as it is done in redis
+	// if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKind).Namespace(dsNamespace).Filter("RecordID =", input.Signature.RecordID).KeysOnly(), &existing); err != nil {
+	// 	log.Printf("Error querying existing records: %v", err)
+	// }
+	// if len(existing) > 0 {
+	// 	LogDev(fmt.Sprintf("RecordID already exists, abandoning: %v", input.Signature))
+	// 	return nil
+	// }
 
-	existingCheck := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
+	existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
 	if existingCheck == 0 {
 		// store RECORD in DS
 		immutableDS := RecordDS{
@@ -782,7 +800,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 
 		dsKey := datastore.IncompleteKey(DSKind, nil)
 		dsKey.Namespace = dsNamespace
-		if _, err := ds.Put(ctx, dsKey, &immutableDS); err != nil {
+		if _, err := fs.Put(ctx, dsKey, &immutableDS); err != nil {
 			log.Fatalf("Exception storing record kind %v sig %v, error %v", DSKind, input.Signature, err)
 		}
 
@@ -894,37 +912,37 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.ToLower(column)
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "preferred name", "name preferred", "chosen name", "patron.first name":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid":
 		err.MiddleName = 1
-	case "suffix", "jr., iii, etc.":
+	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2":
 		err.Address2 = 1
-	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3":
+	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3":
 		err.Address3 = 1
-	case "ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4":
+	case "ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4", "address street line 4":
 		err.Address4 = 1
 	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
 		err.Address1 = 1
-	case "city", "city ", "street city", "home city":
+	case "city", "city ", "street city", "home city", "city_pr", "pa city", "current city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince":
 		err.State = 1
-	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip":
+	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4":
 		err.ZipCode = 1
-	case "citystzip", "city/st/zip ":
+	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated":
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -949,7 +967,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "student name", "students name", "application: applicant", "last, first":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle","lfm name":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -959,14 +977,17 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6":
+	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl", "class status":
 		// also see contains logic...
 		err.Title = 1
-	case "studentid", "student id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid":
+	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde":
+		err.Junk = 1
+	case "level", "room location description 1":
+		// may want to unjunk the degree level things...
 		err.Junk = 1
 	case "perme", "permission email":
 		err.PermE = 1
@@ -988,11 +1009,11 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "street2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
 		err.Address2 = 1
 	}
 	if err.Address2 == 0 && err.ContainsAddress == 0 && strings.Contains(key, "street") {
@@ -1188,6 +1209,8 @@ func GetOrderERR(column string) OrderERR {
 		err.Tax = 1
 	case "order.total":
 		err.Total = 1
+	case "order.channel":
+		err.Channel = 1
 	}
 
 	return err
@@ -1219,6 +1242,9 @@ func GetOrderDetailERR(column string) OrderDetailERR {
 	}
 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
 		err.ProductQuantity = 1
+	}
+	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemlob") {
+		err.MasterCategory = 1
 	}
 
 	return err

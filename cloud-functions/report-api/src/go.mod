@@ -6,6 +6,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1
+	gopkg.in/yaml.v2 v2.2.7
 )
 
 go 1.13

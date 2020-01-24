@@ -9,6 +9,7 @@ steps:
     "--trigger-http",
     "--project", "${PROJECT_ID}",
     "--timeout", "120",
+    "--memory", "512MB",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "100"
     ]
@@ -36,6 +37,19 @@ steps:
     "--trigger-http",
     "--project", "${PROJECT_ID}",
     "--timeout", "30",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+  - id: segment_sweep_expired_sets_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions',
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}-sweep-expired-sets",
+    "--entry-point", "SweepExpiredSets",
+    "--runtime","go111",
+    "--trigger-http",
+    "--project", "${PROJECT_ID}",
+    "--timeout", "300",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
     ]
     env: ['GOPATH=/gopath']

@@ -30,21 +30,21 @@ var (
 func initDB(dsn string, method string) (sess *dbr.Session, err error) {
 	// create a connection with `dialect` (e.g. "postgres", "mysql", or "sqlite3")
 	if _conn == nil {
-		logger.InfoFmt("[csql.%s.initDB] Using a new connection.", method)
+		logger.DebugFmt("[csql.%s.initDB] Using a new connection.", method)
 		_conn, err = dbr.Open(dialect, dsn, nil)
 		if err != nil {
 			return nil, logger.Err(err)
 		}
 		_conn.SetMaxOpenConns(1)
 	} else {
-		logger.InfoFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
+		logger.DebugFmt("[csql.%s.initDB] Using an already instantiated connection.", method)
 	}
 	// create a session for each business unit of execution (e.g. a web request or goworkers job)
 	return _conn.NewSession(nil), nil
 }
 
 // Write the interface into CSQL
-func Write(dsn string, r models.Record) (updated bool, err error) {
+func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err error) {
 	sess, err := initDB(dsn, "Write")
 	if err != nil {
 		return false, logger.Err(errUnableToConnect)
@@ -73,28 +73,36 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	rIDField := r.GetIDField()
 	rmap := r.GetMap()
 	rIDFieldValue := rmap[rIDField]
-	stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
-	if strings.Contains(rIDField, ".") {
-		compositeID = strings.Split(rIDField, ".")
-		if rmap[compositeID[0]] != nil {
-			rIDFieldValue = rmap[compositeID[0]].(map[string]interface{})[compositeID[1]]
-			stmt = tx.Select(compositeID[1]).From(tblNameTick).Where(compositeID[1]+" = ?", rIDFieldValue)
+	exists := ""
+	if !skipUpdate {
+		stmt := tx.Select(rIDField).From(tblNameTick).Where(rIDField+" = ?", rmap[rIDField])
+		if strings.Contains(rIDField, ".") {
+			compositeID = strings.Split(rIDField, ".")
+			if rmap[compositeID[0]] != nil {
+				rIDFieldValue = rmap[compositeID[0]].(map[string]interface{})[compositeID[1]]
+				stmt = tx.Select(compositeID[1]).From(tblNameTick).Where(compositeID[1]+" = ?", rIDFieldValue)
+			}
 		}
-	}
-	buf := dbr.NewBuffer()
-	_ = stmt.Build(stmt.Dialect, buf)
-	exists, err := stmt.ReturnString()
-	logger.InfoFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
-	if err != nil {
-		if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
-			return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
+		buf := dbr.NewBuffer()
+		_ = stmt.Build(stmt.Dialect, buf)
+		exists, err = stmt.ReturnString()
+		logger.DebugFmt("[SELECT]: %s - %s: %s = %s", buf.String(), rIDField, rIDFieldValue, exists)
+		if err != nil {
+			if !strings.Contains(err.Error(), "1146") && !strings.Contains(err.Error(), "not found") {
+				return updated, logger.ErrFmt("[csql.Write.selectStmt] %#v", err)
+			}
 		}
 	}
 	if len(exists) < 1 {
 		is := tx.InsertInto(tblName)
 		switch r.GetEntityType() {
+		case models.TypeExpiredSet:
+			fallthrough
 		case models.TypeDecode:
-			is = is.Columns(r.GetColumnList()...).Record(r)
+			for _, c := range r.GetColumnList() {
+				is = is.Pair(c, rmap[c])
+			}
+			// is = is.Columns(r.GetColumnList()...).Record(r)
 		default:
 			sigs := `[`
 			for _, s := range r.GetSignatures() {
@@ -114,12 +122,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			// }
 			rec := utils.StructToMap(r, r.GetColumnBlackList())
 			j, _ := json.Marshal(rec["record"])
-			// logger.InfoFmt("value: %#v", string(j))
+			// logger.DebugFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
-		logger.InfoFmt("[INSERT]: %s", buf.String())
+		logger.DebugFmt("[INSERT]: %s\n[VALUES]: %#v", buf.String(), buf.Value())
 		res, err = is.Exec()
 	} else {
 		us := tx.Update(tblName).Where(rIDField+" = ?", rmap[rIDField])
@@ -148,12 +156,12 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 			// }
 			rec := utils.StructToMap(r, r.GetColumnBlackList())
 			j, _ := json.Marshal(rec["record"])
-			// logger.InfoFmt("value: %#v", string(j))
+			// logger.DebugFmt("value: %#v", string(j))
 			us = us.Set("record", string(j))
 		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
-		logger.InfoFmt("[UPDATE]: %s", buf.String())
+		logger.DebugFmt("[UPDATE]: %s\n[VALUES]: %#v", buf.String(), buf.Value())
 		res, err = us.Exec()
 		if err == nil {
 			updated = true
@@ -161,16 +169,22 @@ func Write(dsn string, r models.Record) (updated bool, err error) {
 	}
 	// Logging of the created insert command
 	if err != nil {
-		errorito := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+		switch r.GetEntityType() {
 		// TODO: remove this conditional for HH
-		if r.GetTablename() != models.TblHousehold {
-			return updated, errorito
+		case models.TypeHousehold:
+			errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+			return updated, errw
+		case models.TypeExpiredSet:
+			if !strings.Contains(err.Error(), "1062") && !strings.Contains(err.Error(), "PRIMARY") {
+				errw := logger.ErrFmt("[csql.Write.Exec] %#v", err)
+				return updated, errw
+			}
 		}
 		return true, nil
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
-	logger.InfoFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
+	logger.DebugFmt("[csql.Write] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
 		return updated, logger.ErrFmt("[csql.Write.Commit] %#v", err)
@@ -240,10 +254,10 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 								v = strings.Join(tmp, ",")
 								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
 							}
-							logger.InfoFmt("read param array: [%s] %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("read param array: [%s] %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
 							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
-							logger.InfoFmt("read param [%s] %#v - type: %T\n", pf.ParamNames[i], v, t)
+							logger.DebugFmt("read param [%s] %#v - type: %T\n", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
@@ -266,7 +280,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.InfoFmt("Query: %s", buf.String())
+	logger.DebugFmt("Query: %s", buf.String())
 	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList())
 }
 
@@ -323,10 +337,10 @@ func Delete(dsn string, r models.Record) error {
 								v = strings.Join(tmp, ",")
 								dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
 							}
-							logger.InfoFmt("delete param array [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("delete param array [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						default:
 							dbr.Expr(pf.ParsedCondition, v).Build(stmt.Dialect, buf)
-							logger.InfoFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
+							logger.DebugFmt("delete param [%s]: %#v - type: %T", pf.ParamNames[i], v, t)
 						}
 					} else {
 						v = nil
@@ -345,7 +359,7 @@ func Delete(dsn string, r models.Record) error {
 	}
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
-	logger.InfoFmt("[DELETE]: %s", buf.String())
+	logger.DebugFmt("[DELETE]: %s - %s", buf.String(), buf.Value())
 	res, err := stmt.Exec()
 	if err != nil {
 		tx.Rollback()
@@ -353,10 +367,80 @@ func Delete(dsn string, r models.Record) error {
 	}
 	ra, _ := res.RowsAffected()
 	lid, _ := res.LastInsertId()
-	logger.InfoFmt("[csql.Delete] rows affected: %d - last inserted id: %d", ra, lid)
+	logger.DebugFmt("[csql.Delete] rows affected: %d - last inserted id: %d", ra, lid)
 	err = tx.Commit()
 	if err != nil {
 		return logger.ErrFmt("[csql.Delete.Commit] %v#", err)
 	}
+	return nil
+}
+
+// SweepExpiredSets the interface from CSQL
+func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string) error {
+
+	sess, err := initDB(dsn, "SweepExpiredSets")
+	if err != nil {
+		return logger.Err(errUnableToConnect)
+	}
+	qest := models.TblnamePrefix + entityType + "_"
+	queryExpiredSetsTables := `SELECT DISTINCT REPLACE(table_name, '` + qest + `', '') FROM information_schema.tables WHERE table_name LIKE '` + qest + `%';`
+	entities := []string{}
+	sess.SelectBySql(queryExpiredSetsTables).Load(&entities)
+	for _, e := range entities {
+		bl := false
+		for _, b := range entityBlacklist {
+			if strings.Contains(e, b) {
+				bl = true
+				break
+			}
+		}
+		if bl {
+			continue
+		}
+		logger.DebugFmt("entity: %s", e)
+		setField := models.IDField
+		switch entityType {
+		case models.TypePeople:
+			setField = models.PeopleIDField
+		case models.TypeHousehold:
+			setField = models.HouseholdIDField
+		}
+		expiredSets := []string{}
+		tblExpiredSets := models.TblnamePrefix + models.TblExpiredSet + "_" + e
+		tblTarget := qest + e
+		tblExpiredSetsTicked := fmt.Sprintf(tblNameFormatTick, tblExpiredSets)
+		sess.Select(models.ExpiredSetIDField).From(tblExpiredSetsTicked).
+			Where("entity = ?", entityType).
+			Load(&expiredSets)
+		for _, id := range expiredSets {
+			tx, err := sess.Begin()
+			if err != nil {
+				return logger.Err(err)
+			}
+			res, err := tx.DeleteFrom(tblTarget).Where(setField+" = ?", id).Exec()
+			rat, _ := res.RowsAffected()
+			if err != nil {
+				logger.ErrFmt("[csql.SweepExpiredSets.DeleteFrom.tblTarget] %v#", err)
+				continue
+			}
+			if rat > 0 {
+				logger.DebugFmt("DELETED %s: [%s] FROM [%s]", setField, id, tblTarget)
+				res, err := tx.DeleteFrom(tblExpiredSets).Where("expiredId = ? AND entity = ?", id, entityType).Exec()
+				if err != nil {
+					logger.ErrFmt("[csql.SweepExpiredSets.DeleteFrom.tblExpiredSets] %v#", err)
+				}
+				ra, _ := res.RowsAffected()
+				if ra > 0 {
+					logger.DebugFmt("DELETED expiredId: [%s] FROM [%s]", id, tblExpiredSets)
+				}
+			}
+			err = tx.Commit()
+			if err != nil {
+				tx.RollbackUnlessCommitted()
+				return logger.ErrFmt("[csql.SweepExpiredSets.Commit] %v#", err)
+			}
+		}
+	}
+
 	return nil
 }

@@ -19,22 +19,6 @@ function toColumnName(num) {
   }
   var workBook = new Excel.Workbook();
   workBook = await workBook.xlsx.readFile(inputFilename);
-  var ACDSheet = workBook.addWorksheet("ACD");
-  ACDSheet.addRow([]);
-  var ACDHeaderColumns = [
-    { header: "Organization", key: "organization", width: 10 },
-    { header: "Owner", key: "Owner", width: 10 },
-    { header: "EventId", key: "EventId", width: 10 },
-    { header: "fileName", key: "fileName", width: 55 },
-    { header: "Records", key: "Records", width: 10 }
-  ];
-  var ACDHeaderIds = [
-    "Organization",
-    "Owner",
-    "EventId",
-    "fileName",
-    "Records"
-  ];
 
   let lastRCC = 0;
   let maxCol = 0;
@@ -197,47 +181,6 @@ function toColumnName(num) {
     }
     let sheetIndex = index + 1;
     //This will add the necesary columns
-    for (let index = 0; index < report.ColumnCount - lastRCC; index++) {
-      [
-        { header: "Name", id: "Name", width: 20 },
-        { header: "Mapped", id: "Mapped", width: 10 },
-        { header: "Min", id: "Min", width: 10 },
-        { header: "Max", id: "Max", width: 10 },
-        { header: "Sparsity", id: "Sparsity", width: 10 }
-      ].forEach(e => ACDHeaderColumns.push(e));
-
-      ["Name", "Mapped", "Min", "Max", "Sparsity"].forEach(e =>
-        ACDHeaderIds.push(e)
-      );
-    }
-    ACDSheet.getRow(2).values = ACDHeaderIds;
-    ACDSheet.columns = ACDHeaderColumns;
-
-    lastRCC = report.ColumnCount;
-    maxCol = report.ColumnCount > maxCol ? report.ColumnCount : maxCol;
-    let ACDRow = [
-      currentUL.schoolcode,
-      currentUL.owner,
-      report.RequestID,
-      currentUL.fileURL,
-      report.RowCount
-    ];
-    report.Columns.forEach(Column => {
-      mapped = "";
-      if (Column.Mapped) {
-        mapped = Column.Mapped.join();
-      }
-
-      [
-        Column.Name,
-        mapped,
-        Column.Min,
-        Column.Max,
-        (Column.Sparsity / report.RowCount) * 100
-      ].forEach(e => [ACDRow.push(e)]);
-    });
-    // here we add the acd row
-    ACDSheet.addRow(ACDRow);
 
     //Mergepush sheet
     let MergeRow = [
@@ -274,29 +217,7 @@ function toColumnName(num) {
   stream.write("\n]", () => {
     stream.end();
   });
-  // interesting empty mapped should be purple
-  // interesting https://docs.google.com/spreadsheets/d/1HsmSh-bWnlQc0S6PXaGsmN0oZvKIsQvORD6VGptcbJA/edit?folder=1bj5glGr_Il1kb6kVRyuRCthlvQDjuk3j#gid=0
-  const MapBlacklist = ["FINITIAL", "ADTYPE", "ADBOOK", "ZIP5"];
-  const whiteList = [
-    "ZIP,ZIP5",
-    "AD1,ADTYPE,ADBOOK",
-    "AD2,ADTYPE,ADBOOK",
-    "FNAME,FINITIAL",
-    "TITLE,STATUS"
-  ];
-  const commonMatch = {
-    LNAME: ["last name", "name last", "lastname", "last"]
-  };
-  ACDSheet.getRow(1).values = [];
-  //Set ACD merge columns logic
-  let columncounter = 1;
-  for (let index = 6; index < (maxCol + 1) * 5; index += 5) {
-    let fc = `${toColumnName(index)}1`;
-    let sc = `${toColumnName(index + 4)}1`;
-    ACDSheet.mergeCells(fc, sc);
-    ACDSheet.getCell(fc).value = `Set ${columncounter}`;
-    columncounter += 1;
-  }
+
   //Create hyperlinks
   MergeSheet.getColumn(2).eachCell(cell => {
     if (cell.value === null || !cell.value.startsWith("http")) {
@@ -308,80 +229,7 @@ function toColumnName(num) {
       tooltip: cell.value
     };
   });
-  ACDSheet.getColumn(4).eachCell(cell => {
-    if (cell.value === null || !cell.value.startsWith("http")) {
-      return;
-    }
-    cell.value = {
-      text: cell.value,
-      hyperlink: cell.value,
-      tooltip: cell.value
-    };
-  });
-  // Mapped checks
-  for (let index = 7; index < (maxCol + 2) * 5; index += 5) {
-    ACDSheet.getColumn(index).eachCell(cell => {
-      if (cell.value === "Mapped" || cell.value == null || cell.row === 1) {
-        cell.fill = undefined;
-        return;
-      }
-      const inWhiteList = whiteList.indexOf(cell.value) > -1;
-      // Make it white if its on the whitelist list.
-      if (inWhiteList) {
-        cell.fill = undefined;
-        return;
-      }
-      //Paint the cell red if mapped has more than one element ignoring the blacklist
-      mapped = cell.value.split(",").filter(function(el) {
-        return MapBlacklist.indexOf(el) < 0;
-      });
-      if (mapped.length > 1) {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF0000" }
-        };
-        return;
-      }
-      // Paint the cell pink if name is in the mapped column and not in the PinkBlacklist
-      const name = cell._row.getCell(cell.col - 1).value;
-      // Check if name is in the cell
-      const NameMappedmatches = cell.value.match(new RegExp(name, "g"));
-      const MappedNamematches = name.match(new RegExp(cell.value, "g"));
-      // If the name is not in the cell paint it yellow
-      if (commonMatch[cell.value]) {
-        const allowed = commonMatch[cell.value].indexOf(name.toLowerCase());
-        if (allowed > -1) {
-          return;
-        }
-      }
-      if (NameMappedmatches === null && MappedNamematches === null) {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FFFF99" }
-        };
-        return;
-      }
-    });
-  }
 
-  //Sparcity check
-  for (let index = 10; index < (maxCol + 2) * 5; index += 5) {
-    ACDSheet.getColumn(index).eachCell(cell => {
-      if (cell.value === "Sparsity" || cell.value == null || cell.row === 1) {
-        return;
-      }
-      const curSparsity = cell.value;
-      if (curSparsity < 70) {
-        cell.fill = {
-          type: "pattern",
-          pattern: "solid",
-          fgColor: { argb: "FF9999" }
-        };
-      }
-    });
-  }
   worksheet.columns.forEach(c => (c.hidden = false));
   worksheet.getRow(1).hidden = false;
   const xlsFileName = "../_output/report.xlsx";

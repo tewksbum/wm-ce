@@ -22,6 +22,12 @@ const (
 		INDEX(peopleId),
 		INDEX(householdId),
 		PRIMARY KEY (signature));`
+	tblExpiredSetsCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
+		expiredId VARCHAR(128) NOT NULL,
+		entity VARCHAR(32) NOT NULL,
+		INDEX(expiredId),
+		INDEX(entity),
+		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
 		signatures JSON NULL,
@@ -129,8 +135,8 @@ func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or w
 		}
 		or.List = appendList(rows, totalrows, entityType, blacklist)
 	}
-	logger.InfoFmt("Total returned rows: %#v", totalrows)
-	// logger.InfoFmt("Rows: %#v", or.List)
+	logger.DebugFmt("Total returned rows: %#v", totalrows)
+	// logger.DebugFmt("Rows: %#v", or.List)
 	if err != nil {
 		return or, logger.ErrFmt("[csql.loadRows]: %q", err)
 	}
@@ -148,6 +154,8 @@ func appendList(rows interface{}, totalrows int, entityType string, blacklist []
 
 func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFields bool) string {
 	switch entityType {
+	case models.TypeExpiredSet:
+		return fmt.Sprintf(tblExpiredSetsCreateStmt, tblName)
 	case models.TypeDecode:
 		return fmt.Sprintf(tblDecodeCreateStmt, tblName)
 	case models.TypePeople:
@@ -184,12 +192,11 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			phones               JSON AS (record->'$.phones')        STORED,
 		`
 		key := "INDEX(peopleId),"
-		if !ignoreUniqueFields {
-			key = "UNIQUE KEY(peopleId),"
-		}
+		// if !ignoreUniqueFields {
+		// 	key = "UNIQUE KEY(peopleId),"
+		// }
 		idxs := fmt.Sprintf(`,
 			%s
-			UNIQUE KEY(peopleId),
 			INDEX(firstName),
 			INDEX(lastName),
 			INDEX(gender),

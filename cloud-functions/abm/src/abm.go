@@ -212,10 +212,11 @@ type Request360 struct {
 	ID          string           `json:"id"`
 	Signature   Signature        `json:"signature"`
 	Signatures  []Signature      `json:"signatures"`
+	CreatedAt   time.Time        `json:"createdAt"`
 	Fibers      []string         `json:"fibers"`
+	ExpiredSets []string         `json:"expiredSets"`
 	Passthrough []Passthrough360 `json:"passthrough"`
 	MatchKeys   []MatchKey360    `json:"matchKeys"`
-	CreatedAt   time.Time        `json:"createdAt"`
 	TimeStamp   time.Time        `json:"timestamp"`
 }
 
@@ -225,6 +226,7 @@ type OutputHeader struct {
 	EntityType  string           `json:"entityType"`
 	OwnerID     int64            `json:"ownerId"`
 	Passthrough []Passthrough360 `json:"passthrough"`
+	ExpiredSets []string         `json:"expiredSets"`
 }
 
 // Common allows us to merge structs with similar fields, these fields
@@ -325,6 +327,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 
 	outputHeader.EntityType = inputType
 	outputHeader.Passthrough = request360.Passthrough
+	outputHeader.ExpiredSets = request360.ExpiredSets
 	var common Common
 	output := Output{
 		outputHeader,

@@ -340,6 +340,7 @@ var AddressParserPath = os.Getenv("ADDRESSPATH")
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
 var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
 var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -350,11 +351,14 @@ var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|I
 var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
+var reFullName2 = regexp.MustCompile(`^(.*), (.*) (.{1})\.$`) // Wilson, Lauren K.
+var reFullName3 = regexp.MustCompile(`^(.*), (.*)$`)          // Wilson, Lauren K.
 var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|miss|mrs\.|Mr\.|Ms\.|Mrs\.|MR|MRS|MS)$`)
 
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
 
 var redisTransientExpiration = 3600 * 24
+var redisTemporaryExpiration = 3600
 
 // var StateList = map[string]string{
 // 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
@@ -384,6 +388,7 @@ var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var martopic *pubsub.Topic
 var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
@@ -394,6 +399,8 @@ func init() {
 	ctx := context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	martopic = ps.Topic(PubSubTopic)
+	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sb, _ := storage.NewClient(ctx)
 	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
@@ -499,8 +506,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		var parsedName NameParsed
+		// this might be a full name, try to parse it and see if we have first and last names
+		// || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
 		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
-			// this might be a full name, try to parse it and see if we have first and last names
 			parsedName = ParseName(column.Value)
 			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 && column.PeopleERR.Address == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.ContainsAddress == 0 && column.PeopleERR.City == 0 && column.PeopleERR.ContainsCity == 0 {
 				column.MatchKey1 = "FULLNAME"
@@ -587,15 +595,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "AD3"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 {
-				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0"))
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
 				column.MatchKey1 = "STATE"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0"))
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 {
+				column.MatchKey1 = "CITY"
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0"))
 			} else if column.PeopleVER.IS_COUNTRY {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
@@ -616,12 +624,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		if reMilityBaseCity(column.Value) {
 			column.MatchKey1 = "CITY"
-			LogDev(fmt.Sprintf("overriding city by military base: &v", column.Value))
+			LogDev(fmt.Sprintf("overriding city by military base: %v", column.Value))
 		}
 
 		if reOverseasBaseState.MatchString(column.Value) {
 			column.MatchKey1 = "STATE"
-			LogDev(fmt.Sprintf("overriding state by USPS base designation: &v", column.Value))
+			LogDev(fmt.Sprintf("overriding state by USPS base designation: %v", column.Value))
 		}
 
 		// fix zip code that has leading 0 stripped out
@@ -639,9 +647,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// AD type
 		if column.MatchKey1 == "AD1" || column.MatchKey == "AD1" {
-			column.Type = AssignAddressType(&column)
-			column.MatchKey2 = "ADTYPE"
-			column.MatchKey3 = "ADBOOK"
+			if column.Value == "true" || column.Value == "false" || column.Value == "0001-01-01T00:00:00+00:00" || column.Value == "0.000000" {
+				column.MatchKey = ""
+				column.MatchKey1 = ""
+				column.MatchKey2 = ""
+				column.MatchKey3 = ""
+			} else {
+				column.Type = AssignAddressType(&column)
+				column.MatchKey2 = "ADTYPE"
+				column.MatchKey3 = "ADBOOK"
+			}
 		}
 
 		// clear MatchKey if Junk
@@ -866,13 +881,72 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// scan Ad1, Ad2, Ad3, Ad4... to see if we can find a country code...
 		}
 
-		v.Output.ADVALID.Value = "FALSE"
-		v.Output.ADCORRECT.Value = "FALSE"
 		// IF we believe it to NOT be an international address...
 		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
+			v.Output.ADVALID.Value = "FALSE"
+			v.Output.ADCORRECT.Value = "FALSE"
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+		}
+
+		if v.Output.ADBOOK.Value == "" {
+			v.Output.ADBOOK.Value = "Bill"
+		}
+
+		// SetMkField(&(currentOutput.Output), "ADBOOK", AssignAddressBook(&column), column.Name)
+
+		if len(v.Output.FNAME.Value) > 0 {
+			v.Output.FINITIAL = MatchKeyField{
+				Value: v.Output.FNAME.Value[0:1],
+			}
+		}
+
+		MatchByValue1 := strings.Replace(v.Output.TRUSTEDID.Value, "'", `''`, -1)
+		MatchByValue2 := strings.Replace(v.Output.EMAIL.Value, "'", `''`, -1)
+		MatchByValue3A := strings.Replace(v.Output.PHONE.Value, "'", `''`, -1)
+		MatchByValue3B := strings.Replace(v.Output.FINITIAL.Value, "'", `''`, -1)
+		MatchByValue5A := strings.Replace(v.Output.CITY.Value, "'", `''`, -1)
+		MatchByValue5B := strings.Replace(v.Output.STATE.Value, "'", `''`, -1)
+		MatchByValue5C := strings.Replace(v.Output.LNAME.Value, "'", `''`, -1)
+		MatchByValue5D := strings.Replace(v.Output.FNAME.Value, "'", `''`, -1)
+		MatchByValue5E := strings.Replace(v.Output.AD1.Value, "'", `''`, -1)
+		// MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
+
+		redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
+		SetRedisTempKey(append(redisMatchValue0, "retry"))
+		// SetRedisTempKey(redisMatchValue0)
+
+		if len(MatchByValue1) > 0 {
+			redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
+			SetRedisTempKey(append(redisMatchValue1, "retry"))
+			// SetRedisTempKey(redisMatchValue1)
+		}
+		if len(MatchByValue2) > 0 {
+			redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
+			SetRedisTempKey(append(redisMatchValue2, "retry"))
+			// SetRedisTempKey(redisMatchValue2)
+		}
+		if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
+			redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
+			SetRedisTempKey(append(redisMatchValue3, "retry"))
+			// SetRedisTempKey(redisMatchValue3)
+		}
+		if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
+			redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
+			SetRedisTempKey(append(redisMatchValue5, "retry"))
+			// SetRedisTempKey(redisMatchValue5)
+		}
+
+		allMatchKeys := []string{input.Signature.EventID, "dupe"}
+		for _, f := range structs.Names(&PeopleOutput{}) {
+			allMatchKeys = append(allMatchKeys, strings.ToUpper(GetMkField(&(v.Output), f).Value))
+		}
+		if GetRedisIntValue(allMatchKeys) > 0 {
+			LogDev(fmt.Sprintf("Detected Dupe value %v", allMatchKeys))
+			v.Type = "dupe"
+		} else {
+			SetRedisTempKey(allMatchKeys)
 		}
 
 		pubQueue = append(pubQueue, PubQueue{
@@ -882,9 +956,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
-	for _, p := range pubQueue {
-		PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
-	}
+	PubAll(ctx, &input, pubQueue)
+	// for _, p := range pubQueue {
+	// 	PubRecord(ctx, &input, p.Output, p.Suffix, p.Type)
+	// }
 	return nil
 }
 
@@ -1407,32 +1482,7 @@ func ParseAddress(address string) LibPostalParsed {
 	return result
 }
 
-// err.AddressTypeBusiness = 0 // TODO: add logic to detect business address
-// if err.Address1 == 1 || err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 {
-// 	// default to home address
-// 	err.AddressBookBill = 1
-// 	if strings.Contains(key, "consignment") {
-// 		err.AddressBookShip = 1
-// 	} else if strings.Contains(key, "order") {
-// 		err.AddressBookBill = 1
-// 	} else if strings.Contains(key, "emergency") || strings.Contains(key, "permanent") || strings.Contains(key, "home") {
-// 		err.AddressTypeResidence = 1
-// 		err.AddressBookBill = 1
-// 	} else if err.Dorm == 1 {
-// 		err.AddressTypeCampus = 1
-// 	}
-// }
-
 func AssignAddressType(column *InputColumn) string {
-	if column.PeopleERR.AddressBookBill == 1 {
-		return "Bill"
-	} else if column.PeopleERR.AddressBookShip == 1 {
-		return "Ship"
-	}
-	return ""
-}
-
-func AssignAddressBook(column *InputColumn) string {
 	if column.PeopleERR.AddressTypeBusiness == 1 {
 		return "Business"
 	} else if column.PeopleERR.AddressTypeCampus == 1 {
@@ -1441,6 +1491,15 @@ func AssignAddressBook(column *InputColumn) string {
 		return "Residence"
 	}
 	return ""
+}
+
+func AssignAddressBook(column *InputColumn) string {
+	if column.PeopleERR.AddressBookBill == 1 {
+		return "Bill"
+	} else if column.PeopleERR.AddressBookShip == 1 {
+		return "Ship"
+	}
+	return "Bill"
 }
 
 func ExtractMPRCounter(columnName string) int {
@@ -1457,18 +1516,21 @@ func ExtractMPRCounter(columnName string) int {
 	return 0
 }
 
-func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
-	var output Output
-	output.Signature = input.Signature
-	output.Signature.FiberType = recordType
-	if len(suffix) > 0 {
-		output.Signature.RecordID += suffix
+func PubAll(ctx context.Context, input *Input, queue []PubQueue) {
+	var outputs []Output
+	for _, p := range queue {
+		var output Output
+		output.Signature = input.Signature
+		output.Signature.FiberType = p.Type
+		if len(p.Suffix) > 0 {
+			output.Signature.RecordID += p.Suffix
+		}
+		output.Passthrough = input.Passthrough
+		output.MatchKeys = p.Output
+
+		outputs = append(outputs, output)
 	}
-	output.Passthrough = input.Passthrough
-
-	output.MatchKeys = mkOutput
-
-	outputJSON, _ := json.Marshal(output)
+	outputJSON, _ := json.Marshal(outputs)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
 		Attributes: map[string]string{
@@ -1483,6 +1545,52 @@ func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix 
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 	}
+}
+
+func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
+	var output Output
+	output.Signature = input.Signature
+	output.Signature.FiberType = recordType
+	if len(suffix) > 0 {
+		output.Signature.RecordID += suffix
+	}
+	output.Passthrough = input.Passthrough
+
+	output.MatchKeys = mkOutput
+
+	outputJSON, _ := json.Marshal(output)
+	if recordType == "mar" {
+		psresult := martopic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+			Attributes: map[string]string{
+				"type":   "people",
+				"source": "post",
+			},
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		}
+	} else {
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+			Attributes: map[string]string{
+				"type":   "people",
+				"source": "post",
+			},
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		}
+	}
+
 }
 
 func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
@@ -1501,18 +1609,23 @@ func CalcClassYear(cy string) string {
 		if err == nil {
 			return strconv.Itoa(2000 + twodigityear + 4)
 		}
+	} else if reGraduationYear2.MatchString(cy) { // given us a 2 year like "20"
+		twodigityear, err := strconv.Atoi(cy)
+		if err == nil {
+			return strconv.Itoa(2000 + twodigityear)
+		}
 	}
 
 	switch strings.ToLower(cy) {
-	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident":
+	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident", "1st year":
 		return strconv.Itoa(TitleYear + 4)
-	case "sophomore", "soph", "so", "sophomore/transfer":
+	case "sophomore", "soph", "so", "sophomore/transfer", "2nd year":
 		return strconv.Itoa(TitleYear + 3)
-	case "junior", "jr", "junior/senior":
+	case "junior", "jr", "junior/senior", "3rd year":
 		return strconv.Itoa(TitleYear + 2)
-	case "senior", "sr":
+	case "senior", "sr", "4th year":
 		return strconv.Itoa(TitleYear + 1)
-	case "graduate", "undergraduate over 23 (archive)":
+	case "graduate", "undergraduate over 23 (archive)", "gr":
 		return strconv.Itoa(TitleYear - 1)
 	case "allfresh":
 		return strconv.Itoa(TitleYear + 4)
@@ -1545,9 +1658,21 @@ func ParseName(v string) NameParsed {
 		lname := result[2]
 		suffix := result[3]
 
-		if strings.HasSuffix(fname, ",") {
-			fname = result[2]
-			lname = strings.TrimSuffix(result[1], ",")
+		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") {
+			parsed1 := reFullName2.FindStringSubmatch(v)
+			if len(parsed1) >= 3 {
+				lname = parsed1[1]
+				fname = parsed1[2]
+				suffix = ""
+
+			} else {
+				parsed2 := reFullName3.FindStringSubmatch(v)
+				if len(parsed2) >= 2 {
+					lname = parsed2[1]
+					fname = parsed2[2]
+					suffix = ""
+				}
+			}
 		}
 		return NameParsed{
 			FNAME:  fname,
@@ -1611,6 +1736,36 @@ func SetRedisValueWithExpiration(keyparts []string, value int) {
 	}
 }
 
+func SetRedisTempKey(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, 1)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisKeyIfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisKeyTo0IfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 0)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 0, err)
+	}
+}
+
 func IncrRedisValue(keyparts []string) { // no need to update expiration
 	ms := msp.Get()
 	defer ms.Close()
@@ -1630,7 +1785,7 @@ func GetRedisIntValue(keyparts []string) int {
 	defer ms.Close()
 	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
 	return value
 }
@@ -1644,7 +1799,7 @@ func GetRedisIntValues(keys [][]string) []int {
 		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
 	}
 
-	values, err := redis.Ints(ms.Do("MGET", formattedKeys))
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys[0], formattedKeys[1], formattedKeys[2], formattedKeys[3], formattedKeys[4]))
 	if err != nil {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}

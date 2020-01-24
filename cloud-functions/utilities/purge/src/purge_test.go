@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// export GOOGLE_APPLICATION_CREDENTIALS="/Users/mtewksbury/tewks-wemade.json"
+
 // TestProcessRequest run purge locally
 // complete go.testEnvVars in vscode settings before running
 // "go.testEnvVars": {
@@ -40,30 +42,7 @@ func TestProcessRequestALL(t *testing.T) {
 	fmt.Println(got)
 }
 
-func TestProcessRequest2(t *testing.T) {
-	json := `
-	{
-		"clientID": "wemade",
-		"clientSecret": "cool_works",
-		"targetType": "datastore",
-		"targetLevel": "kind",
-		"operation": "delete",
-		"targetSelection": "[default]",
-		"targetSubSelection": ""
-	}`
-
-	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
-	req.Header.Add("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	ProcessRequest(rr, req)
-
-	got := rr.Body.String()
-
-	fmt.Println(got)
-}
-
-func TestProcessRequest3(t *testing.T) {
+func TestProcessRequestFEP18(t *testing.T) {
 	json := []string{
 		`
 		{
@@ -72,7 +51,7 @@ func TestProcessRequest3(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "[default]",
+			"targetSelection": "dev-uci-rha",
 			"targetSubSelection": ""
 		}`,
 		`
@@ -80,9 +59,269 @@ func TestProcessRequest3(t *testing.T) {
 			"clientID": "wemade",
 			"clientSecret": "cool_works",
 			"targetType": "datastore",
-			"targetLevel": "namespace",
+			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "",
+			"targetSelection": "dev-ucl-ochc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ucr-saa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uga-aa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unc-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unl-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uor-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-utk-urhc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wmd-apo",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-cob-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-bal-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-css-hre",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uci-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-amu-fheg",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ucl-ochc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-cmi-ar",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-css-hre",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ucr-saa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uga-aa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unc-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-unl-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-uor-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-utk-urhc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wmd-apo",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-wos-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-tln-hrl",
 			"targetSubSelection": ""
 		}`,
 	}
@@ -99,7 +338,7 @@ func TestProcessRequest3(t *testing.T) {
 	}
 }
 
-func TestProcessRequest4(t *testing.T) {
+func TestProcessRequestB3(t *testing.T) {
 	json := []string{
 		`
 		{
@@ -108,7 +347,7 @@ func TestProcessRequest4(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade.profiler",
+			"targetSelection": "dev-cco-rha",
 			"targetSubSelection": ""
 		}`,
 		`
@@ -118,7 +357,7 @@ func TestProcessRequest4(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade.streamer",
+			"targetSelection": "dev-bru-dar",
 			"targetSubSelection": ""
 		}`,
 		`
@@ -128,7 +367,7 @@ func TestProcessRequest4(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade.dev.5648883367542784",
+			"targetSelection": "dev-gat-aa",
 			"targetSubSelection": ""
 		}`,
 		`
@@ -138,25 +377,9 @@ func TestProcessRequest4(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade.streamer-api.dev",
+			"targetSelection": "dev-gmu-aa",
 			"targetSubSelection": ""
 		}`,
-	}
-	for _, j := range json {
-		req := httptest.NewRequest("POST", "/", strings.NewReader(j))
-		req.Header.Add("Content-Type", "application/json")
-
-		rr := httptest.NewRecorder()
-		ProcessRequest(rr, req)
-
-		got := rr.Body.String()
-
-		fmt.Println(got)
-	}
-}
-
-func TestProcessRequest5(t *testing.T) {
-	json := []string{
 		`
 		{
 			"clientID": "wemade",
@@ -164,8 +387,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "2-Testing"
+			"targetSelection": "dev-hbt-aa",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -174,8 +397,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Admission"
+			"targetSelection": "dev-jsu-ar",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -184,8 +407,8 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Test"
+			"targetSelection": "dev-mar-hrl",
+			"targetSubSelection": ""
 		}`,
 		`
 		{
@@ -194,8 +417,68 @@ func TestProcessRequest5(t *testing.T) {
 			"targetType": "datastore",
 			"targetLevel": "kind",
 			"operation": "delete",
-			"targetSelection": "wemade-dev",
-			"targetSubSelection": "5648073946562560-Testing"
+			"targetSelection": "dev-mia-mmgc",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-mth-cki",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-oku-rha",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-rad-amb",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-sfa-nrhh",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-ttu-aa",
+			"targetSubSelection": ""
+		}`,
+		`
+		{
+			"clientID": "wemade",
+			"clientSecret": "cool_works",
+			"targetType": "datastore",
+			"targetLevel": "kind",
+			"operation": "delete",
+			"targetSelection": "dev-usi-pfa",
+			"targetSubSelection": ""
 		}`,
 	}
 	for _, j := range json {
@@ -219,9 +502,11 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-aub-ab",
+		"targetSelection": "dev-acv-cv",
 		"targetSubSelection": ""
 	}`
+	// "targetSelection": "dev-wmd-apo",
+	// "targetSelection": "dev-wos-rha",
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
 	req.Header.Add("Content-Type", "application/json")
@@ -241,9 +526,9 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"clientSecret": "cool_works",
 		"targetType": "datastore",
 		"targetLevel": "kind",
-		"operation": "delete",
-		"targetSelection": "dev-ark-rl",
-		"targetSubSelection": ""
+		"operation": "count",
+		"targetSelection": "dev-acv-cv",
+		"targetSubSelection": "people-fiber"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
@@ -803,4 +1088,91 @@ func TestProcessRequestC(t *testing.T) {
 
 		fmt.Println(got)
 	}
+}
+
+func TestPurgeList(t *testing.T) {
+	list := `
+	bfc-hou
+cco-rha
+cct-bn
+cen-afe
+chl-rl
+chs-bn
+cly-hrl
+css-hre
+cup-ic
+eiu-nrhh
+emi-rha
+eok-bk
+fau-hre
+fch-asbt
+fls-bn
+gsw-rha
+hbt-aa
+hnu-hrl
+hsn-fheg
+ion-rl
+jau-rha
+jhu-bn
+ksc-bn
+lhi-bn
+mns-rl
+nji-rha
+ohu-aa
+sbu-ad
+sos-rh
+sve-rha
+syg-irc
+tcu-hrl
+tmp-bn
+	`
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "dev-@sponsor@",
+		"targetSubSelection": ""
+	}`
+	lines := strings.Split(list, "\n")
+	for _, line := range lines {
+		sponsor := strings.TrimSpace(line)
+		if len(sponsor) > 0 {
+			sponsorJson := strings.ReplaceAll(json, "@sponsor@", sponsor)
+			req := httptest.NewRequest("POST", "/", strings.NewReader(sponsorJson))
+			req.Header.Add("Content-Type", "application/json")
+			rr := httptest.NewRecorder()
+			ProcessRequest(rr, req)
+			got := rr.Body.String()
+			fmt.Println(got)
+		}
+	}
+}
+
+func PlayingWSubTarget(t *testing.T) {
+	json := `
+	{
+		"clientID": "wemade",
+		"clientSecret": "cool_works",
+		"targetType": "datastore",
+		"targetLevel": "kind",
+		"operation": "delete",
+		"targetSelection": "dev-tln-hrl",
+		"targetSubSelection": "people-set",
+		"targetSubSelection": "people-golden"
+	}`
+	// "targetSelection": "dev-wmd-apo",
+	// "targetSelection": "dev-wos-rha",
+
+	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+	req.Header.Add("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	ProcessRequest(rr, req)
+
+	got := rr.Body.String()
+
+	fmt.Println(got)
 }

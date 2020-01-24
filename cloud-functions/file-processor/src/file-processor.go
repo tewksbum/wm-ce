@@ -1,5 +1,7 @@
 package fileprocessor
 
+// yuck... 
+
 import (
 	"bytes"
 	"context"
@@ -94,6 +96,7 @@ type NERentry map[string]interface{}
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
@@ -103,6 +106,7 @@ var NERApi = os.Getenv("NERAPI")
 var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
+var reStartsWithOrdinalNumber = regexp.MustCompile(`^(?i)(1st|2nd|3rd)`)
 
 var redisTransientExpiration = 3600 * 24
 
@@ -119,6 +123,7 @@ func init() {
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	// topic.PublishSettings.DelayThreshold = 200 * time.Millisecond
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	// status.PublishSettings.DelayThreshold = 5 * time.Minute
 	msp = &redis.Pool{
@@ -239,8 +244,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					psresult := status.Publish(ctx, &pubsub.Message{
 						Data: statusJSON,
 					})
-					_, err = psresult.Get(ctx)
-					if err != nil {
+					_, pserr := psresult.Get(ctx)
+					if pserr != nil {
 						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 					}
 
@@ -250,11 +255,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				origSheet, wcSheet, cpSheet := -1, -1, -1
 				for i, sheet := range xlsxFile.Sheets {
 					switch strings.ToLower(sheet.Name) {
-					case "original":
+					case "original", "page1", "sheet1":
 						origSheet = i
 					case "wc", "working copy", "workingcopy", "working":
 						wcSheet = i
-					case "cp", "upload", "cp upload":
+					case "cp", "upload", "cp upload", "dm_list":
 						cpSheet = i
 					}
 				}
@@ -273,7 +278,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("processing first sheet")
 					allrows = sheetData[0]
 				}
-				allrows = sheetData[0]
+				// allrows = sheetData[0]
 			} else {
 				// open a csv reader
 				fileReader := bytes.NewReader(fileBytes)
@@ -328,7 +333,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headerlessTest2 := false
 			headerlessTest1 := false
 			for _, h := range headers {
-				if len(h) > 0 && reStartsWithNumber.MatchString(h) {
+				if len(h) > 0 && reStartsWithNumber.MatchString(h) && !reStartsWithOrdinalNumber.MatchString(h) {
+					log.Printf("The header column starts with a number: ", h)
 					headerlessTest2 = true
 					break
 				}
@@ -351,9 +357,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			for i, h := range headers {
 				if len(h) > 0 {
-					for _, r := range records {
+					for y, r := range records {
 						if len(r) > i && h == r[i] {
+							// trying to spit out specific thing that was an issue...
 							headerlessTest1 = true
+							log.Printf("%v file has a repeated value row column value: %v %v %v", input.Signature.EventID, y, i, r[i])
 							break
 						}
 					}

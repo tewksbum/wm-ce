@@ -10,6 +10,7 @@ const (
 // Table and type names
 var (
 	TypeDecode           = "decode"
+	TypeExpiredSet       = "expiredsets"
 	TypeEvent            = "event"
 	TypeOrderHeader      = "order"
 	TypeOrderDetail      = "orderdetail"
@@ -19,6 +20,7 @@ var (
 	TypePeople           = "people"
 	TypeCampaign         = "campaigns"
 	TblDecode            = "decode"
+	TblExpiredSet        = "expiredsets"
 	TblnamePrefix        = "seg_"
 	TblEvent             = "events"
 	TblOrderHeader       = "orders"
@@ -36,12 +38,18 @@ var (
 
 // Default variables
 var (
+	PeopleIDField           = "peopleId"
+	HouseholdIDField        = "householdId"
 	IDField                 = "id"
 	DefaultSelectColumnList = []string{"record"}
 	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}
 	DecodeIDField           = "signature"
 	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
-	DecodeBlackList         = []string{"source", "passthrough", "attributes",
+	DecodeBlackList         = []string{"source", "passthrough", "attributes", "expiredSets",
+		"ownerId", "owner", "entityType", "timestamp", "signatures"}
+	ExpiredSetIDField    = "expiredId"
+	ExpiredSetColumnList = []string{"expiredId", "entity"}
+	ExpiredSetBlackList  = []string{"source", "passthrough", "attributes", "expiredSets",
 		"ownerId", "owner", "entityType", "timestamp", "signatures"}
 )
 

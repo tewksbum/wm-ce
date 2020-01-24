@@ -15,6 +15,19 @@ var (
 	ErrStatusNoContent      = "Method [%s] is not allowed"
 )
 
+// PubSubMessage is the payload of a Pub/Sub event.
+type PubSubMessage struct {
+	Data       []byte            `json:"data"`
+	Attributes map[string]string `json:"attributes"`
+}
+
+// SweeperInput input for the Sweeper Segment API
+type SweeperInput struct {
+	AccessKey       string   `json:"accessKey"`
+	EntityType      string   `json:"entityType"`
+	EntityBlacklist []string `json:"entityBlacklist"`
+}
+
 // APIInput input for the Segment API
 type APIInput struct {
 	OwnerID      int64                   `json:"ownerId"`
@@ -24,10 +37,12 @@ type APIInput struct {
 	Owner        string                  `json:"owner"`
 	Organization string                  `json:"organization,omitifempty"`
 	Signatures   []string                `json:"signatures,omitifempty"`
+	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
 	Passthrough  []models.Passthrough360 `json:"passthrough"`
 	Attributes   map[string]string       `json:"attributes"`
 	Filters      []models.QueryFilter    `json:"filters"`
 	Columns      []string                `json:"columns"`
+	WriteToOwner bool                    `json:"writeToOwner"`
 	// Passthrough  map[string]string    `json:"passthrough"`
 	// InputData    interface{}          `json:"inputData"`
 }

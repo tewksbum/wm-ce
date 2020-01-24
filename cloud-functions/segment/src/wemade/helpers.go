@@ -31,6 +31,17 @@ func BuildInputFromData(data []byte) (APIInput, error) {
 	return input, nil
 }
 
+// BuildSweeperInputFromData serializes the json into the SweeperInput struct and returns
+func BuildSweeperInputFromData(data []byte) (SweeperInput, error) {
+	var input SweeperInput
+
+	err := json.Unmarshal(data, &input)
+	if err != nil {
+		return input, logger.ErrFmt(ErrDecodingRequest, err)
+	}
+	return input, nil
+}
+
 // BuildRecordFromInput serialize a json into a Request struct, checks the API key and
 func BuildRecordFromInput(projectID string, namespace string, data []byte, useFixedAccessKey bool) (models.Record, error) {
 	ctx := context.Background()
@@ -39,18 +50,21 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 	if err != nil {
 		return nil, err
 	}
+	writeToOwner := input.WriteToOwner
 	ignoreUniqueFields := false
 	accessKey := input.AccessKey
-	logger.InfoFmt("RawInputJSON: %s", string(data))
+	logger.DebugFmt("RawInputJSON: %s", string(data))
 
 	if tempfixFixedAccesskey != "" && useFixedAccessKey {
 		// When using fixed access key also will ignore unique index
-		logger.InfoFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
+		logger.DebugFmt("Store for FixedAccessKey: %s", tempfixFixedAccesskey)
 		accessKey = tempfixFixedAccesskey
 		ignoreUniqueFields = true
 	}
 
+	logger.DebugFmt("Start Validating Customer: %s - %s -%s", projectID, namespace, accessKey)
 	cust, err := validateCustomer(ctx, projectID, namespace, accessKey)
+	logger.DebugFmt("Finished Validating Customer: %s - %s -%s", projectID, namespace, accessKey)
 	if err != nil {
 		return nil, err
 	}
@@ -81,12 +95,14 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Passthrough:      input.Passthrough,
 		Attributes:       utils.FlattenMap(input.Attributes),
 		Timestamp:        time.Now(),
+		AccessKey:        accessKey,
+		WriteToOwner: writeToOwner,
 	}
 
 	// idata, _ := json.Marshal(input)
 	// brdata, _ := json.Marshal(br)
-	// logger.InfoFmt("APIInput: %s", string(idata))
-	// logger.InfoFmt("BaseRecord: %s", string(brdata))
+	// logger.DebugFmt("APIInput: %s", string(idata))
+	// logger.DebugFmt("BaseRecord: %s", string(brdata))
 
 	entityType := strings.ToLower(input.EntityType)
 
@@ -164,9 +180,10 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		record.Organization = organization
 		json.Unmarshal(data, &record)
 		return &models.PeopleRecord{
-			BaseRecord: br,
-			Signatures: input.Signatures,
-			Record:     record,
+			BaseRecord:  br,
+			Signatures:  input.Signatures,
+			ExpiredSets: input.ExpiredSets,
+			Record:      record,
 		}, nil
 	case models.TypeOrderHeader:
 		br.DBopts = models.Options{

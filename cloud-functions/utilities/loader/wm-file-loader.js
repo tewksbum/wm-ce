@@ -9,7 +9,9 @@ const { getOwners } = require("./utils");
 const today = new Date();
 const streamerURL =
   "https://us-central1-wemade-core.cloudfunctions.net/wm-dev-file-api";
-const logFile = `./logs/xsubmitter-log-${today.toISOString()}.json`;
+const logFile = `./logs/xsubmitter-log-${today
+  .toISOString()
+  .replace(":", "")}.json`;
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
@@ -54,9 +56,9 @@ var skippedSchoolCodes = [];
   while (seq < 16) {
     console.log(`checking for sequence: `, seq);
     while (index <= lfiles) {
-      console.log(`current row seq: `, worksheet.getRow(index).values[10]);
+      // console.log(`current row seq: `, worksheet.getRow(index).values[10]);
       if (seq == worksheet.getRow(index).values[10]) {
-        console.log(`processing file...`);
+        // console.log(`processing file...`);
         await sendRequest(worksheet.getRow(index));
         wroteFlag = true;
       }
@@ -66,7 +68,7 @@ var skippedSchoolCodes = [];
       console.log(`waiting for files to process`);
       await nap(15000);
     }
-    console.log(`reset wait`);
+    // console.log(`reset wait`);
     wroteFlag = false;
     index = 2;
     seq++;
@@ -88,13 +90,22 @@ async function sendRequest(row) {
   const source = row.getCell(1).value;
   console.log(`${source}/${file}`);
   console.log("Processing " + file);
-  const programName = file.substring(0, 3);
+  var programName = "";
+  // if (file.search("-") > 0) {
+  //   programName = file.substring(0, (file.search("-")-1));
+  // }
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
   console.log(schoolName);
   var titleYear = row.values[12];
+  if (typeof titleYear == "undefined") {
+    titleYear = "";
+  }
   var classYear = row.values[11];
+  if (typeof classYear == "undefined") {
+    classYear = "";
+  }
   if (schoolName === undefined) {
     let error = `Couldn't find <${schoolcode}> in schoolCodes`;
     console.log(error);

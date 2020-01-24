@@ -1,4 +1,3 @@
-#!/usr/bin/node
 const fs = require("fs");
 const { Storage } = require("@google-cloud/storage");
 const Excel = require("exceljs");
@@ -16,6 +15,7 @@ const logFile = `./logs/xsubmitter-log-${today
 const stream = fs.createWriteStream(logFile, { flags: "a" });
 stream.write("[\n");
 
+var responses = [];
 console.log(`Starting wm-file submmiter`);
 console.log(`Pushing files to ${streamerURL}`);
 console.log(`Logging results in ${logFile}`);
@@ -52,26 +52,21 @@ var skippedSchoolCodes = [];
   let index = 2;
   let seq = 1;
 
-  // console.log(`starting file scan... files: `, worksheet.rowCount);
-  // for (let seq = 1; seq < 6; seq++) {
-  while (seq < 10) {
+  console.log(`starting file scan... files: `, worksheet.rowCount);
+  while (seq < 16) {
     console.log(`checking for sequence: `, seq);
     while (index <= lfiles) {
-      const currentRow = worksheet.getRow(index);
-      // for (index; index < lfiles; index++) {
       // console.log(`current row seq: `, worksheet.getRow(index).values[10]);
-      if (seq == currentRow.values[10]) {
-        console.log(`classYear: `, worksheet.getRow(index).values[11]);
-        console.log(`processing file...`);
-        await sendRequest(currentRow, currentRow.values[11]);
+      if (seq == worksheet.getRow(index).values[10]) {
+        // console.log(`processing file...`);
+        await sendRequest(worksheet.getRow(index));
         wroteFlag = true;
       }
-      currentRow.hidden = false;
       index++;
     }
     if (wroteFlag) {
-      // console.log(`waiting for files to process`);
-      await nap(2500);
+      console.log(`waiting for files to process`);
+      await nap(15000);
     }
     // console.log(`reset wait`);
     wroteFlag = false;
@@ -79,8 +74,6 @@ var skippedSchoolCodes = [];
     seq++;
   }
 
-  // await workbook.xlsx.writeFile("input.xlsx");
-  //To avoid corrupting files we should only save them if there was any change.
   await workbook.xlsx.writeFile(inputFilename);
   console.log(`Saved xls file as workBook`);
   stream.write("\n]", () => {
@@ -89,7 +82,8 @@ var skippedSchoolCodes = [];
   });
 })();
 
-async function sendRequest(row, classYear) {
+async function sendRequest(row) {
+  row.hidden = false;
   const enabled = row.values[3] ? row.values[3] : false;
   if (enabled !== true) if (enabled.formula !== "TRUE()") return;
   const file = row.getCell(2).value;
@@ -103,10 +97,12 @@ async function sendRequest(row, classYear) {
   // var schoolcode = file.substring(4, 7);
   var schoolcode = row.values[5];
   var schoolName = schoolCodes[schoolcode];
+  console.log(schoolName);
   var titleYear = row.values[12];
   if (typeof titleYear == "undefined") {
     titleYear = "";
   }
+  var classYear = row.values[11];
   if (typeof classYear == "undefined") {
     classYear = "";
   }
@@ -128,27 +124,13 @@ async function sendRequest(row, classYear) {
     skippedSchoolCodes.push(schoolcode);
     return;
   }
-  const owners = await getOwners("dev");
-  if (owners[schoolcode] == undefined) {
-    let error = `skipped, invalid schoolCode ${schoolcode}`;
-    console.log(error);
-    row.getCell(4).value = "false";
-    streamError = JSON.stringify(
-      {
-        file: file,
-        schoolcode: schoolcode,
-        error: error
-      },
-      null,
-      2
-    );
-    stream.write(sep + streamError);
-    sep = sep === "" ? ",\n" : sep;
-    return;
-  }
-  const accessKey = owners[schoolcode].AccessKey;
-  const owner = owners[schoolcode].Owner;
 
+  //Get customer data
+  const owner = row.getCell(6).value;
+  const accessKey = row.getCell(7).value;
+  console.log(owner)
+  console.log(accessKey)
+  return
   const bucketName = "oncampusmarketing";
   const options = {
     version: "v2",
@@ -166,7 +148,6 @@ async function sendRequest(row, classYear) {
   var streamerData = {
     accessKey: `${accessKey}`,
     fileUrl: url,
-    maxRows: 30,
     owner: `${owner}`,
     source: "RHA",
     passthrough: {},
@@ -224,7 +205,7 @@ async function sendRequest(row, classYear) {
 
 function sleep(time) {
   var stop = new Date().getTime();
-  while (new Date().getTime() < stop + time) {}
+  while (new Date().getTime() < stop + time) { }
 }
 
 function nap(ms) {
