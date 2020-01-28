@@ -239,7 +239,7 @@ func GetSetValuesFromMatchKeysNormalized(values []MatchKey360, key string) []str
 }
 
 func LogDev(s string) {
-	if dev {
+	if dev || true {
 		log.Printf(s)
 	}
 }
