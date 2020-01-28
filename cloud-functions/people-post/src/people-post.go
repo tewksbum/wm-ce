@@ -752,7 +752,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		pubs = append(pubs, output)
 	}
-	outputJSON, _ := json.Marshal(outputs)
+	outputJSON, _ := json.Marshal(pubs)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
 		Attributes: map[string]string{
