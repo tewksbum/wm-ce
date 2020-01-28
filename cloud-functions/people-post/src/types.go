@@ -41,14 +41,14 @@ type InputColumn struct {
 type Input struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	Prediction  Prediction        `json:"prediction`
-	Columns     []InputColumn     `json:"columns`
+	Prediction  Prediction        `json:"prediction"`
+	Columns     []InputColumn     `json:"columns"`
 }
 
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   PeopleOutput      `json:"matchkeys`
+	MatchKeys   PeopleOutput      `json:"matchkeys"`
 }
 
 type MatchKeyField struct {
