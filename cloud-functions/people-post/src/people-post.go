@@ -692,19 +692,41 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 				// pub set delete
 				if len(expiredSetCollection) > 0 {
-					expired := PeopleDelete{
-						OwnerID: input.Signature.OwnerID,
-						Expired: expiredSetCollection,
+					// remove expired sets and setmembers from DS
+					var SetKeys []*datastore.Key
+					// var MemberKeys []*datastore.Key
+					var GoldenKeys []*datastore.Key
+
+					for _, set := range expiredSetCollection {
+						setKey := datastore.NameKey(DSKindSet, set, nil)
+						setKey.Namespace = dsNameSpace
+						SetKeys = append(SetKeys, setKey)
+						goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+						goldenKey.Namespace = dsNameSpace
+						GoldenKeys = append(GoldenKeys, goldenKey)
 					}
-					expireJSON, _ := json.Marshal(expired)
-					expire.Publish(ctx, &pubsub.Message{
-						Data: expireJSON,
-						Attributes: map[string]string{
-							"type":   "people",
-							"source": "delete",
-						},
-					})
-					log.Printf("pubbed delete %v", string(expireJSON))
+
+					LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
+					if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
+						log.Printf("Error: deleting expired sets: %v", err)
+					}
+					if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
+						log.Printf("Error: deleting expired golden records: %v", err)
+					}
+
+					// expired := PeopleDelete{
+					// 	OwnerID: input.Signature.OwnerID,
+					// 	Expired: expiredSetCollection,
+					// }
+					// expireJSON, _ := json.Marshal(expired)
+					// expire.Publish(ctx, &pubsub.Message{
+					// 	Data: expireJSON,
+					// 	Attributes: map[string]string{
+					// 		"type":   "people",
+					// 		"source": "delete",
+					// 	},
+					// })
+					// log.Printf("pubbed delete %v", string(expireJSON))
 				}
 
 			}

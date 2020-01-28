@@ -366,27 +366,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
 
-		// remove expired sets and setmembers from DS
-		var SetKeys []*datastore.Key
-		// var MemberKeys []*datastore.Key
-		var GoldenKeys []*datastore.Key
-
-		for _, set := range expiredSetCollection {
-			setKey := datastore.NameKey(DSKindSet, set, nil)
-			setKey.Namespace = dsNameSpace
-			SetKeys = append(SetKeys, setKey)
-			goldenKey := datastore.NameKey(DSKindGolden, set, nil)
-			goldenKey.Namespace = dsNameSpace
-			GoldenKeys = append(GoldenKeys, goldenKey)
-		}
-		LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
-		if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
-			log.Printf("Error: deleting expired sets: %v", err)
-		}
-		if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
-			log.Printf("Error: deleting expired golden records: %v", err)
-		}
-
 		if input.Signature.FiberType == "default" {
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
