@@ -359,8 +359,9 @@ func GetRedisStringsValue(keyparts []string) []string {
 	defer ms.Close()
 	value, err := redis.String(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
+	log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
 	if len(value) > 0 {
 		return strings.Split(value, ",")
 	}

@@ -167,7 +167,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", input.MatchKeys.FNAME.Value, input.MatchKeys.LNAME.Value, input.MatchKeys.AD1.Value, input.MatchKeys.CITY.Value, input.MatchKeys.STATE.Value))
 			}
-
+			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			// read the FiberIDs from Redis
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
