@@ -296,11 +296,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
 					fiberKeys := GetRedisStringsValue(msKey)
-					for _, mf := range matchedFibers {
-						if !Contains(fiberKeys, mf) {
-							fiberKeys = append(fiberKeys, mf)
-						}
-					}
+					fiberKeys = append(fiberKeys, dsFiber.ID.Name)
 					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
 				}
 			}
