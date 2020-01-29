@@ -168,7 +168,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", input.MatchKeys.FNAME.Value, input.MatchKeys.LNAME.Value, input.MatchKeys.AD1.Value, input.MatchKeys.CITY.Value, input.MatchKeys.STATE.Value))
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
-			keypattern := input.Signature.OwnerID + "*"
+			keypattern := "*"
 			redisKeys := GetRedisKeys(keypattern)
 			redisValues := GetRedisValues(redisKeys)
 			LogDev(fmt.Sprintf("redis matching keys: %+v, values %+v", redisKeys, redisValues))
