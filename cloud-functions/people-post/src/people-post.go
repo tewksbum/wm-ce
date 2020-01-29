@@ -690,7 +690,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
 				}
 
-				// pub set delete
 				if len(expiredSetCollection) > 0 {
 					// remove expired sets and setmembers from DS
 					var SetKeys []*datastore.Key
