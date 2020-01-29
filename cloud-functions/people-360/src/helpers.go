@@ -367,3 +367,27 @@ func GetRedisStringsValue(keyparts []string) []string {
 	}
 	return []string{}
 }
+
+func GetRedisKeys(keypattern string) []string {
+	ms := msp.Get()
+	defer ms.Close()
+	keys, err := redis.Strings(ms.Do("KEYS", "keypattern"))
+	if err != nil {
+		log.Printf("Error getting redis keys %v, error %v", keypattern, err)
+	}
+	return keys
+}
+
+func GetRedisValues(keys []string) []string {
+	ms := msp.Get()
+	defer ms.Close()
+	var args []interface{}
+	for _, k := range keys {
+		args = append(args, k)
+	}
+	values, err := redis.Strings(ms.Do("MGET", args...))
+	if err != nil {
+		log.Printf("Error getting redis keys %+v, error %v", keys, err)
+	}
+	return values
+}
