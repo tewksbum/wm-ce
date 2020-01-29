@@ -187,7 +187,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					for _, searchValue := range searchValues {
 						foundFibers := strings.Split(searchValue, ",")
 						for _, foundFiber := range foundFibers {
-							matchedFibers = append(matchedFibers, foundFiber)
+							if len(foundFiber) > 20 { // make sure it is an actual id
+								matchedFibers = append(matchedFibers, foundFiber)
+							}
 						}
 					}
 				}
