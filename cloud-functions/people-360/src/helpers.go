@@ -294,6 +294,18 @@ func SetRedisTempKey(keyparts []string) {
 	}
 }
 
+func SetRedisTempKeyWithValue(keyparts []string, value string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, value)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	} else {
+		log.Printf("setting redis %+v = %+v", strings.Join(keyparts, ":"), value)
+	}
+}
+
 func SetRedisKeyIfNotExists(keyparts []string) {
 	ms := msp.Get()
 	defer ms.Close()
