@@ -379,6 +379,9 @@ func GetRedisKeys(keypattern string) []string {
 }
 
 func GetRedisValues(keys []string) []string {
+	if len(keys) == 0 {
+		return []string{}
+	}
 	ms := msp.Get()
 	defer ms.Close()
 	var args []interface{}
