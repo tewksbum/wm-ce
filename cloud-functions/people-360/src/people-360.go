@@ -295,9 +295,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
+		var searchFields []string
 		if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
 			// get this into redis
-			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 			if len(dsFiber.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", dsFiber.EMAIL.Value))
@@ -415,6 +415,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				if !Contains(setDS.Search, search) {
 					setDS.Search = append(setDS.Search, search)
 				}
+			}
+		}
+
+		if len(searchFields) > 0 {
+			for _, search := range searchFields {
+				msSet := []string{input.Signature.OwnerID, "set", search}
+				setKeys := GetRedisStringsValue(msSet)
+				setKeys = append(setKeys, setDS.ID.Name)
+				SetRedisTempKeyWithValue(msSet, strings.Join(setKeys, ","))
 			}
 		}
 
