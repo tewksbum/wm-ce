@@ -174,14 +174,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			LogDev(fmt.Sprintf("redis matching keys: %+v, values %+v", redisKeys, redisValues))
 
 			// read the FiberIDs from Redis
-			// TODO: convert this to mget
+			searchKeys := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
-					fiberKeys := GetRedisStringsValue(msKey)
-					matchedFibers = append(matchedFibers, fiberKeys...)
+					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
 				}
 			}
+			if len(searchKeys) > 0 {
+				searchValues := GetRedisValues(searchKeys)
+				if len(searchValues) > 0 {
+					for _, searchValue := range searchValues {
+						foundFibers := strings.Split(searchValue, ",")
+						for _, foundFiber := range foundFibers {
+							matchedFibers = append(matchedFibers, foundFiber)
+						}
+					}
+				}
+			}
+			LogDev(fmt.Sprintf("Matched Fibers: %+v", matchedFibers))
+
 			// get all the Fibers
 			var FiberKeys []*datastore.Key
 			var Fibers []PeopleFiberDS
