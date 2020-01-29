@@ -175,10 +175,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			// read the FiberIDs from Redis
 			searchKeys := []string{}
+			searchSets := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
+					msSet := []string{input.Signature.OwnerID, "set", search}
 					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
+					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
 			}
 			if len(searchKeys) > 0 {
@@ -189,6 +192,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						for _, foundFiber := range foundFibers {
 							if len(foundFiber) > 20 { // make sure it is an actual id
 								matchedFibers = append(matchedFibers, foundFiber)
+							}
+						}
+					}
+				}
+			}
+			if len(searchSets) > 0 {
+				searchValues := GetRedisValues(searchSets)
+				if len(searchValues) > 0 {
+					for _, searchValue := range searchValues {
+						foundSets := strings.Split(searchValue, ",")
+						for _, foundSet := range foundSets {
+							if len(foundSet) > 20 { // make sure it is an actual id
+								expiredSetCollection = append(expiredSetCollection, foundSet)
 							}
 						}
 					}
@@ -402,7 +418,29 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		// pull this set into redis
+		if len(expiredSetCollection) > 0 {
+			// remove expired sets and setmembers from DS
+			var SetKeys []*datastore.Key
+			// var MemberKeys []*datastore.Key
+			var GoldenKeys []*datastore.Key
+
+			for _, set := range expiredSetCollection {
+				setKey := datastore.NameKey(DSKindSet, set, nil)
+				setKey.Namespace = dsNameSpace
+				SetKeys = append(SetKeys, setKey)
+				goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+				goldenKey.Namespace = dsNameSpace
+				GoldenKeys = append(GoldenKeys, goldenKey)
+			}
+
+			LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
+			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
+				log.Printf("Error: deleting expired sets: %v", err)
+			}
+			if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
+				log.Printf("Error: deleting expired golden records: %v", err)
+			}
+		}
 
 		log.Printf("set search: %+v", setDS.Search)
 		// setDS.Search = append(setDS.Search, goldenDS.Search...)
