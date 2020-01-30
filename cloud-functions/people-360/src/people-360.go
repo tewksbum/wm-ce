@@ -241,6 +241,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Source:    fiber.Source,
 					EventType: fiber.EventType,
 					EventID:   fiber.EventID,
+					FiberType: fiber.FiberType,
 					RecordID:  fiber.RecordID,
 				})
 
