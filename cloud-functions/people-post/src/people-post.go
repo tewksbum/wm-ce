@@ -656,6 +656,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
 				searchValue := strings.Replace(search, "'", `''`, -1)
@@ -665,6 +666,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				var matchedFibers []string
 				setKeys, _ := fs.GetAll(ctx, setQuery, &querySets)
 				_ = setKeys
+				log.Printf("Search %v found %v sets", search, len(querySets))
 				for _, s := range querySets {
 					if !Contains(expiredSetCollection, s.ID.Name) {
 						expiredSetCollection = append(expiredSetCollection, s.ID.Name)

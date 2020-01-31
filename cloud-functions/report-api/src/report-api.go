@@ -508,7 +508,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setfiber") && !strings.EqualFold(input.ReportType, "setrecord") && !strings.EqualFold(input.ReportType, "sets") {
+	if !strings.EqualFold(input.ReportType, "file") &&
+		!strings.EqualFold(input.ReportType, "owner") &&
+		!strings.EqualFold(input.ReportType, "detail") &&
+		!strings.EqualFold(input.ReportType, "setfiber") &&
+		!strings.EqualFold(input.ReportType, "setrecord") &&
+		!strings.EqualFold(input.ReportType, "fibers") &&
+		!strings.EqualFold(input.ReportType, "sets") {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail, setfiber or setrecord\"}")
 		return
@@ -1222,6 +1228,30 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			report.GridRecords = append(report.GridRecords, rowRecord)
 		}
 		output = report
+	} else if strings.EqualFold(input.ReportType, "fibers") {
+		var fibers []Fiber
+		report := DetailReport{}
+		var header []interface{}
+		fields := structs.Names(&Fiber{})
+		for _, field := range fields {
+			header = append(header, field)
+		}
+		report.GridRecords = append(report.GridRecords, header)
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+		log.Printf("fibers retrieved: %v", len(fibers))
+		for _, r := range fibers {
+			accessor := structs.New(r)
+			var rowRecord []interface{}
+			for _, field := range fields {
+				rowRecord = append(rowRecord, fmt.Sprintf("%+v", accessor.Field(field).Value()))
+			}
+			report.GridRecords = append(report.GridRecords, rowRecord)
+		}
+		output = report
+
 	} else {
 		report := OwnerReport{}
 
