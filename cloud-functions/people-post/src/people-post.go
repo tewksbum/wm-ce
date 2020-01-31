@@ -660,12 +660,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
 				searchValue := strings.Replace(search, "'", `''`, -1)
-				setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue)
 				querySets := []PeopleSetDS{}
+				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
+					log.Fatalf("Error querying sets: %v", err)
+				}
 				var expiredSetCollection []string
 				var matchedFibers []string
-				setKeys, _ := fs.GetAll(ctx, setQuery, &querySets)
-				_ = setKeys
 				log.Printf("Search %v found %v sets", search, len(querySets))
 				for _, s := range querySets {
 					if !Contains(expiredSetCollection, s.ID.Name) {
