@@ -670,6 +670,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				for _, s := range querySets {
 					if !Contains(expiredSetCollection, s.ID.Name) {
 						expiredSetCollection = append(expiredSetCollection, s.ID.Name)
+						log.Printf("Adding set %v to expired sets", s.ID.Name)
 					}
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
@@ -692,6 +693,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
 				}
 
+				log.Printf("Expiring sets %+v", expiredSetCollection)
 				if len(expiredSetCollection) > 0 {
 					// remove expired sets and setmembers from DS
 					var SetKeys []*datastore.Key
