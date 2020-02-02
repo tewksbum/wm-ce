@@ -138,6 +138,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		HasNewValues := false
 		var output People360Output
 		var FiberSignatures []Signature
+		var FiberSearchFields []string
 		output.ID = uuid.New().String()
 		MatchKeyList := structs.Names(&PeopleOutput{})
 		FiberMatchKeys := make(map[string][]string)
@@ -148,7 +149,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var matchedFibers []string
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
-		var existingSearchFields []string
 
 		if matchable {
 			// locate existing set
@@ -247,6 +247,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 				if fiber.FiberType == "default" {
 					matchedDefaultFiber++
+				}
+
+				if len(fiber.Search) > 0 {
+					for _, s := range fiber.Search {
+						FiberSearchFields = append(FiberSearchFields, s)
+					}
 				}
 
 				for _, name := range MatchKeyList {
@@ -396,8 +402,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// populate search fields for set from a) existing sets b) new fiber c) golden
-		if len(existingSearchFields) > 0 {
-			for _, search := range existingSearchFields {
+		if len(FiberSearchFields) > 0 {
+			for _, search := range FiberSearchFields {
 				if !Contains(setDS.Search, search) {
 					setDS.Search = append(setDS.Search, search)
 				}
