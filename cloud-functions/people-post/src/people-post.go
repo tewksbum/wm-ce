@@ -646,13 +646,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 		if len(v.Output.EMAIL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", v.Output.EMAIL.Value))
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.Output.EMAIL.Value)))
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", v.Output.PHONE.Value, v.Output.FINITIAL.Value))
+			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.ToUpper(v.Output.PHONE.Value), strings.ToUpper(v.Output.FINITIAL.Value)))
 		}
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", v.Output.FNAME.Value, v.Output.LNAME.Value, v.Output.AD1.Value, v.Output.CITY.Value, v.Output.STATE.Value))
+			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.Output.FNAME.Value), strings.ToUpper(v.Output.LNAME.Value), strings.ToUpper(v.Output.AD1.Value), strings.ToUpper(v.Output.CITY.Value), strings.ToUpper(v.Output.STATE.Value)))
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
