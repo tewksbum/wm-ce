@@ -287,6 +287,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			output.MatchKeys = MatchKeysFromFiber
 
 		}
+
+		log.Printf("FiberSearchFields is %+v", FiberSearchFields)
+
 		if !matchable {
 			if input.Signature.FiberType == "dupe" {
 				dsFiber.Disposition = "dupe"
@@ -401,26 +404,27 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
 
+		var SetSearchFields []string
 		// populate search fields for set from a) existing sets b) new fiber c) golden
 		if len(FiberSearchFields) > 0 {
 			for _, search := range FiberSearchFields {
-				if !Contains(setDS.Search, search) {
-					setDS.Search = append(setDS.Search, search)
+				if !Contains(SetSearchFields, search) {
+					SetSearchFields = append(SetSearchFields, search)
 				}
 			}
 		}
 
 		if len(dsFiber.Search) > 0 {
 			for _, search := range dsFiber.Search {
-				if !Contains(setDS.Search, search) {
-					setDS.Search = append(setDS.Search, search)
+				if !Contains(SetSearchFields, search) {
+					SetSearchFields = append(SetSearchFields, search)
 				}
 			}
 		}
 		if len(goldenDS.Search) > 0 {
 			for _, search := range goldenDS.Search {
-				if !Contains(setDS.Search, search) {
-					setDS.Search = append(setDS.Search, search)
+				if !Contains(SetSearchFields, search) {
+					SetSearchFields = append(SetSearchFields, search)
 				}
 			}
 		}
@@ -458,8 +462,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
+		setDS.Search = SetSearchFields
 		log.Printf("set search: %+v", setDS.Search)
-		// setDS.Search = append(setDS.Search, goldenDS.Search...)
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}

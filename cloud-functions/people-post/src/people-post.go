@@ -21,8 +21,6 @@ import (
 	"github.com/google/uuid"
 )
 
-var ProjectID = os.Getenv("PROJECTID")
-
 var Env = os.Getenv("ENVIRONMENT")
 var dev = Env == "dev"
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
@@ -55,7 +53,6 @@ var redisTemporaryExpiration = 3600
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
-var DSProjectID = os.Getenv("DSPROJECTID")
 
 // JY: this code looks dangerous as it uses contains, think minneapolis
 func reMilityBaseCity(val string) bool {
@@ -84,8 +81,8 @@ var MLLabels map[string]string
 
 func init() {
 	ctx := context.Background()
-	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	fs, _ = datastore.NewClient(ctx, DSProjectID)
+	ps, _ = pubsub.NewClient(ctx, os.Getenv("PROJECTID"))
+	fs, _ = datastore.NewClient(ctx, os.Getenv("DSPROJECTID"))
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	martopic = ps.Topic(os.Getenv("PSOUTPUT"))
 	expire = ps.Topic(os.Getenv("PSOUTPUT"))
