@@ -691,8 +691,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
 				}
 
-				// log.Printf("Expiring sets %+v", expiredSetCollection)
-				// if len(expiredSetCollection) > 0 {
+				log.Printf("Expiring sets %+v", expiredSetCollection)
+				if len(expiredSetCollection) > 0 {
+					msKey := []string{input.Signature.OwnerID, "set", search}
+					setKeys := GetRedisStringsValue(msKey)
+					for _, sk := range expiredSetCollection {
+						if !Contains(setKeys, sk) {
+							setKeys = append(setKeys, sk)
+						}
+					}
+					SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
+				}
 				// 	// remove expired sets and setmembers from DS
 				// 	var SetKeys []*datastore.Key
 				// 	// var MemberKeys []*datastore.Key
