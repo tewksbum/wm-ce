@@ -664,7 +664,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				var expiredSetCollection []string
 				var matchedFibers []string
-				log.Printf("Search %v found %v sets", search, len(querySets))
+				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
 					if !Contains(expiredSetCollection, s.ID.Name) {
 						expiredSetCollection = append(expiredSetCollection, s.ID.Name)
