@@ -322,8 +322,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
 					fiberKeys := GetRedisStringsValue(msKey)
-					fiberKeys = append(fiberKeys, dsFiber.ID.Name)
-					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
+					if !Contains(fiberKeys, dsFiber.ID.Name) {
+						fiberKeys = append(fiberKeys, dsFiber.ID.Name)
+						SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
+					}
 				}
 			}
 		}
@@ -429,12 +431,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		if len(searchFields) > 0 {
-			for _, search := range searchFields {
+		if len(SetSearchFields) > 0 {
+			for _, search := range SetSearchFields {
 				msSet := []string{input.Signature.OwnerID, "set", search}
 				setKeys := GetRedisStringsValue(msSet)
-				setKeys = append(setKeys, setDS.ID.Name)
-				SetRedisTempKeyWithValue(msSet, strings.Join(setKeys, ","))
+				if !Contains(setKeys, setDS.ID.Name) {
+					setKeys = append(setKeys, setDS.ID.Name)
+					SetRedisTempKeyWithValue(msSet, strings.Join(setKeys, ","))
+				}
 			}
 		}
 
