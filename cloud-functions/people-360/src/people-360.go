@@ -453,7 +453,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				GoldenKeys = append(GoldenKeys, goldenKey)
 			}
 
-			LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
+			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
 			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
 				log.Printf("Error: deleting expired sets: %v", err)
 			}
