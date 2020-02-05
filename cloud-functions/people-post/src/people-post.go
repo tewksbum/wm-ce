@@ -107,6 +107,7 @@ var TitleYear int
 
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var input Input
+	log.Printf("Received message %+v", string(m.Data))
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
