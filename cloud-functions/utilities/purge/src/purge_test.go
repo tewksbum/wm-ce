@@ -502,7 +502,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-acv-cv",
+		"targetSelection": "prod-wiu-saa",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",
@@ -527,8 +527,8 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "count",
-		"targetSelection": "dev-acv-cv",
-		"targetSubSelection": "people-fiber"
+		"targetSelection": "prod-wiu-saa",
+		"targetSubSelection": "people-set"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))

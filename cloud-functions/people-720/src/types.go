@@ -1,4 +1,4 @@
-package people360
+package people720
 
 import (
 	"time"
@@ -8,6 +8,11 @@ import (
 
 type PubSubMessage struct {
 	Data []byte `json:"data"`
+}
+
+type FileComplete struct {
+	EventID string `json:"eventId"`
+	OwnerID string `json:"ownerId"`
 }
 
 type Signature struct {
@@ -300,9 +305,4 @@ type PeopleGoldenDS struct {
 	PermE        string         `datastore:"perme"`
 	PermM        string         `datastore:"permm"`
 	PermS        string         `datastore:"perms"`
-}
-
-type FileComplete struct {
-	EventID string `json:"eventId"`
-	OwnerID string `json:"ownerId"`
 }
