@@ -42,6 +42,7 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var status *pubsub.Topic
+var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
@@ -56,6 +57,7 @@ func init() {
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
+	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -521,6 +523,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				_, err := psresult.Get(ctx)
 				if err != nil {
 					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
+
+				finished := FileComplete{
+					EventID: input.Signature.EventID,
+					OwnerID: input.Signature.OwnerID,
+				}
+				finishedJSON, _ := json.Marshal(finished)
+				pcresult := cleanup.Publish(ctx, &pubsub.Message{
+					Data: finishedJSON,
+				})
+				_, err = pcresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
 				}
 			}
 		} else if input.Signature.FiberType == "mar" {
