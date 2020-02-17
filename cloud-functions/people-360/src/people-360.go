@@ -527,19 +527,25 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 
-				if value, ok := m.Attributes["source"]; ok {
-					if value == "post" { // only pub this message if the source is from post, do not pub if 720
-						finished := FileComplete{
-							EventID: input.Signature.EventID,
-							OwnerID: input.Signature.OwnerID,
-						}
-						finishedJSON, _ := json.Marshal(finished)
-						pcresult := cleanup.Publish(ctx, &pubsub.Message{
-							Data: finishedJSON,
-						})
-						_, err = pcresult.Get(ctx)
-						if err != nil {
-							log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+				cleanupKey := []string{input.Signature.EventID, "cleanup-sent"}
+				if GetRedisIntValue(cleanupKey) == 1 { // already processed
+
+				} else {
+					SetRedisTempKey(cleanupKey)
+					if value, ok := m.Attributes["source"]; ok {
+						if value == "post" { // only pub this message if the source is from post, do not pub if 720
+							finished := FileComplete{
+								EventID: input.Signature.EventID,
+								OwnerID: input.Signature.OwnerID,
+							}
+							finishedJSON, _ := json.Marshal(finished)
+							pcresult := cleanup.Publish(ctx, &pubsub.Message{
+								Data: finishedJSON,
+							})
+							_, err = pcresult.Get(ctx)
+							if err != nil {
+								log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+							}
 						}
 					}
 				}
