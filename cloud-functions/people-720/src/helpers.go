@@ -403,7 +403,7 @@ func GetRedisStringsValue(keyparts []string) []string {
 	if err != nil {
 		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
-	log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
+	//log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
 	if len(value) > 0 {
 		return strings.Split(value, ",")
 	}
