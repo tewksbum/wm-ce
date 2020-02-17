@@ -58,6 +58,8 @@ func init() {
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
+	// delay the clean up by 1 min
+	cleanup.PublishSettings.DelayThreshold = 60 * time.Second
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -525,17 +527,21 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 
-				finished := FileComplete{
-					EventID: input.Signature.EventID,
-					OwnerID: input.Signature.OwnerID,
-				}
-				finishedJSON, _ := json.Marshal(finished)
-				pcresult := cleanup.Publish(ctx, &pubsub.Message{
-					Data: finishedJSON,
-				})
-				_, err = pcresult.Get(ctx)
-				if err != nil {
-					log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+				if value, ok := m.Attributes["source"]; ok {
+					if value == "post" { // only pub this message if the source is from post, do not pub if 720
+						finished := FileComplete{
+							EventID: input.Signature.EventID,
+							OwnerID: input.Signature.OwnerID,
+						}
+						finishedJSON, _ := json.Marshal(finished)
+						pcresult := cleanup.Publish(ctx, &pubsub.Message{
+							Data: finishedJSON,
+						})
+						_, err = pcresult.Get(ctx)
+						if err != nil {
+							log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+						}
+					}
 				}
 			}
 		} else if input.Signature.FiberType == "mar" {
