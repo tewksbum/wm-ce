@@ -5,3 +5,5 @@ require (
 	cloud.google.com/go/pubsub v1.0.1
 	github.com/gomodule/redigo v2.0.0+incompatible
 )
+
+go 1.13

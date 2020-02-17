@@ -47,6 +47,12 @@ type PeopleFiber struct {
 	CreatedAt   time.Time        `json:"createdAt"`
 }
 
+type People360Input struct {
+	Signature   Signature         `json:"signature"`
+	Passthrough map[string]string `json:"passthrough"`
+	MatchKeys   PeopleOutput      `json:"matchkeys"`
+}
+
 type PeopleFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`

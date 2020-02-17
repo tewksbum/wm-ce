@@ -9,7 +9,11 @@ import (
 	"unicode"
 
 	"github.com/fatih/structs"
+	"github.com/gomodule/redigo/redis"
 )
+
+var redisTransientExpiration = 3600 * 24
+var redisTemporaryExpiration = 3600
 
 func GetSmallestYear(values []string) string {
 	if len(values) == 0 {
@@ -24,9 +28,36 @@ func GetSmallestYear(values []string) string {
 	if len(eligible) > 0 {
 		sort.Strings(eligible)
 		return eligible[0]
-	} else {
-		return ""
 	}
+	return ""
+}
+
+func GetPeopleOutputFromFiber(v *PeopleFiberDS) PeopleOutput {
+	o := PeopleOutput{}
+	for _, n := range structs.Names(&PeopleOutput{}) {
+		SetPeopleOutputMatchKeyField(&o, n, GetMatchKeyFieldFromFiber(v, n))
+	}
+	return o
+}
+
+func GetMatchKeyFieldFromFiber(v *PeopleFiberDS, field string) MatchKeyField {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	return f.Interface().(MatchKeyField)
+}
+
+func SetPeopleOutputMatchKeyField(v *PeopleOutput, field string, m MatchKeyField) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	f.Set(reflect.ValueOf(m))
+}
+
+func ConvertPassthrough360SliceToMap(v []Passthrough360) map[string]string {
+	result := make(map[string]string)
+	for _, kvp := range v {
+		result[kvp.Name] = kvp.Value
+	}
+	return result
 }
 
 func GetAdValid(values []string) string {
@@ -271,4 +302,137 @@ func IsInt(s string) bool {
 		}
 	}
 	return true
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func SetRedisTempKey(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, 1)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func SetRedisTempKeyWithValue(keyparts []string, value string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration, value)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	} else {
+		log.Printf("setting redis %+v = %+v", strings.Join(keyparts, ":"), value)
+	}
+}
+
+func SetRedisKeyIfNotExists(keyparts []string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	if err != nil {
+		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+}
+
+func IncrRedisValue(keyparts []string) { // no need to update expiration
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("INCR", strings.Join(keyparts, ":"))
+	if err != nil {
+		log.Printf("Error incrementing redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+}
+
+func SetRedisKeyWithExpiration(keyparts []string) {
+	SetRedisValueWithExpiration(keyparts, 1)
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisIntValues(keys [][]string) []int {
+	ms := msp.Get()
+	defer ms.Close()
+
+	formattedKeys := []string{}
+	for _, key := range keys {
+		formattedKeys = append(formattedKeys, strings.Join(key, ":"))
+	}
+
+	values, err := redis.Ints(ms.Do("MGET", formattedKeys[0], formattedKeys[1], formattedKeys[2], formattedKeys[3], formattedKeys[4]))
+	if err != nil {
+		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
+	}
+	return values
+}
+
+func GetRedisStringValue(keyparts []string) string {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.String(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
+}
+
+func GetRedisStringsValue(keyparts []string) []string {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.String(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
+	if len(value) > 0 {
+		return strings.Split(value, ",")
+	}
+	return []string{}
+}
+
+func GetRedisKeys(keypattern string) []string {
+	ms := msp.Get()
+	defer ms.Close()
+	keys, err := redis.Strings(ms.Do("KEYS", "keypattern"))
+	if err != nil {
+		log.Printf("Error getting redis keys %v, error %v", keypattern, err)
+	}
+	return keys
+}
+
+func GetRedisValues(keys []string) []string {
+	if len(keys) == 0 {
+		return []string{}
+	}
+	ms := msp.Get()
+	defer ms.Close()
+	var args []interface{}
+	for _, k := range keys {
+		args = append(args, k)
+	}
+	values, err := redis.Strings(ms.Do("MGET", args...))
+	if err != nil {
+		log.Printf("Error getting redis keys %+v, error %v", keys, err)
+	}
+	return values
 }
