@@ -513,6 +513,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		!strings.EqualFold(input.ReportType, "detail") &&
 		!strings.EqualFold(input.ReportType, "setfiber") &&
 		!strings.EqualFold(input.ReportType, "setrecord") &&
+		!strings.EqualFold(input.ReportType, "setsearch") &&
 		!strings.EqualFold(input.ReportType, "fibers") &&
 		!strings.EqualFold(input.ReportType, "sets") {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1198,6 +1199,24 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("sets retrieved: %v", len(sets))
 		for _, r := range sets {
 			for _, f := range r.RecordID {
+				var rowRecord []interface{}
+				rowRecord = append(rowRecord, r.ID.Name)
+				rowRecord = append(rowRecord, f)
+				report.GridRecords = append(report.GridRecords, rowRecord)
+			}
+		}
+		output = report
+	} else if strings.EqualFold(input.ReportType, "setsearch") {
+		var sets []PeopleSet
+		report := DetailReport{}
+		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "Search"})
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
+			return
+		}
+		log.Printf("sets retrieved: %v", len(sets))
+		for _, r := range sets {
+			for _, f := range r.Search {
 				var rowRecord []interface{}
 				rowRecord = append(rowRecord, r.ID.Name)
 				rowRecord = append(rowRecord, f)

@@ -68,12 +68,12 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			if mkOutput.AD1.Value != a[0].DeliveryLine1 {
 				mkOutput.ADCORRECT.Value = "TRUE"
 			}
-			mkOutput.AD1.Value = a[0].DeliveryLine1
-			mkOutput.AD1NO.Value = a[0].Components.PrimaryNumber
+			mkOutput.AD1.Value = strings.TrimSpace(a[0].DeliveryLine1)
+			mkOutput.AD1NO.Value = strings.TrimSpace(a[0].Components.PrimaryNumber)
 			if len(a[0].Components.SecondaryDesignator) > 0 && len(a[0].Components.SecondaryNumber) > 0 {
-				mkOutput.AD2.Value = a[0].Components.SecondaryDesignator + " " + a[0].Components.SecondaryNumber
+				mkOutput.AD2.Value = strings.TrimSpace(a[0].Components.SecondaryDesignator + " " + a[0].Components.SecondaryNumber)
 				if strings.HasSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value) {
-					mkOutput.AD1.Value = strings.TrimSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value)
+					mkOutput.AD1.Value = strings.TrimSpace(strings.TrimSuffix(mkOutput.AD1.Value, mkOutput.AD2.Value))
 				}
 			}
 			if mkOutput.CITY.Value != a[0].Components.CityName {
@@ -89,12 +89,12 @@ func StandardizeAddressSS(mkOutput *PeopleOutput) {
 			if len(a[0].Components.Plus4Code) > 0 {
 				Zip += "-" + a[0].Components.Plus4Code
 			}
-			mkOutput.ZIP.Value = Zip
+			mkOutput.ZIP.Value = strings.TrimSpace(Zip)
 			mkOutput.COUNTRY.Value = "US"                          // if libpostal can parse it, it is an US address
 			SetMkField(mkOutput, "ADPARSER", "smartystreet", "SS") // if libpostal can parse it, it is an US address
-			mkOutput.ADTYPE.Value = a[0].Metadata.Rdi
-			mkOutput.ZIPTYPE.Value = a[0].Metadata.ZipType
-			mkOutput.RECORDTYPE.Value = a[0].Metadata.RecordType
+			mkOutput.ADTYPE.Value = strings.TrimSpace(a[0].Metadata.Rdi)
+			mkOutput.ZIPTYPE.Value = strings.TrimSpace(a[0].Metadata.ZipType)
+			mkOutput.RECORDTYPE.Value = strings.TrimSpace(a[0].Metadata.RecordType)
 			mkOutput.ADVALID.Value = "TRUE"
 		}
 	}
