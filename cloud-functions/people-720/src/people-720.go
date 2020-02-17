@@ -96,6 +96,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	log.Printf("total reprocess fiber count %v", len(outputFibers))
+
 	for _, fiber := range outputFibers {
 		var pubs []People360Input
 		var output People360Input
