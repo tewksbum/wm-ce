@@ -27,7 +27,7 @@ const Excel = require("exceljs");
     owner: "wiu-saa",
     accessKey: "cf255eb8fd38d343e86e11bad1711b9e9710ce1e",
     reportType: "setsearch",
-    requestId: "dd90a70d-f6a9-49c2-beb5-6dd0a3668ebe"
+    requestId: "a4fc023d-041b-4ae6-805c-3597b339b1b6"
   };
 
   // get the report data
