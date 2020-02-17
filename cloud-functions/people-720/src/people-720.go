@@ -51,6 +51,12 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
+	cleanupKey := []string{input.EventID, "cleanup"}
+	if GetRedisIntValue(cleanupKey) == 1 { // already processed
+		return nil
+	}
+	SetRedisTempKey(cleanupKey)
+
 	var sets []PeopleSetDS
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &sets); err != nil {
@@ -69,7 +75,6 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			}
 			if len(setKeys) > 1 {
 				// same search mapped to more than 1 swet
-				log.Printf("found set %+v", setKeys)
 				reprocessFibers = append(reprocessFibers, set.Fibers...)
 			}
 		}
