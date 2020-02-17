@@ -401,9 +401,9 @@ func GetRedisStringsValue(keyparts []string) []string {
 	defer ms.Close()
 	value, err := redis.String(ms.Do("GET", strings.Join(keyparts, ":")))
 	if err != nil {
-		log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
 	}
-	log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
+	//log.Printf("Redis search %v got %v", strings.Join(keyparts, ":"), value)
 	if len(value) > 0 {
 		return strings.Split(value, ",")
 	}
@@ -415,7 +415,7 @@ func GetRedisKeys(keypattern string) []string {
 	defer ms.Close()
 	keys, err := redis.Strings(ms.Do("KEYS", "keypattern"))
 	if err != nil {
-		log.Printf("Error getting redis keys %v, error %v", keypattern, err)
+		// log.Printf("Error getting redis keys %v, error %v", keypattern, err)
 	}
 	return keys
 }
@@ -432,7 +432,7 @@ func GetRedisValues(keys []string) []string {
 	}
 	values, err := redis.Strings(ms.Do("MGET", args...))
 	if err != nil {
-		log.Printf("Error getting redis keys %+v, error %v", keys, err)
+		// log.Printf("Error getting redis keys %+v, error %v", keys, err)
 	}
 	return values
 }

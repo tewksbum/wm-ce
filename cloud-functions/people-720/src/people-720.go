@@ -47,6 +47,12 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	cleanupKey := []string{input.EventID, "cleanup"}
+	if GetRedisIntValue(cleanupKey) == 1 { // already processed
+		return nil
+	}
+	SetRedisTempKey(cleanupKey)
+
 	var sets []PeopleSetDS
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &sets); err != nil {
@@ -92,15 +98,22 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	log.Printf("total reprocess fiber count %v", len(outputFibers))
+
 	for _, fiber := range outputFibers {
 		var pubs []People360Input
 		var output People360Input
+
+		fiberType := fiber.FiberType
+		if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
+			fiberType = "default"
+		}
 		output.Signature = Signature{
 			OwnerID:   fiber.OwnerID,
 			Source:    fiber.Source,
-			EventID:   "00000000-0000-0000-0000-000000000000", // fixed fake event id
+			EventID:   input.EventID,
 			EventType: fiber.EventType,
-			FiberType: fiber.FiberType,
+			FiberType: fiberType,
 			RecordID:  fiber.RecordID,
 		}
 		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
