@@ -99,12 +99,17 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	for _, fiber := range outputFibers {
 		var pubs []People360Input
 		var output People360Input
+
+		fiberType := fiber.FiberType
+		if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
+			fiberType = "default"
+		}
 		output.Signature = Signature{
 			OwnerID:   fiber.OwnerID,
 			Source:    fiber.Source,
 			EventID:   "00000000-0000-0000-0000-000000000000", // fixed fake event id
 			EventType: fiber.EventType,
-			FiberType: fiber.FiberType,
+			FiberType: fiberType,
 			RecordID:  fiber.RecordID,
 		}
 		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
