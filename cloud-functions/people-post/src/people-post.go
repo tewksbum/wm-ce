@@ -16,7 +16,6 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 
-	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 )
@@ -625,16 +624,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	// SetRedisTempKey(redisMatchValue5)
 		// }
 
-		allMatchKeys := []string{input.Signature.EventID, "dupe"}
-		for _, f := range structs.Names(&PeopleOutput{}) {
-			allMatchKeys = append(allMatchKeys, strings.ToUpper(GetMkField(&(v.Output), f).Value))
-		}
-		if GetRedisIntValue(allMatchKeys) > 0 {
-			LogDev(fmt.Sprintf("Detected Dupe value %v", allMatchKeys))
-			v.Type = "dupe"
-		} else {
-			SetRedisTempKey(allMatchKeys)
-		}
+		// allMatchKeys := []string{input.Signature.EventID, "dupe"}
+		// for _, f := range structs.Names(&PeopleOutput{}) {
+		// 	allMatchKeys = append(allMatchKeys, strings.ToUpper(GetMkField(&(v.Output), f).Value))
+		// }
+		// if GetRedisIntValue(allMatchKeys) > 0 {
+		// 	LogDev(fmt.Sprintf("Detected Dupe value %v", allMatchKeys))
+		// 	v.Type = "dupe"
+		// } else {
+		// 	SetRedisTempKey(allMatchKeys)
+		// }
 
 		// preload Set (Search:[FiberID])
 		if len(input.Signature.RecordID) == 0 {
@@ -644,13 +643,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 		if len(v.Output.EMAIL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.Output.EMAIL.Value)))
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value))))
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.ToUpper(v.Output.PHONE.Value), strings.ToUpper(v.Output.FINITIAL.Value)))
+			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value))))
 		}
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.Output.FNAME.Value), strings.ToUpper(v.Output.LNAME.Value), strings.ToUpper(v.Output.AD1.Value), strings.ToUpper(v.Output.CITY.Value), strings.ToUpper(v.Output.STATE.Value)))
+			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
