@@ -47,6 +47,10 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	if input.EventID == "00000000-0000-0000-0000-000000000000" { // do not fire on myself
+		return nil
+	}
+
 	var sets []PeopleSetDS
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &sets); err != nil {
