@@ -47,10 +47,6 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	if input.EventID == "00000000-0000-0000-0000-000000000000" { // do not fire on myself
-		return nil
-	}
-
 	cleanupKey := []string{input.EventID, "cleanup"}
 	if GetRedisIntValue(cleanupKey) == 1 { // already processed
 		return nil
@@ -115,7 +111,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		output.Signature = Signature{
 			OwnerID:   fiber.OwnerID,
 			Source:    fiber.Source,
-			EventID:   "00000000-0000-0000-0000-000000000000", // fixed fake event id
+			EventID:   input.EventID,
 			EventType: fiber.EventType,
 			FiberType: fiberType,
 			RecordID:  fiber.RecordID,
