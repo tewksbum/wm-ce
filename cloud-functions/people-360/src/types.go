@@ -7,7 +7,8 @@ import (
 )
 
 type PubSubMessage struct {
-	Data []byte `json:"data"`
+	Data       []byte            `json:"data"`
+	Attributes map[string]string `json:"attributes"`
 }
 
 type Signature struct {
