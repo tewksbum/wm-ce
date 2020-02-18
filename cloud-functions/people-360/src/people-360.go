@@ -74,6 +74,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	inputIsFromPost := false
+	if value, ok := m.Attributes["source"]; ok {
+		if value == "post" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
+			inputIsFromPost = true
+		}
+	}
 	for _, input := range inputs {
 		// assign first initial and zip5
 		if len(input.MatchKeys.FNAME.Value) > 0 {
@@ -349,7 +355,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// append to the output value
-		output.Signatures = append(FiberSignatures, input.Signature)
+		if inputIsFromPost { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
+			output.Signatures = append(FiberSignatures, input.Signature)
+		}
+
 		output.Signature = Signature360{
 			OwnerID:   input.Signature.OwnerID,
 			Source:    input.Signature.Source,
@@ -532,20 +541,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 				} else {
 					SetRedisTempKey(cleanupKey)
-					if value, ok := m.Attributes["source"]; ok {
-						if value == "post" { // only pub this message if the source is from post, do not pub if 720
-							finished := FileComplete{
-								EventID: input.Signature.EventID,
-								OwnerID: input.Signature.OwnerID,
-							}
-							finishedJSON, _ := json.Marshal(finished)
-							pcresult := cleanup.Publish(ctx, &pubsub.Message{
-								Data: finishedJSON,
-							})
-							_, err = pcresult.Get(ctx)
-							if err != nil {
-								log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
-							}
+					if inputIsFromPost { // only pub this message if the source is from post, do not pub if 720
+						finished := FileComplete{
+							EventID: input.Signature.EventID,
+							OwnerID: input.Signature.OwnerID,
+						}
+						finishedJSON, _ := json.Marshal(finished)
+						pcresult := cleanup.Publish(ctx, &pubsub.Message{
+							Data: finishedJSON,
+						})
+						_, err = pcresult.Get(ctx)
+						if err != nil {
+							log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
 						}
 					}
 				}
