@@ -80,10 +80,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			inputIsFromPost = true
 		}
 	}
-
-	var expiredSetCollection []string
-	var dsNameSpace string
-
 	for _, input := range inputs {
 		// assign first initial and zip5
 		if len(input.MatchKeys.FNAME.Value) > 0 {
@@ -128,7 +124,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		// fiber in DS
 		dsFiber := GetFiberDS(&fiber)
-		dsNameSpace = strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
 		dsKey := datastore.NameKey(DSKindFiber, fiber.ID, nil)
 		dsKey.Namespace = dsNameSpace
 		dsFiber.ID = dsKey
@@ -459,6 +455,30 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
+		if len(expiredSetCollection) > 0 {
+			// remove expired sets and setmembers from DS
+			var SetKeys []*datastore.Key
+			// var MemberKeys []*datastore.Key
+			var GoldenKeys []*datastore.Key
+
+			for _, set := range expiredSetCollection {
+				setKey := datastore.NameKey(DSKindSet, set, nil)
+				setKey.Namespace = dsNameSpace
+				SetKeys = append(SetKeys, setKey)
+				goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+				goldenKey.Namespace = dsNameSpace
+				GoldenKeys = append(GoldenKeys, goldenKey)
+			}
+
+			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
+			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
+				log.Printf("Error: deleting expired sets: %v", err)
+			}
+			if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
+				log.Printf("Error: deleting expired golden records: %v", err)
+			}
+		}
+
 		setDS.Search = SetSearchFields
 		log.Printf("set search: %+v", setDS.Search)
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
@@ -566,31 +586,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				"source": "360",
 			},
 		})
-	}
-
-	// purge expired sets and collections
-	if len(expiredSetCollection) > 0 {
-		// remove expired sets and setmembers from DS
-		var SetKeys []*datastore.Key
-		// var MemberKeys []*datastore.Key
-		var GoldenKeys []*datastore.Key
-
-		for _, set := range expiredSetCollection {
-			setKey := datastore.NameKey(DSKindSet, set, nil)
-			setKey.Namespace = dsNameSpace
-			SetKeys = append(SetKeys, setKey)
-			goldenKey := datastore.NameKey(DSKindGolden, set, nil)
-			goldenKey.Namespace = dsNameSpace
-			GoldenKeys = append(GoldenKeys, goldenKey)
-		}
-
-		LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
-		if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
-			log.Printf("Error: deleting expired sets: %v", err)
-		}
-		if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
-			log.Printf("Error: deleting expired golden records: %v", err)
-		}
 	}
 
 	return nil
