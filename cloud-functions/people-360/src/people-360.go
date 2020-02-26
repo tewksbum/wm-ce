@@ -162,6 +162,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 		var matchedFibers []string
 		matchedDefaultFiber := 0
+		var expiredSetCollection []string
 
 		if matchable {
 			// locate existing set
@@ -187,42 +188,37 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			LogDev(fmt.Sprintf("redis matching keys: %+v, values %+v", redisKeys, redisValues))
 
 			// read the FiberIDs from Redis
-			searchKeys := [][]string{}
-			searchSets := [][]string{}
+			searchKeys := []string{}
+			searchSets := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
 					msSet := []string{input.Signature.OwnerID, "set", search}
-					searchKeys = append(searchKeys, msKey)
-					searchSets = append(searchSets, msSet)
+					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
+					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
 			}
 			if len(searchKeys) > 0 {
-				for _, searchKey := range searchKeys {
-					searchValues := GetRedisValues(searchKey)
-					if len(searchValues) > 0 {
-						for _, searchValue := range searchValues {
-							foundFibers := strings.Split(searchValue, ",")
-							for _, foundFiber := range foundFibers {
-								if len(foundFiber) > 20 { // make sure it is an actual id
-									matchedFibers = append(matchedFibers, foundFiber)
-								}
+				searchValues := GetRedisValues(searchKeys)
+				if len(searchValues) > 0 {
+					for _, searchValue := range searchValues {
+						foundFibers := strings.Split(searchValue, ",")
+						for _, foundFiber := range foundFibers {
+							if len(foundFiber) > 20 { // make sure it is an actual id
+								matchedFibers = append(matchedFibers, foundFiber)
 							}
 						}
 					}
 				}
 			}
-
 			if len(searchSets) > 0 {
-				for _, searchSet := range searchSets {
-					searchValues := GetRedisValues(searchSet)
-					if len(searchValues) > 0 {
-						for _, searchValue := range searchValues {
-							foundSets := strings.Split(searchValue, ",")
-							for _, foundSet := range foundSets {
-								if len(foundSet) > 20 { // make sure it is an actual id
-									expiredSetCollection = append(expiredSetCollection, foundSet)
-								}
+				searchValues := GetRedisValues(searchSets)
+				if len(searchValues) > 0 {
+					for _, searchValue := range searchValues {
+						foundSets := strings.Split(searchValue, ",")
+						for _, foundSet := range foundSets {
+							if len(foundSet) > 20 { // make sure it is an actual id
+								expiredSetCollection = append(expiredSetCollection, foundSet)
 							}
 						}
 					}
@@ -572,6 +568,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		})
 	}
 
+	// purge expired sets and collections
 	if len(expiredSetCollection) > 0 {
 		// remove expired sets and setmembers from DS
 		var SetKeys []*datastore.Key
