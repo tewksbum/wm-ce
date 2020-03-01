@@ -195,26 +195,28 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			if len(searchKeys) > 0 {
-				searchValues := GetRedisValues(searchKeys)
+				searchValues := GetRedisGuidValuesList(searchKeys)
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
-						foundFibers := strings.Split(searchValue, ",")
-						for _, foundFiber := range foundFibers {
-							if len(foundFiber) > 20 { // make sure it is an actual id
-								matchedFibers = append(matchedFibers, foundFiber)
+						for _, searchVal := range searchValue {
+							if len(searchVal) > 0 {
+								if !Contains(matchedFibers, searchVal) {
+									matchedFibers = append(matchedFibers, searchVal)
+								}
 							}
 						}
 					}
 				}
 			}
 			if len(searchSets) > 0 {
-				searchValues := GetRedisValues(searchSets)
+				searchValues := GetRedisGuidValuesList(searchSets)
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
-						foundSets := strings.Split(searchValue, ",")
-						for _, foundSet := range foundSets {
-							if len(foundSet) > 20 { // make sure it is an actual id
-								expiredSetCollection = append(expiredSetCollection, foundSet)
+						for _, searchVal := range searchValue {
+							if len(searchVal) > 0 {
+								if !Contains(expiredSetCollection, searchVal) {
+									expiredSetCollection = append(expiredSetCollection, searchVal)
+								}
 							}
 						}
 					}
@@ -331,11 +333,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
 					msKey := []string{input.Signature.OwnerID, "search", search}
-					fiberKeys := GetRedisStringsValue(msKey)
-					if !Contains(fiberKeys, dsFiber.ID.Name) {
-						fiberKeys = append(fiberKeys, dsFiber.ID.Name)
-						SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
-					}
+					AppendRedisTempKey(msKey, dsFiber.ID.Name)
 				}
 			}
 		}
@@ -447,11 +445,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if len(SetSearchFields) > 0 {
 			for _, search := range SetSearchFields {
 				msSet := []string{input.Signature.OwnerID, "set", search}
-				setKeys := GetRedisStringsValue(msSet)
-				if !Contains(setKeys, setDS.ID.Name) {
-					setKeys = append(setKeys, setDS.ID.Name)
-					SetRedisTempKeyWithValue(msSet, strings.Join(setKeys, ","))
-				}
+				AppendRedisTempKey(msSet, setDS.ID.Name)
 			}
 		}
 

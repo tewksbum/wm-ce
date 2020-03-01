@@ -792,6 +792,35 @@ func SetRedisTempKeyWithValue(keyparts []string, value string) {
 	}
 }
 
+func AppendRedisTempKey(keyparts []string, value string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("APPEND", strings.Join(keyparts, ":"), value)
+	if err != nil {
+		log.Printf("Error APPEND value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+	_, err = ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func GetRedisGuidList(keyparts []string) []string {
+	val := GetRedisStringValue(keyparts)
+	result := []string{}
+	if len(val) > 0 {
+		runes := []rune(val)
+		for i := 0; i < len(val)/36; i++ {
+			subval := string(runes[i*36 : i*36+36])
+			if !Contains(result, subval) {
+				result = append(result, subval)
+			}
+		}
+	}
+	return result
+}
+
 func SetRedisKeyIfNotExists(keyparts []string) {
 	ms := msp.Get()
 	defer ms.Close()
