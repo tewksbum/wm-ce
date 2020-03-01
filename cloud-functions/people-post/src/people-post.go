@@ -681,25 +681,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				// load search keys into memstore, load existing first
 				if len(matchedFibers) > 0 {
 					msKey := []string{input.Signature.OwnerID, "search", search}
-					fiberKeys := GetRedisStringsValue(msKey)
 					for _, mf := range matchedFibers {
-						if !Contains(fiberKeys, mf) {
-							fiberKeys = append(fiberKeys, mf)
-						}
+						AppendRedisTempKey(msKey, mf)
 					}
-					SetRedisTempKeyWithValue(msKey, strings.Join(fiberKeys, ","))
 				}
 
 				log.Printf("Expiring sets %+v", expiredSetCollection)
 				if len(expiredSetCollection) > 0 {
 					msKey := []string{input.Signature.OwnerID, "set", search}
-					setKeys := GetRedisStringsValue(msKey)
 					for _, sk := range expiredSetCollection {
-						if !Contains(setKeys, sk) {
-							setKeys = append(setKeys, sk)
-						}
+						AppendRedisTempKey(msKey, sk)
 					}
-					SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
 				}
 				// 	// remove expired sets and setmembers from DS
 				// 	var SetKeys []*datastore.Key

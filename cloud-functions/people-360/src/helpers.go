@@ -306,6 +306,35 @@ func SetRedisTempKeyWithValue(keyparts []string, value string) {
 	}
 }
 
+func AppendRedisTempKey(keyparts []string, value string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("APPEND", strings.Join(keyparts, ":"), value)
+	if err != nil {
+		log.Printf("Error APPEND value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+	_, err = ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration)
+	if err != nil {
+		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func GetRedisGuidList(keyparts []string) []string {
+	val := GetRedisStringValue(keyparts)
+	result := []string{}
+	if len(val) > 0 {
+		runes := []rune(val)
+		for i := 0; i < len(val)/36; i++ {
+			subval := string(runes[i*36 : i*36+36])
+			if !Contains(result, subval) {
+				result = append(result, subval)
+			}
+		}
+	}
+	return result
+}
+
 func SetRedisKeyIfNotExists(keyparts []string) {
 	ms := msp.Get()
 	defer ms.Close()
@@ -405,4 +434,35 @@ func GetRedisValues(keys []string) []string {
 		log.Printf("Error getting redis keys %+v, error %v", keys, err)
 	}
 	return values
+}
+
+func GetRedisGuidValuesList(keys []string) [][]string {
+	if len(keys) == 0 {
+		return [][]string{}
+	}
+	ms := msp.Get()
+	defer ms.Close()
+	var args []interface{}
+	for _, k := range keys {
+		args = append(args, k)
+	}
+	values, err := redis.Strings(ms.Do("MGET", args...))
+	if err != nil {
+		log.Printf("Error getting redis keys %+v, error %v", keys, err)
+	}
+	if len(values) > 0 {
+		output := [][]string{}
+		for _, val := range values {
+			result := []string{}
+			runes := []rune(val)
+			for i := 0; i < len(val)/36; i++ {
+				subval := string(runes[i*36 : i*36+36])
+				if !Contains(result, subval) {
+					result = append(result, subval)
+				}
+			}
+			output = append(output, result)
+		}
+	}
+	return [][]string{}
 }
