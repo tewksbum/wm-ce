@@ -344,9 +344,9 @@ func AppendRedisTempKey(keyparts []string, value string) {
 	if err != nil {
 		log.Printf("Error APPEND value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
 	}
-	_, err = ms.Do("SETEX", strings.Join(keyparts, ":"), redisTemporaryExpiration)
+	_, err = ms.Do("EXPIRE", strings.Join(keyparts, ":"), redisTemporaryExpiration)
 	if err != nil {
-		log.Printf("Error SETEX value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+		log.Printf("Error EXPIRE value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
 	}
 }
 
