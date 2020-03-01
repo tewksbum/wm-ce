@@ -196,6 +196,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			if len(searchKeys) > 0 {
 				searchValues := GetRedisGuidValuesList(searchKeys)
+
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
