@@ -588,53 +588,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		// MatchByValue1 := strings.Replace(v.Output.TRUSTEDID.Value, "'", `''`, -1)
-		// MatchByValue2 := strings.Replace(v.Output.EMAIL.Value, "'", `''`, -1)
-		// MatchByValue3A := strings.Replace(v.Output.PHONE.Value, "'", `''`, -1)
-		// MatchByValue3B := strings.Replace(v.Output.FINITIAL.Value, "'", `''`, -1)
-		// MatchByValue5A := strings.Replace(v.Output.CITY.Value, "'", `''`, -1)
-		// MatchByValue5B := strings.Replace(v.Output.STATE.Value, "'", `''`, -1)
-		// MatchByValue5C := strings.Replace(v.Output.LNAME.Value, "'", `''`, -1)
-		// MatchByValue5D := strings.Replace(v.Output.FNAME.Value, "'", `''`, -1)
-		// MatchByValue5E := strings.Replace(v.Output.AD1.Value, "'", `''`, -1)
-		// // MatchByValue5F := strings.Replace(v.Output.ADBOOK.Value, "'", `''`, -1)
-
-		// redisMatchValue0 := []string{input.Signature.EventID, input.Signature.RecordID, "match"}
-		// SetRedisTempKey(append(redisMatchValue0, "retry"))
-		// // SetRedisTempKey(redisMatchValue0)
-
-		// if len(MatchByValue1) > 0 {
-		// 	redisMatchValue1 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue1), "match"}
-		// 	SetRedisTempKey(append(redisMatchValue1, "retry"))
-		// 	// SetRedisTempKey(redisMatchValue1)
-		// }
-		// if len(MatchByValue2) > 0 {
-		// 	redisMatchValue2 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue2), "match"}
-		// 	SetRedisTempKey(append(redisMatchValue2, "retry"))
-		// 	// SetRedisTempKey(redisMatchValue2)
-		// }
-		// if len(MatchByValue3A) > 0 && len(MatchByValue3B) > 0 {
-		// 	redisMatchValue3 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue3A), strings.ToUpper(MatchByValue3B), "match"}
-		// 	SetRedisTempKey(append(redisMatchValue3, "retry"))
-		// 	// SetRedisTempKey(redisMatchValue3)
-		// }
-		// if len(MatchByValue5A) > 0 && len(MatchByValue5B) > 0 && len(MatchByValue5C) > 0 && len(MatchByValue5D) > 0 && len(MatchByValue5E) > 0 {
-		// 	redisMatchValue5 := []string{input.Signature.EventID, strings.ToUpper(MatchByValue5A), strings.ToUpper(MatchByValue5B), strings.ToUpper(MatchByValue5C), strings.ToUpper(MatchByValue5D), strings.ToUpper(MatchByValue5E), "match"}
-		// 	SetRedisTempKey(append(redisMatchValue5, "retry"))
-		// 	// SetRedisTempKey(redisMatchValue5)
-		// }
-
-		// allMatchKeys := []string{input.Signature.EventID, "dupe"}
-		// for _, f := range structs.Names(&PeopleOutput{}) {
-		// 	allMatchKeys = append(allMatchKeys, strings.ToUpper(GetMkField(&(v.Output), f).Value))
-		// }
-		// if GetRedisIntValue(allMatchKeys) > 0 {
-		// 	LogDev(fmt.Sprintf("Detected Dupe value %v", allMatchKeys))
-		// 	v.Type = "dupe"
-		// } else {
-		// 	SetRedisTempKey(allMatchKeys)
-		// }
-
 		// preload Set (Search:[FiberID])
 		if len(input.Signature.RecordID) == 0 {
 			// ensure record id is not blank or we'll have problem
@@ -656,24 +609,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
+				msKey := []string{input.Signature.OwnerID, "search", search}
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
 					log.Fatalf("Error querying sets: %v", err)
 				}
-				var expiredSetCollection []string
 				var matchedFibers []string
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
-					if !Contains(expiredSetCollection, s.ID.Name) {
-						expiredSetCollection = append(expiredSetCollection, s.ID.Name)
-						log.Printf("Adding set %v to expired sets", s.ID.Name)
-					}
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
-							if !Contains(matchedFibers, f) {
-								matchedFibers = append(matchedFibers, f)
-							}
+							AppendRedisTempKey(msKey, f)
 						}
 					}
 				}
@@ -685,51 +632,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						AppendRedisTempKey(msKey, mf)
 					}
 				}
-
-				log.Printf("Expiring sets %+v", expiredSetCollection)
-				if len(expiredSetCollection) > 0 {
-					msKey := []string{input.Signature.OwnerID, "set", search}
-					for _, sk := range expiredSetCollection {
-						AppendRedisTempKey(msKey, sk)
-					}
-				}
-				// 	// remove expired sets and setmembers from DS
-				// 	var SetKeys []*datastore.Key
-				// 	// var MemberKeys []*datastore.Key
-				// 	var GoldenKeys []*datastore.Key
-
-				// 	for _, set := range expiredSetCollection {
-				// 		setKey := datastore.NameKey(DSKindSet, set, nil)
-				// 		setKey.Namespace = dsNameSpace
-				// 		SetKeys = append(SetKeys, setKey)
-				// 		goldenKey := datastore.NameKey(DSKindGolden, set, nil)
-				// 		goldenKey.Namespace = dsNameSpace
-				// 		GoldenKeys = append(GoldenKeys, goldenKey)
-				// 	}
-
-				// 	LogDev(fmt.Sprintf("deleting %v expired sets and %v expired golden records", len(SetKeys), len(GoldenKeys)))
-				// 	if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
-				// 		log.Printf("Error: deleting expired sets: %v", err)
-				// 	}
-				// 	if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
-				// 		log.Printf("Error: deleting expired golden records: %v", err)
-				// 	}
-
-				// 	// expired := PeopleDelete{
-				// 	// 	OwnerID: input.Signature.OwnerID,
-				// 	// 	Expired: expiredSetCollection,
-				// 	// }
-				// 	// expireJSON, _ := json.Marshal(expired)
-				// 	// expire.Publish(ctx, &pubsub.Message{
-				// 	// 	Data: expireJSON,
-				// 	// 	Attributes: map[string]string{
-				// 	// 		"type":   "people",
-				// 	// 		"source": "delete",
-				// 	// 	},
-				// 	// })
-				// 	// log.Printf("pubbed delete %v", string(expireJSON))
-				// }
-
 			}
 		}
 

@@ -1140,7 +1140,7 @@ tmp-bn
 	for _, line := range lines {
 		sponsor := strings.TrimSpace(line)
 		if len(sponsor) > 0 {
-			sponsorJson := strings.ReplaceAll(json, "@sponsor@", sponsor)
+			sponsorJson := strings.NewReplacer("@sponsor@", sponsor).Replace(json)
 			req := httptest.NewRequest("POST", "/", strings.NewReader(sponsorJson))
 			req.Header.Add("Content-Type", "application/json")
 			rr := httptest.NewRecorder()
