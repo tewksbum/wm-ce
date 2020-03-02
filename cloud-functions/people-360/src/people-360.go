@@ -318,6 +318,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
+		// write fiber search key
 		var searchFields []string
 		if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
 			// get this into redis
@@ -350,7 +351,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if !matchable {
 			LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
-			return nil
+			continue
 		}
 
 		// append to the output value
