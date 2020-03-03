@@ -96,19 +96,23 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		existingCheck := 0
-		if input.Signature.FiberType == "default" {
-			existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
-			if existingCheck == 1 { // this fiber has already been processed
-				LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
-				return nil
-			}
-		} else if input.Signature.FiberType == "mar" {
-			existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
-			if existingCheck == 0 { // default fiber has not been processed
-				IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-				retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-				if retryCount < 30 {
-					return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
+
+		// only perform the duplicate detection if it is coming from post, do not do it otherwise, such as from cleanup
+		if inputIsFromPost {
+			if input.Signature.FiberType == "default" {
+				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+				if existingCheck == 1 { // this fiber has already been processed
+					LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
+					return nil
+				}
+			} else if input.Signature.FiberType == "mar" {
+				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+				if existingCheck == 0 { // default fiber has not been processed
+					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+					retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+					if retryCount < 30 {
+						return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
+					}
 				}
 			}
 		}
