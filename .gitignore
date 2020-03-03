@@ -1,11 +1,11 @@
 .settings/
 cloud-functions/purge-util/src/debug.test
 cloud-functions/utilities/input.xlsx
-cloud-functions/utilities/batch-reports/input.xlsx
-cloud-functions/utilities/batch-reports/report.xlsx
-cloud-functions/utilities/batch-reports/detail-report.xlsx
+cloud-functions/utilities/_output
+cloud-functions/utilities/batch-reports/*.xlsx
 .DS_Store
 cloud-functions/utilities/batch-reports/~$detail-report.xlsx
 .vscode/settings.json
 *Session.sql
 debug.test
+
