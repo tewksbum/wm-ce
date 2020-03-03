@@ -368,7 +368,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if output.CreatedAt.IsZero() {
 			output.CreatedAt = time.Now()
 		}
-		output.Fibers = append(matchedFibers, fiber.ID)
+		if !Contains(matchedFibers, fiber.ID) {
+			matchedFibers = append(matchedFibers, fiber.ID)
+		}
+		output.Fibers = matchedFibers
 		output.Passthroughs = OutputPassthrough
 		//output.TrustedIDs = append(output.TrustedIDs, input.MatchKeys.CAMPAIGNID.Value)
 		var OutputMatchKeys []MatchKey360
@@ -451,6 +454,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
+		setDS.Search = SetSearchFields
+		log.Printf("set search: %+v", setDS.Search)
+		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
+			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
+		}
+
 		if len(expiredSetCollection) > 0 {
 			// remove expired sets and setmembers from DS
 			var SetKeys []*datastore.Key
@@ -473,12 +482,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
-		}
-
-		setDS.Search = SetSearchFields
-		log.Printf("set search: %+v", setDS.Search)
-		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
-			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
 
 		if input.Signature.FiberType == "default" {
