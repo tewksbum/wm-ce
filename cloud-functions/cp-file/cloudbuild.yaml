@@ -1,7 +1,7 @@
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
-    args: ['functions', 
+    args: ['functions', "beta", 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
