@@ -10,6 +10,7 @@ steps:
     "--timeout", "120",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "50",
+    "--egress-settings", "all",
     "--vpc-connector", "${_VPC_CONNECTOR}",
     "--retry"
     ]
@@ -20,6 +21,6 @@ substitutions:
     _FUNCTION_NAME: cp-file
     _TRIGGER_TOPIC: people-cp-ready
     _ENTRY_POINT: GenerateCP
-    _VPC_CONNECTOR: cf-connector-4
+    _VPC_CONNECTOR: cf-connector-outside
 options:
     substitution_option: 'ALLOW_LOOSE'
