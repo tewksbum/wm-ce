@@ -176,9 +176,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	csv.Flush()
 
 	csvBytes := buf.Bytes()
-	csvString := string(csvBytes)
 
-	log.Println(csvString)
 	file := sb.Object(input.EventID + ".csv")
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
