@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"cloud.google.com/go/pubsub"
@@ -55,6 +56,18 @@ func Contains(slice []string, item string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// JY: this code looks dangerous as it uses contains, think minneapolis
+func reMilityBaseCity(val string) bool {
+	city := strings.ToUpper(val)
+	if city == "AFB" || city == "APO" || city == "DPO" || city == "FPO" {
+		return true
+	}
+	// if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
+	// 	return true
+	// }
 	return false
 }
 
@@ -341,9 +354,8 @@ func populateCityStateFromZip(zip string) (string, string) {
 	}
 	if cs, ok := zipMap[checkZip]; ok {
 		return cs.City, cs.State
-	} else {
-		return "", ""
 	}
+	return "", ""
 }
 
 func readZipMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]CityState, error) {
@@ -516,6 +528,7 @@ func ParseAddress(address string) LibPostalParsed {
 	baseUrl.RawQuery = params.Encode()
 
 	req, err := http.NewRequest(http.MethodGet, baseUrl.String(), nil)
+
 	if err != nil {
 		log.Fatalf("error preparing address parser: %v", err)
 	}
@@ -634,54 +647,63 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	return value
 }
 
-func CalcClassYear(cy string) string {
-	log.Printf("have classyear: %v", cy)
-	if reGraduationYear.MatchString(cy) {
-		return cy
-	} else if reClassYearFY1.MatchString(cy) { // FY1617
-		twodigityear, err := strconv.Atoi(cy[2:4])
+func CalcClassYear(title string, sy string, flag bool) (string, string) {
+	LogDev(fmt.Sprintf("calculating classyear and status: %v %v", title, sy))
+	if reGraduationYear.MatchString(title) {
+		return title, CalcClassStatus(title)
+	} else if reClassYearFY1.MatchString(title) { // FY1617
+		twodigityear, err := strconv.Atoi(title[2:4])
 		if err == nil {
-			return strconv.Itoa(2000 + twodigityear + 4)
+			title = strconv.Itoa(2000 + twodigityear + 4)
+			return title, CalcClassStatus(title)
 		}
-	} else if reGraduationYear2.MatchString(cy) { // given us a 2 year like "20"
-		twodigityear, err := strconv.Atoi(cy)
+	} else if reGraduationYear2.MatchString(title) { // given us a 2 year like "20"
+		twodigityear, err := strconv.Atoi(title)
 		if err == nil {
-			return strconv.Itoa(2000 + twodigityear)
+			title = strconv.Itoa(2000 + twodigityear)
+			return title, CalcClassStatus(title)
 		}
 	}
 
-	switch strings.ToLower(cy) {
-	case "freshman", "frosh", "fresh", "fr", "first year student", "first year", "new resident", "1st year":
-		return strconv.Itoa(TitleYear + 4)
-	case "sophomore", "soph", "so", "sophomore/transfer", "2nd year":
-		return strconv.Itoa(TitleYear + 3)
-	case "junior", "jr", "junior/senior", "3rd year":
-		return strconv.Itoa(TitleYear + 2)
-	case "senior", "sr", "4th year":
-		return strconv.Itoa(TitleYear + 1)
-	case "graduate", "undergraduate over 23 (archive)", "gr":
-		return strconv.Itoa(TitleYear - 1)
-	case "allfresh":
-		return strconv.Itoa(TitleYear + 4)
-	default:
-		return strconv.Itoa(TitleYear + 4)
+	if sy != "" {
+		twodigityear, err := strconv.Atoi(sy[0:2])
+		if err == nil {
+			// would be better to move these VER conditionals to regex....
+			if reFreshman.MatchString(title) {
+				return strconv.Itoa(2000 + twodigityear + 4), "undergraduate"
+			} else if reSophomore.MatchString(title) {
+				return strconv.Itoa(2000 + twodigityear + 3), "undergraduate"
+			} else if reJunior.MatchString(title) {
+				return strconv.Itoa(2000 + twodigityear + 2), "undergraduate"
+			} else if reSenior.MatchString(title) {
+				return strconv.Itoa(2000 + twodigityear + 1), "undergraduate"
+			} else if reGraduate.MatchString(title) {
+				return strconv.Itoa(2000 + twodigityear - 1), "graduate"
+			}
+		}
 	}
 
+	//It is only one try
+	if titleYearAttr != "" && flag {
+		return CalcClassYear(titleYearAttr, sy, false)
+	}
+
+	// if we can't fine a class match... then don't return one...
+	return "", ""
 }
 
-func CalcClassDesig(cy string) string {
-	switch strings.ToLower(cy) {
-	case "freshman", "frosh", "fresh", "fr":
-		return "FR"
-	case "sophomore", "soph", "so":
-		return "SO"
-	case "junior", "jr":
-		return "JR"
-	case "senior", "sr":
-		return "SR"
-	default:
-		return ""
+func CalcClassStatus(cy string) string {
+	LogDev(fmt.Sprintf("Calculating status classyear: %v", cy))
+	digityear, err := strconv.Atoi(cy)
+	if err == nil {
+		if digityear < time.Now().Year() {
+			return "graduated"
+		} else if digityear == time.Now().Year() && time.Now().Month() > 4 {
+			return "graduated"
+		}
+		return "ungraduated"
 	}
+	return ""
 }
 
 func ParseName(v string) NameParsed {
@@ -692,7 +714,7 @@ func ParseName(v string) NameParsed {
 		lname := result[2]
 		suffix := result[3]
 
-		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") {
+		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") || strings.Contains(fname, ",") {
 			parsed1 := reFullName2.FindStringSubmatch(v)
 			if len(parsed1) >= 3 {
 				lname = parsed1[1]

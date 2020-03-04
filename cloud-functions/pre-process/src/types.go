@@ -135,6 +135,7 @@ type PeopleERR struct {
 	ZipCode              int `json:"ZipCode"`
 	TrustedID            int `json:"TrustedID"`
 	Title                int `json:"Title"`
+	SchoolYear           int `json:"SchoolYear"`
 	Role                 int `json:"Role"`
 	Dorm                 int `json:"Dorm"`
 	Room                 int `json:"Room"`
@@ -272,7 +273,7 @@ type NERCache struct {
 	TimeStamp    time.Time    `json:"time"`
 	ApplyCounter int          `json:"counter"`
 	Recompute    bool         `json:"dirty"`
-	Source       string       `json:"source`
+	Source       string       `json:"source"`
 }
 
 type NERcolumns struct {
@@ -283,8 +284,8 @@ type NERcolumns struct {
 type Output struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	Prediction  Prediction        `json:"prediction`
-	Columns     []InputColumn     `json:"columns`
+	Prediction  Prediction        `json:"prediction"`
+	Columns     []InputColumn     `json:"columns"`
 }
 
 type OutputFlag struct {

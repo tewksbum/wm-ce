@@ -20,15 +20,16 @@ import (
 	"github.com/google/uuid"
 )
 
-var Env = os.Getenv("ENVIRONMENT")
-var dev = Env == "dev"
+var ProjectID = os.Getenv("PROJECTID")
+var PubSubTopic = os.Getenv("PSOUTPUT")
+var dev = os.Getenv("ENVIRONMENT") == "dev"
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
 var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
 var AddressParserPath = os.Getenv("ADDRESSPATH")
 
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
 
-var reGraduationYear = regexp.MustCompile(`20^\d{2}$`)
+var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
 var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
 var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
@@ -44,26 +45,33 @@ var reFullName2 = regexp.MustCompile(`^(.*), (.*) (.{1})\.$`) // Wilson, Lauren 
 var reFullName3 = regexp.MustCompile(`^(.*), (.*)$`)          // Wilson, Lauren K.
 var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|miss|mrs\.|Mr\.|Ms\.|Mrs\.|MR|MRS|MS)$`)
 
+//To calculate class year and school status
+var reFreshman = regexp.MustCompile(`(?i)freshman|frosh|fresh|fr|first year|new resident|1st year`)
+var reSophomore = regexp.MustCompile(`(?i)sophomore|soph|so|2nd year`)
+var reJunior = regexp.MustCompile(`(?i)junior|jr|3rd year`)
+var reSenior = regexp.MustCompile(`(?i)senior|sr|4th year`)
+var reGraduate = regexp.MustCompile(`(?i)^(graduate|undergraduate over 23 \(archive\)|gr)`)
+
 var fieldsToCopyForDefault = []string{"AD1", "AD2", "AD1NO", "ADTYPE", "ADBOOK", "CITY", "STATE", "ZIP", "COUNTRY", "ZIPTYPE", "RECORDTYPE", "ADPARSER"}
 
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
 
+// var StateList = map[string]string{
+// 	"ALASKA": "AK", "ARIZONA": "AZ", "ARKANSAS": "AR", "CALIFORNIA": "CA", "COLORADO": "CO", "CONNECTICUT": "CT", "DELAWARE": "DE",
+// 	"FLORIDA": "FL", "GEORGIA": "GA", "HAWAII": "HI", "IDAHO": "ID", "ILLINOIS": "IL", "INDIANA": "IN", "IOWA": "IA", "KANSAS": "KS",
+// 	"KENTUCKY": "KY", "LOUISIANA": "LA", "MAINE": "ME", "MARYLAND": "MD", "MASSACHUSETTS": "MA", "MICHIGAN": "MI", "MINNESOTA": "MN",
+// 	"MISSISSIPPI": "MS", "MISSOURI": "MO", "MONTANA": "MT", "NEBRASKA": "NE", "NEVADA": "NV", "NEW HAMPSHIRE": "NH", "NEW JERSEY": "NJ",
+// 	"NEW MEXICO": "NM", "NEW YORK": "NY", "NORTH CAROLINA": "NC", "NORTH DAKOTA": "ND", "OHIO": "OH", "OKLAHOMA": "OK", "OREGON": "OR",
+// 	"PENNSYLVANIA": "PA", "RHODE ISLAND": "RI", "SOUTH CAROLINA": "SC", "SOUTH DAKOTA": "SD", "TENNESSEE": "TN", "TEXAS": "TX", "UTAH": "UT",
+// 	"VERMONT": "VT", "VIRGINIA": "VA", "WASHINGTON": "WA", "WEST VIRGINIA": "WV", "WISCONSIN": "WI", "WYOMING": "WY", "DISTRICT OF COLUMBIA": "DC",
+// 	"MARSHALL ISLANDS": "MH", "ARMED FORCES AFRICA": "AE", "ARMED FORCES AMERICAS": "AA", "ARMED FORCES CANADA": "AE", "ARMED FORCES EUROPE": "AE",
+// 	"ARMED FORCES MIDDLE EAST": "AE", "ARMED FORCES PACIFIC": "AP",
+// }
+
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
-
-// JY: this code looks dangerous as it uses contains, think minneapolis
-func reMilityBaseCity(val string) bool {
-	city := strings.ToUpper(val)
-	if city == "AFB" || city == "APO" || city == "DPO" || city == "FPO" {
-		return true
-	}
-	// if strings.Contains(key, "AFB") || strings.Contains(key, "APO") || strings.Contains(key, "DPO") || strings.Contains(key, "FPO") {
-	// 	return true
-	// }
-	return false
-}
 
 var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
@@ -77,6 +85,9 @@ var msp *redis.Pool
 var fs *datastore.Client
 
 var MLLabels map[string]string
+
+var titleYearAttr = ""
+var schoolYearAttr = ""
 
 func init() {
 	ctx := context.Background()
@@ -102,35 +113,20 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
 }
 
-var TitleYear int
-
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	// log.Printf("Received message %+v", string(m.Data))
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
+	//LogDev(fmt.Sprintf("PubSubMessage PostProcessPeople: %s", string(m.Data)))
 
-	TitleYear = time.Now().Year()
+	var titleValue = ""
 	var MPRCounter int       // keep track of how many MPR we have
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
 	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
-
-	// locate title year, if a 4 digit year is passed then assign it
-	for _, column := range input.Columns {
-		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
-			// make sure thie field is not used for anything else
-			LogDev(fmt.Sprintf("Using attribute TitleYear: %v", column.Value))
-			column.PeopleERR.Junk = 1
-
-			if strings.HasPrefix(column.Value, "20") && len(column.Value) == 4 && IsInt(column.Value) {
-				titleYear, _ := strconv.ParseInt(column.Value, 10, 0)
-				TitleYear = int(titleYear)
-			}
-		}
-	}
 
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
@@ -143,11 +139,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			continue
 		}
 
-		if strings.ToLower(column.Name) == "titleyear" && column.IsAttribute {
-			// make sure thie field is not used for anything else
-			column.PeopleERR.Junk = 1
-		}
-
 		// capture ML prediction to column
 		// predictionValue := input.Prediction.Predictions[index]
 		// predictionKey := strconv.Itoa(int(predictionValue))
@@ -155,7 +146,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// column.MatchKey = mlMatchKey
 
 		// let's figure out which column this goes to
-		if column.PeopleERR.TrustedID == 1 {
+		if column.PeopleERR.SchoolYear == 1 {
+			// right now schoolYear is just a pass through value...
+			// we do expect to get this w/ most files
+			schoolYearAttr = column.Value
+		} else if column.PeopleERR.TrustedID == 1 {
 			column.MatchKey1 = "CLIENTID"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.TrustedID == 1"))
 		} else if column.PeopleERR.Organization == 1 {
@@ -168,9 +163,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
-		} else if (column.PeopleERR.Title == 1 && !reNameTitle.MatchString(column.Value)) || (column.PeopleERR.ContainsTitle == 1 && !reNameTitle.MatchString(column.Value)) {
-			column.MatchKey1 = "TITLE"
-			column.MatchKey2 = "STATUS"
+		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
+			// we don't want to overwrite a file supplied TITLE w/ an attribute...
+			if column.IsAttribute && titleValue == "" {
+				titleValue = column.Value
+				column.MatchKey1 = "TITLE"
+			} else {
+				titleValue = column.Value
+				column.MatchKey1 = "TITLE"
+				if column.IsAttribute {
+					titleYearAttr = column.Value
+				}
+			}
+
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
@@ -416,9 +421,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if !skipValue {
 				// let's assign the value
 				switch matchKeyAssigned {
-				case "TITLE":
-					LogDev(fmt.Sprintf("ClassYear value %v, TitleYear value %v, final value %v", column.Value, TitleYear, CalcClassYear(column.Value)))
-					SetMkField(&(currentOutput.Output), "TITLE", CalcClassYear(column.Value), column.Name)
 				case "FULLNAME":
 					SetMkField(&(currentOutput.Output), "FULLNAME", column.Value, column.Name)
 					if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 {
@@ -439,13 +441,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkFieldWithType(&(currentOutput.Output), matchKeyAssigned, column.Value, column.Name, column.Type)
 				}
 
-				if len(column.MatchKey2) > 0 {
-					switch column.MatchKey2 {
-					case "STATUS":
-						SetMkField(&(currentOutput.Output), "STATUS", CalcClassDesig(column.Value), column.Name)
-					case "ADTYPE":
-						SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
-					}
+				if len(column.MatchKey2) > 0 && column.MatchKey2 == "ADTYPE" {
+					SetMkField(&(currentOutput.Output), "ADTYPE", AssignAddressType(&column), column.Name)
 				}
 
 				if len(column.MatchKey3) > 0 {
@@ -509,12 +506,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if i == indexToSkip {
 			continue
 		}
+
 		LogDev(fmt.Sprintf("Pub output %v of %v, type %v, sequence %v: %v", i, len(outputs), v.Type, v.Sequence, v.Output))
 		suffix := ""
 		if v.Type == "mpr" {
 			suffix = "-^-" + strconv.Itoa(v.Sequence)
 			CopyFieldsToMPR(&(defaultOutput.Output), &(v.Output))
 		}
+
+		// if we have a TITLE, lets standardize it.
+		if len(v.Output.TITLE.Value) > 0 {
+			v.Output.TITLE.Value, v.Output.STATUS.Value = CalcClassYear(v.Output.TITLE.Value, schoolYearAttr, true)
+		}
+
 		if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 { // let's populate city state if we have zip
 			v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
 			if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
@@ -605,7 +609,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
 		}
 
-		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
