@@ -137,20 +137,20 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		} else {
 			log.Printf("%v pubbed fiber rerun as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
+	}
 
-		prresult := ready.Publish(ctx, &pubsub.Message{
-			Data: m.Data,
-			Attributes: map[string]string{
-				"type":   "people",
-				"source": "ready",
-			},
-		})
-		prid, err := prresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not pub ready to pubsub: %v", input.EventID, err)
-		} else {
-			log.Printf("%v pubbed ready as message id %v: %v", input.EventID, prid, string(outputJSON))
-		}
+	prresult := ready.Publish(ctx, &pubsub.Message{
+		Data: m.Data,
+		Attributes: map[string]string{
+			"type":   "people",
+			"source": "ready",
+		},
+	})
+	prid, err := prresult.Get(ctx)
+	if err != nil {
+		log.Fatalf("%v Could not pub ready to pubsub: %v", input.EventID, err)
+	} else {
+		log.Printf("%v pubbed ready as message id %v: %v", input.EventID, prid, string(m.Data))
 	}
 
 	return nil
