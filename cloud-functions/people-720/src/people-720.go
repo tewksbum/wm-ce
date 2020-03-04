@@ -27,6 +27,7 @@ var fs *datastore.Client
 var ps *pubsub.Client
 var msp *redis.Pool
 var topic *pubsub.Topic
+var ready *pubsub.Topic
 
 func init() {
 	ctx := context.Background()
@@ -39,6 +40,8 @@ func init() {
 	}
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	ready = ps.Topic(os.Getenv("PSREADY"))
+	ready.PublishSettings.DelayThreshold = 120 * time.Second
 }
 
 func People720(ctx context.Context, m PubSubMessage) error {
@@ -129,11 +132,24 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			},
 		})
 		psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
 		if err != nil {
 			log.Fatalf("%v Could not pub to pubsub: %v", input.EventID, err)
 		} else {
 			log.Printf("%v pubbed fiber rerun as message id %v: %v", input.EventID, psid, string(outputJSON))
+		}
+
+		prresult := ready.Publish(ctx, &pubsub.Message{
+			Data: m.Data,
+			Attributes: map[string]string{
+				"type":   "people",
+				"source": "ready",
+			},
+		})
+		prid, err := prresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub ready to pubsub: %v", input.EventID, err)
+		} else {
+			log.Printf("%v pubbed ready as message id %v: %v", input.EventID, prid, string(outputJSON))
 		}
 	}
 
