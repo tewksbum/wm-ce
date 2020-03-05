@@ -55,6 +55,7 @@ type Record interface {
 	GetTablenamePrefix() string
 	GetTablenameSuffix() string
 	GetOwnerID() int64
+	GetEventID() string
 	GetStrOwnerID() string
 	GetEntityType() string
 	GetSurrogateID() string
@@ -127,6 +128,7 @@ type Passthrough360 struct {
 // BaseRecord input for the API
 type BaseRecord struct {
 	OwnerID          int64            `json:"ownerId" bigquery:"-" sql:"-"`
+	EventID          string           `json:"eventId" bigquery:"eventId" sql:"eventId"`
 	EntityType       string           `json:"entityType" bigquery:"-" sql:"-"`
 	Source           string           `json:"source" bigquery:"-" sql:"-"`
 	Owner            string           `json:"owner" bigquery:"-" sql:"-"`
@@ -157,6 +159,11 @@ func (r *BaseRecord) GetAccessKey() string {
 // GetOwnerID gets the Customer id
 func (r *BaseRecord) GetOwnerID() int64 {
 	return r.OwnerID
+}
+
+// GetEventID gets the Customer id
+func (r *BaseRecord) GetEventID() string {
+	return r.EventID
 }
 
 // GetStrOwnerID gets the Customer id

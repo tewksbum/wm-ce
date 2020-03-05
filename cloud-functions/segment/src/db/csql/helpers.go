@@ -30,13 +30,15 @@ const (
 		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
+		eventId text NULL,
 		signatures JSON NULL,
 		passthrough JSON NULL,
 		attributes JSON NULL,
 		record JSON NULL,
 		%s
 		created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+		updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+		INDEX(eventId)
 		%s);`
 )
 
@@ -161,6 +163,7 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 	case models.TypePeople:
 		cols := `
 			peopleId     VARCHAR(255) AS (record->>'$.peopleId')     STORED,
+			eventId     VARCHAR(128) AS (record->>'$.eventId')     STORED,
 			salutation   VARCHAR(255) AS (record->>'$.salutation')   STORED,
 			firstName    VARCHAR(255) AS (record->>'$.firstName')    STORED,
 			lastName     VARCHAR(255) AS (record->>'$.lastName')     STORED,

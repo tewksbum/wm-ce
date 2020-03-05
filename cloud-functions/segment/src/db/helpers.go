@@ -8,6 +8,7 @@ func buildPeopleDecode(r *models.PeopleRecord, signature string /*, setPeopleID 
 	rs := &models.DecodeRecord{}
 	rs.BaseRecord = models.BaseRecord{
 		OwnerID:     r.GetOwnerID(),
+		EventID:     r.GetEventID(),
 		EntityType:  models.TypeDecode,
 		Source:      r.GetSource(),
 		Owner:       r.GetOwner(),
@@ -40,6 +41,7 @@ func buildHouseholdDecode(r *models.HouseholdRecord, signature string) models.Re
 	rs := &models.DecodeRecord{}
 	rs.BaseRecord = models.BaseRecord{
 		OwnerID:     r.GetOwnerID(),
+		EventID:     r.GetEventID(),
 		EntityType:  models.TypeDecode,
 		Source:      r.GetSource(),
 		Owner:       r.GetOwner(),
@@ -70,6 +72,7 @@ func buildExpiredSet(r models.Record, expiredID string, entity string) models.Re
 	rs := &models.ExpiredSetRecord{}
 	rs.BaseRecord = models.BaseRecord{
 		OwnerID:    r.GetOwnerID(),
+		EventID:    r.GetEventID(),
 		EntityType: models.TypeExpiredSet,
 		Owner:      r.GetOwner(),
 	}

@@ -89,6 +89,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		ColumnList:       columns,
 		SelectColumnList: selectColumns,
 		EntityType:       input.EntityType,
+		EventID:          input.EventID,
 		OwnerID:          cust.Key.ID,
 		Owner:            owner,
 		Source:           input.Source,
@@ -96,7 +97,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Attributes:       utils.FlattenMap(input.Attributes),
 		Timestamp:        time.Now(),
 		AccessKey:        accessKey,
-		WriteToOwner: writeToOwner,
+		WriteToOwner:     writeToOwner,
 	}
 
 	// idata, _ := json.Marshal(input)

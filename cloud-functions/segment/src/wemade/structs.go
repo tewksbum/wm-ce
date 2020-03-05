@@ -33,6 +33,7 @@ type APIInput struct {
 	OwnerID      int64                   `json:"ownerId"`
 	AccessKey    string                  `json:"accessKey"`
 	EntityType   string                  `json:"entityType"`
+	EventID      string                  `json:"eventId"`
 	Source       string                  `json:"source"`
 	Owner        string                  `json:"owner"`
 	Organization string                  `json:"organization,omitifempty"`
