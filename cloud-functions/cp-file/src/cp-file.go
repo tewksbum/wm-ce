@@ -51,7 +51,7 @@ func init() {
 	cs, _ = storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
 
-	response, _ := http.Get("http://ipecho.net/plain")
+	response, _ := http.Get("https://ifconfig.me/all")
 	data, _ := ioutil.ReadAll(response.Body)
 	log.Printf("init complete in outgoing ip %v", string(data))
 }
