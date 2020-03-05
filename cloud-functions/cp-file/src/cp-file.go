@@ -54,9 +54,41 @@ func init() {
 	response, _ := http.Get("https://ifconfig.me/all")
 	data, _ := ioutil.ReadAll(response.Body)
 
-	response2, _ := http.Get("https://www.google.com")
-	data2, _ := ioutil.ReadAll(response2.Body)
-	log.Printf("init complete in outgoing ip %v %v", string(data), string(data2))
+	// sshConfig := &ssh.ClientConfig{
+	// 	HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	// 	// optional host key algo list
+	// 	HostKeyAlgorithms: []string{
+	// 		ssh.KeyAlgoRSA,
+	// 		ssh.KeyAlgoDSA,
+	// 		ssh.KeyAlgoECDSA256,
+	// 		ssh.KeyAlgoECDSA384,
+	// 		ssh.KeyAlgoECDSA521,
+	// 		ssh.KeyAlgoED25519,
+	// 	},
+	// 	// optional tcp connect timeout
+	// 	Timeout: 60 * time.Second,
+	// }
+
+	// sshConnection, err := ssh.Dial("tcp", "sshmyip.com:22", sshConfig)
+	// if err != nil {
+	// 	log.Fatalf("Error ssh dial: %v", err)
+	// }
+	// sshSession, err := sshConnection.NewSession()
+	// var sshBuffer bytes.Buffer
+	// sshSession.Stdout = &sshBuffer
+
+	// if err != nil {
+	// 	log.Fatalf("Error ssh session: %v", err)
+	// }
+	// defer sshSession.Close()
+	// err = sshSession.Start("")
+	// if err != nil {
+	// 	log.Fatalf("Run failed:%v", err)
+	// }
+	// log.Printf(">%s", sshBuffer.Bytes())
+	// sshConnection.Close()
+
+	log.Printf("init complete in outgoing ip %v", string(data))
 }
 
 func GenerateCP(ctx context.Context, m PubSubMessage) error {
@@ -135,7 +167,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// assemble the csv
 	header := []string{
-		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type",
+		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
@@ -150,6 +182,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			event.Created.Format("01/02/2006"),
 			GetKVPValue(event.Passthrough, "orderByDate"),
 			GetKVPValue(event.Passthrough, "listType"),
+			GetKVPValue(event.Passthrough, "salutation"),
+
 			g.FNAME,
 			g.LNAME,
 			g.AD1,
