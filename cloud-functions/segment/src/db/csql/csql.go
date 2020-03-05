@@ -64,8 +64,8 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	}
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
 	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick, opts.IgnoreUniqueFields)
-	_, err = tx.Exec(createTbl)
 	logger.DebugFmt("[CREATE]: %s", createTbl)
+	_, err = tx.Exec(createTbl)
 	if err != nil {
 		return updated, logger.Err(err)
 	}
@@ -125,7 +125,16 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 			j, _ := json.Marshal(rec["record"])
 			// logger.DebugFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
-			is = is.Pair("eventId", r.GetEventID())
+			eventIds := `[`
+			for _, s := range r.GetEventIDs() {
+				eventIds += `"` + s + `",`
+			}
+			if eventIds != "[" {
+				eventIds = eventIds[:len(eventIds)-1] + `]`
+				is = is.Pair("eventIds", eventIds)
+			} else {
+				eventIds = "[]"
+			}
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
@@ -160,6 +169,16 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 			j, _ := json.Marshal(rec["record"])
 			// logger.DebugFmt("value: %#v", string(j))
 			us = us.Set("record", string(j))
+			eventIds := `[`
+			for _, s := range r.GetEventIDs() {
+				eventIds += `"` + s + `",`
+			}
+			if eventIds != "[" {
+				eventIds = eventIds[:len(eventIds)-1] + `]`
+				us = us.Set("eventIds", eventIds)
+			} else {
+				eventIds = "[]"
+			}
 		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)

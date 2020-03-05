@@ -55,7 +55,7 @@ type Record interface {
 	GetTablenamePrefix() string
 	GetTablenameSuffix() string
 	GetOwnerID() int64
-	GetEventID() string
+	GetEventIDs() []string
 	GetStrOwnerID() string
 	GetEntityType() string
 	GetSurrogateID() string
@@ -88,6 +88,7 @@ type DecodeRecord struct {
 	BaseRecord
 	Signature   string    `json:"signature" bigquery:"signature" sql:"signature"`
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	EventIDs    []string  `json:"eventIds" bigquery:"eventIds" sql:"eventIds"`
 	ExpiredSets []string  `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
 	PeopleID    string    `json:"peopleId" bigquery:"peopleid" sql:"peopleId"`
 	HouseholdID string    `json:"householdId" bigquery:"householdid" sql:"householdId"`
@@ -114,6 +115,11 @@ func (r *DecodeRecord) GetSignatures() []string {
 	return sigs
 }
 
+// GetEventIDs gets the decode EventIDs
+func (r *DecodeRecord) GetEventIDs() []string {
+	return r.EventIDs
+}
+
 // GetExpiredSets gets the decode expired sets
 func (r *DecodeRecord) GetExpiredSets() []string {
 	return r.ExpiredSets
@@ -128,7 +134,6 @@ type Passthrough360 struct {
 // BaseRecord input for the API
 type BaseRecord struct {
 	OwnerID          int64            `json:"ownerId" bigquery:"-" sql:"-"`
-	EventID          string           `json:"eventId" bigquery:"eventId" sql:"eventId"`
 	EntityType       string           `json:"entityType" bigquery:"-" sql:"-"`
 	Source           string           `json:"source" bigquery:"-" sql:"-"`
 	Owner            string           `json:"owner" bigquery:"-" sql:"-"`
@@ -159,11 +164,6 @@ func (r *BaseRecord) GetAccessKey() string {
 // GetOwnerID gets the Customer id
 func (r *BaseRecord) GetOwnerID() int64 {
 	return r.OwnerID
-}
-
-// GetEventID gets the Customer id
-func (r *BaseRecord) GetEventID() string {
-	return r.EventID
 }
 
 // GetStrOwnerID gets the Customer id
@@ -252,6 +252,11 @@ func (r *BaseRecord) GetSignatures() []string {
 	return []string{}
 }
 
+// GetEventIDs gets the record signatures (always empty on base record)
+func (r *BaseRecord) GetEventIDs() []string {
+	return []string{}
+}
+
 // GetExpiredSets gets the decode expired sets
 func (r *BaseRecord) GetExpiredSets() []string {
 	return r.ExpiredSets
@@ -333,6 +338,7 @@ type ProductRecord struct {
 type OrderHeaderRecord struct {
 	BaseRecord
 	Signatures  []string    `json:"signatures" bigquery:"signatures"`
+	EventIDs    []string    `json:"eventIds" bigquery:"eventIds"`
 	SurrogateID string      `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderHeader `json:"record" bigquery:"record"`
 }
@@ -340,6 +346,11 @@ type OrderHeaderRecord struct {
 // GetSignatures gets the order header signatures
 func (r *OrderHeaderRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetEventIDs gets the order header EventIDs
+func (r *OrderHeaderRecord) GetEventIDs() []string {
+	return r.EventIDs
 }
 
 // GetSurrogateID gets the order header surrogate ID
@@ -351,6 +362,7 @@ func (r *OrderHeaderRecord) GetSurrogateID() string {
 type OrderConsignmentRecord struct {
 	BaseRecord
 	Signatures  []string         `json:"signatures" bigquery:"signatures"`
+	EventIDs    []string         `json:"eventIds" bigquery:"eventIds"`
 	SurrogateID string           `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderConsignment `json:"record" bigquery:"record"`
 }
@@ -358,6 +370,11 @@ type OrderConsignmentRecord struct {
 // GetSignatures gets the order consignment signatures
 func (r *OrderConsignmentRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetEventIDs gets the order consignment EventIDs
+func (r *OrderConsignmentRecord) GetEventIDs() []string {
+	return r.EventIDs
 }
 
 // GetSurrogateID gets the order consignment surrogate ID
@@ -369,6 +386,7 @@ func (r *OrderConsignmentRecord) GetSurrogateID() string {
 type OrderDetailRecord struct {
 	BaseRecord
 	Signatures  []string    `json:"signatures" bigquery:"signatures"`
+	EventIDs    []string    `json:"eventIds" bigquery:"eventIds"`
 	SurrogateID string      `json:"surrogateId" bigquery:"surrogateid"`
 	Record      OrderDetail `json:"record" bigquery:"record"`
 }
@@ -376,6 +394,11 @@ type OrderDetailRecord struct {
 // GetSignatures gets the order detail signatures
 func (r *OrderDetailRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetEventIDs gets the order detail EventIDs
+func (r *OrderDetailRecord) GetEventIDs() []string {
+	return r.EventIDs
 }
 
 // GetSurrogateID gets the order detail surrogate ID
@@ -388,6 +411,7 @@ type PeopleRecord struct {
 	BaseRecord
 	// SurrogateID string   `json:"surrogateId" bigquery:"surrogateid"`
 	Signatures  []string `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	EventIDs    []string `json:"eventIds" bigquery:"eventIds" sql:"eventIds"`
 	ExpiredSets []string `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
 	Record      People   `json:"record" bigquery:"record" sql:"record"`
 }
@@ -400,6 +424,11 @@ func (r *PeopleRecord) GetMap() map[string]interface{} {
 // GetSignatures gets the person signatures
 func (r *PeopleRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetEventIDs gets the person EventIDs
+func (r *PeopleRecord) GetEventIDs() []string {
+	return r.EventIDs
 }
 
 // GetExpiredSets gets the person ExpiredSets
@@ -417,6 +446,7 @@ type HouseholdRecord struct {
 	BaseRecord
 	SurrogateID string    `json:"surrogateId" bigquery:"surrogateid"`
 	Signatures  []string  `json:"signatures" bigquery:"signatures" sql:"signatures"`
+	EventIDs    []string  `json:"eventIds" bigquery:"eventIds" sql:"eventIds"`
 	ExpiredSets []string  `json:"expiredSets" bigquery:"expiredsets" sql:"expiredSets"`
 	Record      Household `json:"record" bigquery:"record" sql:"record"`
 }
@@ -429,6 +459,11 @@ func (r *HouseholdRecord) GetMap() map[string]interface{} {
 // GetSignatures gets the person signatures
 func (r *HouseholdRecord) GetSignatures() []string {
 	return r.Signatures
+}
+
+// GetEventIDs gets the person EventIDs
+func (r *HouseholdRecord) GetEventIDs() []string {
+	return r.EventIDs
 }
 
 // GetExpiredSets gets the household ExpiredSets

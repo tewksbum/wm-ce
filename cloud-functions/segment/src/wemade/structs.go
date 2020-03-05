@@ -33,11 +33,11 @@ type APIInput struct {
 	OwnerID      int64                   `json:"ownerId"`
 	AccessKey    string                  `json:"accessKey"`
 	EntityType   string                  `json:"entityType"`
-	EventID      string                  `json:"eventId"`
 	Source       string                  `json:"source"`
 	Owner        string                  `json:"owner"`
 	Organization string                  `json:"organization,omitifempty"`
 	Signatures   []string                `json:"signatures,omitifempty"`
+	EventIDs     []string                `json:"eventIds,omitifempty"`
 	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
 	Passthrough  []models.Passthrough360 `json:"passthrough"`
 	Attributes   map[string]string       `json:"attributes"`

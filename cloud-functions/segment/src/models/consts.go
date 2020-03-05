@@ -41,8 +41,8 @@ var (
 	PeopleIDField           = "peopleId"
 	HouseholdIDField        = "householdId"
 	IDField                 = "id"
-	DefaultSelectColumnList = []string{"record", "eventId"}
-	DefaultColumnList       = []string{"signatures", "eventId", "passthrough", "attributes"}
+	DefaultSelectColumnList = []string{"record"}
+	DefaultColumnList       = []string{"signatures", "eventIds", "passthrough", "attributes"}
 	DecodeIDField           = "signature"
 	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
 	DecodeBlackList         = []string{"source", "passthrough", "attributes", "expiredSets",
