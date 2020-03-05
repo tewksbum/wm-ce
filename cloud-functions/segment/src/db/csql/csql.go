@@ -64,7 +64,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	}
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
 	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick, opts.IgnoreUniqueFields)
-	logger.DebugFmt("[CREATE]: %s", createTbl)
+	// logger.DebugFmt("[CREATE]: %s", createTbl)
 	_, err = tx.Exec(createTbl)
 	if err != nil {
 		return updated, logger.Err(err)
