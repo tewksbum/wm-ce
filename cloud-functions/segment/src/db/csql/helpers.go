@@ -30,7 +30,7 @@ const (
 		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
-		eventId text NULL,
+		eventId VARCHAR(128) NULL,
 		signatures JSON NULL,
 		passthrough JSON NULL,
 		attributes JSON NULL,
@@ -163,7 +163,6 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 	case models.TypePeople:
 		cols := `
 			peopleId     VARCHAR(255) AS (record->>'$.peopleId')     STORED,
-			eventId     VARCHAR(128) AS (record->>'$.eventId')     STORED,
 			salutation   VARCHAR(255) AS (record->>'$.salutation')   STORED,
 			firstName    VARCHAR(255) AS (record->>'$.firstName')    STORED,
 			lastName     VARCHAR(255) AS (record->>'$.lastName')     STORED,
@@ -191,6 +190,8 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			recordtype   VARCHAR(255) AS (record->>'$.recordtype')   STORED,
 			dob          VARCHAR(255) AS (record->>'$.dob')          STORED,
 			status       VARCHAR(255) AS (record->>'$.status')       STORED,
+			salutation   VARCHAR(255) AS (record->>'$.salutation')   STORED,
+			adCode       VARCHAR(255) AS (record->>'$.adCode')       STORED,
 			emails               JSON AS (record->'$.emails')        STORED,
 			phones               JSON AS (record->'$.phones')        STORED,
 		`
@@ -222,6 +223,7 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			INDEX(recordtype),
 			INDEX(dob),
 			INDEX(status)
+			INDEX(adCode)
 			`, key)
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:

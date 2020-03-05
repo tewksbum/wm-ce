@@ -65,6 +65,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
 	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick, opts.IgnoreUniqueFields)
 	_, err = tx.Exec(createTbl)
+	logger.DebugFmt("[CREATE]: %s", createTbl)
 	if err != nil {
 		return updated, logger.Err(err)
 	}
@@ -124,6 +125,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 			j, _ := json.Marshal(rec["record"])
 			// logger.DebugFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
+			is = is.Pair("eventId", r.GetEventID())
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
