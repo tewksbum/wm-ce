@@ -114,79 +114,78 @@ func TestUpsert(t *testing.T) {
 	}
 }
 
-// func TestRead(t *testing.T) {
-// 	type args struct {
-// 		w http.ResponseWriter
-// 		r *http.Request
-// 	}
-// 	// filters := models.QueryFilter{
-// 	// 	field:  "",
-// 	// 	op:     "",
-// 	// 	opType: models.OperationTypeFilter,
-// 	// 	// opLink: models.OperationLinkAnd,
-// 	// 	// Value: w,
-// 	// 	// Values: poop,
-// 	// }
-// 	input, _ := json.Marshal(map[string]interface{}{
-// 		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-// 		"entityType": "household",
-// 		// "columns":    []string{"*"},
-// 		// "columns": []string{"record"},
-// 		// "source":     "test",
-// 		"filters": []map[string]interface{}{
-// 			{
-// 				"field": "lastName",
-// 				"op":    models.OperationEquals,
-// 				"value": "Ali",
-// 			},
-// 			// {
-// 			// 	"opLink": "AND",
-// 			// 	"field":  "signature",
-// 			// 	"op":     models.OperationIsNotNull,
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"field":  "record.peopleid",
-// 			// 	"op":     models.OperationNotIn,
-// 			// 	"opLink": "and",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	"values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"opType": "order",
-// 			// 	"field":  "created_at", //"timestamp",
-// 			// 	"op":     "desc",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"opType": "order",
-// 			// 	"field":  "signature",
-// 			// 	"op":     "asc",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 		},
-// 	})
-// 	// logger.DebugFmt("input: %s", input)
-// 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 	}{
-// 		{
-// 			name: "API READ OK 200",
-// 			args: args{
-// 				w: w1, r: r1,
-// 			},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			Read(tt.args.w, tt.args.r)
-// 		})
-// 	}
-// }
+func TestRead(t *testing.T) {
+	type args struct {
+		w http.ResponseWriter
+		r *http.Request
+	}
+	// filters := models.QueryFilter{
+	// 	field:  "",
+	// 	op:     "",
+	// 	opType: models.OperationTypeFilter,
+	// 	// opLink: models.OperationLinkAnd,
+	// 	// Value: w,
+	// 	// Values: poop,
+	// }
+	input, _ := json.Marshal(map[string]interface{}{
+		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType": "household",
+		// "columns":    []string{"*"},
+		// "columns": []string{"record"},
+		// "source":     "test",
+		"filters": []map[string]interface{}{
+			{
+				"field": "JSON_SEARCH(eventIds, 'one', 'puto')",
+				"op":    models.OperationIsNotNull,
+			},
+			// {
+			// 	"opLink": "AND",
+			// 	"field":  "signature",
+			// 	"op":     models.OperationIsNotNull,
+			// 	// "values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"field":  "record.peopleid",
+			// 	"op":     models.OperationNotIn,
+			// 	"opLink": "and",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	"values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"opType": "order",
+			// 	"field":  "created_at", //"timestamp",
+			// 	"op":     "desc",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	// "values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"opType": "order",
+			// 	"field":  "signature",
+			// 	"op":     "asc",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	// "values": []int{108, 108, 110},
+			// },
+		},
+	})
+	// logger.DebugFmt("input: %s", input)
+	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "API READ OK 200",
+			args: args{
+				w: w1, r: r1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Read(tt.args.w, tt.args.r)
+		})
+	}
+}
 
 // // func TestDelete(t *testing.T) {
 // // 	type args struct {

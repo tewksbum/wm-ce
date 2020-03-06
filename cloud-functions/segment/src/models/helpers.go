@@ -90,7 +90,9 @@ func ParseFilters(filters []QueryFilter, useFieldName bool, prefix string, remov
 				return pq, logger.ErrFmtStr("Operation [%#v] needs an array with at least 1 item on [values] field", f.Op)
 			}
 		case OperationIsNotNull:
-			fallthrough
+			if f.Value != nil {
+				return pq, logger.ErrFmtStr("Operation [%#v] needs the field [value] to be null", f.Op)
+			}
 		case OperationIsNull:
 			if f.Value != nil {
 				return pq, logger.ErrFmtStr("Operation [%#v] needs the field [value] to be null", f.Op)
