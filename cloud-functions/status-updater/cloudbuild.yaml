@@ -1,0 +1,26 @@
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ["beta", 'functions', 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime","go111", 
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "120",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--max-instances", "50",
+    "--egress-settings", "all",
+    "--vpc-connector", "${_VPC_CONNECTOR}",
+    "--retry"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: status-updater
+    _TRIGGER_TOPIC: wm-status-updater
+    _ENTRY_POINT: GenerateCP
+    _VPC_CONNECTOR: cf-connector-outside
+options:
+    substitution_option: 'ALLOW_LOOSE'
