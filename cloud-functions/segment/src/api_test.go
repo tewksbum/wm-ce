@@ -123,23 +123,25 @@ func TestRead(t *testing.T) {
 	// 	field:  "",
 	// 	op:     "",
 	// 	opType: models.OperationTypeFilter,
-	// 	// opLink: models.OperationLinkAnd,
+	// 	// linkOperation: models.OperationLinkAnd,
 	// 	// Value: w,
 	// 	// Values: poop,
 	// }
+	// "eventIds": []string{"ec86f654-ebac-4f90-8cb2-1eb083feebfb", "aa3798d3-6a7e-4817-a738-432ce7f80266"},
 	input, _ := json.Marshal(map[string]interface{}{
-		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-		"entityType": "household",
+		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType":  "people",
+		"doReadCount": true,
 		// "columns":    []string{"*"},
 		// "columns": []string{"record"},
 		// "source":     "test",
 		"filters": []map[string]interface{}{
 			{
-				"field": "JSON_SEARCH(eventIds, 'one', 'puto')",
+				"field": "JSON_SEARCH(eventIds, 'one', 'ec86f654-ebac-4f90-8cb2-1eb083feebfb')",
 				"op":    models.OperationIsNotNull,
 			},
 			// {
-			// 	"opLink": "AND",
+			// 	"linkOperation": "AND",
 			// 	"field":  "signature",
 			// 	"op":     models.OperationIsNotNull,
 			// 	// "values": []int{108, 108, 110},
@@ -147,7 +149,7 @@ func TestRead(t *testing.T) {
 			// {
 			// 	"field":  "record.peopleid",
 			// 	"op":     models.OperationNotIn,
-			// 	"opLink": "and",
+			// 	"linkOperation": "and",
 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
 			// 	"values": []int{108, 108, 110},
 			// },

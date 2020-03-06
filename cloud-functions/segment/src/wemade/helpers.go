@@ -97,6 +97,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Timestamp:        time.Now(),
 		AccessKey:        accessKey,
 		WriteToOwner:     writeToOwner,
+		DoReadCount:      input.DoReadCount,
 	}
 
 	// idata, _ := json.Marshal(input)

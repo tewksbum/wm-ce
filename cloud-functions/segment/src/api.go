@@ -151,7 +151,7 @@ func Read(w http.ResponseWriter, r *http.Request) {
 	logger.DebugFmt("record(s): %+v", rec)
 
 	// Read from db
-	or, err := db.Read(projectID, csqlDSN, rec)
+	or, err := db.Read(projectID, csqlDSN, rec, rec.GetDoReadCount())
 	if err != nil {
 		errToHTTP(w, r, err)
 		return

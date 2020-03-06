@@ -214,7 +214,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 }
 
 // Read the interface from CSQL
-func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
+func Read(dsn string, r models.Record, doReadCount bool) (or wemade.OutputRecord, err error) {
 	opts := r.GetDBOptions()
 	tblName := opts.Tablename
 	if opts.HasTablenamePrefix {
@@ -302,7 +302,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	logger.DebugFmt("Query: %s", buf.String())
-	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList())
+	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList(), doReadCount)
 }
 
 // Delete the interface from CSQL

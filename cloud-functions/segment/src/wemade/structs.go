@@ -44,6 +44,7 @@ type APIInput struct {
 	Filters      []models.QueryFilter    `json:"filters"`
 	Columns      []string                `json:"columns"`
 	WriteToOwner bool                    `json:"writeToOwner"`
+	DoReadCount  bool                    `json:"doReadCount"`
 	// Passthrough  map[string]string    `json:"passthrough"`
 	// InputData    interface{}          `json:"inputData"`
 }
