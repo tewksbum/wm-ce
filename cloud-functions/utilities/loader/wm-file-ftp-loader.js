@@ -1,8 +1,7 @@
 const { Storage } = require("@google-cloud/storage");
-const { PubSub } = require('@google-cloud/pubsub');
 const storage = new Storage();
 const Client = require('ssh2-sftp-client');
-const sftp = new Client();
+const { Datastore } = require("@google-cloud/datastore");
 
 const HOST = 'secureftp.customerportfolios.com';
 const PORT = '22';
@@ -10,17 +9,17 @@ const USER = 'OCM_CRM';
 const PASS = '8NBI/TSnTf';
 const REMOTE_PATH = '/FEP/Input/';
 
-const topicName = "ftp-file-output-dev"
-const projectID = "wemade-core"
+const projectId = "fire-core-wm"
+const ENV = "dev"
 
-const pubSubClient = new PubSub({ projectID });
+const datastore = new Datastore({ projectId });
+const sftp = new Client();
 
 const config = {
   host: HOST,
   port: PORT,
   username: USER,
-  password: PASS,
-  readyTimeout: 60000
+  password: PASS
 };
 
 const getBucketFiles = async () => {
@@ -33,31 +32,15 @@ const getBucketFiles = async () => {
     for (const file of files) {
       console.log("Uploading file: " + file.name);
       const ok = await uploadSFTPFile(file);
-      console.log(`Uploaded file.name: ${ok}`);
+      console.log(`Uploaded file.name: ${file.name} status: ${ok}`);
       if (ok) {
-        //copy the file to the uploaded folder
+        // copy the file to the uploaded folder
         const anotherBucket = storage.bucket(bucketNameDest);
 
         await file.move(anotherBucket, function (err, destinationFile, apiResponse) { })
         console.log(`${file.name} uploaded to ${bucketNameDest}.`);
-
-        data = {
-          filename: file.name,
-          eventType: "UPLOAD",
-          status: "SUCCESS",
-          date: new Date()
-        }
-
-      } else {
-        data = {
-          filename: file.name,
-          eventType: "UPLOAD",
-          status: "ERROR",
-          date: new Date()
-        }
+        await updateEvent((file.name).replace(/\.[^/.]+$/, ""));
       }
-
-      await publishMessage(data);
     }
   }
   catch (err) {
@@ -79,16 +62,26 @@ const uploadSFTPFile = async file => {
     return true;
   } // try ...
   catch (e) {
-    console.log("An error ocurred: " + err.message);
+    console.log("An error ocurred: " + e.message);
     return false;
   } // catch ...
 } // uploadSFTPFile ...
 
-const publishMessage = async data => {
-  const dataBuffer = Buffer.from(JSON.stringify(data));
+const updateEvent = async eventId => {
+  datastore.namespace = `wemade-${ENV}`;
+  const query = datastore.createQuery("Event").filter("EventID", "=", eventId).limit(1);
+  try {
+    const event = await datastore.runQuery(query);
+    if (event) {
+      event[0][0].Status = "Uploaded in CP on " + new Date();
 
-  const messageId = await pubSubClient.topic(topicName).publish(dataBuffer);
-  console.log(`Message ${messageId} published.`);
+      //Update event
+      await datastore.save(event[0][0]);
+      console.log(`Event ${eventId} updated successfully.`)
+    }
+  } catch (e) {
+    console.log("An error ocurred: " + e.message);
+  }
 }
 
 (async () => {
