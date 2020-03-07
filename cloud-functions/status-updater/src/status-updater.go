@@ -51,7 +51,7 @@ func StatusUpdater(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 	// update event
-	event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
+	event.Status = "Uploaded in CP on " + time.Now().Format("2006.01.02 15:04:05")
 	if _, err := fs.Put(ctx, event.Key, &event); err != nil {
 		log.Fatalf("error updating event: %v", err)
 	}
