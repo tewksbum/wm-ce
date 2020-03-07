@@ -13,7 +13,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
