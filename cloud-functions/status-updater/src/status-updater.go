@@ -37,6 +37,8 @@ func StatusUpdater(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	log.Printf("Log PubSubMessage", string(m.Data))
+
 	// look up the event
 	var events []Event
 	var event Event
