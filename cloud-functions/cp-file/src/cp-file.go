@@ -51,8 +51,43 @@ func init() {
 	cs, _ = storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
 
-	response, _ := http.Get("http://ipecho.net/plain")
+	response, _ := http.Get("https://ifconfig.me/all")
 	data, _ := ioutil.ReadAll(response.Body)
+
+	// sshConfig := &ssh.ClientConfig{
+	// 	HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	// 	// optional host key algo list
+	// 	HostKeyAlgorithms: []string{
+	// 		ssh.KeyAlgoRSA,
+	// 		ssh.KeyAlgoDSA,
+	// 		ssh.KeyAlgoECDSA256,
+	// 		ssh.KeyAlgoECDSA384,
+	// 		ssh.KeyAlgoECDSA521,
+	// 		ssh.KeyAlgoED25519,
+	// 	},
+	// 	// optional tcp connect timeout
+	// 	Timeout: 60 * time.Second,
+	// }
+
+	// sshConnection, err := ssh.Dial("tcp", "sshmyip.com:22", sshConfig)
+	// if err != nil {
+	// 	log.Fatalf("Error ssh dial: %v", err)
+	// }
+	// sshSession, err := sshConnection.NewSession()
+	// var sshBuffer bytes.Buffer
+	// sshSession.Stdout = &sshBuffer
+
+	// if err != nil {
+	// 	log.Fatalf("Error ssh session: %v", err)
+	// }
+	// defer sshSession.Close()
+	// err = sshSession.Start("")
+	// if err != nil {
+	// 	log.Fatalf("Run failed:%v", err)
+	// }
+	// log.Printf(">%s", sshBuffer.Bytes())
+	// sshConnection.Close()
+
 	log.Printf("init complete in outgoing ip %v", string(data))
 }
 
@@ -62,20 +97,20 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
-	// lookup the owner
-	var customers []Customer
-	var customer Customer
-	customerQuery := datastore.NewQuery("Customer").Namespace(WMNamespace).Filter("Owner =", input.OwnerID).Limit(1)
+	// // lookup the owner
+	// var customers []Customer
+	// var customer Customer
+	// customerQuery := datastore.NewQuery("Customer").Namespace(WMNamespace).Filter("Owner =", input.OwnerID).Limit(1)
 
-	if _, err := ds.GetAll(ctx, customerQuery, &customers); err != nil {
-		log.Fatalf("Error querying customer: %v", err)
-		return nil
-	} else if len(customers) > 0 {
-		customer = customers[0]
-	} else {
-		log.Fatalf("Owner ID not found: %v", input.OwnerID)
-		return nil
-	}
+	// if _, err := ds.GetAll(ctx, customerQuery, &customers); err != nil {
+	// 	log.Fatalf("Error querying customer: %v", err)
+	// 	return nil
+	// } else if len(customers) > 0 {
+	// 	customer = customers[0]
+	// } else {
+	// 	log.Fatalf("Owner ID not found: %v", input.OwnerID)
+	// 	return nil
+	// }
 
 	// look up the event
 	var events []Event
@@ -131,23 +166,24 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// assemble the csv
-
 	header := []string{
-		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type",
+		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
 	for _, g := range goldens {
 		row := []string{
-			strings.ToUpper(customer.Owner),
-			customer.Name,
-			GetKVPValue(event.Passthrough, "Input Type"),
-			GetKVPValue(event.Passthrough, "Class Year"),
-			GetKVPValue(event.Passthrough, "Program"),
-			GetKVPValue(event.Passthrough, "Adcode"),
+			GetKVPValue(event.Passthrough, "schoolCode"),
+			GetKVPValue(event.Passthrough, "schoolName"),
+			GetKVPValue(event.Passthrough, "inputType"),
+			GetKVPValue(event.Passthrough, "schoolYear"),
+			GetKVPValue(event.Passthrough, "masterProgramCode"),
+			GetKVPValue(event.Passthrough, "ADCODE"),
 			event.Created.Format("01/02/2006"),
-			GetKVPValue(event.Passthrough, "Order By Date"),
-			GetKVPValue(event.Passthrough, "List Type"),
+			GetKVPValue(event.Passthrough, "orderByDate"),
+			GetKVPValue(event.Passthrough, "listType"),
+			GetKVPValue(event.Passthrough, "salutation"),
+
 			g.FNAME,
 			g.LNAME,
 			g.AD1,
@@ -177,7 +213,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	csvBytes := buf.Bytes()
 
-	file := sb.Object(input.EventID + ".csv")
+	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + ".csv")
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
 		log.Fatalf("File cannot be copied to bucket %v", err)
