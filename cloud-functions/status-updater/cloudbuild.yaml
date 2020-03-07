@@ -20,7 +20,7 @@ tags: ['$BRANCH_NAME']
 substitutions:
     _FUNCTION_NAME: status-updater
     _TRIGGER_TOPIC: wm-status-updater
-    _ENTRY_POINT: GenerateCP
+    _ENTRY_POINT: StatusUpdater
     _VPC_CONNECTOR: cf-connector-outside
 options:
     substitution_option: 'ALLOW_LOOSE'
