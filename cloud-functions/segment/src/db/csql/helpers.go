@@ -41,7 +41,7 @@ const (
 		%s);`
 )
 
-func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or wemade.OutputRecord, err error) {
+func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string, doReadCount bool) (or wemade.OutputRecord, err error) {
 	totalrows := 0
 	tmprows := [][]byte{}
 	switch entityType {
@@ -103,11 +103,14 @@ func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or w
 		rows := []models.People{}
 		row := models.People{}
 		totalrows, err = stmt.Load(&tmprows)
-		for _, tr := range tmprows {
-			json.Unmarshal(tr, &row)
-			rows = append(rows, row)
+		if !doReadCount {
+			logger.Info("!doReadCount!doReadCount!doReadCount!doReadCount!doReadCount!doReadCount")
+			for _, tr := range tmprows {
+				json.Unmarshal(tr, &row)
+				rows = append(rows, row)
+			}
+			or.List = appendList(rows, totalrows, entityType, blacklist)
 		}
-		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeProduct:
 		rows := []models.Product{}
 		row := models.Product{}

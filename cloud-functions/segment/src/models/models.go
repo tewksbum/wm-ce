@@ -11,7 +11,7 @@ import (
 type QueryFilter struct {
 	Field  string        `json:"field"`
 	OpType string        `json:"opType"` // filter
-	OpLink *string       `json:"opLink"`
+	OpLink *string       `json:"linkOperation"`
 	Op     string        `json:"op"`
 	Value  *interface{}  `json:"value"`
 	Values []interface{} `json:"values"`
@@ -51,6 +51,7 @@ type Options struct {
 
 //Record interface
 type Record interface {
+	GetDoReadCount() bool
 	GetTablename() string
 	GetTablenamePrefix() string
 	GetTablenameSuffix() string
@@ -149,6 +150,12 @@ type BaseRecord struct {
 	SelectColumnList []string         `json:"-" sql:"-" bigquery:"-"`
 	AccessKey        string           `json:"-" sql:"-" bigquery:"-"`
 	WriteToOwner     bool             `json:"-" sql:"-" bigquery:"-"`
+	DoReadCount      bool             `json:"doReadCount" sql:"-" bigquery:"-"`
+}
+
+// GetDoReadCount get write to owner
+func (r *BaseRecord) GetDoReadCount() bool {
+	return r.DoReadCount
 }
 
 // GetWriteToOwner get write to owner
