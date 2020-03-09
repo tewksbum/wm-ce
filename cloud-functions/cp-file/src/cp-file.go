@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -216,7 +217,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	csvBytes := buf.Bytes()
 
-	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + ".csv")
+	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(goldens)) + ".csv")
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
 		log.Fatalf("File cannot be copied to bucket %v", err)
