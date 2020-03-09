@@ -13,7 +13,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"time"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -227,9 +226,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// update event
-	event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
-	if _, err := fs.Put(ctx, event.Key, &event); err != nil {
-		log.Fatalf("error updating event: %v", err)
-	}
+	// event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
+	// if _, err := fs.Put(ctx, event.Key, &event); err != nil {
+	// 	log.Fatalf("error updating event: %v", err)
+	// }
 	return nil
 }
