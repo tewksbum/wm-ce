@@ -133,12 +133,16 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// get the golden records
 	var goldenKeys []*datastore.Key
+	var goldenIDs []string
 	var goldens []PeopleGoldenDS
 	for _, setKey := range setKeys {
-		dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
-		dsGoldenGetKey.Namespace = dsNameSpace
-		goldenKeys = append(goldenKeys, dsGoldenGetKey)
-		goldens = append(goldens, PeopleGoldenDS{})
+		if !Contains(goldenIDs, setKey.Name) {
+			goldenIDs = append(goldenIDs, setKey.Name)
+			dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
+			dsGoldenGetKey.Namespace = dsNameSpace
+			goldenKeys = append(goldenKeys, dsGoldenGetKey)
+			goldens = append(goldens, PeopleGoldenDS{})
+		}
 	}
 	if len(goldenKeys) > 0 {
 		batchSize := 1000
