@@ -1,45 +1,77 @@
 const { Storage } = require("@google-cloud/storage");
+const { PubSub } = require('@google-cloud/pubsub');
 const storage = new Storage();
 const Client = require('ssh2-sftp-client');
-const { Datastore } = require("@google-cloud/datastore");
 
 const HOST = 'secureftp.customerportfolios.com';
 const PORT = '22';
 const USER = 'OCM_CRM';
 const PASS = '8NBI/TSnTf';
-const REMOTE_PATH = '/FEP/Input/';
 
-const projectId = "fire-core-wm"
-const ENV = "dev"
+const topicName = "wm-status-updater-dev";
+const projectID = "wemade-core";
 
-const datastore = new Datastore({ projectId });
+const bucketName = "wm_cp_upload";
+const bucketNameDest = "wm_cp_uploaded";
+
+const pubSubClient = new PubSub({ projectID });
 const sftp = new Client();
 
 const config = {
   host: HOST,
   port: PORT,
   username: USER,
-  password: PASS
+  password: PASS,
 };
 
+let remotePath;
+
 const getBucketFiles = async () => {
-  const bucketName = "wm_cp_upload";//"wm_cp_uploaded";
-  const bucketNameDest = "wm_cp_uploaded";//"wm_cp_upload";
   try {
     const [files] = await storage
       .bucket(bucketName)
       .getFiles();
     for (const file of files) {
-      console.log("Uploading file: " + file.name);
-      const ok = await uploadSFTPFile(file);
-      console.log(`Uploaded file.name: ${file.name} status: ${ok}`);
-      if (ok) {
-        // copy the file to the uploaded folder
-        const anotherBucket = storage.bucket(bucketNameDest);
+      console.log("Uploading file: " + file.name + " on: " + new Date());
+      var splitFilename = (file.name).split(".", 4);
+      var program = splitFilename[1];
 
-        await file.move(anotherBucket, function (err, destinationFile, apiResponse) { })
-        console.log(`${file.name} uploaded to ${bucketNameDest}.`);
-        await updateEvent((file.name).replace(/\.[^/.]+$/, ""));
+      switch (program.toLowerCase()) {
+        case "fep":
+          remotePath = "/FEP/Input/";
+          break;
+        case "cwp":
+          remotePath = "/CWP/Input/";
+          break;
+        case "frames":
+          remotePath = "/FRAMES/Input/";
+          break;
+        case "rhc":
+          remotePath = "/RHC/Input/";
+          break;
+        case "rhl","linen","ocmovein","off2school":
+          remotePath = "/RHL/Input/";
+          break;
+      }
+
+      if (remotePath) {
+        
+
+        const ok = await uploadSFTPFile(file);
+        console.log(`Uploaded file.name: ${ok}`);
+        if (ok) {
+          //copy the file to the uploaded folder
+          const anotherBucket = storage.bucket(bucketNameDest);
+
+          await file.move(anotherBucket, function (err, destinationFile, apiResponse) { })
+          console.log(`${file.name} uploaded to ${bucketNameDest}.`);
+
+          data = {
+            eventId: splitFilename[3],
+            count: splitFilename[4]
+          }
+          await publishMessage(data);
+        }
       }
     }
   }
@@ -52,36 +84,27 @@ const uploadSFTPFile = async file => {
   try {
     const data = await file.download();
     await sftp.connect(config);
-    await sftp.put(data[0], REMOTE_PATH + file.name);
-    const stats = await sftp.stat(REMOTE_PATH + file.name);
+    await sftp.put(data[0], remotePath + file.name);
+    const stats = await sftp.stat(remotePath + file.name);
 
-    console.log(`Filename: ${file.name}`);
-    console.log(`Bucket Size: ${file.metadata.size}`);
-    console.log(`Remote Size: ${stats.size}`);
+    if (file.metadata.size == stats.size) {
+      return true;
+    }
+
     await sftp.end();
-    return true;
-  } // try ...
+    return false;
+  }
   catch (e) {
     console.log("An error ocurred: " + e.message);
     return false;
-  } // catch ...
-} // uploadSFTPFile ...
-
-const updateEvent = async eventId => {
-  datastore.namespace = `wemade-${ENV}`;
-  const query = datastore.createQuery("Event").filter("EventID", "=", eventId).limit(1);
-  try {
-    const event = await datastore.runQuery(query);
-    if (event) {
-      event[0][0].Status = "Uploaded in CP on " + new Date();
-
-      //Update event
-      await datastore.save(event[0][0]);
-      console.log(`Event ${eventId} updated successfully.`)
-    }
-  } catch (e) {
-    console.log("An error ocurred: " + e.message);
   }
+}
+
+const publishMessage = async data => {
+  const dataBuffer = Buffer.from(JSON.stringify(data));
+
+  const messageId = await pubSubClient.topic(topicName).publish(dataBuffer);
+  console.log(`Message ${messageId} published.`);
 }
 
 (async () => {
