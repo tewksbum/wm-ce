@@ -34,30 +34,31 @@ func init() {
 func StatusUpdater(ctx context.Context, m PubSubMessage) error {
 	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		return nil
 	}
 
-	log.Printf("Log PubSubMessage", string(m.Data))
+	log.Printf("Log PubSubMessage %v", string(m.Data))
 
 	// look up the event
 	var events []Event
 	var event Event
 	eventQuery := datastore.NewQuery("Event").Namespace(WMNamespace).Filter("EventID =", input.EventID).Limit(1)
 	if _, err := fs.GetAll(ctx, eventQuery, &events); err != nil {
-		log.Fatalf("Error querying event: %v", err)
+		log.Printf("Error querying event: %v", err)
 		return nil
 	} else if len(events) > 0 {
 		event = events[0]
 	} else {
-		log.Fatalf("Event ID not found: %v", input.EventID)
+		log.Printf("Event ID not found: %v", input.EventID)
 		return nil
 	}
 
 	// update event
 	event.Status = "PROCESSED date:" + time.Now().Format("2006.01.02 15:04:05") + " count:" + input.Count
-	log.Printf("Event message: ", event.Status)
+	log.Printf("EventId: %v message: %v", input.EventID, event.Status)
 	if _, err := fs.Put(ctx, event.Key, &event); err != nil {
-		log.Fatalf("error updating event: %v", err)
+		log.Printf("error updating event: %v", err)
 	}
 	return nil
 }
