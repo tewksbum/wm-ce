@@ -32,8 +32,8 @@ const getBucketFiles = async () => {
       .bucket(bucketName)
       .getFiles();
     for (const file of files) {
-      console.log("Uploading file: " + file.name + " on: " + new Date());
-      var splitFilename = (file.name).split(".", 4);
+      console.log("Uploading file: " + file.name);
+      var splitFilename = (file.name).split(".", 5);
       var program = splitFilename[1];
 
       switch (program.toLowerCase()) {
@@ -41,22 +41,23 @@ const getBucketFiles = async () => {
           remotePath = "/FEP/Input/";
           break;
         case "cwp":
+        case "ocgifting":
           remotePath = "/CWP/Input/";
           break;
         case "frames":
           remotePath = "/FRAMES/Input/";
           break;
-        case "rhc":
+        case "carpet":
           remotePath = "/RHC/Input/";
           break;
-        case "rhl","linen","ocmovein","off2school":
+        case "linen":
+        case "ocmovein":
+        case "off2school":
           remotePath = "/RHL/Input/";
           break;
       }
 
       if (remotePath) {
-        
-
         const ok = await uploadSFTPFile(file);
         console.log(`Uploaded file.name: ${ok}`);
         if (ok) {
@@ -86,12 +87,11 @@ const uploadSFTPFile = async file => {
     await sftp.connect(config);
     await sftp.put(data[0], remotePath + file.name);
     const stats = await sftp.stat(remotePath + file.name);
+    await sftp.end();
 
     if (file.metadata.size == stats.size) {
       return true;
     }
-
-    await sftp.end();
     return false;
   }
   catch (e) {
