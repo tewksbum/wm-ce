@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"cloud.google.com/go/datastore"
@@ -53,9 +52,10 @@ func StatusUpdater(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Event ID not found: %v", input.EventID)
 		return nil
 	}
+
 	// update event
 	event.Status = "PROCESSED date:" + time.Now().Format("2006.01.02 15:04:05") + " count:" + input.Count
-	log.Printf("Event message", event.Status)
+	log.Printf("Event message: ", event.Status)
 	if _, err := fs.Put(ctx, event.Key, &event); err != nil {
 		log.Fatalf("error updating event: %v", err)
 	}
