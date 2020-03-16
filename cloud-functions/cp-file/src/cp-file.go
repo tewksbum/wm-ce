@@ -126,110 +126,113 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 
-	// get the set ids
-	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
-	setKeys, _ := fs.GetAll(ctx, setQuery, nil)
+	if GetKVPValue(event.Attributes, "Role") == "student" {
+		// get the set ids
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
+		setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+		setKeys, _ := fs.GetAll(ctx, setQuery, nil)
 
-	// get the golden records
-	var goldenKeys []*datastore.Key
-	var goldenIDs []string
-	var goldens []PeopleGoldenDS
-	for _, setKey := range setKeys {
-		if !Contains(goldenIDs, setKey.Name) {
-			goldenIDs = append(goldenIDs, setKey.Name)
-			dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
-			dsGoldenGetKey.Namespace = dsNameSpace
-			goldenKeys = append(goldenKeys, dsGoldenGetKey)
-			goldens = append(goldens, PeopleGoldenDS{})
-		}
-	}
-	if len(goldenKeys) > 0 {
-		batchSize := 1000
-		l := len(goldenKeys) / batchSize
-
-		if len(goldenKeys)%batchSize > 0 {
-			l++
-		}
-		for r := 0; r < l; r++ {
-			s := r * 1000
-			e := s + 1000
-
-			if e > len(goldenKeys) {
-				e = len(goldenKeys)
+		// get the golden records
+		var goldenKeys []*datastore.Key
+		var goldenIDs []string
+		var goldens []PeopleGoldenDS
+		for _, setKey := range setKeys {
+			if !Contains(goldenIDs, setKey.Name) {
+				goldenIDs = append(goldenIDs, setKey.Name)
+				dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
+				dsGoldenGetKey.Namespace = dsNameSpace
+				goldenKeys = append(goldenKeys, dsGoldenGetKey)
+				goldens = append(goldens, PeopleGoldenDS{})
 			}
+		}
+		if len(goldenKeys) > 0 {
+			batchSize := 1000
+			l := len(goldenKeys) / batchSize
 
-			gk := goldenKeys[s:e]
-			gd := goldens[s:e]
-
-			if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
-				log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+			if len(goldenKeys)%batchSize > 0 {
+				l++
 			}
+			for r := 0; r < l; r++ {
+				s := r * 1000
+				e := s + 1000
 
+				if e > len(goldenKeys) {
+					e = len(goldenKeys)
+				}
+
+				gk := goldenKeys[s:e]
+				gd := goldens[s:e]
+
+				if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+					log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+				}
+
+			}
 		}
-	}
 
-	// assemble the csv
-	header := []string{
-		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
-		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
-		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
-	records := [][]string{header}
-	for _, g := range goldens {
-		row := []string{
-			GetKVPValue(event.Passthrough, "schoolCode"),
-			GetKVPValue(event.Passthrough, "schoolName"),
-			GetKVPValue(event.Passthrough, "inputType"),
-			GetKVPValue(event.Passthrough, "schoolYear"),
-			GetKVPValue(event.Passthrough, "masterProgramCode"),
-			GetKVPValue(event.Passthrough, "ADCODE"),
-			event.Created.Format("01/02/2006"),
-			GetKVPValue(event.Passthrough, "orderByDate"),
-			GetKVPValue(event.Passthrough, "listType"),
-			GetKVPValue(event.Passthrough, "salutation"),
+		// assemble the csv
+		header := []string{
+			"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
+			"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
+			"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
+		records := [][]string{header}
+		for _, g := range goldens {
+			row := []string{
+				GetKVPValue(event.Passthrough, "schoolCode"),
+				GetKVPValue(event.Passthrough, "schoolName"),
+				GetKVPValue(event.Passthrough, "inputType"),
+				GetKVPValue(event.Passthrough, "schoolYear"),
+				GetKVPValue(event.Passthrough, "masterProgramCode"),
+				GetKVPValue(event.Passthrough, "ADCODE"),
+				event.Created.Format("01/02/2006"),
+				GetKVPValue(event.Passthrough, "orderByDate"),
+				GetKVPValue(event.Passthrough, "listType"),
+				GetKVPValue(event.Passthrough, "salutation"),
 
-			g.FNAME,
-			g.LNAME,
-			g.AD1,
-			g.AD2,
-			g.CITY,
-			g.STATE,
-			g.ZIP,
-			g.COUNTRY,
-			g.EMAIL,
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
-			"",
+				g.FNAME,
+				g.LNAME,
+				g.AD1,
+				g.AD2,
+				g.CITY,
+				g.STATE,
+				g.ZIP,
+				g.COUNTRY,
+				g.EMAIL,
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+			}
+			records = append(records, row)
 		}
-		records = append(records, row)
+
+		// store it in bucket
+		var buf bytes.Buffer
+
+		csv := csv.NewWriter(&buf)
+		csv.WriteAll(records)
+		csv.Flush()
+
+		csvBytes := buf.Bytes()
+
+		file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(goldens)) + ".csv")
+		writer := file.NewWriter(ctx)
+		if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
+			log.Fatalf("File cannot be copied to bucket %v", err)
+		}
+		if err := writer.Close(); err != nil {
+			log.Fatalf("Failed to close bucket write stream %v", err)
+		}
+
+		// update event
+		// event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
+		// if _, err := fs.Put(ctx, event.Key, &event); err != nil {
+		// 	log.Fatalf("error updating event: %v", err)
+		// }
+		return nil
 	}
-
-	// store it in bucket
-	var buf bytes.Buffer
-
-	csv := csv.NewWriter(&buf)
-	csv.WriteAll(records)
-	csv.Flush()
-
-	csvBytes := buf.Bytes()
-
-	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(goldens)) + ".csv")
-	writer := file.NewWriter(ctx)
-	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
-		log.Fatalf("File cannot be copied to bucket %v", err)
-	}
-	if err := writer.Close(); err != nil {
-		log.Fatalf("Failed to close bucket write stream %v", err)
-	}
-
-	// update event
-	// event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
-	// if _, err := fs.Put(ctx, event.Key, &event); err != nil {
-	// 	log.Fatalf("error updating event: %v", err)
-	// }
 	return nil
 }
