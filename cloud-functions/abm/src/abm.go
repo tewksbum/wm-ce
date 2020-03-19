@@ -250,6 +250,7 @@ type Common struct {
 	RECORDTYPE    string   `json:"recordtype,omitempty"`
 	DOB           string   `json:"dob,omitempty"`
 	STATUS        string   `json:"status,omitempty"`
+	EventIDs      []string `json:"eventIds,omitempty"`
 }
 
 // Output merge struct
@@ -347,7 +348,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 	switch inputType {
 	case "event":
 		event := Event{
-			EventID:  getSignatureHash(rSignature),
+			EventID:  getFrom360Slice("EventID", r360filteredmk).Value,
 			Type:     rSignature.EventType,
 			Browser:  getFrom360Slice("Browser", r360filteredmk).Value,
 			OS:       getFrom360Slice("OS", r360filteredmk).Value,
@@ -475,6 +476,7 @@ func Main(ctx context.Context, m PubSubMessage) error {
 		output.Common.RECORDTYPE = getFrom360Slice("RECORDTYPE", r360filteredmk).Value
 		output.Common.DOB = getFrom360Slice("DOB", r360filteredmk).Value
 		output.Common.STATUS = getFrom360Slice("STATUS", r360filteredmk).Value
+		output.Common.EventIDs = getEventIDs(rSignatures)
 	}
 
 	jsonStrOutput, err := json.Marshal(output)
@@ -529,6 +531,14 @@ func getSignatureHash(s Signature) string {
 	hasher := md5.New()
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func getEventIDs(ee []Signature) []string {
+	var events []string
+	for _, e := range ee {
+		events = append(events, e.EventID)
+	}
+	return events
 }
 
 func inSlice(a string, list []string) bool {

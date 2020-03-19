@@ -30,6 +30,7 @@ const (
 		PRIMARY KEY (expiredId, entity));`
 	tblCreateStmt = `CREATE TABLE IF NOT EXISTS %s(
 		id serial PRIMARY KEY,
+		eventIds JSON NULL,
 		signatures JSON NULL,
 		passthrough JSON NULL,
 		attributes JSON NULL,
@@ -40,7 +41,7 @@ const (
 		%s);`
 )
 
-func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or wemade.OutputRecord, err error) {
+func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string, doReadCount bool) (or wemade.OutputRecord, err error) {
 	totalrows := 0
 	tmprows := [][]byte{}
 	switch entityType {
@@ -102,11 +103,14 @@ func loadRows(stmt *dbr.SelectStmt, entityType string, blacklist []string) (or w
 		rows := []models.People{}
 		row := models.People{}
 		totalrows, err = stmt.Load(&tmprows)
-		for _, tr := range tmprows {
-			json.Unmarshal(tr, &row)
-			rows = append(rows, row)
+		if !doReadCount {
+			logger.Info("!doReadCount!doReadCount!doReadCount!doReadCount!doReadCount!doReadCount")
+			for _, tr := range tmprows {
+				json.Unmarshal(tr, &row)
+				rows = append(rows, row)
+			}
+			or.List = appendList(rows, totalrows, entityType, blacklist)
 		}
-		or.List = appendList(rows, totalrows, entityType, blacklist)
 	case models.TypeProduct:
 		rows := []models.Product{}
 		row := models.Product{}
@@ -188,6 +192,7 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			recordtype   VARCHAR(255) AS (record->>'$.recordtype')   STORED,
 			dob          VARCHAR(255) AS (record->>'$.dob')          STORED,
 			status       VARCHAR(255) AS (record->>'$.status')       STORED,
+			adcode       VARCHAR(255) AS (record->>'$.adcode')       STORED,
 			emails               JSON AS (record->'$.emails')        STORED,
 			phones               JSON AS (record->'$.phones')        STORED,
 		`
@@ -218,7 +223,8 @@ func getCreateTableStatement(entityType string, tblName string, ignoreUniqueFiel
 			INDEX(ziptype),
 			INDEX(recordtype),
 			INDEX(dob),
-			INDEX(status)
+			INDEX(status),
+			INDEX(adcode)
 			`, key)
 		return fmt.Sprintf(tblCreateStmt, tblName, cols, idxs)
 	case models.TypeHousehold:

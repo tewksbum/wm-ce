@@ -96,7 +96,8 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		Attributes:       utils.FlattenMap(input.Attributes),
 		Timestamp:        time.Now(),
 		AccessKey:        accessKey,
-		WriteToOwner: writeToOwner,
+		WriteToOwner:     writeToOwner,
+		DoReadCount:      input.DoReadCount,
 	}
 
 	// idata, _ := json.Marshal(input)
@@ -124,6 +125,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return &models.HouseholdRecord{
 			SurrogateID: surrogateID,
 			Signatures:  input.Signatures,
+			EventIDs:    input.EventIDs,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
@@ -182,6 +184,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return &models.PeopleRecord{
 			BaseRecord:  br,
 			Signatures:  input.Signatures,
+			EventIDs:    input.EventIDs,
 			ExpiredSets: input.ExpiredSets,
 			Record:      record,
 		}, nil
@@ -202,6 +205,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return &models.OrderHeaderRecord{
 			SurrogateID: surrogateID,
 			Signatures:  input.Signatures,
+			EventIDs:    input.EventIDs,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
@@ -222,6 +226,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return &models.OrderConsignmentRecord{
 			SurrogateID: surrogateID,
 			Signatures:  input.Signatures,
+			EventIDs:    input.EventIDs,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil
@@ -242,6 +247,7 @@ func BuildRecordFromInput(projectID string, namespace string, data []byte, useFi
 		return &models.OrderDetailRecord{
 			SurrogateID: surrogateID,
 			Signatures:  input.Signatures,
+			EventIDs:    input.EventIDs,
 			BaseRecord:  br,
 			Record:      record,
 		}, nil

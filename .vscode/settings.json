@@ -35,6 +35,8 @@
   "go.testTimeout": "30m",
   "go.testEnvVars": {
     "APP_ENV": "dev",
+    "GOOGLE_APPLICATION_CREDENTIALS": "/Users/mtewksbury/tewks-wemade.json",
+    "DSPROJECTID": "fire-core-wm",
     "PROJECTID": "wemade-core",
     "NAMESPACE": "wemade-dev",
     "CSQL_REGION": "us-central1",

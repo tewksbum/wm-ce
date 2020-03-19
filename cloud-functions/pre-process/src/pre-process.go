@@ -102,35 +102,35 @@ func init() {
 	var err error
 
 	listChannels = map[string]bool{"tablet": true, "mobile": true, "desktop": true}
-	listCities, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/cities.json")
+	listCities, err = ReadJSONArray(ctx, cs, AIDataBucket, "data/cities.json")
 	if err != nil {
 		// log.Fatalf("Failed to read json %v from bucket", "data/cities.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCities), "data/cities.json")
 	}
 
-	listStates, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/states.json")
+	listStates, err = ReadJSONArray(ctx, cs, AIDataBucket, "data/states.json")
 	if err != nil {
 		// log.Fatalf("Failed to read json %v from bucket", "data/states.json")
 	} else {
 		log.Printf("read %v values from %v", len(listStates), "data/states.json")
 	}
 
-	listCountries, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/countries.json")
+	listCountries, err = ReadJSONArray(ctx, cs, AIDataBucket, "data/countries.json")
 	if err != nil {
 		// log.Fatalf("Failed to read json %v from bucket", "data/countries.json")
 	} else {
 		log.Printf("read %v values from %v", len(listCountries), "data/countries.json")
 	}
 
-	listFirstNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/first_names.json")
+	listFirstNames, err = ReadJSONArray(ctx, cs, AIDataBucket, "data/first_names.json")
 	if err != nil {
 		// log.Fatalf("Failed to read json %v from bucket", "data/first_names.json")
 	} else {
 		log.Printf("read %v values from %v", len(listFirstNames), "data/first_names.json")
 	}
 
-	listLastNames, err = ReadJsonArray(ctx, cs, AIDataBucket, "data/last_names.json")
+	listLastNames, err = ReadJSONArray(ctx, cs, AIDataBucket, "data/last_names.json")
 	if err != nil {
 		// log.Fatalf("Failed to read json %v from bucket", "data/last_names.json")
 	} else {

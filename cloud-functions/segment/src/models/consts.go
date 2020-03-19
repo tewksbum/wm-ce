@@ -42,7 +42,7 @@ var (
 	HouseholdIDField        = "householdId"
 	IDField                 = "id"
 	DefaultSelectColumnList = []string{"record"}
-	DefaultColumnList       = []string{"signatures", "passthrough", "attributes"}
+	DefaultColumnList       = []string{"signatures", "eventIds", "passthrough", "attributes"}
 	DecodeIDField           = "signature"
 	DecodeColumnList        = []string{"signature", "peopleId", "householdId"}
 	DecodeBlackList         = []string{"source", "passthrough", "attributes", "expiredSets",
@@ -55,23 +55,24 @@ var (
 
 // Operation types
 const (
-	OperationEquals           string = "eq"
-	OperationNotEquals        string = "noteq"
-	OperationLessThan         string = "lt"
-	OperationLessThanEqual    string = "ltq"
-	OperationGreaterThan      string = "gt"
-	OperationGreaterThanEqual string = "gte"
-	OperationIs               string = "is"
-	OperationIsNull           string = "isnull"
-	OperationIsNotNull        string = "isnotnull"
-	OperationIn               string = "in"
-	OperationNotIn            string = "notin"
-	OperationLike             string = "like"
-	OperationILike            string = "ilike"
-	OperationNotLike          string = "notlike"
-	OperationBetween          string = "between"
-	OperationLinkAnd          string = "and"
-	OperationLinkOr           string = "or"
+	OperationEquals           string = "Equals"
+	OperationNotEquals        string = "NotEquals"
+	OperationLessThan         string = "LessThan"
+	OperationLessThanEqual    string = "LessThanEqual"
+	OperationGreaterThan      string = "GreaterThan"
+	OperationGreaterThanEqual string = "GreaterThanEqual"
+	OperationIs               string = "Is"
+	OperationIsNull           string = "IsNull"
+	OperationIsNotNull        string = "IsNotNull"
+	OperationIn               string = "In"
+	OperationLike             string = "Like"
+	OperationILike            string = "ILike"
+	OperationNotLike          string = "NotLike"
+	OperationBetween          string = "Between"
+	OperationMatch            string = "Match"
+	OperationNotIn            string = "NotIn"
+	OperationLinkAnd          string = "AND"
+	OperationLinkOr           string = "OR"
 	OperationTypeFilter       string = "filter"
 	OperationTypeOrderBy      string = "order"
 	OperationOrderByAsc       string = "ASC"
