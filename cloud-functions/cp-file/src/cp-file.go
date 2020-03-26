@@ -130,7 +130,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).Filter("role =", "Student").KeysOnly()
 	setKeys, _ := fs.GetAll(ctx, setQuery, nil)
-
+	log.Printf("Found %v matching sets", len(setKeys))
 	// get the golden records
 	var goldenKeys []*datastore.Key
 	var goldenIDs []string
@@ -168,6 +168,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 		}
 	}
+
+	log.Printf("Loaded %v matching golden", len(goldens))
 
 	// assemble the csv
 	header := []string{
