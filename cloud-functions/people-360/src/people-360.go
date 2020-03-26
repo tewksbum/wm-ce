@@ -173,13 +173,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			keypattern := "*"
@@ -328,13 +328,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			// get this into redis
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 			if len(dsFiber.EMAIL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(dsFiber.EMAIL.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
 			}
 			if len(dsFiber.PHONE.Value) > 0 && len(dsFiber.FINITIAL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.TrimSpace(strings.ToUpper(dsFiber.PHONE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.FINITIAL.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.PHONE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
 			}
 			if len(dsFiber.CITY.Value) > 0 && len(dsFiber.STATE.Value) > 0 && len(dsFiber.LNAME.Value) > 0 && len(dsFiber.FNAME.Value) > 0 && len(dsFiber.AD1.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.FNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.LNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.AD1.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.CITY.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.STATE.Value))))
+				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.FNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.LNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.AD1.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.CITY.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.STATE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
 			}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {

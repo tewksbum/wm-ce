@@ -67,13 +67,13 @@ func GetPeopleFiberSearchFields(v *PeopleFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
 	if len(v.EMAIL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL.Value), strings.ToUpper(v.ROLE.Value)))
 	}
 	if len(v.PHONE.Value) > 0 && len(v.FINITIAL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.ToUpper(v.PHONE.Value), strings.ToUpper(v.FINITIAL.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.ToUpper(v.PHONE.Value), strings.ToUpper(v.FINITIAL.Value), strings.ToUpper(v.ROLE.Value)))
 	}
 	if len(v.CITY.Value) > 0 && len(v.STATE.Value) > 0 && len(v.LNAME.Value) > 0 && len(v.FNAME.Value) > 0 && len(v.AD1.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.FNAME.Value), strings.ToUpper(v.LNAME.Value), strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.ToUpper(v.FNAME.Value), strings.ToUpper(v.LNAME.Value), strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value), strings.ToUpper(v.ROLE.Value)))
 	}
 	return searchFields
 }

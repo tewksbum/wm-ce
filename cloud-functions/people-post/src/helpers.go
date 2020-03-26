@@ -766,6 +766,11 @@ func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) (*PostRecord, 
 			Value:  "Parent",
 			Source: "WM",
 		}
+	} else {
+		o.ROLE = MatchKeyField{
+			Value:  "Student",
+			Source: "WM",
+		}
 	}
 	v := PostRecord{
 		Type:     t,

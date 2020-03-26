@@ -128,7 +128,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// get the set ids
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).Filter("role =", "Student").KeysOnly()
 	setKeys, _ := fs.GetAll(ctx, setQuery, nil)
 
 	// get the golden records
