@@ -128,6 +128,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// get the set ids
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
+	setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+	setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
+	log.Printf("Found %v matching sets", len(setKeysTest))
+
 	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).Filter("role =", "Student").KeysOnly()
 	setKeys, _ := fs.GetAll(ctx, setQuery, nil)
 	log.Printf("Found %v matching sets", len(setKeys))
