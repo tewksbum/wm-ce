@@ -745,15 +745,10 @@ func GetOutputByType(s *[]PostRecord, t string) (*PostRecord, int) {
 			return &v, index
 		}
 	}
-	o := PeopleOutput{}
-	o.ROLE = MatchKeyField{
-		Value:  "Student",
-		Source: "WM",
-	}
 	v := PostRecord{
 		Type:     t,
 		Sequence: 1,
-		Output:   o,
+		Output:   PeopleOutput{},
 	}
 	*s = append(*s, v)
 	return &v, len(*s) - 1
@@ -769,11 +764,6 @@ func GetOutputByTypeAndSequence(s *[]PostRecord, t string, i int) (*PostRecord, 
 	if t == "mpr" {
 		o.ROLE = MatchKeyField{
 			Value:  "Parent",
-			Source: "WM",
-		}
-	} else {
-		o.ROLE = MatchKeyField{
-			Value:  "Student",
 			Source: "WM",
 		}
 	}
