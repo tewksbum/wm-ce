@@ -745,10 +745,15 @@ func GetOutputByType(s *[]PostRecord, t string) (*PostRecord, int) {
 			return &v, index
 		}
 	}
+	o := PeopleOutput{}
+	o.ROLE = MatchKeyField{
+		Value:  "Student",
+		Source: "WM",
+	}
 	v := PostRecord{
 		Type:     t,
 		Sequence: 1,
-		Output:   PeopleOutput{},
+		Output:   o,
 	}
 	*s = append(*s, v)
 	return &v, len(*s) - 1
