@@ -82,13 +82,13 @@ func GetPeopleGoldenSearchFields(v *PeopleGoldenDS) []string {
 	log.Printf("golden record: %+v", v)
 	var searchFields []string
 	if len(v.EMAIL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL)))
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL), strings.ToUpper(v.ROLE)))
 	}
 	if len(v.PHONE) > 0 && len(v.FINITIAL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v", strings.ToUpper(v.PHONE), strings.ToUpper(v.FINITIAL)))
+		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.ToUpper(v.PHONE), strings.ToUpper(v.FINITIAL), strings.ToUpper(v.ROLE)))
 	}
 	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.LNAME) > 0 && len(v.FNAME) > 0 && len(v.AD1) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.FNAME), strings.ToUpper(v.LNAME), strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
+		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.ToUpper(v.FNAME), strings.ToUpper(v.LNAME), strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE), strings.ToUpper(v.ROLE)))
 	}
 	return searchFields
 }
