@@ -128,14 +128,15 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// get the set ids
 	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-	setQuery := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
-	setKeys, _ := fs.GetAll(ctx, setQuery, nil)
+	setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+	setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
+	log.Printf("Found %v matching sets", len(setKeysTest))
 
 	// get the golden records
 	var goldenKeys []*datastore.Key
 	var goldenIDs []string
 	var goldens []PeopleGoldenDS
-	for _, setKey := range setKeys {
+	for _, setKey := range setKeysTest {
 		if !Contains(goldenIDs, setKey.Name) {
 			goldenIDs = append(goldenIDs, setKey.Name)
 			dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
@@ -169,6 +170,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
+	log.Printf("Loaded %v matching golden", len(goldens))
+
 	// assemble the csv
 	header := []string{
 		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
@@ -176,6 +179,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
 	for _, g := range goldens {
+		if g.ROLE == "Parent" {
+			continue
+		}
 		row := []string{
 			GetKVPValue(event.Passthrough, "schoolCode"),
 			GetKVPValue(event.Passthrough, "schoolName"),
@@ -208,6 +214,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		records = append(records, row)
 	}
 
+	log.Printf("Writing %v records into output file", len(records))
 	// store it in bucket
 	var buf bytes.Buffer
 
