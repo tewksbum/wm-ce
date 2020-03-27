@@ -214,6 +214,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		records = append(records, row)
 	}
 
+	log.Printf("Writing %v records into output file", len(records))
 	// store it in bucket
 	var buf bytes.Buffer
 
