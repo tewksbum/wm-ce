@@ -352,9 +352,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			// use the lower number
 			if maxHeaderlikeColumnsRowAt < maxColumnRowAt {
 				headers = allrows[maxHeaderlikeColumnsRowAt]
+				log.Printf("Header row identified by maxHeaderlikeColumnsRowAt is %v", headers)
 				records = allrows[maxHeaderlikeColumnsRowAt+1:]
 			} else {
 				headers = allrows[maxColumnRowAt]
+				log.Printf("Header row identified by maxColumnRowAt is %v", headers)
 				records = allrows[maxColumnRowAt+1:]
 			}
 
