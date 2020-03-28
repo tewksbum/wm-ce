@@ -340,7 +340,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			for index, row := range allrows {
 
 				headerCount := CountHeaderlikeCells(row)
-				log.Printf("Row %v headerlike column count %v", headerCount)
+				log.Printf("Row %v headerlike column count %v", index, headerCount)
 				if headerCount > maxHeaderlikeColumns {
 					maxHeaderlikeColumnsRowAt = index
 					maxHeaderlikeColumns = headerCount
