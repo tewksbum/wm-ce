@@ -1,6 +1,6 @@
 package fileprocessor
 
-// yuck... 
+// yuck...
 
 import (
 	"bytes"
@@ -278,6 +278,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("processing first sheet")
 					allrows = sheetData[0]
 				}
+
+				if len(allrows) < 5 {
+					// read the first sheet
+					allrows = sheetData[0]
+				}
 				// allrows = sheetData[0]
 			} else {
 				// open a csv reader
@@ -305,7 +310,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			log.Printf("found %v rows in file", len(allrows))
+
 			// now scan through records
+			// method 1, find the row with the most number of columns, scan the first 20 rows for this
 			var maxColumns int
 			var maxColumnRowAt int
 			for index, row := range allrows {
@@ -314,8 +321,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					maxColumnRowAt = index
 					maxColumns = cellCount
 				}
+				if index == 20 {
+					break
+				}
 			}
-
+			log.Printf("maxColumnRowAt is %v", maxColumnRowAt)
 			// let's back track a little and see if we have just one extra column
 			for i := maxColumnRowAt - 1; i >= 0; i-- {
 				cellCount := CountSparseArray(allrows[i])
@@ -323,10 +333,39 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					maxColumnRowAt = i
 				}
 			}
+			log.Printf("maxColumnRowAt is %v", maxColumnRowAt)
+			// method 2, scan for a row that "looks like a header"
+			var maxHeaderlikeColumns int
+			var maxHeaderlikeColumnsRowAt int
+			for index, row := range allrows {
+
+				headerCount := CountHeaderlikeCells(row)
+				log.Printf("Row %v headerlike column count %v", index, headerCount)
+				if headerCount > maxHeaderlikeColumns {
+					maxHeaderlikeColumnsRowAt = index
+					maxHeaderlikeColumns = headerCount
+				}
+				if index == 20 {
+					break
+				}
+			}
+			log.Printf("headerlike match identified row  %v", maxHeaderlikeColumnsRowAt)
+			// no back track for this one
+
+			// // use the lower number
+			// if maxHeaderlikeColumnsRowAt < maxColumnRowAt {
+			// 	headers = allrows[maxHeaderlikeColumnsRowAt]
+			// 	log.Printf("Header row identified by maxHeaderlikeColumnsRowAt is %v", headers)
+			// 	records = allrows[maxHeaderlikeColumnsRowAt+1:]
+			// } else {
+			// 	headers = allrows[maxColumnRowAt]
+			// 	log.Printf("Header row identified by maxColumnRowAt is %v", headers)
+			// 	records = allrows[maxColumnRowAt+1:]
+			// }
 
 			headers = allrows[maxColumnRowAt]
+			log.Printf("Header row is %v", headers)
 			records = allrows[maxColumnRowAt+1:]
-
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
 			// b. if the header contains any column that starts with a number
@@ -334,7 +373,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headerlessTest1 := false
 			for _, h := range headers {
 				if len(h) > 0 && reStartsWithNumber.MatchString(h) && !reStartsWithOrdinalNumber.MatchString(h) {
-					log.Printf("The header column starts with a number: ", h)
+					log.Printf("The header column starts with a number: %v", h)
 					headerlessTest2 = true
 					break
 				}
@@ -500,6 +539,40 @@ func CountSparseArray(inputArray []string) int {
 		if len(c) > 0 && !strings.HasPrefix(c, "__EMPTY") {
 			counter++
 		}
+	}
+	return counter
+}
+
+func CountHeaderlikeCells(inputArray []string) int {
+	var counter int
+	var startsWithANumber int
+	for _, key := range inputArray {
+		if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
+			counter++
+		} else if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") {
+			counter++
+		} else if strings.Contains(key, "name") {
+			counter++
+		} else if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
+			counter++
+		} else if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+			counter++
+		} else if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
+			counter++
+		} else if strings.Contains(key, "city") { // not sure about this one, think "Twin City"
+			counter++
+		} else if strings.Contains(key, "state") || key == "st" {
+			counter++
+		} else if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
+			counter++
+		}
+
+		if reStartsWithNumber.MatchString(key) && !reStartsWithOrdinalNumber.MatchString(key) {
+			startsWithANumber++
+		}
+	}
+	if startsWithANumber > 0 {
+		return 0
 	}
 	return counter
 }
