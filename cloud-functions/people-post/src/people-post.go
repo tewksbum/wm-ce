@@ -32,6 +32,8 @@ var StorageBucket = os.Getenv("CLOUDSTORAGE")
 var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
 var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
 var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
+var reZip5 = regexp.MustCompile(`^\d{5}$`)
+var reZip9 = regexp.MustCompile(`^\d{5}-\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -525,6 +527,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				v.Output.CITY.Source = "WM"
 				v.Output.STATE.Source = "WM"
 			}
+		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && !reZip5.MatchString(v.Output.ZIP.Value) && !reZip9.MatchString(v.Output.ZIP.Value) {
+			v.Output.STATE.Source = "WM"
+			v.Output.STATE.Value = "UNKNOWN"
 		}
 
 		// copy address fields from MPR to default if value is missing
