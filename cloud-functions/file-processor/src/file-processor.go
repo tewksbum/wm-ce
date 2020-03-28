@@ -338,7 +338,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var maxHeaderlikeColumns int
 			var maxHeaderlikeColumnsRowAt int
 			for index, row := range allrows {
+
 				headerCount := CountHeaderlikeCells(row)
+				log.Printf("Row %v headerlike column count %v", index, headerCount)
 				if headerCount > maxHeaderlikeColumns {
 					maxHeaderlikeColumnsRowAt = index
 					maxHeaderlikeColumns = headerCount
@@ -347,19 +349,23 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					break
 				}
 			}
+			log.Printf("headerlike match identified row  %v", maxHeaderlikeColumnsRowAt)
 			// no back track for this one
 
-			// use the lower number
-			if maxHeaderlikeColumnsRowAt < maxColumnRowAt {
-				headers = allrows[maxHeaderlikeColumnsRowAt]
-				log.Printf("Header row identified by maxHeaderlikeColumnsRowAt is %v", headers)
-				records = allrows[maxHeaderlikeColumnsRowAt+1:]
-			} else {
-				headers = allrows[maxColumnRowAt]
-				log.Printf("Header row identified by maxColumnRowAt is %v", headers)
-				records = allrows[maxColumnRowAt+1:]
-			}
+			// // use the lower number
+			// if maxHeaderlikeColumnsRowAt < maxColumnRowAt {
+			// 	headers = allrows[maxHeaderlikeColumnsRowAt]
+			// 	log.Printf("Header row identified by maxHeaderlikeColumnsRowAt is %v", headers)
+			// 	records = allrows[maxHeaderlikeColumnsRowAt+1:]
+			// } else {
+			// 	headers = allrows[maxColumnRowAt]
+			// 	log.Printf("Header row identified by maxColumnRowAt is %v", headers)
+			// 	records = allrows[maxColumnRowAt+1:]
+			// }
 
+			headers = allrows[maxColumnRowAt]
+			log.Printf("Header row identified by maxColumnRowAt is %v", headers)
+			records = allrows[maxColumnRowAt+1:]
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
 			// b. if the header contains any column that starts with a number
