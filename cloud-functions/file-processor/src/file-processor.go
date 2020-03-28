@@ -325,7 +325,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					break
 				}
 			}
-
+			log.Printf("maxColumnRowAt is %v", maxColumnRowAt)
 			// let's back track a little and see if we have just one extra column
 			for i := maxColumnRowAt - 1; i >= 0; i-- {
 				cellCount := CountSparseArray(allrows[i])
@@ -364,7 +364,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			// }
 
 			headers = allrows[maxColumnRowAt]
-			log.Printf("Header row identified by maxColumnRowAt is %v", headers)
+			log.Printf("Header row is %v", headers)
 			records = allrows[maxColumnRowAt+1:]
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
