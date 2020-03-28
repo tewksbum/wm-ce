@@ -333,7 +333,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					maxColumnRowAt = i
 				}
 			}
-
+			log.Printf("maxColumnRowAt is %v", maxColumnRowAt)
 			// method 2, scan for a row that "looks like a header"
 			var maxHeaderlikeColumns int
 			var maxHeaderlikeColumnsRowAt int
