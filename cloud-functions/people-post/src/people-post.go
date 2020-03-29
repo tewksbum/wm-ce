@@ -32,6 +32,8 @@ var StorageBucket = os.Getenv("CLOUDSTORAGE")
 var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
 var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
 var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
+var reZip5 = regexp.MustCompile(`^\d{5}$`)
+var reZip9 = regexp.MustCompile(`^\d{5}-\d{4}$`)
 var reNumberOnly = regexp.MustCompile("[^0-9]+")
 var reConcatenatedAddress = regexp.MustCompile(`(\d*)\s+((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
 var reConcatenatedCityStateZip = regexp.MustCompile(`((?:[\w+\s*\-])+)[\,]\s+([a-zA-Z]+)\s+([0-9a-zA-Z]+)`)
@@ -559,6 +561,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.COUNTRY.Source = "WM"
 		}
 
+		// swap ad1 and ad2 if ad2 is not blank but ad1 is
+		if len(v.Output.AD1.Value) == 0 && len(v.Output.AD2.Value) > 0 {
+			v.Output.AD1.Value = v.Output.AD2.Value
+			v.Output.AD1.Source = v.Output.AD2.Source
+			v.Output.AD2.Value = ""
+			v.Output.AD2.Source = ""
+		}
+
 		// If we could not identify another country previously...
 		// including US... meaning we don't have a state
 		// yet we have an address
@@ -578,6 +588,15 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.ADCORRECT.Value = "FALSE"
 			StandardizeAddressSS(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+		}
+
+		// try to stick a value into STATE if it is blank and we believe it is international
+		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && !reZip5.MatchString(v.Output.ZIP.Value) && !reZip9.MatchString(v.Output.ZIP.Value) {
+			v.Output.STATE.Source = "WM"
+			v.Output.STATE.Value = "UNKNOWN"
+		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.COUNTRY.Value) == 0 {
+			v.Output.STATE.Source = "WM"
+			v.Output.STATE.Value = "UNKNOWN"
 		}
 
 		if v.Output.ADBOOK.Value == "" {
