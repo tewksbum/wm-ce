@@ -564,6 +564,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.COUNTRY.Source = "WM"
 		}
 
+		// swap ad1 and ad2 if ad2 is not blank but ad1 is
+		if len(v.Output.AD1.Value) == 0 && len(v.Output.AD2.Value) > 0 {
+			v.Output.AD1.Value = v.Output.AD2.Value
+			v.Output.AD1.Source = v.Output.AD2.Source
+			v.Output.AD2.Value = ""
+			v.Output.AD2.Source = ""
+		}
+
 		// If we could not identify another country previously...
 		// including US... meaning we don't have a state
 		// yet we have an address
