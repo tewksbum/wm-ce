@@ -527,9 +527,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				v.Output.CITY.Source = "WM"
 				v.Output.STATE.Source = "WM"
 			}
-		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && !reZip5.MatchString(v.Output.ZIP.Value) && !reZip9.MatchString(v.Output.ZIP.Value) {
-			v.Output.STATE.Source = "WM"
-			v.Output.STATE.Value = "UNKNOWN"
 		}
 
 		// copy address fields from MPR to default if value is missing
