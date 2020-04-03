@@ -199,7 +199,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			Country:   g.COUNTRY,
 			RoleType:  g.ROLE,
 			Email:     g.EMAIL,
-			ContactID: '1',
+			ContactID: g.EMAIL,
 		}
 
 		contact := ContactOutput{
