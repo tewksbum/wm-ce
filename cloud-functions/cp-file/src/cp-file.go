@@ -268,7 +268,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
 		Attributes: map[string]string{
-			"filename": file,
+			"filename": "test",
 		},
 	})
 	psid, err := psresult.Get(ctx)
