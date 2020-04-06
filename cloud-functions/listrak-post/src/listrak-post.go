@@ -37,7 +37,7 @@ func init() {
 }
 
 func ListrakPost(ctx context.Context, m PubSubMessage) error {
-	var input []Input
+	var input Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil

@@ -42,7 +42,7 @@ type SegmentationFieldValue struct {
 	Value               string `json:"value"`
 }
 
-type ContactOutput struct {
+type Output struct {
 	EmailAddress            string                   `json:"emailAddress"`
 	SubscriptionState       string                   `json:"subscriptionState"`
 	ExternalContactID       string                   `json:"externalContactID"`
