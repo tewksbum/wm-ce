@@ -53,7 +53,7 @@ func init() {
 	sb = cs.Bucket(os.Getenv("BUCKET"))
 	topic = ps.Topic(PubSubTopic)
 
-	response, _ := http.Get("https://ifconfig.me/all")
+	response, _ := http.Get("https://wtfismyip.com/text")
 	data, _ := ioutil.ReadAll(response.Body)
 
 	// sshConfig := &ssh.ClientConfig{
