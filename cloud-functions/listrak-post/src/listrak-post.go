@@ -74,60 +74,60 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			ExternalContactID: "",
 			SegmentationFieldValues: []SegmentationFieldValue{
 				SegmentationFieldValue{
-					"segmentationFieldId": "11755", //Filename
-					"value":               c.FirstName,
+					SegmentationFieldId: "11755", //Filename
+					Value:               c.FirstName,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11756", //Lastname
-					"value":               c.Lastname,
+					SegmentationFieldId: "11756", //Lastname
+					Value:               c.Lastname,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11762", //Address1
-					"value":               c.Address1,
+					SegmentationFieldId: "11762", //Address1
+					Value:               c.Address1,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11778", //Address2
-					"value":               c.Address2,
+					SegmentationFieldId: "11778", //Address2
+					Value:               c.Address2,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11763", //City
-					"value":               c.City,
+					SegmentationFieldId: "11763", //City
+					Value:               c.City,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11764", //State
-					"value":               c.State,
+					SegmentationFieldId: "11764", //State
+					Value:               c.State,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11765", //Zip
-					"value":               c.Zip,
+					SegmentationFieldId: "11765", //Zip
+					Value:               c.Zip,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11766", //Country
-					"value":               c.Country,
+					SegmentationFieldId: "11766", //Country
+					Value:               c.Country,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11767", //ContactID
-					"value":               c.ContactID,
+					SegmentationFieldId: "11767", //ContactID
+					Value:               c.ContactID,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11779", //RoleType
-					"value":               c.RoleType,
+					SegmentationFieldId: "11779", //RoleType
+					Value:               c.RoleType,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11780", //Email
-					"value":               c.Email,
+					SegmentationFieldId: "11780", //Email
+					Value:               c.Email,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11775", //SchoolCode
-					"value":               c.SchoolCode,
+					SegmentationFieldId: "11775", //SchoolCode
+					Value:               c.SchoolCode,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11776", //SchoolColor
-					"value":               c.SchoolColor,
+					SegmentationFieldId: "11776", //SchoolColor
+					Value:               c.SchoolColor,
 				},
 				SegmentationFieldValue{
-					"segmentationFieldId": "11777", //SchoolName
-					"value":               c.ShoolName,
+					SegmentationFieldId: "11777", //SchoolName
+					Value:               c.ShoolName,
 				},
 			},
 		}
