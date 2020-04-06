@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -15,6 +18,7 @@ var DSProjectID = os.Getenv("DSPROJECTID")
 var WMNamespace = os.Getenv("DATASTORENS")
 var Env = os.Getenv("ENVIRONMENT")
 var dev = Env == "dev"
+var ListrakEndpoint = os.Getenv("LISTRAKENDPOINT")
 
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -38,6 +42,24 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	}
 
 	log.Printf("Log PubSubMessage %v", string(m.Data))
+
+	//Authentication  map[string]string{"mostafa": "dahab"}
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", "g1mukhpg8gkbgrrb1vmz")
+	data.Set("client_secret", "xriMvCqzXzewkIgUYuHXL33V08PbTAyUbS/a+NaF/jY")
+
+	req, err := http.NewRequest("POST", ListrakEndpoint, strings.NewReader(data.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("[ERROR] Listrak authentication: %v ", err)
+		return nil
+	}
+	log.Printf("Ok status: %v ", resp.Status)
+	defer resp.Body.Close()
+
 	/*
 		// look up the event
 		var events []Event
