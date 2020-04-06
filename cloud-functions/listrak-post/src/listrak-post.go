@@ -1,6 +1,7 @@
 package listrakpost
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"log"
@@ -18,6 +19,7 @@ var DSProjectID = os.Getenv("DSPROJECTID")
 var WMNamespace = os.Getenv("DATASTORENS")
 var Env = os.Getenv("ENVIRONMENT")
 var dev = Env == "dev"
+var ListrakAuthEndpoint = os.Getenv("LISTRAKAUTHENDPOINT")
 var ListrakEndpoint = os.Getenv("LISTRAKENDPOINT")
 
 var ps *pubsub.Client
@@ -35,7 +37,7 @@ func init() {
 }
 
 func ListrakPost(ctx context.Context, m PubSubMessage) error {
-	var input []ContactOutput
+	var input []Input
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil
@@ -49,7 +51,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	data.Set("client_id", "g1mukhpg8gkbgrrb1vmz")
 	data.Set("client_secret", "xriMvCqzXzewkIgUYuHXL33V08PbTAyUbS/a+NaF/jY")
 
-	req, err := http.NewRequest("POST", ListrakEndpoint, strings.NewReader(data.Encode()))
+	req, err := http.NewRequest("POST", ListrakAuthEndpoint, strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -57,29 +59,91 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		log.Printf("[ERROR] Listrak authentication: %v ", err)
 		return nil
 	}
-	log.Printf("Ok status: %v ", resp.Status)
 	defer resp.Body.Close()
 
-	/*
-		// look up the event
-		var events []Event
-		var event Event
-		eventQuery := datastore.NewQuery("Event").Namespace(WMNamespace).Filter("EventID =", input.EventID).Limit(1)
-		if _, err := fs.GetAll(ctx, eventQuery, &events); err != nil {
-			log.Printf("Error querying event: %v", err)
-			return nil
-		} else if len(events) > 0 {
-			event = events[0]
-		} else {
-			log.Printf("Event ID not found: %v", input.EventID)
+	var authResponse AuthResponse
+	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
+		log.Printf("[ERROR]There was an issue decoding the message %v", resp.Body)
+		return nil
+	}
+
+	for _, c := range input.Contacts {
+		output := Output{
+			EmailAddress:      c.Email,
+			SubscriptionState: "Subscribed",
+			ExternalContactID: "",
+			SegmentationFieldValues: []SegmentationFieldValue{
+				SegmentationFieldValue{
+					"segmentationFieldId": "11755", //Filename
+					"value":               c.FirstName,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11756", //Lastname
+					"value":               c.Lastname,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11762", //Address1
+					"value":               c.Address1,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11778", //Address2
+					"value":               c.Address2,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11763", //City
+					"value":               c.City,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11764", //State
+					"value":               c.State,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11765", //Zip
+					"value":               c.Zip,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11766", //Country
+					"value":               c.Country,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11767", //ContactID
+					"value":               c.ContactID,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11779", //RoleType
+					"value":               c.RoleType,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11780", //Email
+					"value":               c.Email,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11775", //SchoolCode
+					"value":               c.SchoolCode,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11776", //SchoolColor
+					"value":               c.SchoolColor,
+				},
+				SegmentationFieldValue{
+					"segmentationFieldId": "11777", //SchoolName
+					"value":               c.ShoolName,
+				},
+			},
+		}
+		jsonValue, _ := json.Marshal(output)
+
+		req, err = http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
+		client = &http.Client{}
+		resp, err = client.Do(req)
+		if err != nil {
+			log.Printf("[ERROR] Listrak contact list: %v ", err)
 			return nil
 		}
-
-		// update event
-		event.Status = "PROCESSED date:" + time.Now().Format("2006.01.02 15:04:05") + " count:" + input.Count
-		log.Printf("EventId: %v message: %v", input.EventID, event.Status)
-		if _, err := fs.Put(ctx, event.Key, &event); err != nil {
-			log.Printf("error updating event: %v", err)
-		}*/
+		defer resp.Body.Close()
+		log.Printf("Listrak contact list OK")
+	}
 	return nil
 }

@@ -180,33 +180,26 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
-	var contacts []ContactOutput
+	output := Output{}
 	for _, g := range goldens {
-		school := School{
+		contactInfo := ContactInfo{
+			FirstName:   g.FNAME,
+			LastName:    g.LNAME,
+			Address1:    g.AD1,
+			Address2:    g.AD2,
+			City:        g.CITY,
+			State:       g.STATE,
+			Zip:         g.ZIP,
+			Country:     g.COUNTRY,
+			RoleType:    g.ROLE,
+			Email:       g.EMAIL,
+			ContactID:   g.EMAIL,
 			SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
 			SchoolColor: "Purple",
 			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
 		}
 
-		contactInfo := ContactInfo{
-			FirstName: g.FNAME,
-			LastName:  g.LNAME,
-			Address1:  g.AD1,
-			Address2:  g.AD2,
-			City:      g.CITY,
-			State:     g.STATE,
-			Zip:       g.ZIP,
-			Country:   g.COUNTRY,
-			RoleType:  g.ROLE,
-			Email:     g.EMAIL,
-			ContactID: g.EMAIL,
-		}
-
-		contact := ContactOutput{
-			School:      school,
-			ContactInfo: contactInfo,
-		}
-		contacts = append(contacts, contact)
+		output.Contacts = append(output.Contacts, contactInfo)
 
 		if g.ROLE == "Parent" {
 			continue
@@ -263,12 +256,12 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Failed to close bucket write stream %v", err)
 	}
 
-	// push into pubsub
-	outputJSON, _ := json.Marshal(contacts)
+	// push into pubsub contacts
+	outputJSON, _ := json.Marshal(output)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
 		Attributes: map[string]string{
-			"filename": "test",
+			"eventid": input.EventID,
 		},
 	})
 	psid, err := psresult.Get(ctx)
@@ -276,9 +269,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	if err != nil {
 		log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
 		return nil
-	} else {
-		log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 	}
+	log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 
 	return nil
 }
