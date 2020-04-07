@@ -60,6 +60,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 	defer resp.Body.Close()
+	log.Printf("Authentication: %v", resp.Status)
 
 	var authResponse AuthResponse
 	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
@@ -133,16 +134,20 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		}
 		jsonValue, _ := json.Marshal(output)
 
-		req, err = http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
-		client = &http.Client{}
-		resp, err = client.Do(req)
-		if err != nil {
-			log.Printf("[ERROR] Listrak contact list: %v ", err)
+		log.Printf("Bearer: %v", authResponse.AccessToken)
+
+		req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
+		req2.Header.Set("Content-Type", "application/json")
+		req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
+		client2 := &http.Client{}
+		resp2, err2 := client2.Do(req2)
+		if err2 != nil {
+			log.Printf("[ERROR] Listrak contact list: %v ", err2)
 			return nil
 		}
-		defer resp.Body.Close()
+		defer resp2.Body.Close()
+		log.Printf("Add contact: %v", resp2.Status)
+		log.Printf("Add contact: %v", resp2.Body)
 		log.Printf("Listrak contact list OK")
 	}
 	return nil
