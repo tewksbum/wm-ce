@@ -74,12 +74,12 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			ExternalContactID: "",
 			SegmentationFieldValues: []SegmentationFieldValue{
 				SegmentationFieldValue{
-					SegmentationFieldId: "11755", //Filename
+					SegmentationFieldId: "11755", //Firstname
 					Value:               c.FirstName,
 				},
 				SegmentationFieldValue{
 					SegmentationFieldId: "11756", //Lastname
-					Value:               c.Lastname,
+					Value:               c.LastName,
 				},
 				SegmentationFieldValue{
 					SegmentationFieldId: "11762", //Address1
@@ -127,7 +127,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				},
 				SegmentationFieldValue{
 					SegmentationFieldId: "11777", //SchoolName
-					Value:               c.ShoolName,
+					Value:               c.SchoolName,
 				},
 			},
 		}
