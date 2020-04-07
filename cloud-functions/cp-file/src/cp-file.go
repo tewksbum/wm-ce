@@ -182,6 +182,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	records := [][]string{header}
 	output := Output{}
 	for _, g := range goldens {
+		log.Printf("Golden: ", g)
+		log.Printf("Golden ID: ", g.ID.Name)
 		contactInfo := ContactInfo{
 			FirstName:   g.FNAME,
 			LastName:    g.LNAME,
