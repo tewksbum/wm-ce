@@ -130,5 +130,5 @@ type ContactInfo struct {
 }
 
 type Output struct {
-	Contacts []ContactInfo `json:"contactInfo"`
+	Contacts []ContactInfo `json:"contacts"`
 }
