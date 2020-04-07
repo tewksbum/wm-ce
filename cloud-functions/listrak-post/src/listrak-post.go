@@ -48,8 +48,8 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	//Authentication  map[string]string{"mostafa": "dahab"}
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
-	data.Set("client_id", "g1mukhpg8gkbgrrb1vmz")
-	data.Set("client_secret", "xriMvCqzXzewkIgUYuHXL33V08PbTAyUbS/a+NaF/jY")
+	data.Set("client_id", "nfpszemtoo82g91a7ius")
+	data.Set("client_secret", "YZgjhGpSZwskKeIRGQe/j38bpce0Y2pzZJ/ZOu/JEAQ")
 
 	req, err := http.NewRequest("POST", ListrakAuthEndpoint, strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
@@ -70,6 +70,8 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			return nil
 		}
 		log.Printf("Bearer: %v", authResponse.AccessToken)
+		log.Printf("Contacts count: %v", len(input.Contacts))
+
 		for _, c := range input.Contacts {
 			output := Output{
 				EmailAddress:      c.Email,
@@ -135,7 +137,6 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				},
 			}
 			jsonValue, _ := json.Marshal(output)
-
 			req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
 			req2.Header.Set("Content-Type", "application/json")
 			req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
