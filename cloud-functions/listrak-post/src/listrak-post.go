@@ -61,94 +61,95 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	}
 	defer resp.Body.Close()
 	log.Printf("Authentication: %v", resp.Status)
-
-	var authResponse AuthResponse
-	if err := json.NewDecoder(resp.Body).Decode(&authResponse); err != nil {
-		log.Printf("[ERROR]There was an issue decoding the message %v", resp.Body)
-		return nil
-	}
-
-	for _, c := range input.Contacts {
-		output := Output{
-			EmailAddress:      c.Email,
-			SubscriptionState: "Subscribed",
-			ExternalContactID: "",
-			SegmentationFieldValues: []SegmentationFieldValue{
-				SegmentationFieldValue{
-					SegmentationFieldId: "11755", //Firstname
-					Value:               c.FirstName,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11756", //Lastname
-					Value:               c.LastName,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11762", //Address1
-					Value:               c.Address1,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11778", //Address2
-					Value:               c.Address2,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11763", //City
-					Value:               c.City,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11764", //State
-					Value:               c.State,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11765", //Zip
-					Value:               c.Zip,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11766", //Country
-					Value:               c.Country,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11767", //ContactID
-					Value:               c.ContactID,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11779", //RoleType
-					Value:               c.RoleType,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11780", //Email
-					Value:               c.Email,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11775", //SchoolCode
-					Value:               c.SchoolCode,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11776", //SchoolColor
-					Value:               c.SchoolColor,
-				},
-				SegmentationFieldValue{
-					SegmentationFieldId: "11777", //SchoolName
-					Value:               c.SchoolName,
-				},
-			},
-		}
-		jsonValue, _ := json.Marshal(output)
-
-		log.Printf("Bearer: %v", authResponse.AccessToken)
-
-		req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
-		req2.Header.Set("Content-Type", "application/json")
-		req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
-		client2 := &http.Client{}
-		resp2, err2 := client2.Do(req2)
-		if err2 != nil {
-			log.Printf("[ERROR] Listrak contact list: %v ", err2)
+	if resp.StatusCode == http.StatusOK {
+		decoder := json.NewDecoder(resp.Body)
+		var authResponse AuthResponse
+		err = decoder.Decode(&authResponse)
+		if err != nil {
+			log.Printf("[ERROR] There was a problem decoding the output response %v", err)
 			return nil
 		}
-		defer resp2.Body.Close()
-		log.Printf("Add contact: %v", resp2.Status)
-		log.Printf("Add contact: %v", resp2.Body)
-		log.Printf("Listrak contact list OK")
+		log.Printf("Bearer: %v", authResponse.AccessToken)
+		for _, c := range input.Contacts {
+			output := Output{
+				EmailAddress:      c.Email,
+				SubscriptionState: "Subscribed",
+				ExternalContactID: "",
+				SegmentationFieldValues: []SegmentationFieldValue{
+					SegmentationFieldValue{
+						SegmentationFieldId: "11755", //Firstname
+						Value:               c.FirstName,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11756", //Lastname
+						Value:               c.LastName,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11762", //Address1
+						Value:               c.Address1,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11778", //Address2
+						Value:               c.Address2,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11763", //City
+						Value:               c.City,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11764", //State
+						Value:               c.State,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11765", //Zip
+						Value:               c.Zip,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11766", //Country
+						Value:               c.Country,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11767", //ContactID
+						Value:               c.ContactID,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11779", //RoleType
+						Value:               c.RoleType,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11780", //Email
+						Value:               c.Email,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11775", //SchoolCode
+						Value:               c.SchoolCode,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11776", //SchoolColor
+						Value:               c.SchoolColor,
+					},
+					SegmentationFieldValue{
+						SegmentationFieldId: "11777", //SchoolName
+						Value:               c.SchoolName,
+					},
+				},
+			}
+			jsonValue, _ := json.Marshal(output)
+
+			req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
+			req2.Header.Set("Content-Type", "application/json")
+			req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
+			client2 := &http.Client{}
+			resp2, err2 := client2.Do(req2)
+			if err2 != nil {
+				log.Printf("[ERROR] Listrak contact list: %v ", err2)
+				return nil
+			}
+			defer resp2.Body.Close()
+			log.Printf("Add contact: %v", resp2.Status)
+			log.Printf("Add contact: %v", resp2.Body)
+			log.Printf("Listrak contact list OK")
+		}
 	}
 	return nil
 }
