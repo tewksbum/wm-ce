@@ -193,9 +193,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			Country:     g.COUNTRY,
 			RoleType:    g.ROLE,
 			Email:       g.EMAIL,
-			ContactID:   g.EMAIL,
+			ContactID:   g.ID.stringID,
 			SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
-			SchoolColor: "Purple",
+			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
 		}
 

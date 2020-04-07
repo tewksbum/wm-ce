@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -42,8 +43,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil
 	}
-
-	log.Printf("Log PubSubMessage %v", string(m.Data))
+	LogDev(fmt.Sprintf("PubSubMessage %v", string(m.Data)))
 
 	//Authentication  map[string]string{"mostafa": "dahab"}
 	data := url.Values{}
@@ -60,7 +60,8 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 	defer resp.Body.Close()
-	log.Printf("Authentication: %v", resp.Status)
+	LogDev(fmt.Sprintf("Authentication: %v", resp.Status))
+
 	if resp.StatusCode == http.StatusOK {
 		decoder := json.NewDecoder(resp.Body)
 		var authResponse AuthResponse
@@ -69,8 +70,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			log.Printf("[ERROR] There was a problem decoding the output response %v", err)
 			return nil
 		}
-		log.Printf("Bearer: %v", authResponse.AccessToken)
-		log.Printf("Contacts count: %v", len(input.Contacts))
+		LogDev(fmt.Sprintf("Contacts count: %v", len(input.Contacts)))
 
 		for _, c := range input.Contacts {
 			output := Output{
@@ -119,10 +119,6 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 						Value:               c.RoleType,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11780", //Email
-						Value:               c.Email,
-					},
-					SegmentationFieldValue{
 						SegmentationFieldId: "11775", //SchoolCode
 						Value:               c.SchoolCode,
 					},
@@ -147,10 +143,14 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				return nil
 			}
 			defer resp2.Body.Close()
-			log.Printf("Add contact: %v", resp2.Status)
-			log.Printf("Add contact: %v", resp2.Body)
-			log.Printf("Listrak contact list OK")
+			LogDev(fmt.Sprintf("Contact add: %v", resp2.Status))
 		}
 	}
 	return nil
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }
