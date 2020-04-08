@@ -81,3 +81,10 @@ func GetKVPValue(v []KVP, key string) string {
 	}
 	return ""
 }
+
+func schoolYearFormatter(schoolYear, classStanding string) string {
+	if classStanding == "Freshman" {
+		return "FY" + schoolYear
+	}
+	return schoolYear
+}

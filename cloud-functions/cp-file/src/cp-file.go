@@ -176,7 +176,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// assemble the csv
 	header := []string{
-		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
+		"School Code", "CRM", "Processor", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
@@ -195,7 +195,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			Country:     g.COUNTRY,
 			RoleType:    g.ROLE,
 			Email:       g.EMAIL,
-      ContactID:   g.ID.Name,
+			ContactID:   g.ID.Name,
 			SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
 			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
@@ -209,16 +209,17 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 		row := []string{
 			GetKVPValue(event.Passthrough, "schoolCode"),
+			"",
+			"",
 			GetKVPValue(event.Passthrough, "schoolName"),
 			GetKVPValue(event.Passthrough, "inputType"),
-			GetKVPValue(event.Passthrough, "schoolYear"),
+			schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Passthrough, "classStanding")),
 			GetKVPValue(event.Passthrough, "masterProgramCode"),
 			GetKVPValue(event.Passthrough, "ADCODE"),
 			event.Created.Format("01/02/2006"),
 			GetKVPValue(event.Passthrough, "orderByDate"),
-			GetKVPValue(event.Passthrough, "listType"),
+			GetKVPValue(event.Passthrough, "listType")[0:1],
 			GetKVPValue(event.Passthrough, "salutation"),
-
 			g.FNAME,
 			g.LNAME,
 			g.AD1,
