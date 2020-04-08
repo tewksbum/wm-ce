@@ -1,6 +1,7 @@
 package cpfile
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
