@@ -83,6 +83,7 @@ func GetKVPValue(v []KVP, key string) string {
 }
 
 func schoolYearFormatter(schoolYear, classStanding string) string {
+	LogDev(fmt.Sprintf("schoolYear: %v classStanding: %v", schoolYear, classStanding))
 	if classStanding == "Freshman" {
 		return "FY" + schoolYear
 	}
@@ -90,8 +91,15 @@ func schoolYearFormatter(schoolYear, classStanding string) string {
 }
 
 func listTypeFormatter(listType string) string {
+	LogDev(fmt.Sprintf("listType: %v", listType))
 	if len(listType) > 0 {
 		return listType[0:1]
 	}
 	return listType
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }
