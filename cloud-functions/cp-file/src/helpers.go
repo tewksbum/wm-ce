@@ -38,11 +38,6 @@ func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string
 	}
 	return slice
 }
-func LogDev(s string) {
-	if dev || true {
-		log.Printf(s)
-	}
-}
 
 func Left(str string, num int) string {
 	if num <= 0 {
