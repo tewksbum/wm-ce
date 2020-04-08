@@ -88,3 +88,10 @@ func schoolYearFormatter(schoolYear, classStanding string) string {
 	}
 	return schoolYear
 }
+
+func listTypeFormatter(listType string) string {
+	if len(listType) > 0 {
+		return listType[0:1]
+	}
+	return listType
+}

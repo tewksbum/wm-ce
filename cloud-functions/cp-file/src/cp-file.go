@@ -182,8 +182,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	records := [][]string{header}
 	output := Output{}
 	for _, g := range goldens {
-		log.Printf("Golden: ", g)
-		log.Printf("Golden ID: ", g.ID.Name)
 		contactInfo := ContactInfo{
 			FirstName:   g.FNAME,
 			LastName:    g.LNAME,
@@ -218,7 +216,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			GetKVPValue(event.Passthrough, "ADCODE"),
 			event.Created.Format("01/02/2006"),
 			GetKVPValue(event.Passthrough, "orderByDate"),
-			GetKVPValue(event.Passthrough, "listType")[0:1],
+			listTypeFormatter(GetKVPValue(event.Passthrough, "listType")),
 			GetKVPValue(event.Passthrough, "salutation"),
 			g.FNAME,
 			g.LNAME,
@@ -239,11 +237,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		}
 		records = append(records, row)
 	}
-
 	log.Printf("Writing %v records into output file", len(records))
+
 	// store it in bucket
 	var buf bytes.Buffer
-
 	csv := csv.NewWriter(&buf)
 	csv.WriteAll(records)
 	csv.Flush()
@@ -253,10 +250,12 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
-		log.Fatalf("File cannot be copied to bucket %v", err)
+		log.Printf("File cannot be copied to bucket %v", err)
+		return nil
 	}
 	if err := writer.Close(); err != nil {
-		log.Fatalf("Failed to close bucket write stream %v", err)
+		log.Printf("Failed to close bucket write stream %v", err)
+		return nil
 	}
 
 	// push into pubsub contacts
