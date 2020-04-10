@@ -211,7 +211,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			"",
 			GetKVPValue(event.Passthrough, "schoolName"),
 			GetKVPValue(event.Passthrough, "inputType"),
-			schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Passthrough, "classStanding")),
+			schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
 			GetKVPValue(event.Passthrough, "masterProgramCode"),
 			GetKVPValue(event.Passthrough, "ADCODE"),
 			event.Created.Format("01/02/2006"),
