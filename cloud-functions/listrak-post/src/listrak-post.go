@@ -79,55 +79,55 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				ExternalContactID: "",
 				SegmentationFieldValues: []SegmentationFieldValue{
 					SegmentationFieldValue{
-						SegmentationFieldId: "11755", //Firstname
+						SegmentationFieldId: "12092", //Firstname
 						Value:               c.FirstName,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11756", //Lastname
+						SegmentationFieldId: "12093", //Lastname
 						Value:               c.LastName,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11762", //Address1
+						SegmentationFieldId: "12087", //Address1
 						Value:               c.Address1,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11778", //Address2
+						SegmentationFieldId: "12088", //Address2
 						Value:               c.Address2,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11763", //City
+						SegmentationFieldId: "12089", //City
 						Value:               c.City,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11764", //State
+						SegmentationFieldId: "12095", //State
 						Value:               c.State,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11765", //Zip
+						SegmentationFieldId: "12096", //Zip
 						Value:               c.Zip,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11766", //Country
+						SegmentationFieldId: "12091", //Country
 						Value:               c.Country,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11767", //ContactID
+						SegmentationFieldId: "12090", //ContactID
 						Value:               c.ContactID,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11779", //RoleType
+						SegmentationFieldId: "12094", //RoleType
 						Value:               c.RoleType,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11775", //SchoolCode
+						SegmentationFieldId: "12084", //SchoolCode
 						Value:               c.SchoolCode,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11776", //SchoolColor
+						SegmentationFieldId: "12085", //SchoolColor
 						Value:               c.SchoolColor,
 					},
 					SegmentationFieldValue{
-						SegmentationFieldId: "11777", //SchoolName
+						SegmentationFieldId: "12086", //SchoolName
 						Value:               c.SchoolName,
 					},
 				},
