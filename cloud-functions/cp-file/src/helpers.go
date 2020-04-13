@@ -1,6 +1,7 @@
 package cpfile
 
 import (
+	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -36,11 +37,6 @@ func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string
 		slice = append(slice, Left(GetSignatureField(&s, field), 36))
 	}
 	return slice
-}
-func LogDev(s string) {
-	if dev || true {
-		log.Printf(s)
-	}
 }
 
 func Left(str string, num int) string {
@@ -80,4 +76,26 @@ func GetKVPValue(v []KVP, key string) string {
 		}
 	}
 	return ""
+}
+
+func schoolYearFormatter(schoolYear, classStanding string) string {
+	LogDev(fmt.Sprintf("schoolYear: %v classStanding: %v", schoolYear, classStanding))
+	if classStanding == "Freshman" {
+		return "FY" + schoolYear
+	}
+	return schoolYear
+}
+
+func listTypeFormatter(listType string) string {
+	LogDev(fmt.Sprintf("listType: %v", listType))
+	if len(listType) > 0 {
+		return listType[0:1]
+	}
+	return listType
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }

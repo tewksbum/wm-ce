@@ -28,6 +28,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+var PubSubTopic = os.Getenv("PSOUTPUT")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -50,8 +51,9 @@ func init() {
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	cs, _ = storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
+	topic = ps.Topic(PubSubTopic)
 
-	response, _ := http.Get("https://ifconfig.me/all")
+	response, _ := http.Get("https://wtfismyip.com/text")
 	data, _ := ioutil.ReadAll(response.Body)
 
 	// sshConfig := &ssh.ClientConfig{
@@ -174,26 +176,48 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 	// assemble the csv
 	header := []string{
-		"School Code", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
+		"School Code", "CRM", "Processor", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
+	output := Output{}
 	for _, g := range goldens {
+		contactInfo := ContactInfo{
+			FirstName:   g.FNAME,
+			LastName:    g.LNAME,
+			Address1:    g.AD1,
+			Address2:    g.AD2,
+			City:        g.CITY,
+			State:       g.STATE,
+			Zip:         g.ZIP,
+			Country:     g.COUNTRY,
+			RoleType:    g.ROLE,
+			Email:       g.EMAIL,
+			ContactID:   g.ID.Name,
+			SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+		}
+
+		output.Contacts = append(output.Contacts, contactInfo)
+
 		if g.ROLE == "Parent" {
 			continue
 		}
+
 		row := []string{
 			GetKVPValue(event.Passthrough, "schoolCode"),
+			"",
+			"",
 			GetKVPValue(event.Passthrough, "schoolName"),
 			GetKVPValue(event.Passthrough, "inputType"),
-			GetKVPValue(event.Passthrough, "schoolYear"),
+			schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
 			GetKVPValue(event.Passthrough, "masterProgramCode"),
 			GetKVPValue(event.Passthrough, "ADCODE"),
 			event.Created.Format("01/02/2006"),
 			GetKVPValue(event.Passthrough, "orderByDate"),
-			GetKVPValue(event.Passthrough, "listType"),
+			listTypeFormatter(GetKVPValue(event.Passthrough, "listType")),
 			GetKVPValue(event.Passthrough, "salutation"),
-
 			g.FNAME,
 			g.LNAME,
 			g.AD1,
@@ -213,11 +237,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		}
 		records = append(records, row)
 	}
-
 	log.Printf("Writing %v records into output file", len(records))
+
 	// store it in bucket
 	var buf bytes.Buffer
-
 	csv := csv.NewWriter(&buf)
 	csv.WriteAll(records)
 	csv.Flush()
@@ -227,16 +250,29 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
-		log.Fatalf("File cannot be copied to bucket %v", err)
+		log.Printf("File cannot be copied to bucket %v", err)
+		return nil
 	}
 	if err := writer.Close(); err != nil {
-		log.Fatalf("Failed to close bucket write stream %v", err)
+		log.Printf("Failed to close bucket write stream %v", err)
+		return nil
 	}
 
-	// update event
-	// event.Status = "Uploaded on " + time.Now().Format("2006.01.02 15:04:05")
-	// if _, err := fs.Put(ctx, event.Key, &event); err != nil {
-	// 	log.Fatalf("error updating event: %v", err)
-	// }
+	// push into pubsub contacts
+	outputJSON, _ := json.Marshal(output)
+	psresult := topic.Publish(ctx, &pubsub.Message{
+		Data: outputJSON,
+		Attributes: map[string]string{
+			"eventid": input.EventID,
+		},
+	})
+	psid, err := psresult.Get(ctx)
+	_, err = psresult.Get(ctx)
+	if err != nil {
+		log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+		return nil
+	}
+	log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+
 	return nil
 }

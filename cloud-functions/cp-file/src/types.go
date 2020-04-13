@@ -111,3 +111,24 @@ type FileReady struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`
 }
+
+type ContactInfo struct {
+	FirstName   string `json:"firstName"`
+	LastName    string `json:"lastName"`
+	Address1    string `json:"address1"`
+	Address2    string `json:"address2"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	Zip         string `json:"zip"`
+	Country     string `json:"country"`
+	RoleType    string `json:"roleType"`
+	Email       string `json:"email"`
+	ContactID   string `json:"contactID"`
+	SchoolCode  string `json:"schoolCode"`
+	SchoolColor string `json:"schoolColor"`
+	SchoolName  string `json:"schoolName"`
+}
+
+type Output struct {
+	Contacts []ContactInfo `json:"contacts"`
+}
