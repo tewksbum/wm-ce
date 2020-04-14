@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-	"time"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -55,7 +54,7 @@ func StatusUpdater(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// update event
-	event.Status = "PROCESSED date:" + time.Now().Format("2006.01.02 15:04:05") + " count:" + input.Count
+	event.Status = input.Message
 	log.Printf("EventId: %v message: %v", input.EventID, event.Status)
 	if _, err := fs.Put(ctx, event.Key, &event); err != nil {
 		log.Printf("error updating event: %v", err)

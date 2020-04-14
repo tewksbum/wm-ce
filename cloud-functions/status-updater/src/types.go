@@ -41,5 +41,5 @@ type KIP struct {
 
 type Input struct {
 	EventID string `json:"eventId"`
-	Count   string `json:"count"`
+	Message string `json:"message"`
 }
