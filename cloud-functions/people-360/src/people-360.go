@@ -240,7 +240,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			if len(FiberKeys) > 0 {
 				if err := fs.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
+					log.Printf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
 				}
 			}
 
