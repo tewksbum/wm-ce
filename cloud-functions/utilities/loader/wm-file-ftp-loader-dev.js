@@ -78,7 +78,7 @@ const getBucketFiles = async () => {
             eventId: splitFilename[3],
             message:
               "PROCESSED date:" +
-              moment().format("YYYY.MM.DD HH:m:s") +
+              moment().format("YYYY.MM.DD HH:mm:ss") +
               " count:" +
               splitFilename[4],
           };
