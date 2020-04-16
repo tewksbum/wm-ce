@@ -218,6 +218,9 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.LastName == 1 || column.PeopleERR.ContainsLastName == 1 {
 			columnFlags.PeopleLastName = true
 		}
+		if column.PeopleERR.FullName == 1 {
+			columnFlags.PeopleFullName = true
+		}
 		if column.PeopleERR.Address1 == 1 {
 			columnFlags.PeopleAddress1 = true
 		}
@@ -239,19 +242,15 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if column.PeopleERR.TrustedID == 1 {
 			columnFlags.PeopleClientID = true
 		}
-
 		if column.ProductERR.PID == 1 {
 			columnFlags.ProductID = true
 		}
-
 		if column.CampaignERR.CampaignID == 1 {
 			columnFlags.CampaignID = true
 		}
-
 		if column.OrderERR.ID == 1 {
 			columnFlags.OrderID = true
 		}
-
 		if column.OrderDetailERR.ID == 1 {
 			columnFlags.OrderDetailID = true
 		}
@@ -272,7 +271,10 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// update entity flags
 	flags.Event = true // every record = event
 
-	if columnFlags.PeopleFirstName && columnFlags.PeopleLastName && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
+	if (columnFlags.PeopleFirstName && columnFlags.PeopleLastName) && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
+		flags.People = true
+	}
+	if columnFlags.PeopleFullName && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
 		flags.People = true
 	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
@@ -287,12 +289,25 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
 		}
 	}
+	if columnFlags.PeopleFullName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
+		flags.People = true
+		if dev {
+			log.Printf("have a people entity >>> FullName, Add1, City %v", input.Signature.EventID)
+		}
+	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
 		}
 	}
+	if columnFlags.PeopleFullName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
+		flags.People = true
+		if dev {
+			log.Printf("have a people entity >>> FullName, Add, Zip %v", input.Signature.EventID)
+		}
+	}
+
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
