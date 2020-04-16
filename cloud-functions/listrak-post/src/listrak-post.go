@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -34,19 +35,19 @@ var fs *datastore.Client
 var secrets Secrets
 
 var listrakSegment = map[string]int{
-	"firstname":   os.Getenv("LISTRAKSEGMENT_FIRSTNAME"),
-	"lastname":    os.Getenv("LISTRAKSEGMENT_LASTNAME"),
-	"address1":    os.Getenv("LISTRAKSEGMENT_ADDRESS1"),
-	"address2":    os.Getenv("LISTRAKSEGMENT_ADDRESS2"),
-	"city":        os.Getenv("LISTRAKSEGMENT_CITY"),
-	"state":       os.Getenv("LISTRAKSEGMENT_STATE"),
-	"zip":         os.Getenv("LISTRAKSEGMENT_ZIP"),
-	"country":     os.Getenv("LISTRAKSEGMENT_COUNTRY"),
-	"contactid":   os.Getenv("LISTRAKSEGMENT_CONTACTID"),
-	"roletype":    os.Getenv("LISTRAKSEGMENT_ROLETYPE"),
-	"schoolcode":  os.Getenv("LISTRAKSEGMENT_SCHOOLCODE"),
-	"schoolcolor": os.Getenv("LISTRAKSEGMENT_SCHOOLCOLOR"),
-	"schoolname":  os.Getenv("LISTRAKSEGMENT_SCHOOLNAME"),
+	"firstname":   strconv.Atoi(os.Getenv("LISTRAKSEGMENT_FIRSTNAME")),
+	"lastname":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_LASTNAME")),
+	"address1":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ADDRESS1")),
+	"address2":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ADDRESS2")),
+	"city":        strconv.Atoi(os.Getenv("LISTRAKSEGMENT_CITY")),
+	"state":       strconv.Atoi(os.Getenv("LISTRAKSEGMENT_STATE")),
+	"zip":         strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ZIP")),
+	"country":     strconv.Atoi(os.Getenv("LISTRAKSEGMENT_COUNTRY")),
+	"contactid":   strconv.Atoi(os.Getenv("LISTRAKSEGMENT_CONTACTID")),
+	"roletype":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ROLETYPE")),
+	"schoolcode":  strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLCODE")),
+	"schoolcolor": strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLCOLOR")),
+	"schoolname":  strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLNAME")),
 }
 
 func init() {
