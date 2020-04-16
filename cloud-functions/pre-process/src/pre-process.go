@@ -274,9 +274,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	if (columnFlags.PeopleFirstName && columnFlags.PeopleLastName) && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
 		flags.People = true
 	}
-	if columnFlags.PeopleFullName && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
-		flags.People = true
-	}
 	if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
 		flags.People = true
 		if dev {
@@ -289,25 +286,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 			log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
 		}
 	}
-	if columnFlags.PeopleFullName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
-		flags.People = true
-		if dev {
-			log.Printf("have a people entity >>> FullName, Add1, City %v", input.Signature.EventID)
-		}
-	}
 	if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
 		}
 	}
-	if columnFlags.PeopleFullName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
-		flags.People = true
-		if dev {
-			log.Printf("have a people entity >>> FullName, Add, Zip %v", input.Signature.EventID)
-		}
-	}
-
 	if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
 		flags.People = true
 	}
