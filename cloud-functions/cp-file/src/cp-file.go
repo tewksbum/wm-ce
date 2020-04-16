@@ -182,24 +182,30 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	records := [][]string{header}
 	output := Output{}
 	for _, g := range goldens {
-		contactInfo := ContactInfo{
-			FirstName:   g.FNAME,
-			LastName:    g.LNAME,
-			Address1:    g.AD1,
-			Address2:    g.AD2,
-			City:        g.CITY,
-			State:       g.STATE,
-			Zip:         g.ZIP,
-			Country:     g.COUNTRY,
-			RoleType:    g.ROLE,
-			Email:       g.EMAIL,
-			ContactID:   g.ID.Name,
-			SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
-			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
-			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+		if len(g.EMAIL) > 0 {
+			emails := strings.Split(g.EMAIL, "|")
+			if len(emails) > 0 {
+				for _, email := range emails {
+					contactInfo := ContactInfo{
+						FirstName:   g.FNAME,
+						LastName:    g.LNAME,
+						Address1:    g.AD1,
+						Address2:    g.AD2,
+						City:        g.CITY,
+						State:       g.STATE,
+						Zip:         g.ZIP,
+						Country:     g.COUNTRY,
+						RoleType:    g.ROLE,
+						Email:       email,
+						ContactID:   g.ID.Name,
+						SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+						SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+						SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+					}
+					output.Contacts = append(output.Contacts, contactInfo)
+				}
+			}
 		}
-
-		output.Contacts = append(output.Contacts, contactInfo)
 
 		if g.ROLE == "Parent" {
 			continue
@@ -226,7 +232,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			g.STATE,
 			g.ZIP,
 			g.COUNTRY,
-			g.EMAIL,
+			strings.Split(g.EMAIL, "|")[0], // only write one email to CP
 			"",
 			"",
 			"",
@@ -259,20 +265,34 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// push into pubsub contacts
-	outputJSON, _ := json.Marshal(output)
-	psresult := topic.Publish(ctx, &pubsub.Message{
-		Data: outputJSON,
-		Attributes: map[string]string{
-			"eventid": input.EventID,
-		},
-	})
-	psid, err := psresult.Get(ctx)
-	_, err = psresult.Get(ctx)
-	if err != nil {
-		log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
-		return nil
+	totalContacts := len(output.Contacts)
+	pageSize := 250
+	batchCount := totalContacts / pageSize
+	if totalContacts%pageSize > 0 {
+		batchCount++
 	}
-	log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+	for i := 0; i < batchCount; i++ {
+		startIndex := i * pageSize
+		endIndex := (i + 1) * pageSize
+		if endIndex > totalContacts {
+			endIndex = totalContacts
+		}
+		contacts := output.Contacts[startIndex:endIndex]
+		outputJSON, _ := json.Marshal(contacts)
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+			Attributes: map[string]string{
+				"eventid": input.EventID,
+			},
+		})
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+			return nil
+		}
+		log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+	}
 
 	return nil
 }

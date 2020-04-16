@@ -160,11 +160,16 @@ func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []stri
 	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
-func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string) {
+func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string, values []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
-	f.Set(reflect.ValueOf(value))
-	// LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
+	// if the field to be set is EMAIL, and the existing golden record value does not already contain the new value, then add it as
+	// a | delimited value
+	if field == "EMAIL" {
+		f.Set(reflect.ValueOf(strings.Join(values, "|")))
+	} else {
+		f.Set(reflect.ValueOf(value))
+	}
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
@@ -203,7 +208,7 @@ func PopulateSetOutputMatchKeys(target *PeopleSetDS, values []MatchKey360) {
 func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
-		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))
+		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
 	}
 }
 
@@ -214,6 +219,15 @@ func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 		}
 	}
 	return ""
+}
+
+func GetGoldenValuesFromMatchKeys(values []MatchKey360, key string) []string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Values
+		}
+	}
+	return []string{}
 }
 
 func GetSetValuesFromMatchKeys(values []MatchKey360, key string) []string {
