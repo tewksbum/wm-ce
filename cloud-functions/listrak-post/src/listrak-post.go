@@ -69,7 +69,7 @@ func init() {
 	smClient, err := secretmanager.NewClient(ctx)
 	if err != nil {
 		log.Printf("failed to setup client: %v", err)
-		return nil
+		return
 	}
 
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
@@ -79,13 +79,13 @@ func init() {
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {
 		log.Printf("Failed to get secret: %v", err)
-		return nil
+		return
 	}
 
 	secretsData := secretresult.Payload.Data
 	if err := json.Unmarshal(secretsData, &secrets); err != nil {
 		log.Printf("Error decoding secrets %v", err)
-		return nil
+		return
 	}
 	LogDev(fmt.Sprintf("Listrak Client Id %v, Secrets %v", secrets.Listtrack.ClientID, secrets.Listtrack.ClientSecret))
 
@@ -136,55 +136,55 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				SubscriptionState: "Subscribed",
 				ExternalContactID: "",
 				Segments: []SegmentationField{
-					SegmentationField{
+					{
 						ID:    listrakSegment["firstname"],
 						Value: c.FirstName,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["lastname"],
 						Value: c.LastName,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["address1"],
 						Value: c.Address1,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["address2"],
 						Value: c.Address2,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["city"],
 						Value: c.City,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["state"],
 						Value: c.State,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["zip"],
 						Value: c.Zip,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["country"],
 						Value: c.Country,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["contactid"],
 						Value: c.ContactID,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["roletype"],
 						Value: c.RoleType,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["schoolcode"],
 						Value: c.SchoolCode,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["schoolcolor"],
 						Value: c.SchoolColor,
 					},
-					SegmentationField{
+					{
 						ID:    listrakSegment["schoolname"],
 						Value: c.SchoolName,
 					},
@@ -204,7 +204,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				}
 				defer resp2.Body.Close()
 				if resp2.StatusCode != http.StatusOK {
-					log.Printf("EventID: [%v] Contact status: [%v] value:[%v]", eventID, resp2.Status, jsonValue)
+					log.Printf("EventID: [%v] Contact status: [%v] value: [%v]", eventID, resp2.Status, jsonValue)
 					if flag {
 						break
 					} else {
