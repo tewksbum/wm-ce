@@ -38,7 +38,7 @@ type AuthResponse struct {
 }
 
 type SegmentationField struct {
-	ID    string `json:"segmentationFieldId"`
+	ID    int    `json:"segmentationFieldId"`
 	Value string `json:"value"`
 }
 

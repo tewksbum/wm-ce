@@ -35,19 +35,32 @@ var fs *datastore.Client
 var secrets Secrets
 
 var listrakSegment = map[string]int{
-	"firstname":   strconv.Atoi(os.Getenv("LISTRAKSEGMENT_FIRSTNAME")),
-	"lastname":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_LASTNAME")),
-	"address1":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ADDRESS1")),
-	"address2":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ADDRESS2")),
-	"city":        strconv.Atoi(os.Getenv("LISTRAKSEGMENT_CITY")),
-	"state":       strconv.Atoi(os.Getenv("LISTRAKSEGMENT_STATE")),
-	"zip":         strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ZIP")),
-	"country":     strconv.Atoi(os.Getenv("LISTRAKSEGMENT_COUNTRY")),
-	"contactid":   strconv.Atoi(os.Getenv("LISTRAKSEGMENT_CONTACTID")),
-	"roletype":    strconv.Atoi(os.Getenv("LISTRAKSEGMENT_ROLETYPE")),
-	"schoolcode":  strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLCODE")),
-	"schoolcolor": strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLCOLOR")),
-	"schoolname":  strconv.Atoi(os.Getenv("LISTRAKSEGMENT_SCHOOLNAME")),
+	"firstname":   getenvInt("LISTRAKSEGMENT_FIRSTNAME"),
+	"lastname":    getenvInt("LISTRAKSEGMENT_LASTNAME"),
+	"address1":    getenvInt("LISTRAKSEGMENT_ADDRESS1"),
+	"address2":    getenvInt("LISTRAKSEGMENT_ADDRESS2"),
+	"city":        getenvInt("LISTRAKSEGMENT_CITY"),
+	"state":       getenvInt("LISTRAKSEGMENT_STATE"),
+	"zip":         getenvInt("LISTRAKSEGMENT_ZIP"),
+	"country":     getenvInt("LISTRAKSEGMENT_COUNTRY"),
+	"contactid":   getenvInt("LISTRAKSEGMENT_CONTACTID"),
+	"roletype":    getenvInt("LISTRAKSEGMENT_ROLETYPE"),
+	"schoolcode":  getenvInt("LISTRAKSEGMENT_SCHOOLCODE"),
+	"schoolcolor": getenvInt("LISTRAKSEGMENT_SCHOOLCOLOR"),
+	"schoolname":  getenvInt("LISTRAKSEGMENT_SCHOOLNAME"),
+}
+
+func getenvInt(key string) int {
+	s := os.Getenv(key)
+	if s == "" {
+		s = "0"
+	}
+
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return v
 }
 
 func init() {
@@ -139,7 +152,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 						ID:    listrakSegment["address2"],
 						Value: c.Address2,
 					},
-					SegmentationFieldValue{
+					SegmentationField{
 						ID:    listrakSegment["city"],
 						Value: c.City,
 					},
