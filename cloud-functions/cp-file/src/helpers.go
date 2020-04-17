@@ -99,3 +99,11 @@ func LogDev(s string) {
 		log.Printf(s)
 	}
 }
+
+func validateRole(role string) string {
+	LogDev(fmt.Sprintf("role: %v", role))
+	if role == "" {
+		return "Student"
+	}
+	return role
+}

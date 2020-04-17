@@ -202,6 +202,7 @@ type ERRFlags struct {
 	OrderID         bool
 	ConsignmentID   bool
 	OrderDetailID   bool
+	PeopleFullName  bool
 }
 
 type NER struct {

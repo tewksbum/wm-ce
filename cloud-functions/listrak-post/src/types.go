@@ -27,24 +27,27 @@ type ContactInfo struct {
 	SchoolName  string `json:"schoolName"`
 }
 
-type Input struct {
-	Contacts []ContactInfo `json:"contacts"`
-}
-
 type AuthResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
 }
 
-type SegmentationFieldValue struct {
-	SegmentationFieldId string `json:"segmentationFieldId"`
-	Value               string `json:"value"`
+type SegmentationField struct {
+	ID    int    `json:"segmentationFieldId"`
+	Value string `json:"value"`
 }
 
 type Output struct {
-	EmailAddress            string                   `json:"emailAddress"`
-	SubscriptionState       string                   `json:"subscriptionState"`
-	ExternalContactID       string                   `json:"externalContactID"`
-	SegmentationFieldValues []SegmentationFieldValue `json:"segmentationFieldValues"`
+	EmailAddress      string              `json:"emailAddress"`
+	SubscriptionState string              `json:"subscriptionState"`
+	ExternalContactID string              `json:"externalContactID"`
+	Segments          []SegmentationField `json:"segmentationFieldValues"`
+}
+
+type Secrets struct {
+	Listtrack struct {
+		ClientID     string `json:"client_id"`
+		ClientSecret string `json:"client_secret"`
+	} `json:"listtrack"`
 }

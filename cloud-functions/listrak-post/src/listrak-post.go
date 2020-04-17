@@ -9,10 +9,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
+
+	secretmanager "cloud.google.com/go/secretmanager/apiv1"
+	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
 )
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -23,44 +27,99 @@ var dev = Env == "dev"
 var ListrakAuthEndpoint = os.Getenv("LISTRAKAUTHENDPOINT")
 var ListrakEndpoint = os.Getenv("LISTRAKENDPOINT")
 
+var smClient *secretmanager.Client
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
+var secrets Secrets
 
-// var setSchema bigquery.Schema
+var listrakSegment = map[string]int{
+	"firstname":   getenvInt("LISTRAKSEGMENT_FIRSTNAME"),
+	"lastname":    getenvInt("LISTRAKSEGMENT_LASTNAME"),
+	"address1":    getenvInt("LISTRAKSEGMENT_ADDRESS1"),
+	"address2":    getenvInt("LISTRAKSEGMENT_ADDRESS2"),
+	"city":        getenvInt("LISTRAKSEGMENT_CITY"),
+	"state":       getenvInt("LISTRAKSEGMENT_STATE"),
+	"zip":         getenvInt("LISTRAKSEGMENT_ZIP"),
+	"country":     getenvInt("LISTRAKSEGMENT_COUNTRY"),
+	"contactid":   getenvInt("LISTRAKSEGMENT_CONTACTID"),
+	"roletype":    getenvInt("LISTRAKSEGMENT_ROLETYPE"),
+	"schoolcode":  getenvInt("LISTRAKSEGMENT_SCHOOLCODE"),
+	"schoolcolor": getenvInt("LISTRAKSEGMENT_SCHOOLCOLOR"),
+	"schoolname":  getenvInt("LISTRAKSEGMENT_SCHOOLNAME"),
+}
+
+func getenvInt(key string) int {
+	s := os.Getenv(key)
+	if s == "" {
+		s = "0"
+	}
+
+	v, err := strconv.Atoi(s)
+	if err != nil {
+		return 0
+	}
+	return v
+}
 
 func init() {
 	ctx := context.Background()
+
+	smClient, err := secretmanager.NewClient(ctx)
+	if err != nil {
+		log.Printf("failed to setup client: %v", err)
+		return
+	}
+
+	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
+		Name: os.Getenv("SECRETS_VERSION"),
+	}
+
+	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
+	if err != nil {
+		log.Printf("Failed to get secret: %v", err)
+		return
+	}
+
+	secretsData := secretresult.Payload.Data
+	if err := json.Unmarshal(secretsData, &secrets); err != nil {
+		log.Printf("Error decoding secrets %v", err)
+		return
+	}
+
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 }
 
 func ListrakPost(ctx context.Context, m PubSubMessage) error {
-	var input Input
+	var input []ContactInfo
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil
 	}
 	LogDev(fmt.Sprintf("PubSubMessage %v", string(m.Data)))
+	eventID := m.Attributes["eventid"]
 
 	//Authentication  map[string]string{"mostafa": "dahab"}
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	data.Set("client_id", "nfpszemtoo82g91a7ius")
-	data.Set("client_secret", "YZgjhGpSZwskKeIRGQe/j38bpce0Y2pzZJ/ZOu/JEAQ")
+	data := url.Values{
+		"grant_type":    {"client_credentials"},
+		"client_id":     {secrets.Listtrack.ClientID},
+		"client_secret": {secrets.Listtrack.ClientSecret},
+	}
 
 	req, err := http.NewRequest("POST", ListrakAuthEndpoint, strings.NewReader(data.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		log.Printf("[ERROR] Listrak authentication: %v ", err)
+		log.Printf("[ERROR] EventID: [%v] Listrak authentication: [%v] ", eventID, err)
 		return nil
 	}
 	defer resp.Body.Close()
-	LogDev(fmt.Sprintf("Authentication: %v", resp.Status))
+	successCount := 0
+	failCount := 0
 
 	if resp.StatusCode == http.StatusOK {
 		decoder := json.NewDecoder(resp.Body)
@@ -70,82 +129,97 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			log.Printf("[ERROR] There was a problem decoding the output response %v", err)
 			return nil
 		}
-		LogDev(fmt.Sprintf("Contacts count: %v", len(input.Contacts)))
+		log.Printf("Event id : [%v] Contacts count: [%v]", eventID, len(input))
 
-		for _, c := range input.Contacts {
+		for _, c := range input {
 			output := Output{
 				EmailAddress:      c.Email,
 				SubscriptionState: "Subscribed",
 				ExternalContactID: "",
-				SegmentationFieldValues: []SegmentationFieldValue{
-					SegmentationFieldValue{
-						SegmentationFieldId: "12092", //Firstname
-						Value:               c.FirstName,
+				Segments: []SegmentationField{
+					{
+						ID:    listrakSegment["firstname"],
+						Value: c.FirstName,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12093", //Lastname
-						Value:               c.LastName,
+					{
+						ID:    listrakSegment["lastname"],
+						Value: c.LastName,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12087", //Address1
-						Value:               c.Address1,
+					{
+						ID:    listrakSegment["address1"],
+						Value: c.Address1,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12088", //Address2
-						Value:               c.Address2,
+					{
+						ID:    listrakSegment["address2"],
+						Value: c.Address2,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12089", //City
-						Value:               c.City,
+					{
+						ID:    listrakSegment["city"],
+						Value: c.City,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12095", //State
-						Value:               c.State,
+					{
+						ID:    listrakSegment["state"],
+						Value: c.State,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12096", //Zip
-						Value:               c.Zip,
+					{
+						ID:    listrakSegment["zip"],
+						Value: c.Zip,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12091", //Country
-						Value:               c.Country,
+					{
+						ID:    listrakSegment["country"],
+						Value: c.Country,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12090", //ContactID
-						Value:               c.ContactID,
+					{
+						ID:    listrakSegment["contactid"],
+						Value: c.ContactID,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12094", //RoleType
-						Value:               c.RoleType,
+					{
+						ID:    listrakSegment["roletype"],
+						Value: c.RoleType,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12084", //SchoolCode
-						Value:               c.SchoolCode,
+					{
+						ID:    listrakSegment["schoolcode"],
+						Value: c.SchoolCode,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12085", //SchoolColor
-						Value:               c.SchoolColor,
+					{
+						ID:    listrakSegment["schoolcolor"],
+						Value: c.SchoolColor,
 					},
-					SegmentationFieldValue{
-						SegmentationFieldId: "12086", //SchoolName
-						Value:               c.SchoolName,
+					{
+						ID:    listrakSegment["schoolname"],
+						Value: c.SchoolName,
 					},
 				},
 			}
 			jsonValue, _ := json.Marshal(output)
-			req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
-			req2.Header.Set("Content-Type", "application/json")
-			req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
-			client2 := &http.Client{}
-			resp2, err2 := client2.Do(req2)
-			if err2 != nil {
-				log.Printf("[ERROR] Listrak contact list: %v ", err2)
-				return nil
+			flag := false
+			for {
+				req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
+				req2.Header.Set("Content-Type", "application/json")
+				req2.Header.Add("Authorization", "Bearer "+authResponse.AccessToken)
+				client2 := &http.Client{}
+				resp2, err2 := client2.Do(req2)
+				if err2 != nil {
+					log.Printf("[ERROR] Listrak contact list: %v ", err2)
+					return nil
+				}
+				defer resp2.Body.Close()
+				if resp2.StatusCode != http.StatusOK && resp2.StatusCode != http.StatusCreated {
+					log.Printf("EventID: [%v] Contact status: [%v] value: [%v]", eventID, resp2.Status, c.Email)
+					if flag {
+						failCount++
+						break
+					} else {
+						flag = true
+					}
+				} else {
+					successCount++
+					break
+				}
 			}
-			defer resp2.Body.Close()
-			LogDev(fmt.Sprintf("Contact add: %v", resp2.Status))
 		}
 	}
+	log.Printf("EventID: [%v] Success: [%v] Fail: [%v]", eventID, successCount, failCount)
 	return nil
 }
 
