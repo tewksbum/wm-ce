@@ -205,7 +205,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 				}
 				defer resp2.Body.Close()
 				if resp2.StatusCode != http.StatusOK && resp2.StatusCode != http.StatusCreated {
-					log.Printf("EventID: [%v] Contact status: [%v] value: [%v]", eventID, resp2.Status, jsonValue)
+					log.Printf("EventID: [%v] Contact status: [%v] value: [%v]", eventID, resp2.Status, c.Email)
 					if flag {
 						failCount++
 						break
