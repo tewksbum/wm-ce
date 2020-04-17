@@ -128,7 +128,3 @@ type ContactInfo struct {
 	SchoolColor string `json:"schoolColor"`
 	SchoolName  string `json:"schoolName"`
 }
-
-type Output struct {
-	Contacts []ContactInfo `json:"contacts"`
-}

@@ -27,10 +27,6 @@ type ContactInfo struct {
 	SchoolName  string `json:"schoolName"`
 }
 
-type Input struct {
-	Contacts []ContactInfo `json:"contacts"`
-}
-
 type AuthResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`

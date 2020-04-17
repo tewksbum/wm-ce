@@ -95,7 +95,7 @@ func init() {
 }
 
 func ListrakPost(ctx context.Context, m PubSubMessage) error {
-	var input Input
+	var input []ContactInfo
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil
@@ -128,9 +128,9 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			log.Printf("[ERROR] There was a problem decoding the output response %v", err)
 			return nil
 		}
-		log.Printf("Event id : [%v] Contacts count: [%v]", eventID, len(input.Contacts))
+		log.Printf("Event id : [%v] Contacts count: [%v]", eventID, len(input))
 
-		for _, c := range input.Contacts {
+		for _, c := range input {
 			output := Output{
 				EmailAddress:      c.Email,
 				SubscriptionState: "Subscribed",

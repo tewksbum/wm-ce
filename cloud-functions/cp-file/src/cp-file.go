@@ -180,7 +180,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 		"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 	records := [][]string{header}
-	output := Output{}
+	output := []ContactInfo{}
 	for _, g := range goldens {
 		if len(g.EMAIL) > 0 {
 			emails := strings.Split(g.EMAIL, "|")
@@ -202,7 +202,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 						SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 						SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
 					}
-					output.Contacts = append(output.Contacts, contactInfo)
+					output = append(output, contactInfo)
 				}
 			}
 		}
@@ -265,7 +265,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	}
 
 	// push into pubsub contacts
-	totalContacts := len(output.Contacts)
+	totalContacts := len(output)
 	pageSize := 250
 	batchCount := totalContacts / pageSize
 	if totalContacts%pageSize > 0 {
@@ -277,7 +277,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		if endIndex > totalContacts {
 			endIndex = totalContacts
 		}
-		contacts := output.Contacts[startIndex:endIndex]
+		contacts := output[startIndex:endIndex]
 		outputJSON, _ := json.Marshal(contacts)
 		psresult := topic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
