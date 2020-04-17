@@ -87,7 +87,6 @@ func init() {
 		log.Printf("Error decoding secrets %v", err)
 		return
 	}
-	LogDev(fmt.Sprintf("Listrak Client Id %v, Secrets %v", secrets.Listtrack.ClientID, secrets.Listtrack.ClientSecret))
 
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
@@ -119,6 +118,8 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 	defer resp.Body.Close()
+	successCount := 0
+	failCount := 0
 
 	if resp.StatusCode == http.StatusOK {
 		decoder := json.NewDecoder(resp.Body)
@@ -203,19 +204,22 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 					return nil
 				}
 				defer resp2.Body.Close()
-				if resp2.StatusCode != http.StatusOK {
+				if resp2.StatusCode != http.StatusOK && resp2.StatusCode != http.StatusCreated {
 					log.Printf("EventID: [%v] Contact status: [%v] value: [%v]", eventID, resp2.Status, jsonValue)
 					if flag {
+						failCount++
 						break
 					} else {
 						flag = true
 					}
 				} else {
+					successCount++
 					break
 				}
 			}
 		}
 	}
+	log.Printf("EventID: [%v] Success: [%v] Fail: [%v]", eventID, successCount, failCount)
 	return nil
 }
 
