@@ -115,7 +115,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip":
 		err.ZipCode = 1
-	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz", "citystatezip":
+	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz":
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
@@ -123,7 +123,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.County = 1
 	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country":
 		err.Country = 1
-	case "address", "student address", "parent address", "home address", "permanent address":
+	case "address", "student address", "parent address", "home address", "permanent address", "citystatezip":
 		err.FullAddress = 1
 	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2":
 		err.Email = 1
