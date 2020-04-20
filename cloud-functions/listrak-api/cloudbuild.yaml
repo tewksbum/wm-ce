@@ -18,6 +18,6 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: listrak-api
-    _ENTRY_POINT: ProcessRequest
+    _ENTRY_POINT: ListrakProcessRequest
 options:
     substitution_option: 'ALLOW_LOOSE'
