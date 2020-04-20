@@ -95,7 +95,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname":
 		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename":
+	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
