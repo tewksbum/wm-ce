@@ -502,7 +502,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-acv-cv",
+		"targetSelection": "dev-atu-rha",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",
@@ -527,8 +527,8 @@ func TestProcessRequestArkRl(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "count",
-		"targetSelection": "dev-acv-cv",
-		"targetSubSelection": "people-fiber"
+		"targetSelection": "prod-wiu-saa",
+		"targetSubSelection": "people-set"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
@@ -1140,7 +1140,7 @@ tmp-bn
 	for _, line := range lines {
 		sponsor := strings.TrimSpace(line)
 		if len(sponsor) > 0 {
-			sponsorJson := strings.ReplaceAll(json, "@sponsor@", sponsor)
+			sponsorJson := strings.NewReplacer("@sponsor@", sponsor).Replace(json)
 			req := httptest.NewRequest("POST", "/", strings.NewReader(sponsorJson))
 			req.Header.Add("Content-Type", "application/json")
 			rr := httptest.NewRecorder()

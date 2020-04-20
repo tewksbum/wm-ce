@@ -98,9 +98,11 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 				if strings.EqualFold(input.TargetType, "datastore") {
 					if strings.ToLower(input.Operation) == "delete" {
-						n, k, e := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+						n1, k1, e1 := purgeDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+						n2, k2, e2 := purgeFireStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
+
 						w.WriteHeader(http.StatusOK)
-						fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n, k, e)
+						fmt.Fprintf(w, "{\"success\": true, \"message\": \"deleted %v namespaces, %v kinds, %v entities\"}", n1+n2, k1+k2, e1+e2)
 					} else if strings.ToLower(input.Operation) == "count" {
 						n, k, e := countDataStore(strings.ToLower(input.TargetLevel), input.TargetSelection, input.TargetSubSelection)
 						w.WriteHeader(http.StatusOK)
@@ -193,7 +195,7 @@ func countDataStore(level string, filter string, subfilter string) (int, int, in
 	return countNS, countKind, countEntity
 }
 
-func purgeDataStore(level string, filter string, subfilter string) (int, int, int) {
+func purgeFireStore(level string, filter string, subfilter string) (int, int, int) {
 	countNS := 0
 	countKind := 0
 	countEntity := 0
@@ -210,6 +212,72 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 			if rens.MatchString(n.Name) {
 				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
 				kinds, err := fs.GetAll(ctx, query, nil)
+				if err != nil {
+					return countNS, countKind, countEntity
+				}
+				if len(subfilter) > 0 {
+					rekind, _ := regexp.Compile(subfilter)
+					for _, k := range kinds {
+						if rekind.MatchString(k.Name) {
+							countKind++
+							countEntity += deleteFS(n.Name, k.Name)
+						}
+					}
+				} else {
+					for _, k := range kinds {
+						countKind++
+						countEntity += deleteFS(n.Name, k.Name)
+					}
+				}
+				countNS++
+			}
+		}
+	case "kind":
+		query := datastore.NewQuery("__kind__").Namespace(filter).KeysOnly()
+		if filter == "[default]" { // remove the namespace filter if [default]
+			query = datastore.NewQuery("__kind__").KeysOnly()
+		}
+		keys, err := fs.GetAll(ctx, query, nil)
+		if err != nil {
+			return countNS, countKind, countEntity
+		}
+		if len(subfilter) > 0 {
+
+			regex, _ := regexp.Compile(subfilter)
+			for _, k := range keys {
+				if regex.MatchString(k.Name) {
+					countKind++
+					countEntity += deleteFS(filter, k.Name)
+				}
+			}
+		} else {
+			for _, k := range keys {
+				countKind++
+				countEntity += deleteFS(filter, k.Name)
+			}
+		}
+		countNS++
+	}
+	return countNS, countKind, countEntity
+}
+
+func purgeDataStore(level string, filter string, subfilter string) (int, int, int) {
+	countNS := 0
+	countKind := 0
+	countEntity := 0
+	switch level {
+	case "namespace":
+		query := datastore.NewQuery("__namespace__").KeysOnly()
+		namespaces, err := ds.GetAll(ctx, query, nil)
+		if err != nil {
+			return countNS, countKind, countEntity
+		}
+		rens, _ := regexp.Compile("^" + env + "-" + filter)
+
+		for _, n := range namespaces {
+			if rens.MatchString(n.Name) {
+				query := datastore.NewQuery("__kind__").Namespace(n.Name).KeysOnly()
+				kinds, err := ds.GetAll(ctx, query, nil)
 				if err != nil {
 					return countNS, countKind, countEntity
 				}
@@ -235,7 +303,7 @@ func purgeDataStore(level string, filter string, subfilter string) (int, int, in
 		if filter == "[default]" { // remove the namespace filter if [default]
 			query = datastore.NewQuery("__kind__").KeysOnly()
 		}
-		keys, err := fs.GetAll(ctx, query, nil)
+		keys, err := ds.GetAll(ctx, query, nil)
 		if err != nil {
 			return countNS, countKind, countEntity
 		}
@@ -276,7 +344,66 @@ func countDS(ns string, kind string) int {
 	return len(keys)
 }
 
+func countFS(ns string, kind string) int {
+	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
+		return 0
+	}
+	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
+	if ns == "[default]" {
+		query = datastore.NewQuery(kind).KeysOnly()
+	}
+	keys, _ := fs.GetAll(ctx, query, nil)
+
+	return len(keys)
+}
+
 func deleteDS(ns string, kind string) int {
+	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
+		return 0
+	}
+	query := datastore.NewQuery(kind).Namespace(ns).KeysOnly()
+	if ns == "[default]" {
+		query = datastore.NewQuery(kind).KeysOnly()
+	}
+	keys, _ := ds.GetAll(ctx, query, nil)
+
+	l := len(keys) / 500
+	if len(keys)%500 > 0 {
+		l++
+	}
+	log.Printf("Deleting %v records from ns %v, kind %v, loop counts %v", len(keys), ns, kind, l)
+	for r := 0; r < l; r++ {
+		s := r * 500
+		e := s + 500
+		if e > len(keys) {
+			e = len(keys)
+		}
+		log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
+		if r%10 == 0 {
+			log.Printf("Deleting records from ns %v, kind %v, %v - %v", ns, kind, s, e)
+			err := ds.DeleteMulti(ctx, keys[s:e])
+
+			if err != nil {
+				log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+			}
+		} else {
+			c := make(chan bool)
+			go func() {
+				err := ds.DeleteMulti(ctx, keys[s:e])
+
+				if err != nil {
+					log.Printf("Error Deleting records from ns %v, kind %v, err %v", ns, kind, err)
+				}
+
+				c <- true
+			}()
+		}
+	}
+
+	return len(keys)
+}
+
+func deleteFS(ns string, kind string) int {
 	if strings.HasPrefix(kind, "_") { // statistics entities, cannot delete them without error
 		return 0
 	}

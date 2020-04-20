@@ -492,9 +492,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"Invalid access key, -10\"}")
 		return
-	} else {
-		log.Printf("found %v matches: %v", len(entities), entities)
 	}
+	log.Printf("found %v matches: %v", len(entities), entities)
 
 	customer := entities[0]
 	if customer.Enabled == false {
@@ -509,7 +508,14 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !strings.EqualFold(input.ReportType, "file") && !strings.EqualFold(input.ReportType, "owner") && !strings.EqualFold(input.ReportType, "detail") && !strings.EqualFold(input.ReportType, "setfiber") && !strings.EqualFold(input.ReportType, "setrecord") {
+	if !strings.EqualFold(input.ReportType, "file") &&
+		!strings.EqualFold(input.ReportType, "owner") &&
+		!strings.EqualFold(input.ReportType, "detail") &&
+		!strings.EqualFold(input.ReportType, "setfiber") &&
+		!strings.EqualFold(input.ReportType, "setrecord") &&
+		!strings.EqualFold(input.ReportType, "setsearch") &&
+		!strings.EqualFold(input.ReportType, "fibers") &&
+		!strings.EqualFold(input.ReportType, "sets") {
 		w.WriteHeader(http.StatusBadRequest)
 		fmt.Fprint(w, "{\"success\": false, \"message\": \"reportType must be one of : file, owner, detail, setfiber or setrecord\"}")
 		return
@@ -1200,6 +1206,71 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		output = report
+	} else if strings.EqualFold(input.ReportType, "setsearch") {
+		var sets []PeopleSet
+		report := DetailReport{}
+		report.GridRecords = append(report.GridRecords, []interface{}{"SetID", "Search"})
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
+			return
+		}
+		log.Printf("sets retrieved: %v", len(sets))
+		for _, r := range sets {
+			for _, f := range r.Search {
+				var rowRecord []interface{}
+				rowRecord = append(rowRecord, r.ID.Name)
+				rowRecord = append(rowRecord, f)
+				report.GridRecords = append(report.GridRecords, rowRecord)
+			}
+		}
+		output = report
+	} else if strings.EqualFold(input.ReportType, "sets") {
+		var sets []PeopleSet
+		report := DetailReport{}
+		var header []interface{}
+		fields := structs.Names(&PeopleSet{})
+		for _, field := range fields {
+			header = append(header, field)
+		}
+		report.GridRecords = append(report.GridRecords, header)
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKSet).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &sets); err != nil {
+			log.Fatalf("Error querying sets: %v", err)
+			return
+		}
+		log.Printf("sets retrieved: %v", len(sets))
+		for _, r := range sets {
+			accessor := structs.New(r)
+			var rowRecord []interface{}
+			for _, field := range fields {
+				rowRecord = append(rowRecord, fmt.Sprintf("%+v", accessor.Field(field).Value()))
+			}
+			report.GridRecords = append(report.GridRecords, rowRecord)
+		}
+		output = report
+	} else if strings.EqualFold(input.ReportType, "fibers") {
+		var fibers []Fiber
+		report := DetailReport{}
+		var header []interface{}
+		fields := structs.Names(&Fiber{})
+		for _, field := range fields {
+			header = append(header, field)
+		}
+		report.GridRecords = append(report.GridRecords, header)
+		if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKFiber).Namespace(OwnerNamespace).Filter("eventid =", input.RequestID), &fibers); err != nil {
+			log.Fatalf("Error querying fibers: %v", err)
+			return
+		}
+		log.Printf("fibers retrieved: %v", len(fibers))
+		for _, r := range fibers {
+			accessor := structs.New(r)
+			var rowRecord []interface{}
+			for _, field := range fields {
+				rowRecord = append(rowRecord, fmt.Sprintf("%+v", accessor.Field(field).Value()))
+			}
+			report.GridRecords = append(report.GridRecords, rowRecord)
+		}
+		output = report
+
 	} else {
 		report := OwnerReport{}
 

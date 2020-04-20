@@ -45,8 +45,8 @@ func TestUpsert(t *testing.T) {
 		"accessKey":    "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
 		"entityType":   "people",
 		"age":          "108",
-		"writeToOwner": false,  //true
-		"peopleId":     "poop", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
+		"writeToOwner": false,     //true
+		"peopleId":     "poopppp", //"c3d142cd-327b-4280-a7d0-4eae98471679", //"3afb8d06-56e3-46c2-bc85-ec15708cf540",
 		"householdId":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
 		"firstName":    "KAKA", "lastName": "Ali",
 		"attributes": map[string]string{"organization": "mracu"},
@@ -75,11 +75,11 @@ func TestUpsert(t *testing.T) {
 		"expiredSets": []string{"6cfc2a31-79f3-4a63-a113-58500f5026c4", "c67f2e2a-9507-4154-8863-2e70d89e9519"},
 		// "accessKey":  "05c8da151b6281c92ad9c6971a7786ab",
 		// "entityType": "event",
-		"source":  "test",
-		"type":    "jajaja",
-		"browser": "Duck OS 1.0.8.0",
-		"eventId": "ec86f654-ebac-4f90-8cb2-1eb083feebfb",
-		"id":      "ca1a173b-6cf9-4cff-a7c3-8241df12a487",
+		"source":   "test",
+		"type":     "jajaja",
+		"browser":  "Duck OS 1.0.8.0",
+		"eventIds": []string{"ec86f654-ebac-4f90-8cb2-1eb083feebfb", "aa3798d3-6a7e-4817-a738-432ce7f80266"},
+		"id":       "ca1a173b-6cf9-4cff-a7c3-8241df12a487",
 		// "signature": map[string]interface{}{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD"},
 		// "signatures": []map[string]interface{}{{"ownerId": 2, "source": "Testing", "eventId": "20344429-d7b5-4456-b657-b3237effecf3", "eventType": "UPLOAD",
 		// 	"recordId": "a46d0e9d-fa20-49ab-bce0-e47cbbd531c9"}},
@@ -114,79 +114,80 @@ func TestUpsert(t *testing.T) {
 	}
 }
 
-// func TestRead(t *testing.T) {
-// 	type args struct {
-// 		w http.ResponseWriter
-// 		r *http.Request
-// 	}
-// 	// filters := models.QueryFilter{
-// 	// 	field:  "",
-// 	// 	op:     "",
-// 	// 	opType: models.OperationTypeFilter,
-// 	// 	// opLink: models.OperationLinkAnd,
-// 	// 	// Value: w,
-// 	// 	// Values: poop,
-// 	// }
-// 	input, _ := json.Marshal(map[string]interface{}{
-// 		"accessKey":  "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
-// 		"entityType": "household",
-// 		// "columns":    []string{"*"},
-// 		// "columns": []string{"record"},
-// 		// "source":     "test",
-// 		"filters": []map[string]interface{}{
-// 			{
-// 				"field": "lastName",
-// 				"op":    models.OperationEquals,
-// 				"value": "Ali",
-// 			},
-// 			// {
-// 			// 	"opLink": "AND",
-// 			// 	"field":  "signature",
-// 			// 	"op":     models.OperationIsNotNull,
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"field":  "record.peopleid",
-// 			// 	"op":     models.OperationNotIn,
-// 			// 	"opLink": "and",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	"values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"opType": "order",
-// 			// 	"field":  "created_at", //"timestamp",
-// 			// 	"op":     "desc",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 			// {
-// 			// 	"opType": "order",
-// 			// 	"field":  "signature",
-// 			// 	"op":     "asc",
-// 			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
-// 			// 	// "values": []int{108, 108, 110},
-// 			// },
-// 		},
-// 	})
-// 	// logger.DebugFmt("input: %s", input)
-// 	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 	}{
-// 		{
-// 			name: "API READ OK 200",
-// 			args: args{
-// 				w: w1, r: r1,
-// 			},
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			Read(tt.args.w, tt.args.r)
-// 		})
-// 	}
-// }
+func TestRead(t *testing.T) {
+	type args struct {
+		w http.ResponseWriter
+		r *http.Request
+	}
+	// filters := models.QueryFilter{
+	// 	field:  "",
+	// 	op:     "",
+	// 	opType: models.OperationTypeFilter,
+	// 	// linkOperation: models.OperationLinkAnd,
+	// 	// Value: w,
+	// 	// Values: poop,
+	// }
+	// "eventIds": []string{"ec86f654-ebac-4f90-8cb2-1eb083feebfb", "aa3798d3-6a7e-4817-a738-432ce7f80266"},
+	input, _ := json.Marshal(map[string]interface{}{
+		"accessKey":   "6a30ed702e8a6614c7fba7e7e24eb1bd8807a2d9",
+		"entityType":  "people",
+		"doReadCount": true,
+		// "columns":    []string{"*"},
+		// "columns": []string{"record"},
+		// "source":     "test",
+		"filters": []map[string]interface{}{
+			{
+				"field": "JSON_SEARCH(eventIds, 'one', 'ec86f654-ebac-4f90-8cb2-1eb083feebfb')",
+				"op":    models.OperationIsNotNull,
+			},
+			// {
+			// 	"linkOperation": "AND",
+			// 	"field":  "signature",
+			// 	"op":     models.OperationIsNotNull,
+			// 	// "values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"field":  "record.peopleid",
+			// 	"op":     models.OperationNotIn,
+			// 	"linkOperation": "and",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	"values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"opType": "order",
+			// 	"field":  "created_at", //"timestamp",
+			// 	"op":     "desc",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	// "values": []int{108, 108, 110},
+			// },
+			// {
+			// 	"opType": "order",
+			// 	"field":  "signature",
+			// 	"op":     "asc",
+			// 	// "value":  "91de1279-46c2-4fdc-9566-2b2506415fdb",
+			// 	// "values": []int{108, 108, 110},
+			// },
+		},
+	})
+	// logger.DebugFmt("input: %s", input)
+	w1, r1 := createReqRes("POST", "https://wemade.io/foo", bytes.NewReader(input))
+	tests := []struct {
+		name string
+		args args
+	}{
+		{
+			name: "API READ OK 200",
+			args: args{
+				w: w1, r: r1,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Read(tt.args.w, tt.args.r)
+		})
+	}
+}
 
 // // func TestDelete(t *testing.T) {
 // // 	type args struct {

@@ -64,6 +64,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 	}
 	tblNameTick := fmt.Sprintf(tblNameFormatTick, tblName)
 	createTbl := getCreateTableStatement(r.GetEntityType(), tblNameTick, opts.IgnoreUniqueFields)
+	// logger.DebugFmt("[CREATE]: %s", createTbl)
 	_, err = tx.Exec(createTbl)
 	if err != nil {
 		return updated, logger.Err(err)
@@ -124,6 +125,16 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 			j, _ := json.Marshal(rec["record"])
 			// logger.DebugFmt("value: %#v", string(j))
 			is = is.Pair("record", string(j))
+			eventIds := `[`
+			for _, s := range r.GetEventIDs() {
+				eventIds += `"` + s + `",`
+			}
+			if eventIds != "[" {
+				eventIds = eventIds[:len(eventIds)-1] + `]`
+				is = is.Pair("eventIds", eventIds)
+			} else {
+				eventIds = "[]"
+			}
 		}
 		buf := dbr.NewBuffer()
 		_ = is.Build(is.Dialect, buf)
@@ -158,6 +169,16 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 			j, _ := json.Marshal(rec["record"])
 			// logger.DebugFmt("value: %#v", string(j))
 			us = us.Set("record", string(j))
+			eventIds := `[`
+			for _, s := range r.GetEventIDs() {
+				eventIds += `"` + s + `",`
+			}
+			if eventIds != "[" {
+				eventIds = eventIds[:len(eventIds)-1] + `]`
+				us = us.Set("eventIds", eventIds)
+			} else {
+				eventIds = "[]"
+			}
 		}
 		buf := dbr.NewBuffer()
 		_ = us.Build(us.Dialect, buf)
@@ -193,7 +214,7 @@ func Write(dsn string, r models.Record, skipUpdate bool) (updated bool, err erro
 }
 
 // Read the interface from CSQL
-func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
+func Read(dsn string, r models.Record, doReadCount bool) (or wemade.OutputRecord, err error) {
 	opts := r.GetDBOptions()
 	tblName := opts.Tablename
 	if opts.HasTablenamePrefix {
@@ -281,7 +302,7 @@ func Read(dsn string, r models.Record) (or wemade.OutputRecord, err error) {
 	buf := dbr.NewBuffer()
 	_ = stmt.Build(stmt.Dialect, buf)
 	logger.DebugFmt("Query: %s", buf.String())
-	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList())
+	return loadRows(stmt, r.GetEntityType(), r.GetColumnBlackList(), doReadCount)
 }
 
 // Delete the interface from CSQL

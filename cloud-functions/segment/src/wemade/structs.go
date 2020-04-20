@@ -37,12 +37,14 @@ type APIInput struct {
 	Owner        string                  `json:"owner"`
 	Organization string                  `json:"organization,omitifempty"`
 	Signatures   []string                `json:"signatures,omitifempty"`
+	EventIDs     []string                `json:"eventIds,omitifempty"`
 	ExpiredSets  []string                `json:"expiredSets,omitifempty"`
 	Passthrough  []models.Passthrough360 `json:"passthrough"`
 	Attributes   map[string]string       `json:"attributes"`
 	Filters      []models.QueryFilter    `json:"filters"`
 	Columns      []string                `json:"columns"`
 	WriteToOwner bool                    `json:"writeToOwner"`
+	DoReadCount  bool                    `json:"doReadCount"`
 	// Passthrough  map[string]string    `json:"passthrough"`
 	// InputData    interface{}          `json:"inputData"`
 }
