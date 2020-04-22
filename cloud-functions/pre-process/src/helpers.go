@@ -142,7 +142,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Birthday = 1
 	case "age":
 		err.Age = 1
-	case "pname", "pname1", "pname2", "pname 1", "pname 2", "purchaser", "guardian", "guardian name", "guardian_name", "parent", "parent name", "parent_name":
+	case "pname", "pname1", "pname2", "pname 1", "pname 2", "purchaser", "guardian", "guardian name", "guardian_name", "parent", "parent name", "parent_name", "parents names":
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1

@@ -539,15 +539,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
 		}
 
-		// let's populate state if we have zip
-		if len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && ((len(v.Output.COUNTRY.Value) == 0) || (v.Output.COUNTRY.Value == "US") || (v.Output.COUNTRY.Value == "USA") || (v.Output.COUNTRY.Value == "United States of America") || (v.Output.COUNTRY.Value == "United States")) {
-			_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-			if len(v.Output.STATE.Value) > 0 {
-				v.Output.STATE.Source = "WM"
-			}
-			LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
-		}
-
 		// copy address fields from MPR to default if value is missing
 		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {
 			for _, f := range fieldsToCopyForDefault {
