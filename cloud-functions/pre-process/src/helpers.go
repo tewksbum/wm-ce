@@ -156,7 +156,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
-	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl", "class status", "classstanding", "yos":
+	case "title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl", "class status", "classstanding", "yos", "incoming classification code":
 		// also see contains logic...
 		// lots of thing mashed up here... could we / should we split out SchoolYear & ClassStanding?  From a detection standpoint...
 		err.Title = 1
@@ -166,7 +166,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code":
 		err.Junk = 1
 	case "level", "room location description 1":
 		// may want to unjunk the degree level things...
