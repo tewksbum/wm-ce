@@ -294,7 +294,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 {
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0"))
 			} else if column.PeopleVER.IS_COUNTRY {
@@ -521,12 +521,31 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.TITLE.Value, v.Output.STATUS.Value = CalcClassYear(v.Output.TITLE.Value, schoolYearAttr, true)
 		}
 
-		if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 { // let's populate city state if we have zip
+		// let's populate city state if we have zip
+		if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && v.Type != "mar" {
 			v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
 			if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
 				v.Output.CITY.Source = "WM"
 				v.Output.STATE.Source = "WM"
 			}
+		}
+		LogDev(fmt.Sprintf("v.Output.COUNTRY.Value: %v, v.Output.ZIP.Value: %v, v.Output.STATE.Value: %v", v.Output.COUNTRY.Value, v.Output.ZIP.Value, v.Output.STATE.Value))
+		// let's populate state if we have zip
+		if len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && ((len(v.Output.COUNTRY.Value) == 0) || (v.Output.COUNTRY.Value == "US") || (v.Output.COUNTRY.Value == "USA") || (v.Output.COUNTRY.Value == "United States of America") || (v.Output.COUNTRY.Value == "United States")) {
+			_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+			if len(v.Output.STATE.Value) > 0 {
+				v.Output.STATE.Source = "WM"
+			}
+			LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
+		}
+
+		// let's populate state if we have zip
+		if len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && ((len(v.Output.COUNTRY.Value) == 0) || (v.Output.COUNTRY.Value == "US") || (v.Output.COUNTRY.Value == "USA") || (v.Output.COUNTRY.Value == "United States of America") || (v.Output.COUNTRY.Value == "United States")) {
+			_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+			if len(v.Output.STATE.Value) > 0 {
+				v.Output.STATE.Source = "WM"
+			}
+			LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
 		}
 
 		// copy address fields from MPR to default if value is missing
@@ -572,7 +591,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// If we could not identify another country previously...
 		// including US... meaning we don't have a state
 		// yet we have an address
-		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" {
+		if v.Output.AD1.Value != "" && v.Output.COUNTRY.Value == "" && v.Type != "mar" {
 			LogDev(fmt.Sprintf("trying to find a country %v %v %v", v.Output.AD1.Value, v.Output.AD2.Value, v.Output.STATE.Value))
 			if v.Output.STATE.Value == "other" {
 				v.Output.COUNTRY.Value = "INTL"
@@ -583,7 +602,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// IF we believe it to NOT be an international address...
 		// if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "America" {
-		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" {
+		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" && v.Type != "mar" {
 			v.Output.ADVALID.Value = "FALSE"
 			v.Output.ADCORRECT.Value = "FALSE"
 			StandardizeAddressSS(&(v.Output))
@@ -591,10 +610,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// try to stick a value into STATE if it is blank and we believe it is international
-		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && !reZip5.MatchString(v.Output.ZIP.Value) && !reZip9.MatchString(v.Output.ZIP.Value) {
+		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && !reZip5.MatchString(v.Output.ZIP.Value) && !reZip9.MatchString(v.Output.ZIP.Value) && v.Type != "mar" {
 			v.Output.STATE.Source = "WM"
 			v.Output.STATE.Value = "UNKNOWN"
-		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.COUNTRY.Value) == 0 {
+		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.COUNTRY.Value) == 0 && v.Type != "mar" {
 			v.Output.STATE.Source = "WM"
 			v.Output.STATE.Value = "UNKNOWN"
 		}

@@ -95,7 +95,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname":
 		err.LastName = 1
-	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename":
+	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
@@ -111,7 +111,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address1 = 1
 	case "city", "city ", "street city", "home city", "city_pr", "pa city", "current city", "parent city", "scity", "active city", "home mailing city", "address city":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state", "state code", "region":
 		err.State = 1
 	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip":
 		err.ZipCode = 1
@@ -146,7 +146,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "primary contact":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
