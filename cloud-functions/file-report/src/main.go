@@ -65,7 +65,7 @@ func init() {
 // ProcessUpdate processes update from pubsub into elastic
 func ProcessUpdate(ctx context.Context, m psMessage) error {
 	var input FileReport
-
+	log.Printf("received message %+v", m)
 	err := json.Unmarshal(m.Data, &input)
 	if err != nil {
 		log.Printf("ERROR unable to unmarshal request %v", err)
