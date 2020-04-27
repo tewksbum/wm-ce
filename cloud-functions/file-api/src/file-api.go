@@ -182,30 +182,6 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		input.Source = "Default"
 	}
 
-	report := FileReport{
-		ID:            event.EventID,
-		RequestedAt:   event.Created,
-		Attributes:    event.Attributes,
-		Passthroughs:  event.Passthrough,
-		CustomerID:    event.CustomerID,
-		InputFilePath: event.Detail,
-		InputFileName: fileName,
-		Owner:         event.Owner,
-		StatusLabel:   "request received",
-		StatusBy:      cfName,
-	}
-	reportJSON, _ := json.Marshal(report)
-	reportPub := topicR.Publish(ctx, &pubsub.Message{
-		Data: reportJSON,
-		Attributes: map[string]string{
-			"source": cfName,
-		},
-	})
-	_, err = reportPub.Get(ctx)
-	if err != nil {
-		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", output.Signature.EventID, err)
-	}
-
 	// log the request
 
 	OwnerKey := customer.Key.Name
@@ -226,6 +202,32 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Detail:      input.FileURL,
 		RowLimit:    input.MaxRows,
 	}
+
+	report := FileReport{
+		ID:            event.EventID,
+		RequestedAt:   event.Created,
+		Attributes:    event.Attributes,
+		Passthroughs:  event.Passthrough,
+		CustomerID:    event.CustomerID,
+		InputFilePath: event.Detail,
+		InputFileName: fileName,
+		Owner:         event.Owner,
+		StatusLabel:   "request received",
+		StatusBy:      cfName,
+	}
+	reportJSON, _ := json.Marshal(report)
+	log.Printf("sending file report from %v", cfName)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err = reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", output.Signature.EventID, err)
+	}
+
 	fsClient, err := datastore.NewClient(ctx, DSProjectID)
 	eventKey := datastore.IncompleteKey("Event", nil)
 	eventKey.Namespace = NameSpace
