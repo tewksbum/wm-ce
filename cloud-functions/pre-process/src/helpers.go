@@ -22,6 +22,20 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+func publishReport(report *FileReport, cfName string) {
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err := reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR Could not pub to reporting pubsub: %v", err)
+	}
+}
+
 func MapNER(column InputColumn, ner map[string]float64) {
 	for k, v := range ner {
 		switch k {

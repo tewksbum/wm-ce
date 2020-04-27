@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -94,6 +93,51 @@ type NERrequest struct {
 // NERentry entry
 type NERentry map[string]interface{}
 
+type FileReport struct {
+	ID               string                `json:"id,omitempty"`
+	ProcessingBegin  time.Time             `json:"processingBegin,omitempty"`
+	StatusLabel      string                `json:"statusLabel,omitempty"`
+	StatusBy         string                `json:"statusBy,omitempty"`
+	Errors           []ReportError         `json:"errors"`
+	Warnings         []ReportError         `json:"warnings"`
+	Counters         []ReportCounter       `json:"counters"`
+	InputStatistics  map[string]ColumnStat `json:"inputStats"`
+	OutputStatistics []ReportStat          `json:"outputStats"`
+	Columns          []string              `json:"columns,omitempty"`
+}
+
+// ReportError stores errors and warnings
+type ReportError struct {
+	FileLevel bool   `json:"file_level,omitempty"`
+	Row       int    `json:"row,omitempty"`
+	RecordID  string `json:"record_id,omitempty"`
+	Field     string `json:"field,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+// ReportCounter stores record, purge, murge
+type ReportCounter struct {
+	Type      string `json:"type,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Count     int    `json:"count,omitempty"`
+	Increment bool   `json:"inc,omitempty"`
+}
+
+// ReportStat stores metric such as sparsity
+type ReportStat struct {
+	Field  string `json:"field,omitempty"`
+	Metric string `json:"metric,omitempty"`
+	Value  int    `json:"value,omitempty"`
+}
+
+type ColumnStat struct {
+	Name     string  `json:"name"`
+	Min      string  `json:"min"`
+	Max      string  `json:"max"`
+	Sparsity float32 `json:"sparsity"`
+}
+
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 var DSProjectID = os.Getenv("DSPROJECTID")
@@ -117,12 +161,15 @@ var topic *pubsub.Topic
 var status *pubsub.Topic
 var sb *storage.Client
 var msp *redis.Pool
+var topicR *pubsub.Topic
+var cfName = os.Getenv("FUNCTION_NAME")
 
 func init() {
 	ctx = context.Background()
 	sb, _ = storage.NewClient(ctx)
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	// topic.PublishSettings.DelayThreshold = 200 * time.Millisecond
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	// status.PublishSettings.DelayThreshold = 5 * time.Minute
@@ -150,22 +197,49 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		RowLimit = int(row.(float64))
 	}
 
+	// populate report
+	if len(cfName) == 0 {
+		cfName = "file-processor"
+	}
+	report := FileReport{
+		ID:              input.Signature.EventID,
+		ProcessingBegin: time.Now(),
+		StatusLabel:     "processing file began",
+		StatusBy:        cfName,
+	}
+	publishReport(&report, cfName)
+
 	// get the file
 	if url, ok := input.EventData["fileUrl"]; ok {
 		resp, err := http.Get(fmt.Sprintf("%v", url))
 		if err != nil {
-			log.Fatalf("File cannot be downloaded %V", url)
-
 			input.EventData["message"] = "File cannot be downloaded"
 			input.EventData["status"] = "Error"
+
+			report := FileReport{
+				ID:          input.Signature.EventID,
+				StatusLabel: "error: file cannot be downloaded",
+				StatusBy:    cfName,
+				Errors: []ReportError{
+					ReportError{
+						FileLevel: true,
+						Value:     fmt.Sprintf("%v", url),
+						Message:   "file cannot be downloaded",
+					},
+				},
+			}
+			publishReport(&report, cfName)
+
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
-				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				log.Printf("ERROR %v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
+
+			log.Fatalf("File cannot be downloaded %v", url)
 		}
 
 		defer resp.Body.Close()
@@ -182,7 +256,19 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			writer := file.NewWriter(ctx)
 
 			if _, err := io.Copy(writer, bytes.NewReader(fileBytes)); err != nil {
-				log.Fatalf("File cannot be copied to bucket %v", err)
+				report := FileReport{
+					ID:          input.Signature.EventID,
+					StatusLabel: "error: file cannot be copied to wemade storage",
+					StatusBy:    cfName,
+					Errors: []ReportError{
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   "file cannot be copied to wemade storage",
+						},
+					},
+				}
+				publishReport(&report, cfName)
 
 				input.EventData["message"] = "File cannot be copied to bucket"
 				input.EventData["status"] = "Error"
@@ -192,8 +278,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+					log.Printf("ERROR %v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
+				log.Fatalf("File cannot be copied to bucket %v", err)
 			}
 			if err := writer.Close(); err != nil {
 				log.Fatalf("Failed to close bucket write stream %v", err)
@@ -213,7 +300,19 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			fileSize := len(fileBytes)
 			log.Printf("read %v bytes from the file", fileSize)
 			if fileSize < 1 {
-				log.Fatal("Unable to process an empty file.")
+				report := FileReport{
+					ID:          input.Signature.EventID,
+					StatusLabel: "error: file is empty",
+					StatusBy:    cfName,
+					Errors: []ReportError{
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   "file is empty",
+						},
+					},
+				}
+				publishReport(&report, cfName)
 
 				input.EventData["message"] = "File is empty"
 				input.EventData["status"] = "Error"
@@ -223,9 +322,13 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+					log.Printf("ERROR %v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
+
+				log.Printf("ERROR file is empty")
+				return fmt.Errorf("file is empty")
 			}
+
 			var headers []string
 			var records [][]string
 			var allrows [][]string
@@ -233,11 +336,39 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if fileKind.Extension == "xlsx" || contentType == "application/zip" {
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)
 				if err != nil {
-					log.Fatalf("unable to parse xlsx: %v", err)
-					return nil
+					report := FileReport{
+						ID:          input.Signature.EventID,
+						StatusLabel: "error: cannot parse as excel",
+						StatusBy:    cfName,
+						Errors: []ReportError{
+							ReportError{
+								FileLevel: true,
+								Value:     fmt.Sprintf("%v", url),
+								Message:   "cannot parse as excel",
+							},
+						},
+					}
+					publishReport(&report, cfName)
+
+					log.Printf("ERROR unable to parse xlsx: %v", err)
+					return fmt.Errorf("unable to parse xlsx: %v", err)
 				}
 				sheetData, err := xlsxFile.ToSlice()
 				if err != nil {
+					report := FileReport{
+						ID:          input.Signature.EventID,
+						StatusLabel: "error: cannot read excel sheets",
+						StatusBy:    cfName,
+						Errors: []ReportError{
+							ReportError{
+								FileLevel: true,
+								Value:     fmt.Sprintf("%v", url),
+								Message:   "cannot read excel sheets",
+							},
+						},
+					}
+					publishReport(&report, cfName)
+
 					input.EventData["message"] = "Unable to read excel data"
 					input.EventData["status"] = "Error"
 					statusJSON, _ := json.Marshal(input)
@@ -293,7 +424,19 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				csvReader.FieldsPerRecord = -1
 				allrows, err = csvReader.ReadAll()
 				if err != nil {
-					log.Fatalf("unable to read header: %v", err)
+					report := FileReport{
+						ID:          input.Signature.EventID,
+						StatusLabel: "error: cannot parse delimited text",
+						StatusBy:    cfName,
+						Errors: []ReportError{
+							ReportError{
+								FileLevel: true,
+								Value:     fmt.Sprintf("%v", url),
+								Message:   "cannot parse delimited text",
+							},
+						},
+					}
+					publishReport(&report, cfName)
 
 					input.EventData["message"] = "Unable to read csv header"
 					input.EventData["status"] = "Error"
@@ -306,6 +449,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 					}
 
+					log.Printf("unable to read header: %v", err)
 					return nil
 				}
 			}
@@ -380,6 +524,19 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			if headerlessTest2 {
 				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
+				report := FileReport{
+					ID:          input.Signature.EventID,
+					StatusLabel: "error: headerless file detected",
+					StatusBy:    cfName,
+					Errors: []ReportError{
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   "headerless file detected",
+						},
+					},
+				}
+				publishReport(&report, cfName)
 
 				input.EventData["message"] = "File appears to contain no header row - 1"
 				input.EventData["status"] = "Error"
@@ -412,6 +569,20 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if headerlessTest1 {
 				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
 
+				report := FileReport{
+					ID:          input.Signature.EventID,
+					StatusLabel: "error: headerless file detected",
+					StatusBy:    cfName,
+					Errors: []ReportError{
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   "headerless file detected",
+						},
+					},
+				}
+				publishReport(&report, cfName)
+
 				input.EventData["message"] = "File appears to contain no header row - 2"
 				input.EventData["status"] = "Error"
 				statusJSON, _ := json.Marshal(input)
@@ -428,6 +599,23 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			headers = EnsureColumnsHaveNames(RenameDuplicateColumns(headers))
 
+			report0 := FileReport{
+				ID:          input.Signature.EventID,
+				Columns:     headers,
+				StatusBy:    cfName,
+				StatusLabel: "finished parsing",
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Record",
+						Name:      "Columns",
+						Count:     len(headers),
+						Increment: false,
+					},
+				},
+			}
+			publishReport(&report0, cfName)
+			columnStats := make(map[string]ColumnStat)
+
 			// Call NER API
 			NerRequest := NERrequest{
 				Owner:  input.Signature.OwnerID,
@@ -443,6 +631,13 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				PersistNER(NerKey, NerResponse)
 			}
 
+			report1 := FileReport{
+				ID:          input.Signature.EventID,
+				StatusBy:    cfName,
+				StatusLabel: "finished name entity recognition",
+			}
+			publishReport(&report1, cfName)
+
 			// push the records into pubsub
 			var output Output
 			output.Signature = input.Signature
@@ -456,15 +651,43 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			recordCount := 0
 
-			sort.Slice(records, func(i, j int) bool {
-				return rand.Int() < rand.Int()
-			})
+			// do not randomize record sequence anymore
+			// sort.Slice(records, func(i, j int) bool {
+			// 	return rand.Int() < rand.Int()
+			// })
+
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Record",
+						Name:      "Raw",
+						Count:     len(records),
+						Increment: false,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 
 			for r, d := range records {
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
+					report := FileReport{
+						ID: input.Signature.EventID,
+						Counters: []ReportCounter{
+							ReportCounter{
+								Type:      "Record",
+								Name:      "Blank",
+								Count:     1,
+								Increment: true,
+							},
+						},
+					}
+					publishReport(&report, cfName)
+
 					continue
 				}
+
 				if RowLimit > 1 && r > RowLimit-1 {
 					break
 				}
@@ -485,6 +708,26 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				// }
 				output.Fields = fields
 
+				for k, v := range output.Fields {
+					name := k
+					value := strings.TrimSpace(v)
+					stat := ColumnStat{Name: name}
+					if val, ok := columnStats[name]; ok {
+						stat = val
+					}
+					if len(value) > 0 {
+						stat.Sparsity++
+						if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+							stat.Min = value
+						}
+						if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+							stat.Max = value
+						}
+					}
+
+					columnStats[name] = stat
+				}
+
 				// let's pub it
 				outputJSON, _ := json.Marshal(output)
 				psresult := topic.Publish(ctx, &pubsub.Message{
@@ -498,6 +741,22 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					recordCount++
 				}
 			}
+			report2 := FileReport{
+				ID:              input.Signature.EventID,
+				InputStatistics: columnStats,
+				StatusBy:        cfName,
+				StatusLabel:     "finished streaming",
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Record",
+						Name:      "Total",
+						Count:     recordCount,
+						Increment: false,
+					},
+				},
+			}
+			publishReport(&report2, cfName)
+
 			input.EventData["status"] = "Streamed"
 			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
 			input.EventData["recordcount"] = len(records)
@@ -513,6 +772,20 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
 
 		} else {
+			report := FileReport{
+				ID:          input.Signature.EventID,
+				StatusLabel: "error: file cannot be fetched",
+				StatusBy:    cfName,
+				Errors: []ReportError{
+					ReportError{
+						FileLevel: true,
+						Value:     fmt.Sprintf("%v", url),
+						Message:   "file cannot be fetched",
+					},
+				},
+			}
+			publishReport(&report, cfName)
+
 			input.EventData["message"] = "Unable to fetch file"
 			input.EventData["status"] = "Error"
 			statusJSON, _ := json.Marshal(input)
@@ -529,6 +802,20 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 	}
 	return nil
+}
+
+func publishReport(report *FileReport, cfName string) {
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err := reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR Could not pub to reporting pubsub: %v", err)
+	}
 }
 
 // CountSparseArray count sparse array

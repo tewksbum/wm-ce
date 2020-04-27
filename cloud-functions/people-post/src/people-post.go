@@ -28,6 +28,7 @@ var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
 var AddressParserPath = os.Getenv("ADDRESSPATH")
 
 var StorageBucket = os.Getenv("CLOUDSTORAGE")
+var cfName = os.Getenv("FUNCTION_NAME")
 
 var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
 var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
@@ -98,6 +99,8 @@ func init() {
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	martopic = ps.Topic(os.Getenv("PSOUTPUT"))
 	expire = ps.Topic(os.Getenv("PSOUTPUT"))
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
+
 	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	sb, _ := storage.NewClient(ctx)
@@ -129,6 +132,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	var outputs []PostRecord // this contains all outputs with a type
 
 	LogDev(fmt.Sprintf("people-post for record: %v", input.Signature.RecordID))
+
+	if len(cfName) == 0 {
+		cfName = "people-post"
+	}
 
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
@@ -454,6 +461,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				outputs[indexOutput] = *currentOutput
 			}
 		} else {
+
 			log.Printf("Event %v Record %v Column has no match key assigned: %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 		LogDev(fmt.Sprintf("Outputs is %v", outputs))
@@ -628,14 +636,65 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		var searchFields []string
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+		{
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "PeoplePost",
+						Name:      "People:RecordID",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
+		}
+		publishReport(&report, cfName)
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "PeoplePost",
+						Name:      "People:Email",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "PeoplePost",
+						Name:      "People:Phone+FInitial",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 		}
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "PeoplePost",
+						Name:      "People:City+State+LName+FName+AD1",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
@@ -673,6 +732,18 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			Suffix: suffix,
 			Type:   v.Type,
 		})
+		report := FileReport{
+			ID: input.Signature.EventID,
+			Counters: []ReportCounter{
+				ReportCounter{
+					Type:      "Fiber",
+					Name:      v.Type,
+					Count:     1,
+					Increment: true,
+				},
+			},
+		}
+		publishReport(&report, cfName)
 	}
 
 	var pubs []Output

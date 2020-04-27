@@ -21,6 +21,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+var cfName = os.Getenv("FUNCTION_NAME")
 
 var ds *datastore.Client
 var fs *datastore.Client
@@ -80,7 +81,18 @@ func People720(ctx context.Context, m PubSubMessage) error {
 
 	}
 	sets = nil
-
+	report := FileReport{
+		ID: input.Signature.EventID,
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "Fiber",
+				Name:      "Reprocess",
+				Count:     len(reprocessFibers),
+				Increment: true,
+			},
+		},
+	}
+	publishReport(&report, cfName)
 	var fiberKeys []*datastore.Key
 	var fibers []PeopleFiberDS
 	for _, fiber := range reprocessFibers {

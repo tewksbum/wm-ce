@@ -32,6 +32,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+var cfName = os.Getenv("FUNCTION_NAME")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -103,6 +104,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 				if existingCheck == 1 { // this fiber has already been processed
 					LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
+					report := FileReport{
+						ID: input.Signature.EventID,
+						Counters: []ReportCounter{
+							ReportCounter{
+								Type:      "People360",
+								Name:      "Existing",
+								Count:     1,
+								Increment: true,
+							},
+						},
+					}
+					publishReport(&report, cfName)
 					return nil
 				}
 			} else if input.Signature.FiberType == "mar" {
@@ -110,7 +123,31 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				if existingCheck == 0 { // default fiber has not been processed
 					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
 					retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+					report := FileReport{
+						ID: input.Signature.EventID,
+						Counters: []ReportCounter{
+							ReportCounter{
+								Type:      "People360",
+								Name:      "Retry",
+								Count:     1,
+								Increment: true,
+							},
+						},
+					}
+					publishReport(&report, cfName)
 					if retryCount < 30 {
+						report := FileReport{
+							ID: input.Signature.EventID,
+							Counters: []ReportCounter{
+								ReportCounter{
+									Type:      "People360",
+									Name:      "RetryExceeded",
+									Count:     1,
+									Increment: true,
+								},
+							},
+						}
+						publishReport(&report, cfName)
 						return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
 					}
 				}
@@ -303,6 +340,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			output.MatchKeys = MatchKeysFromFiber
 
+		} else {
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Unmatchable",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 		}
 
 		log.Printf("FiberSearchFields is %+v", FiberSearchFields)
@@ -320,6 +370,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			dsFiber.Disposition = "update"
 		}
+		report := FileReport{
+			ID: input.Signature.EventID,
+			Counters: []ReportCounter{
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Disposition:" + dsFiber.Disposition,
+					Count:     1,
+					Increment: true,
+				},
+			},
+		}
+		publishReport(&report, cfName)
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
 		// write fiber search key
@@ -355,6 +417,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if !matchable {
 			LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Fiber",
+						Name:      "Deleted",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 			continue
 		}
 
@@ -486,9 +560,34 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
+
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Set",
+						Name:      "Expired",
+						Count:     len(expiredSetCollection),
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 		}
 
 		if input.Signature.FiberType == "default" {
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Fiber",
+						Name:      "Completed",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 

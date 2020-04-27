@@ -10,6 +10,36 @@ type PubSubMessage struct {
 	Data []byte `json:"data"`
 }
 
+type FileReport struct {
+	ID               string          `json:"id,omitempty"`
+	ProcessingBegin  time.Time       `json:"processingBegin,omitempty"`
+	StatusLabel      string          `json:"statusLabel,omitempty"`
+	StatusBy         string          `json:"statusBy,omitempty"`
+	Errors           []ReportError   `json:"errors"`
+	Warnings         []ReportError   `json:"warnings"`
+	Counters         []ReportCounter `json:"counters"`
+	InputStatistics  []ReportStat    `json:"inputStats"`
+	OutputStatistics []ReportStat    `json:"outputStats"`
+}
+
+// ReportError stores errors and warnings
+type ReportError struct {
+	FileLevel bool   `json:"file_level,omitempty"`
+	Row       int    `json:"row,omitempty"`
+	RecordID  string `json:"record_id,omitempty"`
+	Field     string `json:"field,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+// ReportCounter stores record, purge, murge
+type ReportCounter struct {
+	Type      string `json:"type,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Count     int    `json:"count,omitempty"`
+	Increment bool   `json:"inc,omitempty"`
+}
+
 type FileComplete struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`

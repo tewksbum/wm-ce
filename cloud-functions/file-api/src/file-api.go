@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -69,6 +71,21 @@ type KVP struct {
 	Value string `json:"v" datastore:"v"`
 }
 
+type FileReport struct {
+	ID              string    `json:"id,omitempty"`
+	RequestedAt     time.Time `json:"requestedAt,omitempty"`
+	ProcessingBegin time.Time `json:"processingBegin,omitempty"`
+	ProcessingEnd   time.Time `json:"processingEnd,omitempty"`
+	Attributes      []KVP     `json:"attributes,omitempty"`
+	Passthroughs    []KVP     `json:"passthroughs,omitempty"`
+	CustomerID      string    `json:"customerId,omitempty"`
+	InputFilePath   string    `json:"inputFilePath,omitempty"`
+	InputFileName   string    `json:"inputFileName,omitempty"`
+	Owner           string    `json:"owner,omitempty"`
+	StatusLabel     string    `json:"statusLabel,omitempty"`
+	StatusBy        string    `json:"statusBy,omitempty"`
+}
+
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 var DSProjectID = os.Getenv("DSPROJECTID")
@@ -76,17 +93,18 @@ var DSProjectID = os.Getenv("DSPROJECTID")
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
 
-var PubSubTopic = os.Getenv("PSOUTPUT")
-
 // global vars
 var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
+var topicR *pubsub.Topic
+var cfName = os.Getenv("FUNCTION_NAME")
 
 func init() {
 	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	topic = ps.Topic(PubSubTopic)
+	topic = ps.Topic(os.Getenv("PSOUTPUT"))
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	log.Printf("init completed, pubsub topic names: %v", topic)
 }
 
@@ -223,6 +241,39 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
 	}
 
+	// populate report
+	if len(cfName) == 0 {
+		cfName = "file-api"
+	}
+	fileName := ""
+	fileURL, err := url.Parse(event.Detail)
+	if err != nil {
+	} else {
+		fileName = filepath.Base(fileURL.Path)
+	}
+	report := FileReport{
+		ID:            event.EventID,
+		RequestedAt:   event.Created,
+		Attributes:    event.Attributes,
+		Passthroughs:  event.Passthrough,
+		CustomerID:    event.CustomerID,
+		InputFilePath: event.Detail,
+		InputFileName: fileName,
+		Owner:         event.Owner,
+		StatusLabel:   "request received",
+		StatusBy:      cfName,
+	}
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err = reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", output.Signature.EventID, err)
+	}
 }
 
 func ToJson(v *map[string]string) string {
