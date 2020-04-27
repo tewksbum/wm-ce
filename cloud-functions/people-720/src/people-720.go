@@ -87,7 +87,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}
 	sets = nil
 	report := FileReport{
-		ID: input.Signature.EventID,
+		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
 				Type:      "Fiber",
