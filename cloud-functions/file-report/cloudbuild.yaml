@@ -4,7 +4,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
-    "--entry-point", "${_ENTRY_POINT}", 
+    "--entry-point", "${_ENTRY_POINT_1}", 
     "--runtime","go111", 
     "--memory", "1024MB",
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
@@ -19,7 +19,7 @@ steps:
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}-api", 
-    "--entry-point", "${_ENTRY_POINT}", 
+    "--entry-point", "${_ENTRY_POINT_2}", 
     "--runtime","go111", 
     "--memory", "1024MB",
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
@@ -35,6 +35,7 @@ substitutions:
     _FUNCTION_NAME: file-report-update
     _TRIGGER_TOPIC: file-report
     _ENTRY_POINT_1: ProcessUpdate
+    _ENTRY_POINT_2: GetReport
     _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'

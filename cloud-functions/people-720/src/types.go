@@ -11,15 +11,13 @@ type PubSubMessage struct {
 }
 
 type FileReport struct {
-	ID               string          `json:"id,omitempty"`
-	ProcessingBegin  time.Time       `json:"processingBegin,omitempty"`
-	StatusLabel      string          `json:"statusLabel,omitempty"`
-	StatusBy         string          `json:"statusBy,omitempty"`
-	Errors           []ReportError   `json:"errors"`
-	Warnings         []ReportError   `json:"warnings"`
-	Counters         []ReportCounter `json:"counters"`
-	InputStatistics  []ReportStat    `json:"inputStats"`
-	OutputStatistics []ReportStat    `json:"outputStats"`
+	ID              string          `json:"id,omitempty"`
+	ProcessingBegin time.Time       `json:"processingBegin,omitempty"`
+	StatusLabel     string          `json:"statusLabel,omitempty"`
+	StatusBy        string          `json:"statusBy,omitempty"`
+	Errors          []ReportError   `json:"errors"`
+	Warnings        []ReportError   `json:"warnings"`
+	Counters        []ReportCounter `json:"counters"`
 }
 
 // ReportError stores errors and warnings
