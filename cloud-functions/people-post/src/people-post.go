@@ -96,6 +96,7 @@ var schoolYearAttr = ""
 
 func init() {
 	ctx = context.Background()
+
 	ps, _ = pubsub.NewClient(ctx, os.Getenv("PROJECTID"))
 	fs, _ = datastore.NewClient(ctx, os.Getenv("DSPROJECTID"))
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))

@@ -21,6 +21,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+
 var cfName = os.Getenv("FUNCTION_NAME")
 
 var ctx context.Context

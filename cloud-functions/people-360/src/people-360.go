@@ -32,6 +32,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+
 var cfName = os.Getenv("FUNCTION_NAME")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -49,8 +50,6 @@ var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
 var topicR *pubsub.Topic
-
-// var setSchema bigquery.Schema
 
 func init() {
 	ctx = context.Background()
