@@ -15,7 +15,7 @@ steps:
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
-  - id: go_deploy_1
+  - id: go_deploy_2
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}-api", 
