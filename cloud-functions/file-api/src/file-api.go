@@ -182,6 +182,27 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		input.Source = "Default"
 	}
 
+	// log the request
+
+	OwnerKey := customer.Key.Name
+	if len(OwnerKey) == 0 {
+		OwnerKey = strconv.FormatInt(customer.Key.ID, 10)
+	}
+	event := &Event{
+		CustomerID:  OwnerKey,
+		Created:     time.Now(),
+		Source:      input.Source,
+		Owner:       input.Owner,
+		Passthrough: ToKVPSlice(&input.Passthrough),
+		Attributes:  ToKVPSlice(&input.Attributes),
+		EventID:     uuid.New().String(),
+		Status:      "Pending",
+		EventType:   "UPLOAD",
+		Endpoint:    "FILE",
+		Detail:      input.FileURL,
+		RowLimit:    input.MaxRows,
+	}
+
 	report := FileReport{
 		ID:            event.EventID,
 		RequestedAt:   event.Created,
@@ -206,26 +227,6 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", output.Signature.EventID, err)
 	}
 
-	// log the request
-
-	OwnerKey := customer.Key.Name
-	if len(OwnerKey) == 0 {
-		OwnerKey = strconv.FormatInt(customer.Key.ID, 10)
-	}
-	event := &Event{
-		CustomerID:  OwnerKey,
-		Created:     time.Now(),
-		Source:      input.Source,
-		Owner:       input.Owner,
-		Passthrough: ToKVPSlice(&input.Passthrough),
-		Attributes:  ToKVPSlice(&input.Attributes),
-		EventID:     uuid.New().String(),
-		Status:      "Pending",
-		EventType:   "UPLOAD",
-		Endpoint:    "FILE",
-		Detail:      input.FileURL,
-		RowLimit:    input.MaxRows,
-	}
 	fsClient, err := datastore.NewClient(ctx, DSProjectID)
 	eventKey := datastore.IncompleteKey("Event", nil)
 	eventKey.Namespace = NameSpace
