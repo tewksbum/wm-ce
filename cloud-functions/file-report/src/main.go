@@ -65,7 +65,6 @@ func init() {
 // ProcessUpdate processes update from pubsub into elastic
 func ProcessUpdate(ctx context.Context, m psMessage) error {
 	var input FileReport
-	log.Printf("received message %+v", m)
 	err := json.Unmarshal(m.Data, &input)
 	if err != nil {
 		log.Printf("ERROR unable to unmarshal request %v", err)
@@ -75,9 +74,22 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
-			input.Errors = []ReportError{}
-			input.Warnings = []ReportError{}
-			input.Counts = map[string]interface{}{
+			var report FileReport
+			report.ID = input.ID
+			report.RequestedAt = input.RequestedAt
+			report.ProcessingBegin = input.ProcessingBegin
+			report.ProcessingEnd = input.ProcessingEnd
+			report.Attributes = input.Attributes
+			report.Passthroughs = input.Passthroughs
+			report.CustomerID = input.CustomerID
+			report.InputFilePath = input.InputFilePath
+			report.InputFileName = input.InputFileName
+			report.Owner = input.Owner
+			report.StatusLabel = input.StatusLabel
+			report.StatusBy = input.StatusBy
+			report.Errors = []ReportError{}
+			report.Warnings = []ReportError{}
+			report.Counts = map[string]interface{}{
 				"record":     map[string]interface{}{},
 				"preprocess": map[string]interface{}{},
 				"peoplepost": map[string]interface{}{},
@@ -87,7 +99,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 				"set":        map[string]interface{}{},
 				"golden":     map[string]interface{}{},
 			}
-			input.StatusHistory = []ReportStatus{
+			report.StatusHistory = []ReportStatus{
 				ReportStatus{
 					Label:     input.StatusLabel,
 					Timestamp: time.Now(),
@@ -96,8 +108,8 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 			}
 			esResponse, err := esClient.Index().
 				Index(os.Getenv("REPORT_ESINDEX")).
-				Id(input.ID).
-				BodyJson(input).
+				Id(report.ID).
+				BodyJson(report).
 				Do(ctx)
 			if err != nil {
 				log.Fatalf("error indexing %v", err)
