@@ -49,6 +49,7 @@ var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
+
 var topicR *pubsub.Topic
 
 func init() {

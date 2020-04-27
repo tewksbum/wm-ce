@@ -87,6 +87,7 @@ var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
 var fs *datastore.Client
+
 var topicR *pubsub.Topic
 
 var MLLabels map[string]string

@@ -31,6 +31,7 @@ var ps *pubsub.Client
 var msp *redis.Pool
 var topic *pubsub.Topic
 var ready *pubsub.Topic
+
 var topicR *pubsub.Topic
 
 func init() {
