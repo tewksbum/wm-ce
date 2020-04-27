@@ -203,6 +203,17 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		RowLimit:    input.MaxRows,
 	}
 
+	// populate report
+	if len(cfName) == 0 {
+		cfName = "file-api"
+	}
+	fileName := ""
+	fileURL, err := url.Parse(event.Detail)
+	if err != nil {
+	} else {
+		fileName = filepath.Base(fileURL.Path)
+	}
+
 	report := FileReport{
 		ID:            event.EventID,
 		RequestedAt:   event.Created,
@@ -225,7 +236,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 	})
 	_, err = reportPub.Get(ctx)
 	if err != nil {
-		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", output.Signature.EventID, err)
+		log.Printf("ERROR %v Could not pub to reporting pubsub: %v", event.EventID, err)
 	}
 
 	fsClient, err := datastore.NewClient(ctx, DSProjectID)
@@ -265,17 +276,6 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		log.Fatalf("%v Could not pub to pubsub: %v", output.Signature.EventID, err)
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
-	}
-
-	// populate report
-	if len(cfName) == 0 {
-		cfName = "file-api"
-	}
-	fileName := ""
-	fileURL, err := url.Parse(event.Detail)
-	if err != nil {
-	} else {
-		fileName = filepath.Base(fileURL.Path)
 	}
 
 }
