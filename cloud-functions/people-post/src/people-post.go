@@ -654,7 +654,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 			publishReport(&report, cfName)
 		}
-		publishReport(&report, cfName)
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
 			report := FileReport{
