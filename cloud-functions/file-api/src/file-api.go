@@ -216,6 +216,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		StatusBy:      cfName,
 	}
 	reportJSON, _ := json.Marshal(report)
+	log.Printf("sending file report from %v", cfName)
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
 		Data: reportJSON,
 		Attributes: map[string]string{
