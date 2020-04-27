@@ -39,6 +39,7 @@ var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
 
+var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -47,11 +48,12 @@ var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
+var topicR *pubsub.Topic
 
 // var setSchema bigquery.Schema
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
@@ -66,6 +68,7 @@ func init() {
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 

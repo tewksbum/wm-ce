@@ -76,6 +76,7 @@ var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 
+var ctx context.Context
 var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
@@ -86,6 +87,7 @@ var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
 var fs *datastore.Client
+var topicR *pubsub.Topic
 
 var MLLabels map[string]string
 
@@ -93,7 +95,7 @@ var titleYearAttr = ""
 var schoolYearAttr = ""
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, os.Getenv("PROJECTID"))
 	fs, _ = datastore.NewClient(ctx, os.Getenv("DSPROJECTID"))
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
@@ -108,7 +110,7 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
-
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
