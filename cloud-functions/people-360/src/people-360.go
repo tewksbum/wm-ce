@@ -32,6 +32,7 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+
 var cfName = os.Getenv("FUNCTION_NAME")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -39,6 +40,7 @@ var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
 
+var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -48,10 +50,10 @@ var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
 
-// var setSchema bigquery.Schema
+var topicR *pubsub.Topic
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
@@ -66,6 +68,7 @@ func init() {
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 

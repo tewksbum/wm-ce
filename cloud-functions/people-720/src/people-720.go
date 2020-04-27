@@ -21,8 +21,10 @@ var dev = Env == "dev"
 var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
+
 var cfName = os.Getenv("FUNCTION_NAME")
 
+var ctx context.Context
 var ds *datastore.Client
 var fs *datastore.Client
 var ps *pubsub.Client
@@ -30,8 +32,10 @@ var msp *redis.Pool
 var topic *pubsub.Topic
 var ready *pubsub.Topic
 
+var topicR *pubsub.Topic
+
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	msp = &redis.Pool{
@@ -42,6 +46,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	ready = ps.Topic(os.Getenv("PSREADY"))
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	ready.PublishSettings.DelayThreshold = 120 * time.Second
 }
 
