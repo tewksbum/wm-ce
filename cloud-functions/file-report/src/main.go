@@ -70,7 +70,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 		log.Printf("ERROR unable to unmarshal request %v", err)
 		return nil
 	}
-
+	log.Printf("processing message with source of %v", m.Attributes["source"])
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
