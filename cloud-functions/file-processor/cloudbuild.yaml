@@ -1,4 +1,4 @@
-timeout: 10m
+timeout: 600s
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'

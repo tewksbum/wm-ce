@@ -1,6 +1,7 @@
 package people360
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -8,9 +9,24 @@ import (
 	"strings"
 	"unicode"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
 )
+
+func publishReport(report *FileReport, cfName string) {
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err := reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR Could not pub to reporting pubsub: %v", err)
+	}
+}
 
 func GetSmallestYear(values []string) string {
 	if len(values) == 0 {

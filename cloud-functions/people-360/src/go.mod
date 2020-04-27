@@ -9,7 +9,8 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/uuid v1.1.1
-	google.golang.org/api v0.9.0
+	google.golang.org/api v0.22.0
+	google.golang.org/genproto v0.0.0-20200424135956-bca184e23272 // indirect
 )
 
 go 1.13
