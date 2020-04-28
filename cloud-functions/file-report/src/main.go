@@ -116,8 +116,6 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 			}
 			log.Printf("index request on %v successful %+v", input.ID, esResponse)
 		} else {
-			// we'll run some updates
-			esUpdate := esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID)
 
 			// append to the status history
 			if len(input.StatusLabel) > 0 {
@@ -126,8 +124,8 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					Timestamp: time.Now(),
 					Function:  input.StatusBy,
 				}
-				runUpdate(esUpdate.Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
-				runUpdate(esUpdate.Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
+				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
+				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 			}
 
 			if len(input.Counters) > 0 {
@@ -140,7 +138,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					} else {
 						script = `if (ctx._source.counts.` + t + `.containsKey("` + n + `")) { ctx._source.counts.` + t + `["` + n + `"] = params.count} else { ctx._source.counts.` + t + `["` + n + `"] = params.count}`
 					}
-					runUpdate(esUpdate.Script(elastic.NewScript(script).Param("count", counter.Count)))
+					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
 				}
 			}
 
@@ -150,19 +148,19 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 				for _, column := range input.Columns {
 					mapping[column] = map[string]int{}
 				}
-				runUpdate(esUpdate.Doc(map[string]interface{}{"mapping": mapping}))
+				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
 			}
 
 			if len(input.ColumnMaps) > 0 { // this goes into mapping
 				for _, mapping := range input.ColumnMaps {
 					script := `if (ctx._source.mapping["` + mapping.Name + `"].containsKey("` + mapping.Value + `")) { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] ++} else { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] = 1}`
 					// log.Printf(script)
-					runUpdate(esUpdate.Script(elastic.NewScript(script)))
+					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
 				}
 			}
 
 			if len(input.InputStatistics) > 0 {
-				runUpdate(esUpdate.Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
+				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
 			}
 
 			// if len(input.OutputStatistics) > 0 {
@@ -172,13 +170,13 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 			// apend errors and warnings
 			if len(input.Errors) > 0 {
 				for _, e := range input.Errors {
-					runUpdate(esUpdate.Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
+					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
 				}
 			}
 
 			if len(input.Warnings) > 0 {
 				for _, e := range input.Warnings {
-					runUpdate(esUpdate.Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
+					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
 				}
 			}
 		}
@@ -195,8 +193,6 @@ func runUpdate(eu *elastic.UpdateService) {
 	esUpdateResponse, err := eu.DetectNoop(true).Refresh("true").Do(ctx)
 	if err != nil {
 		log.Printf("error updating es %v", err)
-	} else {
-		log.Printf("es updated with response %v", esUpdateResponse)
 	}
 }
 
