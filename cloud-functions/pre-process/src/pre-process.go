@@ -450,12 +450,6 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		column.EventVER = GetEventVER(&column)
 		if flags.People {
 			column.PeopleVER = GetPeopleVER(&column)
-			report := FileReport{
-				ID:          input.Signature.EventID,
-				StatusBy:    cfName,
-				StatusLabel: "finished value entity recognition",
-			}
-			publishReport(&report, cfName)
 		}
 		columns[i] = column
 	}
