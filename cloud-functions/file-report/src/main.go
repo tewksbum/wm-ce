@@ -106,15 +106,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					Function:  input.StatusBy,
 				},
 			}
-			esResponse, err := esClient.Index().
-				Index(os.Getenv("REPORT_ESINDEX")).
-				Id(report.ID).
-				BodyJson(report).
-				Do(ctx)
-			if err != nil {
-				log.Fatalf("error indexing %v", err)
-			}
-			log.Printf("index request on %v successful %+v", input.ID, esResponse)
+			runElasticIndex(esClient.Index().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).BodyJson(report))
 		} else {
 
 			// append to the status history
@@ -124,8 +116,8 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					Timestamp: time.Now(),
 					Function:  input.StatusBy,
 				}
-				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
-				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
+				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
+				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 			}
 
 			if len(input.Counters) > 0 {
@@ -138,7 +130,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					} else {
 						script = `if (ctx._source.counts.` + t + `.containsKey("` + n + `")) { ctx._source.counts.` + t + `["` + n + `"] = params.count} else { ctx._source.counts.` + t + `["` + n + `"] = params.count}`
 					}
-					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
+					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
 				}
 			}
 
@@ -148,19 +140,19 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 				for _, column := range input.Columns {
 					mapping[column] = map[string]int{}
 				}
-				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
+				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
 			}
 
 			if len(input.ColumnMaps) > 0 { // this goes into mapping
 				for _, mapping := range input.ColumnMaps {
 					script := `if (ctx._source.mapping["` + mapping.Name + `"].containsKey("` + mapping.Value + `")) { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] ++} else { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] = 1}`
 					// log.Printf(script)
-					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
+					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
 				}
 			}
 
 			if len(input.InputStatistics) > 0 {
-				runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
+				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
 			}
 
 			// if len(input.OutputStatistics) > 0 {
@@ -170,13 +162,13 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 			// apend errors and warnings
 			if len(input.Errors) > 0 {
 				for _, e := range input.Errors {
-					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
+					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
 				}
 			}
 
 			if len(input.Warnings) > 0 {
 				for _, e := range input.Warnings {
-					runUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
+					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
 				}
 			}
 		}
@@ -189,8 +181,15 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 	return nil
 }
 
-func runUpdate(eu *elastic.UpdateService) {
-	esUpdateResponse, err := eu.DetectNoop(true).Refresh("true").Do(ctx)
+func runElasticIndex(eu *elastic.IndexService) {
+	_, err := eu.Do(ctx)
+	if err != nil {
+		log.Printf("error updating es %v", err)
+	}
+}
+
+func runElasticUpdate(eu *elastic.UpdateService) {
+	_, err := eu.DetectNoop(true).Refresh("true").Do(ctx)
 	if err != nil {
 		log.Printf("error updating es %v", err)
 	}
