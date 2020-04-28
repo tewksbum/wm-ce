@@ -189,7 +189,7 @@ func runElasticIndex(eu *elastic.IndexService) {
 }
 
 func runElasticUpdate(eu *elastic.UpdateService) {
-	_, err := eu.DetectNoop(true).Refresh("true").Do(ctx)
+	_, err := eu.DetectNoop(true).Do(ctx)
 	if err != nil {
 		log.Printf("error updating es %v", err)
 	}
