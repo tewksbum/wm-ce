@@ -126,6 +126,7 @@ func ProcessUpdate(ctx context.Context, m psMessage) error {
 					Timestamp: time.Now(),
 					Function:  input.StatusBy,
 				}
+				runUpdate(esUpdate.Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
 				runUpdate(esUpdate.Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 			}
 
