@@ -9,7 +9,8 @@ steps:
     "--memory", "256MB",
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "60",
+    "--max-instances", "1"
+    "--timeout", "10",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--vpc-connector", "${_VPC_CONNECTOR}"
     ]
