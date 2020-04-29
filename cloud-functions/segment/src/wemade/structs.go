@@ -26,6 +26,7 @@ type SweeperInput struct {
 	AccessKey       string   `json:"accessKey"`
 	EntityType      string   `json:"entityType"`
 	EntityBlacklist []string `json:"entityBlacklist"`
+	EntityWhitelist []string `json:"entityWhitelist"`
 }
 
 // APIInput input for the Segment API

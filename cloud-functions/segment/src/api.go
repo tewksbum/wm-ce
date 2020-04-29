@@ -214,7 +214,7 @@ func SweepExpiredSets(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger.DebugFmt("[SweepExpiredSets] Start DB works")
-	if db.SweepExpiredSets(projectID, csqlDSN, input.EntityType, input.EntityBlacklist) != nil {
+	if db.SweepExpiredSets(projectID, csqlDSN, input.EntityType, input.EntityBlacklist, input.EntityWhitelist) != nil {
 		errToHTTP(w, r, err)
 		return
 	}
