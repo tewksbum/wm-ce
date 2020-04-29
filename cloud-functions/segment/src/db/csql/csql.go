@@ -397,7 +397,7 @@ func Delete(dsn string, r models.Record) error {
 }
 
 // SweepExpiredSets the interface from CSQL
-func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string) error {
+func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string, entityWhitelist []string) error {
 
 	sess, err := initDB(dsn, "SweepExpiredSets")
 	if err != nil {
@@ -405,6 +405,16 @@ func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string) e
 	}
 	qest := models.TblnamePrefix + entityType + "_"
 	queryExpiredSetsTables := `SELECT DISTINCT REPLACE(table_name, '` + qest + `', '') FROM information_schema.tables WHERE table_name LIKE '` + qest + `%';`
+	if len(entityWhitelist) > 0 {
+		queryExpiredSetsTables = `SELECT DISTINCT REPLACE(table_name, '` + qest + `', '') FROM information_schema.tables WHERE table_name RLIKE '`
+		for _, t := range entityWhitelist {
+			queryExpiredSetsTables += qest + t + "|"
+		}
+		if queryExpiredSetsTables[:len(queryExpiredSetsTables)-1] == "|" {
+			queryExpiredSetsTables = queryExpiredSetsTables[:len(queryExpiredSetsTables)-1]
+		}
+		queryExpiredSetsTables += `';`
+	}
 	entities := []string{}
 	sess.SelectBySql(queryExpiredSetsTables).Load(&entities)
 	for _, e := range entities {
@@ -457,8 +467,8 @@ func SweepExpiredSets(dsn string, entityType string, entityBlacklist []string) e
 			}
 			err = tx.Commit()
 			if err != nil {
-				tx.RollbackUnlessCommitted()
-				return logger.ErrFmt("[csql.SweepExpiredSets.Commit] %v#", err)
+				tx.Rollback()
+				return logger.ErrFmt("[csql.SweepExpiredSets.Rollback] %v#", err)
 			}
 		}
 	}

@@ -206,8 +206,12 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
-
+		//only students
 		if g.ROLE == "Parent" {
+			continue
+		}
+		//only students with address
+		if len(g.AD1) == 0 {
 			continue
 		}
 

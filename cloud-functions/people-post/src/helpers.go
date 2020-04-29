@@ -20,6 +20,20 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+func publishReport(report *FileReport, cfName string) {
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err := reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR Could not pub to reporting pubsub: %v", err)
+	}
+}
+
 func GetPopulatedMatchKeys(a *PeopleOutput) []string {
 	names := structs.Names(&PeopleOutput{})
 	result := []string{}
