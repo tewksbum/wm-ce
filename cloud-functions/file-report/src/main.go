@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/datastore"
+	"cloud.google.com/go/pubsub"
 
 	"github.com/olivere/elastic/v7"
 
@@ -26,6 +27,10 @@ var dsClient *datastore.Client
 var fsClient *datastore.Client
 var smClient *secretmanager.Client
 var esSecret elasticSecret
+var ps *pubsub.Client
+var sub *pubsub.Subscription
+
+var projectID = os.Getenv("GCP_PROJECT")
 
 func init() {
 	var err error
@@ -60,10 +65,32 @@ func init() {
 	if err != nil {
 		log.Panicf("Error creating elastic client %v", err)
 	}
+
+	ps, err = pubsub.NewClient(ctx, projectID)
+	if err != nil {
+		log.Fatalf("failed to setup pubsub client: %v", err)
+	}
+
+	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
+	sub.ReceiveSettings.Synchronous = true
+	sub.ReceiveSettings.MaxOutstandingMessages = 20000
+}
+
+// PullMessages pulls messages from a pubsub subscription
+func PullMessages(ctx context.Context, m psMessage) error {
+	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		log.Printf("received message: %q", string(msg.Data))
+		msg.Ack()
+		ProcessUpdate(ctx, msg)
+	})
+	if err != nil {
+		log.Printf("receive error: %v", err)
+	}
+	return nil
 }
 
 // ProcessUpdate processes update from pubsub into elastic
-func ProcessUpdate(ctx context.Context, m psMessage) error {
+func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 	var input FileReport
 	err := json.Unmarshal(m.Data, &input)
 	if err != nil {
