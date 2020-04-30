@@ -16,6 +16,7 @@ type FileReport struct {
 	ProcessingBegin  time.Time       `json:"processingBegin,omitempty"`
 	StatusLabel      string          `json:"statusLabel,omitempty"`
 	StatusBy         string          `json:"statusBy,omitempty"`
+	ColumnMaps       []NameValue     `json:"map,omitempty"` // this is for input
 	Errors           []ReportError   `json:"errors"`
 	Warnings         []ReportError   `json:"warnings"`
 	Counters         []ReportCounter `json:"counters"`
@@ -498,4 +499,10 @@ type Passthrough struct {
 type PeopleDelete struct {
 	OwnerID string   `json:"ownerId"`
 	Expired []string `json:"expired"`
+}
+
+// NameValue stores name value pair
+type NameValue struct {
+	Name  string `json:"k,omitempty"`
+	Value string `json:"v,omitempty"`
 }

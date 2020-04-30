@@ -670,6 +670,20 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			publishReport(&report, cfName)
 
 			for r, d := range records {
+
+				output.Signature.RecordID = uuid.New().String()
+				output.Signature.RowNumber = r + 1
+
+				if output.Signature.RowNumber == 1 {
+					report := FileReport{
+						ID:              input.Signature.EventID,
+						ProcessingBegin: time.Now(),
+						StatusLabel:     "processing records",
+						StatusBy:        cfName,
+					}
+					publishReport(&report, cfName)
+				}
+
 				// count unique values
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					report := FileReport{
@@ -691,9 +705,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				if RowLimit > 1 && r > RowLimit-1 {
 					break
 				}
-
-				output.Signature.RecordID = uuid.New().String()
-				output.Signature.RowNumber = r + 1
 
 				fields := make(map[string]string)
 				for j, y := range d {
