@@ -9,6 +9,7 @@ import (
 	"os"
 	"reflect"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/datastore"
@@ -29,6 +30,7 @@ var smClient *secretmanager.Client
 var esSecret elasticSecret
 var ps *pubsub.Client
 var sub *pubsub.Subscription
+var mutex sync.Mutex
 
 var projectID = os.Getenv("GCP_PROJECT")
 
@@ -81,6 +83,8 @@ func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		log.Printf("received message: %q", string(msg.Data))
 		msg.Ack()
+		mutex.Lock()
+		defer mutex.Unlock()
 		ProcessUpdate(ctx, msg)
 	})
 	if err != nil {
