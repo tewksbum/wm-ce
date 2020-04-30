@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/structs"
+
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
@@ -759,9 +761,27 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		output.Passthrough = input.Passthrough
 		output.MatchKeys = p.Output
-
 		pubs = append(pubs, output)
+
+		// write the mapping to report
+		matchKeyNames := structs.Names(&PeopleOutput{})
+		mappingResult := []NameValue{}
+		for _, mkn := range matchKeyNames {
+			mkfield := GetMkField(&(p.Output), mkn)
+			if len(mkfield.Source) > 0 && mkfield.Source != "WM" {
+				mappingResult = append(mappingResult, NameValue{
+					Name:  mkfield.Source,
+					Value: mkn,
+				})
+			}
+		}
+		report := FileReport{
+			ID:         input.Signature.EventID,
+			ColumnMaps: mappingResult,
+		}
+		publishReport(&report, cfName)
 	}
+
 	outputJSON, _ := json.Marshal(pubs)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,

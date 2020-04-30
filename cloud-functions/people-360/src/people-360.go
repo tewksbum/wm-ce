@@ -619,6 +619,25 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if fiberCompleted+fiberDeleted >= recordCount && recordCount > 0 {
 				fiberFinished = true
 			}
+
+			if recordCount > 0 {
+				percentRecordFinished := fmt.Sprintf("%d%%", 10*int(10.0*float32(recordCompleted+recordDeleted)/float32(recordCount)))
+				progressKey := []string{input.Signature.EventID, percentRecordFinished}
+				if percentRecordFinished != "0%" { // do not write 0%
+					if GetRedisIntValue(progressKey) == 1 { // already published this status
+					} else {
+						SetRedisTempKey(progressKey)
+						report := FileReport{
+							ID:            input.Signature.EventID,
+							ProcessingEnd: time.Now(),
+							StatusLabel:   "records progress " + percentRecordFinished,
+							StatusBy:      cfName,
+						}
+						publishReport(&report, cfName)
+					}
+				}
+			}
+
 			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
@@ -643,7 +662,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 				cleanupKey := []string{input.Signature.EventID, "cleanup-sent"}
 				if GetRedisIntValue(cleanupKey) == 1 { // already processed
-
+					report := FileReport{
+						ID:            input.Signature.EventID,
+						ProcessingEnd: time.Now(),
+						StatusLabel:   "all done",
+						StatusBy:      cfName,
+					}
+					publishReport(&report, cfName)
 				} else {
 					SetRedisTempKey(cleanupKey)
 					if inputIsFromPost { // only pub this message if the source is from post, do not pub if 720
