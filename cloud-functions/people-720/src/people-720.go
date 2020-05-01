@@ -66,6 +66,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		ID:          input.EventID,
 		StatusLabel: "set verification started",
 		StatusBy:    cfName,
+		StatusTime:  time.Now(),
 	}
 	publishReport(&report0, cfName)
 

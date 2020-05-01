@@ -499,6 +499,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
 		log.Printf("golden search: %+v", goldenDS.Search)
+		{
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Golden",
+						Name:      "Created",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
+		}
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
@@ -537,6 +551,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		setDS.Search = SetSearchFields
 		log.Printf("set search: %+v", setDS.Search)
+		{
+			report := FileReport{
+				ID: input.Signature.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "Set",
+						Name:      "Created",
+						Count:     1,
+						Increment: true,
+					},
+				},
+			}
+			publishReport(&report, cfName)
+		}
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
@@ -569,6 +597,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Counters: []ReportCounter{
 					ReportCounter{
 						Type:      "Set",
+						Name:      "Expired",
+						Count:     len(expiredSetCollection),
+						Increment: true,
+					},
+					ReportCounter{
+						Type:      "Golden",
 						Name:      "Expired",
 						Count:     len(expiredSetCollection),
 						Increment: true,
@@ -628,10 +662,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					} else {
 						SetRedisTempKey(progressKey)
 						report := FileReport{
-							ID:            input.Signature.EventID,
-							ProcessingEnd: time.Now(),
-							StatusLabel:   "records progress " + percentRecordFinished,
-							StatusBy:      cfName,
+							ID:          input.Signature.EventID,
+							StatusLabel: "records progress " + percentRecordFinished,
+							StatusBy:    cfName,
+							StatusTime:  time.Now(),
+						}
+						if percentRecordFinished == "100%" {
+							report.ProcessingEnd = time.Now()
 						}
 						publishReport(&report, cfName)
 					}
@@ -665,8 +702,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					report := FileReport{
 						ID:            input.Signature.EventID,
 						ProcessingEnd: time.Now(),
-						StatusLabel:   "all done",
+						StatusLabel:   "records already done",
 						StatusBy:      cfName,
+						StatusTime:    time.Now(),
 					}
 					publishReport(&report, cfName)
 				} else {

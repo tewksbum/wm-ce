@@ -84,6 +84,7 @@ type FileReport struct {
 	Owner           string    `json:"owner,omitempty"`
 	StatusLabel     string    `json:"statusLabel,omitempty"`
 	StatusBy        string    `json:"statusBy,omitempty"`
+	StatusTime      time.Time `json:"statusTime,omitempty"`
 }
 
 // ProjectID is the env var of project id
@@ -225,6 +226,7 @@ func ProcessEvent(w http.ResponseWriter, r *http.Request) {
 		Owner:         event.Owner,
 		StatusLabel:   "request received",
 		StatusBy:      cfName,
+		StatusTime:    time.Now(),
 	}
 	reportJSON, _ := json.Marshal(report)
 	log.Printf("sending file report from %v", cfName)

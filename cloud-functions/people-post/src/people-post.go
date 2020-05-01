@@ -649,65 +649,47 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			input.Signature.RecordID = uuid.New().String()
 		}
 		var searchFields []string
+		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 		{
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:RecordID",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
 		}
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:Email",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
+		} else {
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Email", Count: 1, Increment: true})
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:Phone+FInitial",
-						Count:     1,
-						Increment: true,
-					},
-				},
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Phone+FInitial", Count: 1, Increment: true})
+		} else {
+			if len(v.Output.PHONE.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Phone", Count: 1, Increment: true})
 			}
-			publishReport(&report, cfName)
+			if len(v.Output.FINITIAL.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FInitial", Count: 1, Increment: true})
+			}
 		}
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:City+State+LName+FName+AD1",
-						Count:     1,
-						Increment: true,
-					},
-				},
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
+		} else {
+			if len(v.Output.CITY.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
 			}
-			publishReport(&report, cfName)
+			if len(v.Output.STATE.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-State", Count: 1, Increment: true})
+			}
+			if len(v.Output.LNAME.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-LName", Count: 1, Increment: true})
+			}
+			if len(v.Output.FNAME.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FName", Count: 1, Increment: true})
+			}
+			if len(v.Output.AD1.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-AD1", Count: 1, Increment: true})
+			}
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
@@ -745,16 +727,46 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			Suffix: suffix,
 			Type:   v.Type,
 		})
+
+		matchKeyStat := map[string]int{}
+		if v.Type == "default" {
+			if len(v.Output.AD1.Value) > 0 {
+				matchKeyStat["AD1"] = 1
+			}
+			if len(v.Output.AD2.Value) > 0 {
+				matchKeyStat["AD2"] = 1
+			}
+			if len(v.Output.FNAME.Value) > 0 {
+				matchKeyStat["FNAME"] = 1
+			}
+			if len(v.Output.LNAME.Value) > 0 {
+				matchKeyStat["LNAME"] = 1
+			}
+			if len(v.Output.CITY.Value) > 0 {
+				matchKeyStat["CITY"] = 1
+			}
+			if len(v.Output.STATE.Value) > 0 {
+				matchKeyStat["STATE"] = 1
+			}
+			if len(v.Output.ZIP.Value) > 0 {
+				matchKeyStat["ZIP"] = 1
+			}
+			if len(v.Output.EMAIL.Value) > 0 {
+				matchKeyStat["EMAIL"] = 1
+			}
+			if len(v.Output.PHONE.Value) > 0 {
+				matchKeyStat["PHONE"] = 1
+			}
+			if len(v.Output.COUNTRY.Value) > 0 {
+				matchKeyStat["COUNTRY"] = 1
+			}
+		}
+
+		reportCounters = append(reportCounters, ReportCounter{Type: "Fiber", Name: v.Type, Count: 1, Increment: true})
 		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "Fiber",
-					Name:      v.Type,
-					Count:     1,
-					Increment: true,
-				},
-			},
+			ID:                 input.Signature.EventID,
+			Counters:           reportCounters,
+			MatchKeyStatistics: matchKeyStat,
 		}
 		publishReport(&report, cfName)
 	}
