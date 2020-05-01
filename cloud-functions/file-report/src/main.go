@@ -102,6 +102,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 		return nil
 	}
 	log.Printf("processing message with source of %v", m.Attributes["source"])
+	bulk := esClient.Bulk()
+
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
@@ -137,9 +139,14 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					Function:  input.StatusBy,
 				},
 			}
-			runElasticIndex(esClient.Index().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).BodyJson(report))
+			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
-
+			if !input.ProcessingBegin.IsZero() {
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}))
+			}
+			if !input.ProcessingEnd.IsZero() {
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}))
+			}
 			// append to the status history
 			if len(input.StatusLabel) > 0 {
 				newStatus := ReportStatus{
@@ -147,8 +154,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					Timestamp: time.Now(),
 					Function:  input.StatusBy,
 				}
-				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
-				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 			}
 
 			if len(input.Counters) > 0 {
@@ -161,7 +168,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					} else {
 						script = `if (ctx._source.counts.` + t + `.containsKey("` + n + `")) { ctx._source.counts.` + t + `["` + n + `"] = params.count} else { ctx._source.counts.` + t + `["` + n + `"] = params.count}`
 					}
-					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
 				}
 			}
 
@@ -171,19 +178,19 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 				for _, column := range input.Columns {
 					mapping[column] = map[string]int{}
 				}
-				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
 			}
 
 			if len(input.ColumnMaps) > 0 { // this goes into mapping
 				for _, mapping := range input.ColumnMaps {
 					script := `if (ctx._source.mapping["` + mapping.Name + `"].containsKey("` + mapping.Value + `")) { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] ++} else { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] = 1}`
 					log.Printf(script)
-					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
 				}
 			}
 
 			if len(input.InputStatistics) > 0 {
-				runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
 			}
 
 			// if len(input.OutputStatistics) > 0 {
@@ -193,17 +200,22 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			// apend errors and warnings
 			if len(input.Errors) > 0 {
 				for _, e := range input.Errors {
-					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
 				}
 			}
 
 			if len(input.Warnings) > 0 {
 				for _, e := range input.Warnings {
-					runElasticUpdate(esClient.Update().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
 				}
 			}
 		}
 
+		// run the bulk request
+		_, err := bulk.Do(ctx)
+		if err != nil {
+			log.Printf("error updating es %v", err)
+		}
 	} else {
 		log.Printf("ERROR source is missing from message attributes %v", err)
 		return nil
