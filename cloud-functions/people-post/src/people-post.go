@@ -249,6 +249,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
 			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1 || column.PeopleERR.ContainsCountry == 1) {
 				column.MatchKey1 = "COUNTRY"
+				LogDev(fmt.Sprintf("Country: %v", column.Value))
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
 			} else if column.PeopleVER.IS_EMAIL {
 				column.MatchKey1 = "EMAIL"
@@ -586,7 +587,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
 		}
 		// standardize "US" for any US State address
-		if reState.MatchString(v.Output.STATE.Value) {
+		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") {
 			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
 			v.Output.COUNTRY.Value = "US"
 			v.Output.COUNTRY.Source = "WM"
