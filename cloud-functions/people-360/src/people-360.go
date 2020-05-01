@@ -665,6 +665,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							ID:          input.Signature.EventID,
 							StatusLabel: "records progress " + percentRecordFinished,
 							StatusBy:    cfName,
+							StatusTime:  time.Now(),
 						}
 						if percentRecordFinished == "100%" {
 							report.ProcessingEnd = time.Now()
@@ -701,8 +702,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					report := FileReport{
 						ID:            input.Signature.EventID,
 						ProcessingEnd: time.Now(),
-						StatusLabel:   "all done",
+						StatusLabel:   "records already done",
 						StatusBy:      cfName,
+						StatusTime:    time.Now(),
 					}
 					publishReport(&report, cfName)
 				} else {

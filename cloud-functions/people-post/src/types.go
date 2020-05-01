@@ -12,16 +12,17 @@ type PubSubMessage struct {
 }
 
 type FileReport struct {
-	ID               string          `json:"id,omitempty"`
-	ProcessingBegin  time.Time       `json:"processingBegin,omitempty"`
-	StatusLabel      string          `json:"statusLabel,omitempty"`
-	StatusBy         string          `json:"statusBy,omitempty"`
-	ColumnMaps       []NameValue     `json:"map,omitempty"` // this is for input
-	Errors           []ReportError   `json:"errors"`
-	Warnings         []ReportError   `json:"warnings"`
-	Counters         []ReportCounter `json:"counters"`
-	InputStatistics  []ReportStat    `json:"inputStats"`
-	OutputStatistics []ReportStat    `json:"outputStats"`
+	ID                 string                `json:"id,omitempty"`
+	ProcessingBegin    time.Time             `json:"processingBegin,omitempty"`
+	StatusLabel        string                `json:"statusLabel,omitempty"`
+	StatusBy           string                `json:"statusBy,omitempty"`
+	StatusTime         time.Time             `json:"statusTime,omitempty"`
+	ColumnMaps         []NameValue           `json:"map,omitempty"` // this is for input
+	Errors             []ReportError         `json:"errors"`
+	Warnings           []ReportError         `json:"warnings"`
+	Counters           []ReportCounter       `json:"counters"`
+	InputStatistics    map[string]ColumnStat `json:"inputStats"`
+	MatchKeyStatistics map[string]int        `json:"matchKeyStats"`
 }
 
 // ReportError stores errors and warnings
@@ -47,6 +48,13 @@ type ReportStat struct {
 	Field  string `json:"field,omitempty"`
 	Metric string `json:"metric,omitempty"`
 	Value  int    `json:"value,omitempty"`
+}
+
+type ColumnStat struct {
+	Name     string  `json:"name"`
+	Min      string  `json:"min"`
+	Max      string  `json:"max"`
+	Sparsity float32 `json:"sparsity"`
 }
 
 type Signature struct {

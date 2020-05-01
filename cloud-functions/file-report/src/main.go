@@ -119,6 +119,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			report.Owner = input.Owner
 			report.StatusLabel = input.StatusLabel
 			report.StatusBy = input.StatusBy
+			report.StatusTime = input.StatusTime
 			report.Errors = []ReportError{}
 			report.Warnings = []ReportError{}
 			report.Counts = map[string]interface{}{
@@ -150,10 +151,10 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			if len(input.StatusLabel) > 0 {
 				newStatus := ReportStatus{
 					Label:     input.StatusLabel,
-					Timestamp: time.Now(),
+					Timestamp: input.StatusTime,
 					Function:  input.StatusBy,
 				}
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy}))
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}))
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 			}
 

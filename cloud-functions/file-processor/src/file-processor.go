@@ -94,16 +94,17 @@ type NERrequest struct {
 type NERentry map[string]interface{}
 
 type FileReport struct {
-	ID               string                `json:"id,omitempty"`
-	ProcessingBegin  time.Time             `json:"processingBegin,omitempty"`
-	StatusLabel      string                `json:"statusLabel,omitempty"`
-	StatusBy         string                `json:"statusBy,omitempty"`
-	Errors           []ReportError         `json:"errors"`
-	Warnings         []ReportError         `json:"warnings"`
-	Counters         []ReportCounter       `json:"counters"`
-	InputStatistics  map[string]ColumnStat `json:"inputStats"`
-	OutputStatistics []ReportStat          `json:"outputStats"`
-	Columns          []string              `json:"columns,omitempty"`
+	ID                 string                  `json:"id,omitempty"`
+	ProcessingBegin    time.Time               `json:"processingBegin,omitempty"`
+	StatusLabel        string                  `json:"statusLabel,omitempty"`
+	StatusBy           string                  `json:"statusBy,omitempty"`
+	StatusTime         time.Time               `json:"statusTime,omitempty"`
+	Errors             []ReportError           `json:"errors"`
+	Warnings           []ReportError           `json:"warnings"`
+	Counters           []ReportCounter         `json:"counters"`
+	InputStatistics    map[string]ColumnStat   `json:"inputStats"`
+	MatchKeyStatistics map[string]MatchKeyStat `json:"matchKeyStats"`
+	Columns            []string                `json:"columns,omitempty"`
 }
 
 // ReportError stores errors and warnings
@@ -135,6 +136,10 @@ type ColumnStat struct {
 	Name     string  `json:"name"`
 	Min      string  `json:"min"`
 	Max      string  `json:"max"`
+	Sparsity float32 `json:"sparsity"`
+}
+type MatchKeyStat struct {
+	Name     string  `json:"name"`
 	Sparsity float32 `json:"sparsity"`
 }
 
@@ -206,6 +211,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		ProcessingBegin: time.Now(),
 		StatusLabel:     "processing file began",
 		StatusBy:        cfName,
+		StatusTime:      time.Now(),
 	}
 	publishReport(&report, cfName)
 
@@ -220,6 +226,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID:          input.Signature.EventID,
 				StatusLabel: "error: file cannot be downloaded",
 				StatusBy:    cfName,
+				StatusTime:  time.Now(),
 				Errors: []ReportError{
 					ReportError{
 						FileLevel: true,
@@ -260,6 +267,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					ID:          input.Signature.EventID,
 					StatusLabel: "error: file cannot be copied to wemade storage",
 					StatusBy:    cfName,
+					StatusTime:  time.Now(),
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
@@ -304,6 +312,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					ID:          input.Signature.EventID,
 					StatusLabel: "error: file is empty",
 					StatusBy:    cfName,
+					StatusTime:  time.Now(),
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
@@ -340,6 +349,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ID:          input.Signature.EventID,
 						StatusLabel: "error: cannot parse as excel",
 						StatusBy:    cfName,
+						StatusTime:  time.Now(),
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
@@ -359,6 +369,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ID:          input.Signature.EventID,
 						StatusLabel: "error: cannot read excel sheets",
 						StatusBy:    cfName,
+						StatusTime:  time.Now(),
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
@@ -428,6 +439,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ID:          input.Signature.EventID,
 						StatusLabel: "error: cannot parse delimited text",
 						StatusBy:    cfName,
+						StatusTime:  time.Now(),
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
@@ -528,6 +540,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					ID:          input.Signature.EventID,
 					StatusLabel: "error: headerless file detected",
 					StatusBy:    cfName,
+					StatusTime:  time.Now(),
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
@@ -573,6 +586,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					ID:          input.Signature.EventID,
 					StatusLabel: "error: headerless file detected",
 					StatusBy:    cfName,
+					StatusTime:  time.Now(),
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
@@ -603,6 +617,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID:          input.Signature.EventID,
 				Columns:     headers,
 				StatusBy:    cfName,
+				StatusTime:  time.Now(),
 				StatusLabel: "finished parsing",
 				Counters: []ReportCounter{
 					ReportCounter{
@@ -634,6 +649,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			report1 := FileReport{
 				ID:          input.Signature.EventID,
 				StatusBy:    cfName,
+				StatusTime:  time.Now(),
 				StatusLabel: "finished name entity recognition",
 			}
 			publishReport(&report1, cfName)
@@ -680,6 +696,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ProcessingBegin: time.Now(),
 						StatusLabel:     "processing records",
 						StatusBy:        cfName,
+						StatusTime:      time.Now(),
 					}
 					publishReport(&report, cfName)
 				}
@@ -756,6 +773,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID:              input.Signature.EventID,
 				InputStatistics: columnStats,
 				StatusBy:        cfName,
+				StatusTime:      time.Now(),
 				StatusLabel:     "finished streaming",
 				Counters: []ReportCounter{
 					ReportCounter{
@@ -787,6 +805,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID:          input.Signature.EventID,
 				StatusLabel: "error: file cannot be fetched",
 				StatusBy:    cfName,
+				StatusTime:  time.Now(),
 				Errors: []ReportError{
 					ReportError{
 						FileLevel: true,

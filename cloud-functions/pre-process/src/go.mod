@@ -11,6 +11,7 @@ require (
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/xojoc/useragent v0.0.0-20200116211053-1ec61d55e8fe
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect
+	golang.org/x/text v0.3.2
 	google.golang.org/api v0.22.0
 	google.golang.org/genproto v0.0.0-20200424135956-bca184e23272 // indirect
 )

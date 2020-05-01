@@ -304,6 +304,7 @@ type FileReport struct {
 	ProcessingBegin  time.Time       `json:"processingBegin,omitempty"`
 	StatusLabel      string          `json:"statusLabel,omitempty"`
 	StatusBy         string          `json:"statusBy,omitempty"`
+	StatusTime       time.Time       `json:"statusTime,omitempty"`
 	Errors           []ReportError   `json:"errors"`
 	Warnings         []ReportError   `json:"warnings"`
 	Counters         []ReportCounter `json:"counters"`
