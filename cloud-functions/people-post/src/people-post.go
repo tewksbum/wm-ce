@@ -725,6 +725,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if len(v.Output.AD1.Value) > 0 {
 				matchKeyStat["AD1"] = 1
 			}
+			if len(v.Output.AD2.Value) > 0 {
+				matchKeyStat["AD2"] = 1
+			}
 			if len(v.Output.FNAME.Value) > 0 {
 				matchKeyStat["FNAME"] = 1
 			}
@@ -734,8 +737,20 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			if len(v.Output.CITY.Value) > 0 {
 				matchKeyStat["CITY"] = 1
 			}
+			if len(v.Output.STATE.Value) > 0 {
+				matchKeyStat["STATE"] = 1
+			}
 			if len(v.Output.ZIP.Value) > 0 {
 				matchKeyStat["ZIP"] = 1
+			}
+			if len(v.Output.EMAIL.Value) > 0 {
+				matchKeyStat["EMAIL"] = 1
+			}
+			if len(v.Output.PHONE.Value) > 0 {
+				matchKeyStat["PHONE"] = 1
+			}
+			if len(v.Output.COUNTRY.Value) > 0 {
+				matchKeyStat["COUNTRY"] = 1
 			}
 		}
 

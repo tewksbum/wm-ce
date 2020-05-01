@@ -19,13 +19,13 @@ type FileReport struct {
 	StatusTime         time.Time              `json:"statusTime,omitempty"`
 	Errors             []ReportError          `json:"errors"`
 	Warnings           []ReportError          `json:"warnings"`
-	Counters           []ReportCounter        `json:"counters,omitempty"`      // this is for input
-	Counts             map[string]interface{} `json:"counts"`                  // this is for elastic
-	Columns            []string               `json:"columns,omitempty"`       // this is for input, file processor to write this before streaming
-	ColumnMaps         []NameValue            `json:"map,omitempty"`           // this is for input
-	Mapping            map[string]interface{} `json:"mapping,omitempty"`       // this is for elastic
-	InputStatistics    map[string]ColumnStat  `json:"inputStats,omitempty"`    // this is for input, file processor to write this after streaming
-	MatchKeyStatistics map[string]ColumnStat  `json:"matchKeyStats,omitempty"` // this is for input, file processor to write this after streaming
+	Counters           []ReportCounter        `json:"counters,omitempty"`   // this is for input
+	Counts             map[string]interface{} `json:"counts"`               // this is for elastic
+	Columns            []string               `json:"columns,omitempty"`    // this is for input, file processor to write this before streaming
+	ColumnMaps         []NameValue            `json:"map,omitempty"`        // this is for input
+	Mapping            map[string]interface{} `json:"mapping,omitempty"`    // this is for elastic
+	InputStatistics    map[string]ColumnStat  `json:"inputStats,omitempty"` // this is for input, file processor to write this after streaming
+	MatchKeyStatistics map[string]int         `json:"matchKeyStats"`        // this is for input and elastic
 	StatusHistory      []ReportStatus         `json:"history"`
 	//OutputStatistics []ReportStat           `json:"outputStats,omitempty"`
 }

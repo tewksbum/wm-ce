@@ -22,7 +22,7 @@ type FileReport struct {
 	Warnings           []ReportError         `json:"warnings"`
 	Counters           []ReportCounter       `json:"counters"`
 	InputStatistics    map[string]ColumnStat `json:"inputStats"`
-	MatchKeyStatistics map[string]int        `json:"matchKeyStats"`
+	MatchKeyStatistics map[string]int        `json:"matchKeyStats,omitempty"`
 }
 
 // ReportError stores errors and warnings

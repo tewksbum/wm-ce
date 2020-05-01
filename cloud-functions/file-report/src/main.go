@@ -132,6 +132,18 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 				"set":        map[string]interface{}{},
 				"golden":     map[string]interface{}{},
 			}
+			report.MatchKeyStatistics = map[string]int{
+				"AD1":     0,
+				"AD2":     0,
+				"FNAME":   0,
+				"LNAME":   0,
+				"EMAIL":   0,
+				"PHONE":   0,
+				"CITY":    0,
+				"STATE":   0,
+				"ZIP":     0,
+				"COUNTRY": 0,
+			}
 			report.StatusHistory = []ReportStatus{
 				ReportStatus{
 					Label:     input.StatusLabel,
@@ -184,7 +196,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			if len(input.ColumnMaps) > 0 { // this goes into mapping
 				for _, mapping := range input.ColumnMaps {
 					script := `if (ctx._source.mapping["` + mapping.Name + `"].containsKey("` + mapping.Value + `")) { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] ++} else { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] = 1}`
-					log.Printf(script)
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
 				}
 			}
@@ -193,9 +204,12 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
 			}
 
-			// if len(input.OutputStatistics) > 0 {
-			// 	esUpdate = esUpdate.Doc(map[string]interface{}{"outputStats": input.OutputStatistics})
-			// }
+			if len(input.MatchKeyStatistics) > 0 {
+				for k, v := range input.MatchKeyStatistics {
+					script := `ctx._source.matchKeyStats["` + k + `"] += params.count`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", v)))
+				}
+			}
 
 			// apend errors and warnings
 			if len(input.Errors) > 0 {
