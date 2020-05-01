@@ -499,20 +499,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
 		log.Printf("golden search: %+v", goldenDS.Search)
-		{
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Golden",
-						Name:      "Created",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
-		}
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
@@ -550,21 +536,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		setDS.Search = SetSearchFields
-		log.Printf("set search: %+v", setDS.Search)
-		{
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Set",
-						Name:      "Created",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+		reportCounters := []ReportCounter{
+			ReportCounter{
+				Type:      "Golden",
+				Name:      "Created",
+				Count:     1,
+				Increment: true,
+			},
+			ReportCounter{
+				Type:      "Set",
+				Name:      "Created",
+				Count:     1,
+				Increment: true,
+			},
 		}
+		log.Printf("set search: %+v", setDS.Search)
+
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
@@ -592,39 +579,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
 
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Set",
-						Name:      "Expired",
-						Count:     len(expiredSetCollection),
-						Increment: true,
-					},
-					ReportCounter{
-						Type:      "Golden",
-						Name:      "Expired",
-						Count:     len(expiredSetCollection),
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "Set", Name: "Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters = append(reportCounters, ReportCounter{Type: "Golden", Name: "Expired", Count: len(expiredSetCollection), Increment: true})
 		}
 
 		if input.Signature.FiberType == "default" {
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Fiber",
-						Name:      "Completed",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "Fiber", Name: "Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 
@@ -727,6 +687,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		} else if input.Signature.FiberType == "mar" {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
+		}
+
+		{
+			report := FileReport{
+				ID:       input.Signature.EventID,
+				Counters: reportCounters,
+			}
+			publishReport(&report, cfName)
 		}
 
 		// push into pubsub
