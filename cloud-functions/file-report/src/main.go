@@ -100,7 +100,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 		log.Printf("ERROR unable to unmarshal request %v", err)
 		return nil
 	}
-	log.Printf("processing message with source of %v", m.Attributes["source"])
 	bulk := esClient.Bulk()
 
 	if source, ok := m.Attributes["source"]; ok {
