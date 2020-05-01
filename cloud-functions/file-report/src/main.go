@@ -81,11 +81,10 @@ func init() {
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		log.Printf("received message: %q", string(msg.Data))
 		msg.Ack()
 		mutex.Lock()
-		defer mutex.Unlock()
 		ProcessUpdate(ctx, msg)
+		defer mutex.Unlock()
 	})
 	if err != nil {
 		log.Printf("receive error: %v", err)
