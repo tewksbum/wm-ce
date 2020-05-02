@@ -536,7 +536,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		setDS.Search = SetSearchFields
+		reportCounters := []ReportCounter{
+			ReportCounter{
+				Type:      "Golden",
+				Name:      "Created",
+				Count:     1,
+				Increment: true,
+			},
+			ReportCounter{
+				Type:      "Set",
+				Name:      "Created",
+				Count:     1,
+				Increment: true,
+			},
+		}
 		log.Printf("set search: %+v", setDS.Search)
+
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
@@ -564,33 +579,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
 
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Set",
-						Name:      "Expired",
-						Count:     len(expiredSetCollection),
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "Set", Name: "Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters = append(reportCounters, ReportCounter{Type: "Golden", Name: "Expired", Count: len(expiredSetCollection), Increment: true})
 		}
 
 		if input.Signature.FiberType == "default" {
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "Fiber",
-						Name:      "Completed",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "Fiber", Name: "Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 
@@ -619,6 +613,28 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if fiberCompleted+fiberDeleted >= recordCount && recordCount > 0 {
 				fiberFinished = true
 			}
+
+			if recordCount > 0 {
+				percentRecordFinished := fmt.Sprintf("%d%%", 10*int(10.0*float32(recordCompleted+recordDeleted)/float32(recordCount)))
+				progressKey := []string{input.Signature.EventID, percentRecordFinished}
+				if percentRecordFinished != "0%" { // do not write 0%
+					if GetRedisIntValue(progressKey) == 1 { // already published this status
+					} else {
+						SetRedisTempKey(progressKey)
+						report := FileReport{
+							ID:          input.Signature.EventID,
+							StatusLabel: "records progress " + percentRecordFinished,
+							StatusBy:    cfName,
+							StatusTime:  time.Now(),
+						}
+						if percentRecordFinished == "100%" {
+							report.ProcessingEnd = time.Now()
+						}
+						publishReport(&report, cfName)
+					}
+				}
+			}
+
 			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
@@ -643,7 +659,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 				cleanupKey := []string{input.Signature.EventID, "cleanup-sent"}
 				if GetRedisIntValue(cleanupKey) == 1 { // already processed
-
+					report := FileReport{
+						ID:            input.Signature.EventID,
+						ProcessingEnd: time.Now(),
+						StatusLabel:   "records already done",
+						StatusBy:      cfName,
+						StatusTime:    time.Now(),
+					}
+					publishReport(&report, cfName)
 				} else {
 					SetRedisTempKey(cleanupKey)
 					if inputIsFromPost { // only pub this message if the source is from post, do not pub if 720
@@ -664,6 +687,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		} else if input.Signature.FiberType == "mar" {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
+		}
+
+		{
+			report := FileReport{
+				ID:       input.Signature.EventID,
+				Counters: reportCounters,
+			}
+			publishReport(&report, cfName)
 		}
 
 		// push into pubsub

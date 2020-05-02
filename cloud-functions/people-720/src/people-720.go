@@ -62,6 +62,14 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}
 	SetRedisTempKey(cleanupKey)
 
+	report0 := FileReport{
+		ID:          input.EventID,
+		StatusLabel: "set verification started",
+		StatusBy:    cfName,
+		StatusTime:  time.Now(),
+	}
+	publishReport(&report0, cfName)
+
 	var sets []PeopleSetDS
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &sets); err != nil {

@@ -135,7 +135,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "justatest":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
@@ -180,7 +180,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag":
 		err.Junk = 1
 	case "level", "room location description 1":
 		// may want to unjunk the degree level things...

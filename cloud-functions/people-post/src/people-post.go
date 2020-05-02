@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/structs"
+
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
@@ -245,8 +247,9 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1) {
+			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1 || column.PeopleERR.ContainsCountry == 1) {
 				column.MatchKey1 = "COUNTRY"
+				LogDev(fmt.Sprintf("Country: %v", column.Value))
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
 			} else if column.PeopleVER.IS_EMAIL {
 				column.MatchKey1 = "EMAIL"
@@ -290,24 +293,24 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 {
+			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 {
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "AD2"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 {
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "AD3"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0"))
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
 			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
 				column.MatchKey1 = "STATE"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0"))
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 {
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0"))
+				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsCountry == 0"))
 			} else if column.PeopleVER.IS_COUNTRY {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
@@ -534,21 +537,28 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// let's populate city state if we have zip
-		if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && v.Type != "mar" {
-			v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-			if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
-				v.Output.CITY.Source = "WM"
-				v.Output.STATE.Source = "WM"
+		if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
+			if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
+				v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+				if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
+					v.Output.CITY.Source = "WM"
+					v.Output.STATE.Source = "WM"
+				}
+				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v, v.Output.CITY.Value: %v, v.Output.CITY.Source: %v ", v.Output.STATE.Value, v.Output.STATE.Source, v.Output.CITY.Value, v.Output.CITY.Source))
+
+			} else if len(v.Output.STATE.Value) == 0 {
+				_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+				if len(v.Output.STATE.Value) > 0 {
+					v.Output.STATE.Source = "WM"
+				}
+				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
+			} else if len(v.Output.CITY.Value) == 0 {
+				v.Output.CITY.Value, _ = populateCityStateFromZip(v.Output.ZIP.Value)
+				if len(v.Output.CITY.Value) > 0 {
+					v.Output.CITY.Source = "WM"
+				}
+				LogDev(fmt.Sprintf("v.Output.CITY.Value: %v, v.Output.CITY.Source: %v", v.Output.CITY.Value, v.Output.CITY.Source))
 			}
-		}
-		LogDev(fmt.Sprintf("v.Output.COUNTRY.Value: %v, v.Output.ZIP.Value: %v, v.Output.STATE.Value: %v", v.Output.COUNTRY.Value, v.Output.ZIP.Value, v.Output.STATE.Value))
-		// let's populate state if we have zip
-		if len(v.Output.STATE.Value) == 0 && len(v.Output.ZIP.Value) >= 5 && ((len(v.Output.COUNTRY.Value) == 0) || (v.Output.COUNTRY.Value == "US") || (v.Output.COUNTRY.Value == "USA") || (v.Output.COUNTRY.Value == "United States of America") || (v.Output.COUNTRY.Value == "United States")) {
-			_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-			if len(v.Output.STATE.Value) > 0 {
-				v.Output.STATE.Source = "WM"
-			}
-			LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
 		}
 
 		// copy address fields from MPR to default if value is missing
@@ -577,7 +587,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
 		}
 		// standardize "US" for any US State address
-		if reState.MatchString(v.Output.STATE.Value) {
+		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") {
 			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
 			v.Output.COUNTRY.Value = "US"
 			v.Output.COUNTRY.Source = "WM"
@@ -639,65 +649,47 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			input.Signature.RecordID = uuid.New().String()
 		}
 		var searchFields []string
+		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
 		{
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:RecordID",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
 		}
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:Email",
-						Count:     1,
-						Increment: true,
-					},
-				},
-			}
-			publishReport(&report, cfName)
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
+		} else {
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Email", Count: 1, Increment: true})
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:Phone+FInitial",
-						Count:     1,
-						Increment: true,
-					},
-				},
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Phone+FInitial", Count: 1, Increment: true})
+		} else {
+			if len(v.Output.PHONE.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Phone", Count: 1, Increment: true})
 			}
-			publishReport(&report, cfName)
+			if len(v.Output.FINITIAL.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FInitial", Count: 1, Increment: true})
+			}
 		}
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PeoplePost",
-						Name:      "People:City+State+LName+FName+AD1",
-						Count:     1,
-						Increment: true,
-					},
-				},
+			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
+		} else {
+			if len(v.Output.CITY.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
 			}
-			publishReport(&report, cfName)
+			if len(v.Output.STATE.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-State", Count: 1, Increment: true})
+			}
+			if len(v.Output.LNAME.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-LName", Count: 1, Increment: true})
+			}
+			if len(v.Output.FNAME.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FName", Count: 1, Increment: true})
+			}
+			if len(v.Output.AD1.Value) == 0 {
+				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-AD1", Count: 1, Increment: true})
+			}
 		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
@@ -735,16 +727,46 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			Suffix: suffix,
 			Type:   v.Type,
 		})
+
+		matchKeyStat := map[string]int{}
+		if v.Type == "default" {
+			if len(v.Output.AD1.Value) > 0 {
+				matchKeyStat["AD1"] = 1
+			}
+			if len(v.Output.AD2.Value) > 0 {
+				matchKeyStat["AD2"] = 1
+			}
+			if len(v.Output.FNAME.Value) > 0 {
+				matchKeyStat["FNAME"] = 1
+			}
+			if len(v.Output.LNAME.Value) > 0 {
+				matchKeyStat["LNAME"] = 1
+			}
+			if len(v.Output.CITY.Value) > 0 {
+				matchKeyStat["CITY"] = 1
+			}
+			if len(v.Output.STATE.Value) > 0 {
+				matchKeyStat["STATE"] = 1
+			}
+			if len(v.Output.ZIP.Value) > 0 {
+				matchKeyStat["ZIP"] = 1
+			}
+			if len(v.Output.EMAIL.Value) > 0 {
+				matchKeyStat["EMAIL"] = 1
+			}
+			if len(v.Output.PHONE.Value) > 0 {
+				matchKeyStat["PHONE"] = 1
+			}
+			if len(v.Output.COUNTRY.Value) > 0 {
+				matchKeyStat["COUNTRY"] = 1
+			}
+		}
+
+		reportCounters = append(reportCounters, ReportCounter{Type: "Fiber", Name: v.Type, Count: 1, Increment: true})
 		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "Fiber",
-					Name:      v.Type,
-					Count:     1,
-					Increment: true,
-				},
-			},
+			ID:                 input.Signature.EventID,
+			Counters:           reportCounters,
+			MatchKeyStatistics: matchKeyStat,
 		}
 		publishReport(&report, cfName)
 	}
@@ -759,9 +781,27 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		output.Passthrough = input.Passthrough
 		output.MatchKeys = p.Output
-
 		pubs = append(pubs, output)
+
+		// write the mapping to report
+		matchKeyNames := structs.Names(&PeopleOutput{})
+		mappingResult := []NameValue{}
+		for _, mkn := range matchKeyNames {
+			mkfield := GetMkField(&(p.Output), mkn)
+			if len(mkfield.Source) > 0 && mkfield.Source != "WM" {
+				mappingResult = append(mappingResult, NameValue{
+					Name:  mkfield.Source,
+					Value: mkn,
+				})
+			}
+		}
+		report := FileReport{
+			ID:         input.Signature.EventID,
+			ColumnMaps: mappingResult,
+		}
+		publishReport(&report, cfName)
 	}
+
 	outputJSON, _ := json.Marshal(pubs)
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,

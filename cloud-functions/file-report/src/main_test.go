@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"cloud.google.com/go/pubsub"
 )
 
 func TestStep1(t *testing.T) {
@@ -23,12 +25,12 @@ func TestStep1(t *testing.T) {
 		"statusBy": "wm-file-api-dev"
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-api-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestCounter1(t *testing.T) {
@@ -39,12 +41,12 @@ func TestCounter1(t *testing.T) {
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestCounter2(t *testing.T) {
@@ -55,12 +57,12 @@ func TestCounter2(t *testing.T) {
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestColumns(t *testing.T) {
@@ -71,12 +73,12 @@ func TestColumns(t *testing.T) {
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestColumnMap1(t *testing.T) {
@@ -89,12 +91,12 @@ func TestColumnMap1(t *testing.T) {
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 func TestColumnMap2(t *testing.T) {
 	json := `{
@@ -106,12 +108,12 @@ func TestColumnMap2(t *testing.T) {
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestColumnStat(t *testing.T) {
@@ -127,12 +129,12 @@ func TestColumnStat(t *testing.T) {
 		}
 	}`
 	re := regexp.MustCompile(`\r?\n`)
-	var message psMessage
+	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	message.Attributes = map[string]string{
 		"source": "wm-file-processor-dev",
 	}
-	ProcessUpdate(context.Background(), message)
+	ProcessUpdate(context.Background(), &message)
 }
 
 func TestReport(t *testing.T) {
