@@ -12,7 +12,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -217,8 +219,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 	publishReport(&report, cfName)
 
 	// get the file
-	if url, ok := input.EventData["fileUrl"]; ok {
-		resp, err := http.Get(fmt.Sprintf("%v", url))
+	if fileURL, ok := input.EventData["fileUrl"]; ok {
+		resp, err := http.Get(fmt.Sprintf("%v", fileURL))
 		if err != nil {
 			input.EventData["message"] = "File cannot be downloaded"
 			input.EventData["status"] = "Error"
@@ -231,7 +233,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				Errors: []ReportError{
 					ReportError{
 						FileLevel: true,
-						Value:     fmt.Sprintf("%v", url),
+						Value:     fmt.Sprintf("%v", fileURL),
 						Message:   "file cannot be downloaded",
 					},
 				},
@@ -247,7 +249,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				log.Printf("ERROR %v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 
-			log.Fatalf("File cannot be downloaded %v", url)
+			log.Fatalf("File cannot be downloaded %v", fileURL)
 		}
 
 		defer resp.Body.Close()
@@ -272,7 +274,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   "file cannot be copied to wemade storage",
 						},
 					},
@@ -317,7 +319,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   "file is empty",
 						},
 					},
@@ -342,18 +344,26 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var headers []string
 			var records [][]string
 			var allrows [][]string
+
+			parsedFileName := ""
+			parsedFileURL, err := url.Parse(fmt.Sprintf("%v", fileURL))
+			if err != nil {
+			} else {
+				parsedFileName = strings.ToLower(filepath.Base(parsedFileURL.Path))
+			}
+
 			{
 				report := FileReport{
 					ID: input.Signature.EventID,
 					Audits: []ReportError{
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   fmt.Sprintf("detected file format is %v", fileKind.Extension),
 						},
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   fmt.Sprintf("detected content type is %v", contentType),
 						},
 					},
@@ -361,7 +371,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				publishReport(&report, cfName)
 			}
 
-			if fileKind.Extension == "xlsx" || contentType == "application/zip" {
+			if fileKind.Extension == "xlsx" || contentType == "application/zip" || strings.HasSuffix(parsedFileName, ".xlsx") {
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)
 				if err != nil {
 					report := FileReport{
@@ -372,7 +382,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
-								Value:     fmt.Sprintf("%v", url),
+								Value:     fmt.Sprintf("%v", fileURL),
 								Message:   "cannot parse as excel",
 							},
 						},
@@ -392,7 +402,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
-								Value:     fmt.Sprintf("%v", url),
+								Value:     fmt.Sprintf("%v", fileURL),
 								Message:   "cannot read excel sheets",
 							},
 						},
@@ -462,7 +472,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						Errors: []ReportError{
 							ReportError{
 								FileLevel: true,
-								Value:     fmt.Sprintf("%v", url),
+								Value:     fmt.Sprintf("%v", fileURL),
 								Message:   "cannot parse delimited text",
 							},
 						},
@@ -563,7 +573,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   "headerless file detected",
 						},
 					},
@@ -609,7 +619,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					Errors: []ReportError{
 						ReportError{
 							FileLevel: true,
-							Value:     fmt.Sprintf("%v", url),
+							Value:     fmt.Sprintf("%v", fileURL),
 							Message:   "headerless file detected",
 						},
 					},
@@ -828,7 +838,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				Errors: []ReportError{
 					ReportError{
 						FileLevel: true,
-						Value:     fmt.Sprintf("%v", url),
+						Value:     fmt.Sprintf("%v", fileURL),
 						Message:   "file cannot be fetched",
 					},
 				},
@@ -846,7 +856,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
 
-			log.Fatalf("Unable to fetch file %v, response code %v", url, resp.StatusCode)
+			log.Fatalf("Unable to fetch file %v, response code %v", fileURL, resp.StatusCode)
 		}
 
 	}
