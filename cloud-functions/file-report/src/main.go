@@ -232,9 +232,11 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 		}
 
 		// run the bulk request
-		_, err := bulk.Do(ctx)
-		if err != nil {
-			log.Printf("error updating es %v", err)
+		if bulk.NumberOfActions() > 0 {
+			_, err := bulk.Do(ctx)
+			if err != nil {
+				log.Printf("error updating es %v", err)
+			}
 		}
 	} else {
 		log.Printf("ERROR source is missing from message attributes %v", err)

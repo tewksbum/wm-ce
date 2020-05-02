@@ -220,11 +220,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 	// get the file
 	if fileURL, ok := input.EventData["fileUrl"]; ok {
+		log.Printf("fetching file %v", fileURL)
 		resp, err := http.Get(fmt.Sprintf("%v", fileURL))
 		if err != nil {
 			input.EventData["message"] = "File cannot be downloaded"
 			input.EventData["status"] = "Error"
-
 			report := FileReport{
 				ID:          input.Signature.EventID,
 				StatusLabel: "error: file cannot be downloaded",
