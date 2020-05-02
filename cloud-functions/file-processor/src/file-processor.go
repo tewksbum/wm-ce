@@ -101,6 +101,7 @@ type FileReport struct {
 	StatusTime         time.Time               `json:"statusTime,omitempty"`
 	Errors             []ReportError           `json:"errors"`
 	Warnings           []ReportError           `json:"warnings"`
+	Audits             []ReportError           `json:"audits"`
 	Counters           []ReportCounter         `json:"counters"`
 	InputStatistics    map[string]ColumnStat   `json:"inputStats"`
 	MatchKeyStatistics map[string]MatchKeyStat `json:"matchKeyStats"`
@@ -341,6 +342,24 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var headers []string
 			var records [][]string
 			var allrows [][]string
+			{
+				report := FileReport{
+					ID: input.Signature.EventID,
+					Audits: []ReportError{
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   fmt.Sprintf("detected file format is %v", fileKind.Extension),
+						},
+						ReportError{
+							FileLevel: true,
+							Value:     fmt.Sprintf("%v", url),
+							Message:   fmt.Sprintf("detected content type is %v", contentType),
+						},
+					},
+				}
+				publishReport(&report, cfName)
+			}
 
 			if fileKind.Extension == "xlsx" || contentType == "application/zip" {
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)

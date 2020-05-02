@@ -121,6 +121,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			report.StatusTime = input.StatusTime
 			report.Errors = []ReportError{}
 			report.Warnings = []ReportError{}
+			report.Audits = []ReportError{}
 			report.Counts = map[string]interface{}{
 				"record":     map[string]interface{}{},
 				"preprocess": map[string]interface{}{},
@@ -220,6 +221,12 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			if len(input.Warnings) > 0 {
 				for _, e := range input.Warnings {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
+				}
+			}
+
+			if len(input.Audits) > 0 {
+				for _, e := range input.Warnings {
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
 				}
 			}
 		}
