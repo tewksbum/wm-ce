@@ -135,7 +135,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "justatest":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
