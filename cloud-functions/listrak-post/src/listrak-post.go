@@ -50,6 +50,19 @@ var listrakSegment = map[string]int{
 	"schoolname":  getenvInt("LISTRAKSEGMENT_SCHOOLNAME"),
 }
 
+// Ambassador segmentation ids
+var listrakAmbassadorSegment = map[string]int{
+	"schoolcode":  getenvInt("LISTRAKSEGMENT_AMBASSADOR_SCHOOLCODE"),
+	"schoolname":  getenvInt("LISTRAKSEGMENT_AMBASSADOR_SCHOOLNAME"),
+	"schoolcolor": getenvInt("LISTRAKSEGMENT_AMBASSADOR_SCHOOLCOLOR"),
+	"firstname":   getenvInt("LISTRAKSEGMENT_AMBASSADOR_FIRSTNAME"),
+	"lastname":    getenvInt("LISTRAKSEGMENT_AMBASSADOR_LASTNAME"),
+	"fbid":        getenvInt("LISTRAKSEGMENT_AMBASSADOR_FBID"),
+	"instagram":   getenvInt("LISTRAKSEGMENT_AMBASSADOR_INSTAGRAM"),
+	"social":      getenvInt("LISTRAKSEGMENT_AMBASSADOR_SOCIAL"),
+	"why":         getenvInt("LISTRAKSEGMENT_AMBASSADOR_WHY"),
+}
+
 func getenvInt(key string) int {
 	s := os.Getenv(key)
 	if s == "" {
@@ -94,13 +107,16 @@ func init() {
 }
 
 func ListrakPost(ctx context.Context, m PubSubMessage) error {
+	eventID := m.Attributes["eventid"]
+	form := m.Attributes["form"]
+	listid := m.Attributes["listid"]
+
 	var input []ContactInfo
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 		return nil
 	}
 	LogDev(fmt.Sprintf("PubSubMessage %v", string(m.Data)))
-	eventID := m.Attributes["eventid"]
 
 	//Authentication  map[string]string{"mostafa": "dahab"}
 	data := url.Values{
@@ -122,6 +138,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	failCount := 0
 
 	if resp.StatusCode == http.StatusOK {
+		ListrakEndpoint := "https://api.listrak.com/email/v1/List/" + listid + "/Contact"
 		decoder := json.NewDecoder(resp.Body)
 		var authResponse AuthResponse
 		err = decoder.Decode(&authResponse)
@@ -130,66 +147,109 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 			return nil
 		}
 		log.Printf("Event id : [%v] Contacts count: [%v]", eventID, len(input))
-
+		var output Output
 		for _, c := range input {
-			output := Output{
-				EmailAddress:      c.Email,
-				SubscriptionState: "Subscribed",
-				ExternalContactID: "",
-				Segments: []SegmentationField{
-					{
-						ID:    listrakSegment["firstname"],
-						Value: c.FirstName,
+			if form == "cp" {
+				output = Output{
+					EmailAddress:      c.Email,
+					SubscriptionState: "Subscribed",
+					ExternalContactID: "",
+					Segments: []SegmentationField{
+						{
+							ID:    listrakAmbassadorSegment["firstname"],
+							Value: c.FirstName,
+						},
+						{
+							ID:    listrakAmbassadorSegment["lastname"],
+							Value: c.LastName,
+						},
+						{
+							ID:    listrakSegment["address1"],
+							Value: c.Address1,
+						},
+						{
+							ID:    listrakSegment["address2"],
+							Value: c.Address2,
+						},
+						{
+							ID:    listrakSegment["city"],
+							Value: c.City,
+						},
+						{
+							ID:    listrakSegment["state"],
+							Value: c.State,
+						},
+						{
+							ID:    listrakSegment["zip"],
+							Value: c.Zip,
+						},
+						{
+							ID:    listrakSegment["country"],
+							Value: c.Country,
+						},
+						{
+							ID:    listrakSegment["contactid"],
+							Value: c.ContactID,
+						},
+						{
+							ID:    listrakSegment["roletype"],
+							Value: c.RoleType,
+						},
+						{
+							ID:    listrakSegment["schoolcode"],
+							Value: c.SchoolCode,
+						},
+						{
+							ID:    listrakSegment["schoolcolor"],
+							Value: c.SchoolColor,
+						},
+						{
+							ID:    listrakSegment["schoolname"],
+							Value: c.SchoolName,
+						},
 					},
-					{
-						ID:    listrakSegment["lastname"],
-						Value: c.LastName,
+				}
+			} else {
+				output = Output{
+					EmailAddress:      c.Email,
+					SubscriptionState: "Subscribed",
+					ExternalContactID: "",
+					Segments: []SegmentationField{
+						{
+							ID:    listrakSegment["firstname"],
+							Value: c.FirstName,
+						},
+						{
+							ID:    listrakSegment["lastname"],
+							Value: c.LastName,
+						},
+						{
+							ID:    listrakSegment["schoolcode"],
+							Value: c.SchoolCode,
+						},
+						{
+							ID:    listrakSegment["schoolcolor"],
+							Value: c.SchoolColor,
+						},
+						{
+							ID:    listrakSegment["fbid"],
+							Value: c.FbID,
+						},
+						{
+							ID:    listrakSegment["instagram"],
+							Value: c.Instagram,
+						},
+						{
+							ID:    listrakSegment["social"],
+							Value: c.Social,
+						},
+						{
+							ID:    listrakSegment["why"],
+							Value: c.Why,
+						},
 					},
-					{
-						ID:    listrakSegment["address1"],
-						Value: c.Address1,
-					},
-					{
-						ID:    listrakSegment["address2"],
-						Value: c.Address2,
-					},
-					{
-						ID:    listrakSegment["city"],
-						Value: c.City,
-					},
-					{
-						ID:    listrakSegment["state"],
-						Value: c.State,
-					},
-					{
-						ID:    listrakSegment["zip"],
-						Value: c.Zip,
-					},
-					{
-						ID:    listrakSegment["country"],
-						Value: c.Country,
-					},
-					{
-						ID:    listrakSegment["contactid"],
-						Value: c.ContactID,
-					},
-					{
-						ID:    listrakSegment["roletype"],
-						Value: c.RoleType,
-					},
-					{
-						ID:    listrakSegment["schoolcode"],
-						Value: c.SchoolCode,
-					},
-					{
-						ID:    listrakSegment["schoolcolor"],
-						Value: c.SchoolColor,
-					},
-					{
-						ID:    listrakSegment["schoolname"],
-						Value: c.SchoolName,
-					},
-				},
+				}
+
 			}
 			jsonValue, _ := json.Marshal(output)
 			flag := false

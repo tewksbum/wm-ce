@@ -25,6 +25,10 @@ type ContactInfo struct {
 	SchoolCode  string `json:"schoolCode"`
 	SchoolColor string `json:"schoolColor"`
 	SchoolName  string `json:"schoolName"`
+	FbID        string `json:"fbId"`
+	Instagram   string `json:"instagram"`
+	Social      string `json:"social"`
+	Why         string `json:"why"`
 }
 
 type AuthResponse struct {

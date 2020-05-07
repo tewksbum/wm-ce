@@ -176,7 +176,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Title = 1
 	case "schoolyear":
 		err.SchoolYear = 1
-	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid":
+	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid", "wmid", "gclid":
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1

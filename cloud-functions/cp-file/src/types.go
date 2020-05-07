@@ -43,6 +43,7 @@ type Event struct {
 	Endpoint    string
 	Passthrough []KVP
 	Attributes  []KVP
+	EventData   []KVP
 	Detail      string
 	RowLimit    int
 	Counters    []KIP
@@ -127,4 +128,8 @@ type ContactInfo struct {
 	SchoolCode  string `json:"schoolCode"`
 	SchoolColor string `json:"schoolColor"`
 	SchoolName  string `json:"schoolName"`
+	FbID        string `json:"fbId"`
+	Instagram   string `json:"instagram"`
+	Social      string `json:"social"`
+	Why         string `json:"why"`
 }
