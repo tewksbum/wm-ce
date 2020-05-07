@@ -224,6 +224,10 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 							Value: c.LastName,
 						},
 						{
+							ID:    listrakAmbassadorSegment["schoolname"],
+							Value: c.SchoolName,
+						},
+						{
 							ID:    listrakAmbassadorSegment["schoolcode"],
 							Value: c.SchoolCode,
 						},
