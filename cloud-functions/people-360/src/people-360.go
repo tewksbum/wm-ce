@@ -49,6 +49,7 @@ var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
+var cpTopic *pubsub.Topic
 
 var topicR *pubsub.Topic
 
@@ -61,6 +62,7 @@ func init() {
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
+	cpTopic = ps.Topic(os.Getenv("PSCPFILE"))
 	// delay the clean up by 1 min
 	cleanup.PublishSettings.DelayThreshold = 60 * time.Second
 	msp = &redis.Pool{
@@ -722,6 +724,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				"source": "360",
 			},
 		})
+
+		//Send to cp-file for eventType == "Form Submission"
+		if input.Signature.EventType == "Form Submission" {
+			outputCP := FileReady{
+				EventID: input.Signature.EventID,
+				OwnerID: input.Signature.OwnerID,
+			}
+			outputCPJSON, _ := json.Marshal(outputCP)
+			cpresult := cpTopic.Publish(ctx, &pubsub.Message{
+				Data: outputCPJSON,
+			})
+			_, err = cpresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+			}
+		}
 	}
 
 	return nil

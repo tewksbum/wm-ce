@@ -337,3 +337,8 @@ type FileComplete struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`
 }
+
+type FileReady struct {
+	EventID string `json:"eventId"`
+	OwnerID string `json:"ownerId"`
+}
