@@ -301,9 +301,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
 	} else {
+
 		contactInfo := ContactInfo{
-			FirstName:   g.FNAME,
-			LastName:    g.LNAME,
+			FirstName:   GetKVPValue(event.EventData, "fname"),
+			LastName:    GetKVPValue(event.EventData, "lname"),
 			SchoolCode:  GetKVPValue(event.EventData, "organization"), //in other place
 			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
