@@ -303,13 +303,14 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	} else {
 
 		contactInfo := ContactInfo{
+			Email:       GetKVPValue(event.EventData, "email"),
 			FirstName:   GetKVPValue(event.EventData, "fname"),
 			LastName:    GetKVPValue(event.EventData, "lname"),
-			SchoolCode:  GetKVPValue(event.EventData, "organization"), //in other place
+			SchoolCode:  GetKVPValue(event.EventData, "organization"),
 			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
-			FbID:        GetKVPValue(event.EventData, "fbid"),      //in
-			Instagram:   GetKVPValue(event.EventData, "instagram"), //in
+			FbID:        GetKVPValue(event.EventData, "fbid"),
+			Instagram:   GetKVPValue(event.EventData, "instagram"),
 			Social:      GetKVPValue(event.Passthrough, "social"),
 			Why:         GetKVPValue(event.Passthrough, "why"),
 		}

@@ -216,35 +216,35 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 					ExternalContactID: "",
 					Segments: []SegmentationField{
 						{
-							ID:    listrakSegment["firstname"],
+							ID:    listrakAmbassadorSegment["firstname"],
 							Value: c.FirstName,
 						},
 						{
-							ID:    listrakSegment["lastname"],
+							ID:    listrakAmbassadorSegment["lastname"],
 							Value: c.LastName,
 						},
 						{
-							ID:    listrakSegment["schoolcode"],
+							ID:    listrakAmbassadorSegment["schoolcode"],
 							Value: c.SchoolCode,
 						},
 						{
-							ID:    listrakSegment["schoolcolor"],
+							ID:    listrakAmbassadorSegment["schoolcolor"],
 							Value: c.SchoolColor,
 						},
 						{
-							ID:    listrakSegment["fbid"],
+							ID:    listrakAmbassadorSegment["fbid"],
 							Value: c.FbID,
 						},
 						{
-							ID:    listrakSegment["instagram"],
+							ID:    listrakAmbassadorSegment["instagram"],
 							Value: c.Instagram,
 						},
 						{
-							ID:    listrakSegment["social"],
+							ID:    listrakAmbassadorSegment["social"],
 							Value: c.Social,
 						},
 						{
-							ID:    listrakSegment["why"],
+							ID:    listrakAmbassadorSegment["why"],
 							Value: c.Why,
 						},
 					},
