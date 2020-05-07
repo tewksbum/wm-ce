@@ -128,53 +128,54 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		return nil
 	}
 	output := []ContactInfo{}
+
+	// get the set ids
+	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
+	setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+	setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
+	log.Printf("Found %v matching sets", len(setKeysTest))
+
+	// get the golden records
+	var goldenKeys []*datastore.Key
+	var goldenIDs []string
+	var goldens []PeopleGoldenDS
+	for _, setKey := range setKeysTest {
+		if !Contains(goldenIDs, setKey.Name) {
+			goldenIDs = append(goldenIDs, setKey.Name)
+			dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
+			dsGoldenGetKey.Namespace = dsNameSpace
+			goldenKeys = append(goldenKeys, dsGoldenGetKey)
+			goldens = append(goldens, PeopleGoldenDS{})
+		}
+	}
+	if len(goldenKeys) > 0 {
+		batchSize := 1000
+		l := len(goldenKeys) / batchSize
+
+		if len(goldenKeys)%batchSize > 0 {
+			l++
+		}
+		for r := 0; r < l; r++ {
+			s := r * 1000
+			e := s + 1000
+
+			if e > len(goldenKeys) {
+				e = len(goldenKeys)
+			}
+
+			gk := goldenKeys[s:e]
+			gd := goldens[s:e]
+
+			if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+				log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+			}
+
+		}
+	}
+
+	log.Printf("Loaded %v matching golden", len(goldens))
+
 	if event.EventType != "Form Submission" {
-
-		// get the set ids
-		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-		setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
-		setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
-		log.Printf("Found %v matching sets", len(setKeysTest))
-
-		// get the golden records
-		var goldenKeys []*datastore.Key
-		var goldenIDs []string
-		var goldens []PeopleGoldenDS
-		for _, setKey := range setKeysTest {
-			if !Contains(goldenIDs, setKey.Name) {
-				goldenIDs = append(goldenIDs, setKey.Name)
-				dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
-				dsGoldenGetKey.Namespace = dsNameSpace
-				goldenKeys = append(goldenKeys, dsGoldenGetKey)
-				goldens = append(goldens, PeopleGoldenDS{})
-			}
-		}
-		if len(goldenKeys) > 0 {
-			batchSize := 1000
-			l := len(goldenKeys) / batchSize
-
-			if len(goldenKeys)%batchSize > 0 {
-				l++
-			}
-			for r := 0; r < l; r++ {
-				s := r * 1000
-				e := s + 1000
-
-				if e > len(goldenKeys) {
-					e = len(goldenKeys)
-				}
-
-				gk := goldenKeys[s:e]
-				gd := goldens[s:e]
-
-				if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
-				}
-
-			}
-		}
-
-		log.Printf("Loaded %v matching golden", len(goldens))
 
 		// assemble the csv
 		header := []string{
@@ -268,7 +269,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Failed to close bucket write stream %v", err)
 			return nil
 		}
-
 		// push into pubsub contacts
 		totalContacts := len(output)
 		pageSize := 250
@@ -300,23 +300,26 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
-	} else {
 
-		contactInfo := ContactInfo{
-			Email:       GetKVPValue(event.EventData, "email"),
-			FirstName:   GetKVPValue(event.EventData, "fname"),
-			LastName:    GetKVPValue(event.EventData, "lname"),
-			SchoolCode:  GetKVPValue(event.EventData, "organization"),
-			SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
-			SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
-			FbID:        GetKVPValue(event.EventData, "fbid"),
-			Instagram:   GetKVPValue(event.EventData, "instagram"),
-			Social:      GetKVPValue(event.Passthrough, "social"),
-			Why:         GetKVPValue(event.Passthrough, "why"),
+	} else {
+		for _, g := range goldens {
+			contactInfo := ContactInfo{
+				Email:       g.EMAIL,
+				FirstName:   g.FNAME,
+				LastName:    g.LNAME,
+				SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+				SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+				SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+				FbID:        GetKVPValue(event.Passthrough, "fbid"),
+				Instagram:   GetKVPValue(event.Passthrough, "instagram"),
+				Social:      GetKVPValue(event.Passthrough, "social"),
+				Why:         GetKVPValue(event.Passthrough, "why"),
+			}
+			output = append(output, contactInfo)
 		}
-		output = append(output, contactInfo)
 
 		outputJSON, _ := json.Marshal(output)
+		fmt.Println(string(outputJSON))
 		psresult := topic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
 			Attributes: map[string]string{
