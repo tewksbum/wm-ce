@@ -90,7 +90,6 @@ var FileUrlKey = "fileUrl"
 func init() {
 	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
-	fs, _ = pubsub.NewClient(ctx, DsProjectID)
 	topic = ps.Topic(PubSubTopic)
 	log.Printf("init completed, pubsub topic names: %v", topic)
 }
