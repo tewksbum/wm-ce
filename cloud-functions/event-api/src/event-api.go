@@ -72,8 +72,8 @@ type KVP struct {
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 
-// DsProjectID is the env var of project id
-var DsProjectID = os.Getenv("DSPROJECTID")
+// DSProjectID is the env var of project id
+var DSProjectID = os.Getenv("DSPROJECTID")
 
 // NameSpace is the env var for datastore name space of streamer
 var NameSpace = os.Getenv("DATASTORENS")
