@@ -199,6 +199,9 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
+		if key == "FiberID" {
+			continue
+		}
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
 		if key == "RecordID" {
 			SetPeople360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
