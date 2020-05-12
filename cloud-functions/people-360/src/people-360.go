@@ -82,7 +82,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
 	if value, ok := m.Attributes["source"]; ok {
-		if value == "post" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
+		if value == "post" || value == "test" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
 			inputIsFromPost = true
 		}
 	}
@@ -196,6 +196,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var FiberSignatures []Signature
 		var FiberSearchFields []string
 		output.ID = uuid.New().String()
+		output.Signatures = []Signature{}
 		MatchKeyList := structs.Names(&PeopleOutput{})
 		FiberMatchKeys := make(map[string][]string)
 		// collect all fiber match key values
