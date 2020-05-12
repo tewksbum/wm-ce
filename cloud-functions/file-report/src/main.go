@@ -74,8 +74,9 @@ func init() {
 	}
 
 	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
-	sub.ReceiveSettings.Synchronous = true
-	sub.ReceiveSettings.MaxOutstandingMessages = 20000
+	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
+	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
+	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
 }
 
 // PullMessages pulls messages from a pubsub subscription
