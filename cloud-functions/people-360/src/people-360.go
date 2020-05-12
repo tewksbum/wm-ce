@@ -79,7 +79,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-
+	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
 	if value, ok := m.Attributes["source"]; ok {
 		if value == "post" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
