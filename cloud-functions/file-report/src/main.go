@@ -81,10 +81,10 @@ func init() {
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		msg.Ack()
 		mutex.Lock()
 		ProcessUpdate(ctx, msg)
 		defer mutex.Unlock()
+		msg.Ack()
 	})
 	if err != nil {
 		log.Printf("receive error: %v", err)
@@ -122,6 +122,9 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			report.Errors = []ReportError{}
 			report.Warnings = []ReportError{}
 			report.Audits = []ReportError{}
+			report.Records = map[string]RecordDetail{}
+			report.Fibers = map[string]FiberDetail{}
+			report.Sets = map[string]SetDetail{}
 			report.Counts = map[string]interface{}{
 				"record":     map[string]interface{}{},
 				"preprocess": map[string]interface{}{},
@@ -225,8 +228,80 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			}
 
 			if len(input.Audits) > 0 {
-				for _, e := range input.Warnings {
+				for _, e := range input.Audits {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
+				}
+			}
+
+			if len(input.RecordList) > 0 {
+				for _, r := range input.RecordList {
+					var record RecordDetail
+					record.RowNumber = r.RowNumber
+					record.CreatedOn = r.CreatedOn
+					record.Disposition = r.Disposition
+					record.Fibers = []string{}
+					record.Sets = []string{}
+					// create the nested doc or update dispoistion
+					script := `if (ctx._source.records.containsKey("` + r.ID + `")) {ctx._source.records["` + r.ID + `"]["Disposition"] = params.record.disposition} else { ctx._source.records["` + r.ID + `"] = params.record}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("record", record)))
+
+					// add fiber and sets
+					if len(r.Fibers) > 0 {
+						for _, f := range r.Fibers {
+							bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].fibers.add(params.fiber)`).Param("fiber", f)))
+						}
+					}
+
+					if len(r.Sets) > 0 {
+						for _, s := range r.Sets {
+							bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].sets.add(params.set)`).Param("set", s)))
+						}
+					}
+				}
+			}
+
+			if len(input.FiberList) > 0 {
+				for _, r := range input.FiberList {
+					var fiber FiberDetail
+					fiber.CreatedOn = r.CreatedOn
+					fiber.Disposition = r.Disposition
+					fiber.Type = r.Type
+					// create the nested doc or update dispoistion
+					script := `if (ctx._source.fibers.containsKey("` + r.ID + `")) {ctx._source.fibers["` + r.ID + `"]["Disposition"] = params.fiber.disposition} else { ctx._source.fibers["` + r.ID + `"] = params.fiber}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fiber", fiber)))
+				}
+			}
+
+			if len(input.SetList) > 0 {
+				for _, r := range input.SetList {
+					var set SetDetail
+					set.FiberCount = 0
+					set.CreatedOn = r.CreatedOn
+
+					// create the nested doc or update dispoistion
+					{
+						script := `if (!ctx._source.sets.containsKey("` + r.ID + `")) { ctx._source.sets["` + r.ID + `"] = params.set}`
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("set", set)))
+					}
+
+					// fiber count
+					{
+						script := `ctx._source.sets["` + r.ID + `"]["fiberCount"] += params.fibercount`
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fibercount", r.FiberCount)))
+					}
+
+					// deleted
+					if r.IsDeleted {
+						script := `ctx._source.sets["` + r.ID + `"]["isDeleted"] = true; ctx._source.sets["` + r.ID + `"]["deletedOn"] = params.deletedon`
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("deletedon", r.DeletedOn)))
+					}
+
+					// replaced by
+					if len(r.ReplacedBy) > 0 {
+						script := `ctx._source.sets["` + r.ID + `"]["replacedBy"] += params.replaced`
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("replaced", r.ReplacedBy)))
+
+					}
 				}
 			}
 		}
