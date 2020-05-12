@@ -42,8 +42,8 @@ type RecordDetail struct {
 	RowNumber   int       `json:"row,omitempty"`
 	CreatedOn   time.Time `json:"createdOn,omitempty"`
 	Disposition string    `json:"disposition,omitempty"`
-	Fibers      []string  `json:"fibers,omitempty"`
-	Sets        []string  `json:"sets,omitempty"`
+	Fibers      []string  `json:"fibers"`
+	Sets        []string  `json:"sets"`
 }
 
 // FiberDetail stores detail about a record

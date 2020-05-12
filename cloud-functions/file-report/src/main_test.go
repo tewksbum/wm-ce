@@ -137,6 +137,64 @@ func TestColumnStat(t *testing.T) {
 	ProcessUpdate(context.Background(), &message)
 }
 
+func TestRecord1(t *testing.T) {
+	json := `{
+		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
+		"recordList": [
+			{
+				"id": "d55738bf-07ce-49ca-8c8d-b5052d53b2e1",
+				"row": 1,
+				"createdOn": "2020-05-06T05:06:12Z"
+			},
+			{
+				"id": "b878dba5-4561-4a45-a7c8-b35b59b2ea46",
+				"row": 2,
+				"createdOn": "2020-05-06T05:06:12Z"
+			}			
+		]
+	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
+func TestRecord2(t *testing.T) {
+	json := `{
+		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
+		"recordList": [
+			{
+				"id": "d55738bf-07ce-49ca-8c8d-b5052d53b2e1",
+				"disposition": "new",
+				"fibers": [
+					"ef0c3403-c5ac-455d-b920-cf67f5e1ebfb",
+					"390cd601-1db4-4426-a0a0-ec0610d9baff"
+				]
+			}
+		],
+		"fiberList": [
+			{
+				"id": "ef0c3403-c5ac-455d-b920-cf67f5e1ebfb",
+				"type": "default"
+			},
+			{
+				"id": "390cd601-1db4-4426-a0a0-ec0610d9baff",
+				"type": "mar"
+			}
+		]
+	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
 func TestReport(t *testing.T) {
 	json := `{"bypass": "@U1Q6TAy^QH,98y", "eventId": "9cfdc586-6a7c-4347-9a15-25fa9cf57907"}`
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
