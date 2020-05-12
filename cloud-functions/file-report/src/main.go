@@ -101,7 +101,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 		return nil
 	}
 	bulk := esClient.Bulk()
-
+	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
