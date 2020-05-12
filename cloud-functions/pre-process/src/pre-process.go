@@ -500,6 +500,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 						Increment: true,
 					},
 				},
+				RecordList: []RecordDetail{
+					RecordDetail{
+						ID:       input.Signature.RecordID,
+						IsPerson: "T",
+					},
+				},
 			}
 			publishReport(&report, cfName)
 
@@ -515,6 +521,12 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 						Name:      "IsNotPerson",
 						Count:     1,
 						Increment: true,
+					},
+				},
+				RecordList: []RecordDetail{
+					RecordDetail{
+						ID:       input.Signature.RecordID,
+						IsPerson: "F",
 					},
 				},
 			}

@@ -163,7 +163,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		OutputPassthrough := ConvertPassthrough(input.Passthrough)
 		var fiber PeopleFiber
 		fiber.CreatedAt = time.Now()
-		fiber.ID = uuid.New().String()
+		fiber.ID = input.Signature.FiberID
 		fiber.MatchKeys = input.MatchKeys
 		fiber.Passthrough = OutputPassthrough
 		fiber.Signature = input.Signature
@@ -385,6 +385,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 			},
+			FiberList: []FiberDetail{
+				FiberDetail{
+					ID:          input.Signature.FiberID,
+					Disposition: dsFiber.Disposition,
+				},
+			},
 		}
 		publishReport(&report, cfName)
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
@@ -538,6 +544,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		setDS.Search = SetSearchFields
+		setList := []SetDetail{
+			SetDetail{
+				ID:         output.ID,
+				CreatedOn:  time.Now(),
+				FiberCount: len(setDS.Fibers),
+			},
+		}
+		fiberList := []FiberDetail{
+			FiberDetail{
+				ID: fiber.ID,
+				Sets: []string{
+					output.ID,
+				},
+			},
+		}
+
 		reportCounters := []ReportCounter{
 			ReportCounter{
 				Type:      "Golden",
@@ -571,6 +593,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 				goldenKey.Namespace = dsNameSpace
 				GoldenKeys = append(GoldenKeys, goldenKey)
+				setList = append(setList, SetDetail{
+					ID:         set,
+					IsDeleted:  true,
+					DeletedOn:  time.Now(),
+					ReplacedBy: output.ID,
+				})
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -693,8 +721,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		{
 			report := FileReport{
-				ID:       input.Signature.EventID,
-				Counters: reportCounters,
+				ID:        input.Signature.EventID,
+				Counters:  reportCounters,
+				SetList:   setList,
+				FiberList: fiberList,
 			}
 			publishReport(&report, cfName)
 		}

@@ -807,6 +807,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				} else {
 					// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 					recordCount++
+					report := FileReport{
+						ID: input.Signature.EventID,
+						RecordList: []RecordDetail{
+							RecordDetail{
+								ID:        output.Signature.RecordID,
+								RowNumber: output.Signature.RowNumber,
+								CreatedOn: time.Now(),
+							},
+						},
+					}
+					publishReport(&report, cfName)
 				}
 			}
 			report2 := FileReport{

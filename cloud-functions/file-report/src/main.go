@@ -238,25 +238,28 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					var record RecordDetail
 					record.RowNumber = r.RowNumber
 					record.CreatedOn = r.CreatedOn
-					record.Disposition = r.Disposition
 					record.Fibers = []string{}
-					record.Sets = []string{}
 					// create the nested doc or update dispoistion
 					script := `if (ctx._source.records.containsKey("` + r.ID + `")) {ctx._source.records["` + r.ID + `"]["Disposition"] = params.record.disposition} else { ctx._source.records["` + r.ID + `"] = params.record}`
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("record", record)))
 
-					// add fiber and sets
+					// update isPerson
+					if len(r.IsPerson) > 0 {
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].isPerson = params.person)`).Param("person", r.IsPerson)))
+					}
+
+					//update disposition
+					if len(r.Disposition) > 0 {
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].disposition = params.disp)`).Param("disp", r.Disposition)))
+					}
+
+					// add fiber
 					if len(r.Fibers) > 0 {
 						for _, f := range r.Fibers {
 							bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].fibers.add(params.fiber)`).Param("fiber", f)))
 						}
 					}
 
-					if len(r.Sets) > 0 {
-						for _, s := range r.Sets {
-							bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.records["`+r.ID+`"].sets.add(params.set)`).Param("set", s)))
-						}
-					}
 				}
 			}
 
@@ -266,16 +269,23 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					fiber.CreatedOn = r.CreatedOn
 					fiber.Disposition = r.Disposition
 					fiber.Type = r.Type
+					fiber.Sets = []string{}
 					// create the nested doc or update dispoistion
 					script := `if (ctx._source.fibers.containsKey("` + r.ID + `")) {ctx._source.fibers["` + r.ID + `"]["Disposition"] = params.fiber.disposition} else { ctx._source.fibers["` + r.ID + `"] = params.fiber}`
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fiber", fiber)))
+
+					if len(r.Sets) > 0 {
+						for _, s := range r.Sets {
+							bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(`ctx._source.fibers["`+r.ID+`"].sets.add(params.set)`).Param("set", s)))
+						}
+					}
 				}
 			}
 
 			if len(input.SetList) > 0 {
 				for _, r := range input.SetList {
 					var set SetDetail
-					set.FiberCount = 0
+					set.FiberCount = r.FiberCount //this does not change as we do not update set
 					set.CreatedOn = r.CreatedOn
 
 					// create the nested doc or update dispoistion
@@ -284,11 +294,11 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("set", set)))
 					}
 
-					// fiber count
-					{
-						script := `ctx._source.sets["` + r.ID + `"]["fiberCount"] += params.fibercount`
-						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fibercount", r.FiberCount)))
-					}
+					// // fiber count
+					// {
+					// 	script := `ctx._source.sets["` + r.ID + `"]["fiberCount"] += params.fibercount`
+					// 	bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fibercount", r.FiberCount)))
+					// }
 
 					// deleted
 					if r.IsDeleted {
