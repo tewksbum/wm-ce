@@ -23,6 +23,19 @@ type FileReport struct {
 	Counters           []ReportCounter       `json:"counters"`
 	InputStatistics    map[string]ColumnStat `json:"inputStats"`
 	MatchKeyStatistics map[string]int        `json:"matchKeyStats,omitempty"`
+	RecordList         []RecordDetail        `json:"recordList,omitempty"`
+	FiberList          []FiberDetail         `json:"fiberList,omitempty"`
+}
+
+// RecordDetail stores detail about a record
+type RecordDetail struct {
+	ID          string    `json:"id,omitempty"`
+	RowNumber   int       `json:"row,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	IsPerson    string    `json:"isPerson,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Fibers      []string  `json:"fibers"`
+	Sets        []string  `json:"sets"`
 }
 
 // ReportError stores errors and warnings
@@ -33,6 +46,14 @@ type ReportError struct {
 	Field     string `json:"field,omitempty"`
 	Value     string `json:"value,omitempty"`
 	Message   string `json:"message,omitempty"`
+}
+
+// FiberDetail stores detail about a record
+type FiberDetail struct {
+	ID          string    `json:"id,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	Type        string    `json:"type,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
 }
 
 // ReportCounter stores record, purge, murge
@@ -64,6 +85,7 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	FiberType string `json:"fiberType"`
 	RecordID  string `json:"recordId"`
+	FiberID   string `json:"id"`
 }
 
 type Prediction struct {

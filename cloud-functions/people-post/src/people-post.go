@@ -772,6 +772,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	}
 
 	var pubs []Output
+	var reportFibers []FiberDetail
+	var recordFibers []string
 	for _, p := range pubQueue {
 		var output Output
 		output.Signature = input.Signature
@@ -782,6 +784,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		output.Passthrough = input.Passthrough
 		output.MatchKeys = p.Output
 		pubs = append(pubs, output)
+
+		output.Signature.FiberID = uuid.New().String()
+		recordFibers = append(recordFibers, output.Signature.FiberID)
+		reportFibers = append(reportFibers, FiberDetail{
+			ID:        output.Signature.FiberID,
+			CreatedOn: time.Now(),
+			Type:      output.Signature.FiberType,
+		})
 
 		// write the mapping to report
 		matchKeyNames := structs.Names(&PeopleOutput{})
@@ -816,6 +826,17 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+		report := FileReport{
+			ID: input.Signature.EventID,
+			RecordList: []RecordDetail{
+				RecordDetail{
+					ID:     input.Signature.RecordID,
+					Fibers: recordFibers,
+				},
+			},
+			FiberList: reportFibers,
+		}
+		publishReport(&report, cfName)
 	}
 	return nil
 }

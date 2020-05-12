@@ -310,6 +310,7 @@ type FileReport struct {
 	Counters         []ReportCounter `json:"counters"`
 	InputStatistics  []ReportStat    `json:"inputStats"`
 	OutputStatistics []ReportStat    `json:"outputStats"`
+	RecordList       []RecordDetail  `json:"recordList,omitempty"`
 }
 
 // ReportError stores errors and warnings
@@ -335,4 +336,15 @@ type ReportStat struct {
 	Field  string `json:"field,omitempty"`
 	Metric string `json:"metric,omitempty"`
 	Value  int    `json:"value,omitempty"`
+}
+
+// RecordDetail stores detail about a record
+type RecordDetail struct {
+	ID          string    `json:"id,omitempty"`
+	RowNumber   int       `json:"row,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	IsPerson    string    `json:"isPerson,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Fibers      []string  `json:"fibers"`
+	Sets        []string  `json:"sets"`
 }
