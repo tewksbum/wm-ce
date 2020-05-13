@@ -82,7 +82,7 @@ type NERCache struct {
 	TimeStamp    time.Time    `json:"time"`
 	ApplyCounter int          `json:"counter"`
 	Recompute    bool         `json:"dirty"`
-	Source       string       `json:"source`
+	Source       string       `json:"source"`
 }
 
 // NERrequest request
@@ -96,19 +96,18 @@ type NERrequest struct {
 type NERentry map[string]interface{}
 
 type FileReport struct {
-	ID                 string                  `json:"id,omitempty"`
-	ProcessingBegin    time.Time               `json:"processingBegin,omitempty"`
-	StatusLabel        string                  `json:"statusLabel,omitempty"`
-	StatusBy           string                  `json:"statusBy,omitempty"`
-	StatusTime         time.Time               `json:"statusTime,omitempty"`
-	Errors             []ReportError           `json:"errors"`
-	Warnings           []ReportError           `json:"warnings"`
-	Audits             []ReportError           `json:"audits"`
-	Counters           []ReportCounter         `json:"counters"`
-	InputStatistics    map[string]ColumnStat   `json:"inputStats"`
-	MatchKeyStatistics map[string]MatchKeyStat `json:"matchKeyStats"`
-	Columns            []string                `json:"columns,omitempty"`
-	RecordList         []RecordDetail          `json:"recordList,omitempty"`
+	ID              string                `json:"id,omitempty"`
+	ProcessingBegin time.Time             `json:"processingBegin,omitempty"`
+	StatusLabel     string                `json:"statusLabel,omitempty"`
+	StatusBy        string                `json:"statusBy,omitempty"`
+	StatusTime      time.Time             `json:"statusTime,omitempty"`
+	Errors          []ReportError         `json:"errors"`
+	Warnings        []ReportError         `json:"warnings"`
+	Audits          []ReportError         `json:"audits"`
+	Counters        []ReportCounter       `json:"counters"`
+	InputStatistics map[string]ColumnStat `json:"inputStats"`
+	Columns         []string              `json:"columns,omitempty"`
+	RecordList      []RecordDetail        `json:"recordList,omitempty"`
 }
 
 // ReportError stores errors and warnings

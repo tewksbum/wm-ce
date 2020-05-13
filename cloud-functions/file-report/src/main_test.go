@@ -87,7 +87,8 @@ func TestColumnMap1(t *testing.T) {
 		"map": [
 			{"k": "First Name", "v": "FNAME"},
 			{"k": "Last Name", "v": "LNAME"}, 
-			{"k": "Address 1", "v": "AD1"}
+			{"k": "Address 1", "v": "AD1"},
+			{"k": "Address 2", "v": "AD2"}
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
@@ -104,7 +105,8 @@ func TestColumnMap2(t *testing.T) {
 		"map": [
 			{"k": "First Name", "v": "LNAME"},
 			{"k": "Last Name", "v": "FNAME"}, 
-			{"k": "Address 1", "v": "AD1"}
+			{"k": "Address 1", "v": "AD1"},
+			{"k": "Address 1", "v": "AD2"}
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
@@ -126,6 +128,23 @@ func TestColumnStat(t *testing.T) {
 				"max": "Williams",
 				"sparsity": 99
 			}
+		}
+	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
+func TestMatchKeyStats(t *testing.T) {
+	json := `{
+		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
+		"matchKeyStats": {
+			"AD1": 1,
+			"AD2": 1
 		}
 	}`
 	re := regexp.MustCompile(`\r?\n`)
@@ -186,6 +205,17 @@ func TestRecord2(t *testing.T) {
 			}
 		]
 	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
+func TestRecord3(t *testing.T) {
+	json := `{"id":"b34f2060-eb40-4ee8-a8d9-ffb7842fbc73","processingBegin":"0001-01-01T00:00:00Z","statusTime":"0001-01-01T00:00:00Z","errors":null,"warnings":null,"audits":null,"counters":null,"inputStats":null,"matchKeyStats":null,"recordList":[{"id":"2d394ea7-6266-44d1-9c72-5777c3d3bec7","row":3,"createdOn":"2020-05-13T01:09:22.072473942Z","fibers":null,"sets":null}]}`
 	re := regexp.MustCompile(`\r?\n`)
 	var message pubsub.Message
 	message.Data = []byte(re.ReplaceAllString(json, ""))
