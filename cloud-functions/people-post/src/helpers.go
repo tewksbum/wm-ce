@@ -727,23 +727,39 @@ func ParseName(v string) NameParsed {
 		fname := result[1]
 		lname := result[2]
 		suffix := result[3]
-
 		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") || strings.Contains(fname, ",") {
 			parsed1 := reFullName2.FindStringSubmatch(v)
 			if len(parsed1) >= 3 {
 				lname = parsed1[1]
 				fname = parsed1[2]
 				suffix = ""
-
 			} else {
 				parsed2 := reFullName3.FindStringSubmatch(v)
 				if len(parsed2) >= 2 {
 					lname = parsed2[1]
 					fname = parsed2[2]
 					suffix = ""
+				} else {
+					parsed3 := reFullName5.FindStringSubmatch(v)
+					if len(parsed3) >= 2 {
+						lname = parsed3[1]
+						fname = parsed3[2]
+						suffix = ""
+					}
 				}
 			}
 		}
+		return NameParsed{
+			FNAME:  fname,
+			LNAME:  lname,
+			SUFFIX: suffix,
+		}
+	}
+	result = reFullName4.FindStringSubmatch(v)
+	if len(result) >= 2 {
+		lname := result[1]
+		fname := result[2]
+		suffix := ""
 		return NameParsed{
 			FNAME:  fname,
 			LNAME:  lname,

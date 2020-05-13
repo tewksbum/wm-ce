@@ -48,6 +48,8 @@ var reOverseasBaseState = regexp.MustCompile(`(?i)^(AA|AE|AP)$`)
 var reFullName = regexp.MustCompile(`^(.+?) ([^\s,]+)(,? (?:[JS]r\.?|III?|IV))?$`)
 var reFullName2 = regexp.MustCompile(`^(.*), (.*) (.{1})\.$`) // Wilson, Lauren K.
 var reFullName3 = regexp.MustCompile(`^(.*), (.*)$`)          // Wilson, Lauren K.
+var reFullName4 = regexp.MustCompile(`^(.*),(.*)$`)           // Wilson,Lauren
+var reFullName5 = regexp.MustCompile(`^(.*),(.*)( .{1}\.)$`)  //// Wilson,Lauren K.
 var reNameTitle = regexp.MustCompile(`(?i)^(mr|ms|miss|mrs|dr|mr\.|ms\.|dr\.|miss|mrs\.|Mr\.|Ms\.|Mrs\.|MR|MRS|MS)$`)
 
 //To calculate class year and school status
