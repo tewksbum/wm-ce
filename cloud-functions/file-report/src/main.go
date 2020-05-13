@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -164,6 +163,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					Function:  input.StatusBy,
 				},
 			}
+			js, _ := json.Marshal(report)
+			log.Printf("%v", string(js))
 			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
 			if !input.ProcessingBegin.IsZero() {
@@ -331,7 +332,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					}
 					// add sets
 					if len(r.Sets) > 0 {
-						combinedscript += `r.fibers.addAll(params.r.sets); `
+						combinedscript += `r.sets.addAll(params.r.sets); `
 					}
 					if len(combinedscript) > 65 {
 						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
@@ -484,18 +485,8 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
 	}
 
-	var doc FileReport
-	for _, item := range searchResult.Each(reflect.TypeOf(doc)) {
-		if t, ok := item.(FileReport); ok {
-			jsonStr, err := json.Marshal(t)
-			if err != nil {
-				log.Fatalf("Error unable to marshal response  %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -122\"}")
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprint(w, string(jsonStr))
-			}
-		}
+	for _, hit := range searchResult.Hits.Hits {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, string(hit.Source))
 	}
 }
