@@ -26,6 +26,7 @@ type FileReport struct {
 	ColumnMaps         []NameValue           `json:"map,omitempty"`        // this is for input
 	Mapping            []NameMappedCounter   `json:"mapping,omitempty"`    // this is for elastic
 	InputStatistics    map[string]ColumnStat `json:"inputStats,omitempty"` // this is for input, file processor to write this after streaming
+	InputStat          []ColumnStat          `json:"inputStats,omitempty"` // this is for elastic
 	MatchKeyStatistics map[string]int        `json:"matchKeyStats"`        // this is for input
 	MatchKeyCounts     []KeyCounter          `json:"matchKeyCounts"`       // this is for elastic
 	StatusHistory      []ReportStatus        `json:"history"`
