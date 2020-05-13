@@ -168,6 +168,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		fiber.Passthrough = OutputPassthrough
 		fiber.Signature = input.Signature
 
+		log.Printf("fiber id is %v", fiber.ID)
+
 		// fiber in DS
 		dsFiber := GetFiberDS(&fiber)
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.Signature.OwnerID))
@@ -529,6 +531,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+
 		if len(goldenDS.Search) > 0 {
 			for _, search := range goldenDS.Search {
 				if !Contains(SetSearchFields, search) {
@@ -575,6 +578,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Increment: true,
 			},
 		}
+
 		log.Printf("set search: %+v", setDS.Search)
 
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {

@@ -51,6 +51,7 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	FiberType string `json:"fiberType"`
 	RecordID  string `json:"recordId"`
+	FiberID   string `json:"id"`
 }
 
 type EventData struct {
