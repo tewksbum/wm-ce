@@ -49,6 +49,7 @@ var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
+var cpTopic *pubsub.Topic
 
 var topicR *pubsub.Topic
 
@@ -61,6 +62,7 @@ func init() {
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
+	cpTopic = ps.Topic(os.Getenv("PSCPFILE"))
 	// delay the clean up by 1 min
 	cleanup.PublishSettings.DelayThreshold = 60 * time.Second
 	msp = &redis.Pool{
@@ -77,10 +79,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-
+	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
 	if value, ok := m.Attributes["source"]; ok {
-		if value == "post" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
+		if value == "post" || value == "test" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
 			inputIsFromPost = true
 		}
 	}
@@ -161,10 +163,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		OutputPassthrough := ConvertPassthrough(input.Passthrough)
 		var fiber PeopleFiber
 		fiber.CreatedAt = time.Now()
-		fiber.ID = uuid.New().String()
+		fiber.ID = input.Signature.FiberID
 		fiber.MatchKeys = input.MatchKeys
 		fiber.Passthrough = OutputPassthrough
 		fiber.Signature = input.Signature
+
+		log.Printf("fiber id is %v", fiber.ID)
 
 		// fiber in DS
 		dsFiber := GetFiberDS(&fiber)
@@ -194,6 +198,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var FiberSignatures []Signature
 		var FiberSearchFields []string
 		output.ID = uuid.New().String()
+		output.Signatures = []Signature{}
 		MatchKeyList := structs.Names(&PeopleOutput{})
 		FiberMatchKeys := make(map[string][]string)
 		// collect all fiber match key values
@@ -383,6 +388,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 			},
+			FiberList: []FiberDetail{
+				FiberDetail{
+					ID:          input.Signature.FiberID,
+					Disposition: dsFiber.Disposition,
+				},
+			},
 		}
 		publishReport(&report, cfName)
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
@@ -520,6 +531,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+
 		if len(goldenDS.Search) > 0 {
 			for _, search := range goldenDS.Search {
 				if !Contains(SetSearchFields, search) {
@@ -536,6 +548,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		setDS.Search = SetSearchFields
+		setList := []SetDetail{
+			SetDetail{
+				ID:         output.ID,
+				CreatedOn:  time.Now(),
+				FiberCount: len(setDS.Fibers),
+			},
+		}
+		fiberList := []FiberDetail{
+			FiberDetail{
+				ID: fiber.ID,
+				Sets: []string{
+					output.ID,
+				},
+			},
+		}
+
 		reportCounters := []ReportCounter{
 			ReportCounter{
 				Type:      "Golden",
@@ -550,6 +578,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Increment: true,
 			},
 		}
+
 		log.Printf("set search: %+v", setDS.Search)
 
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
@@ -569,6 +598,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 				goldenKey.Namespace = dsNameSpace
 				GoldenKeys = append(GoldenKeys, goldenKey)
+				setList = append(setList, SetDetail{
+					ID:         set,
+					IsDeleted:  true,
+					DeletedOn:  time.Now(),
+					ReplacedBy: output.ID,
+				})
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -691,8 +726,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		{
 			report := FileReport{
-				ID:       input.Signature.EventID,
-				Counters: reportCounters,
+				ID:        input.Signature.EventID,
+				Counters:  reportCounters,
+				SetList:   setList,
+				FiberList: fiberList,
 			}
 			publishReport(&report, cfName)
 		}
@@ -722,6 +759,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				"source": "360",
 			},
 		})
+
+		//Send to cp-file for eventType == "Form Submission"
+		if input.Signature.EventType == "Form Submission" {
+			outputCP := FileReady{
+				EventID: input.Signature.EventID,
+				OwnerID: input.Signature.OwnerID,
+			}
+			outputCPJSON, _ := json.Marshal(outputCP)
+			cpresult := cpTopic.Publish(ctx, &pubsub.Message{
+				Data: outputCPJSON,
+			})
+			_, err = cpresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+			}
+		}
 	}
 
 	return nil

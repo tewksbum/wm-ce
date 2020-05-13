@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -74,22 +73,28 @@ func init() {
 	}
 
 	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
-	sub.ReceiveSettings.Synchronous = true
-	sub.ReceiveSettings.MaxOutstandingMessages = 20000
+	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
+	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
+	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
 }
 
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		msg.Ack()
 		mutex.Lock()
 		ProcessUpdate(ctx, msg)
 		defer mutex.Unlock()
+		msg.Ack()
 	})
 	if err != nil {
 		log.Printf("receive error: %v", err)
 	}
 	return nil
+}
+
+// main for go
+func main() {
+	PullMessages(ctx, psMessage{})
 }
 
 // ProcessUpdate processes update from pubsub into elastic
@@ -100,8 +105,12 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 		log.Printf("ERROR unable to unmarshal request %v", err)
 		return nil
 	}
-	bulk := esClient.Bulk()
+	bulk, err := esClient.BulkProcessor().Name("BulkUpdate").Stats(true).Workers(1).Do(ctx)
+	if err != nil {
+		log.Printf("error starting bulk processor %v", err)
+	}
 
+	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
@@ -122,27 +131,30 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			report.Errors = []ReportError{}
 			report.Warnings = []ReportError{}
 			report.Audits = []ReportError{}
-			report.Counts = map[string]interface{}{
-				"record":     map[string]interface{}{},
-				"preprocess": map[string]interface{}{},
-				"peoplepost": map[string]interface{}{},
-				"people360":  map[string]interface{}{},
-				"people720":  map[string]interface{}{},
-				"fiber":      map[string]interface{}{},
-				"set":        map[string]interface{}{},
-				"golden":     map[string]interface{}{},
+			report.Records = []RecordDetail{}
+			report.Fibers = []FiberDetail{}
+			report.Sets = []SetDetail{}
+			report.Counts = []CounterGroup{
+				CounterGroup{Group: "record", Items: []KeyCounter{}},
+				CounterGroup{Group: "preprocess", Items: []KeyCounter{}},
+				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
+				CounterGroup{Group: "people360", Items: []KeyCounter{}},
+				CounterGroup{Group: "people720", Items: []KeyCounter{}},
+				CounterGroup{Group: "fiber", Items: []KeyCounter{}},
+				CounterGroup{Group: "set", Items: []KeyCounter{}},
+				CounterGroup{Group: "golden", Items: []KeyCounter{}},
 			}
-			report.MatchKeyStatistics = map[string]int{
-				"AD1":     0,
-				"AD2":     0,
-				"FNAME":   0,
-				"LNAME":   0,
-				"EMAIL":   0,
-				"PHONE":   0,
-				"CITY":    0,
-				"STATE":   0,
-				"ZIP":     0,
-				"COUNTRY": 0,
+			report.MatchKeyCounts = []KeyCounter{
+				KeyCounter{Key: "AD1", Count: 0},
+				KeyCounter{Key: "AD2", Count: 0},
+				KeyCounter{Key: "FNAME", Count: 0},
+				KeyCounter{Key: "LNAME", Count: 0},
+				KeyCounter{Key: "EMAIL", Count: 0},
+				KeyCounter{Key: "PHONE", Count: 0},
+				KeyCounter{Key: "CITY", Count: 0},
+				KeyCounter{Key: "STATE", Count: 0},
+				KeyCounter{Key: "ZIP", Count: 0},
+				KeyCounter{Key: "COUNTRY", Count: 0},
 			}
 			report.StatusHistory = []ReportStatus{
 				ReportStatus{
@@ -151,6 +163,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 					Function:  input.StatusBy,
 				},
 			}
+			js, _ := json.Marshal(report)
+			log.Printf("%v", string(js))
 			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
 			if !input.ProcessingBegin.IsZero() {
@@ -171,43 +185,79 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			}
 
 			if len(input.Counters) > 0 {
+				exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
 				for _, counter := range input.Counters {
 					script := ""
-					n := strings.ToLower(counter.Name)
+
 					t := strings.ToLower(counter.Type)
-					if counter.Increment {
-						script = `if (ctx._source.counts.` + t + `.containsKey("` + n + `")) { ctx._source.counts.` + t + `["` + n + `"] += params.count} else { ctx._source.counts.` + t + `["` + n + `"] = params.count}`
-					} else {
-						script = `if (ctx._source.counts.` + t + `.containsKey("` + n + `")) { ctx._source.counts.` + t + `["` + n + `"] = params.count} else { ctx._source.counts.` + t + `["` + n + `"] = params.count}`
+					kc := KeyCounter{
+						Key:   strings.ToLower(counter.Name),
+						Count: counter.Count,
 					}
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", counter.Count)))
+
+					if counter.Increment {
+						//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count += params.count.count}}`
+						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count += params.count.count}`
+					} else {
+						//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
+						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)}`
+					}
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", kc)))
 				}
 			}
 
 			if len(input.Columns) > 0 {
-				// let's make a map
-				mapping := map[string]interface{}{}
+				exists := `if (!ctx._source.containsKey("mapping")) {ctx._source["mapping"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+				// let's make a list
 				for _, column := range input.Columns {
-					mapping[column] = map[string]int{}
+					columnMapping := NameMappedCounter{
+						Name:        column,
+						MapCounters: []MapCounter{},
+					}
+					script := `def column = ctx._source.mapping.find(c -> c.name == params.m.name); if (column == null) {ctx._source.mapping.add(params.m)}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)))
 				}
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"mapping": mapping}))
 			}
 
 			if len(input.ColumnMaps) > 0 { // this goes into mapping
+				exists := `if (!ctx._source.containsKey("mapping")) {ctx._source["mapping"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, mapping := range input.ColumnMaps {
-					script := `if (ctx._source.mapping["` + mapping.Name + `"].containsKey("` + mapping.Value + `")) { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] ++} else { ctx._source.mapping["` + mapping.Name + `"]["` + mapping.Value + `"] = 1}`
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script)))
+					columnMapping := NameMappedCounter{
+						Name: mapping.Name,
+						MapCounters: []MapCounter{
+							MapCounter{
+								Name:  mapping.Value,
+								Count: 1,
+							},
+						},
+					}
+					script := `def column = ctx._source.mapping.find(c -> c.name == params.map.name); if (column == null) {ctx._source.mapping.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)))
 				}
 			}
 
 			if len(input.InputStatistics) > 0 {
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": input.InputStatistics}))
+				values := []ColumnStat{}
+				for _, v := range input.InputStatistics {
+					values = append(values, v)
+				}
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": values}))
 			}
 
 			if len(input.MatchKeyStatistics) > 0 {
+				exists := `if (!ctx._source.containsKey("matchKeyCounts")) {ctx._source["matchKeyCounts"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for k, v := range input.MatchKeyStatistics {
-					script := `ctx._source.matchKeyStats["` + k + `"] += params.count`
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", v)))
+					count := KeyCounter{
+						Key:   k,
+						Count: v,
+					}
+					script := `def mk = ctx._source.matchKeyCounts.find(g -> g.key == params.count.key); if (mk == null) {ctx._source.matchKeyCounts.add(params.count);} else {mk.count += params.count.count}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)))
 				}
 			}
 
@@ -225,16 +275,103 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) error {
 			}
 
 			if len(input.Audits) > 0 {
-				for _, e := range input.Warnings {
+				for _, e := range input.Audits {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
+				}
+			}
+
+			if len(input.RecordList) > 0 {
+				for _, r := range input.RecordList {
+					var record RecordDetail
+					record.ID = r.ID
+					record.RowNumber = r.RowNumber
+					record.CreatedOn = r.CreatedOn
+					record.Fibers = []string{}
+					// add record if does not exist
+					script := `def r = ctx._source.records.find(g -> g.id == params.record.id); if (r == null) {ctx._source.records.add(params.record);}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("record", record)))
+
+					combinedscript := "def r = ctx._source.records.find(g -> g.id == params.r.id); "
+					// update isPerson
+					if len(r.IsPerson) > 0 {
+						combinedscript += `r.isPerson = params.r.isPerson; `
+					}
+					//update disposition
+					if len(r.Disposition) > 0 {
+						combinedscript += `r.disposition = params.r.disposition; `
+					}
+					// add fiber
+					if len(r.Fibers) > 0 {
+						combinedscript += `r.fibers.addAll(params.r.fibers); `
+					}
+					if len(combinedscript) > 70 {
+						log.Printf("script: %v", combinedscript)
+						js, _ := json.Marshal(r)
+						log.Printf("record: %v", string(js))
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+					}
+				}
+			}
+
+			if len(input.FiberList) > 0 {
+				for _, r := range input.FiberList {
+					var fiber FiberDetail
+					fiber.ID = r.ID
+					fiber.CreatedOn = r.CreatedOn
+					fiber.Disposition = r.Disposition
+					fiber.Type = r.Type
+					fiber.Sets = []string{}
+					// create the fiber if not already there
+					script := `def r = ctx._source.fibers.find(g -> g.id == params.fiber.id); if (r == null) {ctx._source.fibers.add(params.fiber);}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fiber", fiber)))
+
+					combinedscript := "def r = ctx._source.fibers.find(g -> g.id == params.r.id); "
+					//update disposition
+					if len(r.Disposition) > 0 {
+						combinedscript += `r.disposition = params.r.disposition; `
+					}
+					// add sets
+					if len(r.Sets) > 0 {
+						combinedscript += `r.sets.addAll(params.r.sets); `
+					}
+					if len(combinedscript) > 65 {
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+					}
+				}
+			}
+
+			if len(input.SetList) > 0 {
+				for _, r := range input.SetList {
+					var set SetDetail
+					set.ID = r.ID
+					set.FiberCount = r.FiberCount //this does not change as we do not update set
+					set.CreatedOn = r.CreatedOn
+
+					// create the set if not already there
+					script := `def r = ctx._source.sets.find(g -> g.id == params.set.id); if (r == null) {ctx._source.sets.add(params.set);}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("set", set)))
+
+					combinedscript := "def r = ctx._source.sets.find(g -> g.id == params.r.id); "
+					if r.IsDeleted {
+						combinedscript += `r.isDeleted = params.r.isDeleted; r.deletedOn = params.r.deletedOn; `
+					}
+					if len(r.ReplacedBy) > 0 {
+						combinedscript += `r.replacedBy = params.r.replacedBy; `
+					}
+					if len(combinedscript) > 60 {
+						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+					}
 				}
 			}
 		}
 
 		// run the bulk request
-		_, err := bulk.Do(ctx)
+		err = bulk.Flush()
 		if err != nil {
-			log.Printf("error updating es %v", err)
+			log.Printf("error running bulk update %v", err)
+		} else {
+			stats := bulk.Stats()
+			log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
 		}
 	} else {
 		log.Printf("ERROR source is missing from message attributes %v", err)
@@ -348,18 +485,8 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
 	}
 
-	var doc FileReport
-	for _, item := range searchResult.Each(reflect.TypeOf(doc)) {
-		if t, ok := item.(FileReport); ok {
-			jsonStr, err := json.Marshal(t)
-			if err != nil {
-				log.Fatalf("Error unable to marshal response  %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -122\"}")
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprint(w, string(jsonStr))
-			}
-		}
+	for _, hit := range searchResult.Hits.Hits {
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, string(hit.Source))
 	}
 }

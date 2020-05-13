@@ -21,6 +21,37 @@ type FileReport struct {
 	Errors          []ReportError   `json:"errors"`
 	Warnings        []ReportError   `json:"warnings"`
 	Counters        []ReportCounter `json:"counters"`
+	FiberList       []FiberDetail   `json:"fiberList,omitempty"`
+	SetList         []SetDetail     `json:"setList,omitempty"`
+}
+
+// RecordDetail stores detail about a record
+type RecordDetail struct {
+	ID          string    `json:"id,omitempty"`
+	RowNumber   int       `json:"row,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	IsPerson    string    `json:"isPerson,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Fibers      []string  `json:"fibers"`
+}
+
+// FiberDetail stores detail about a record
+type FiberDetail struct {
+	ID          string    `json:"id,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	Type        string    `json:"type,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Sets        []string  `json:"sets"`
+}
+
+// SetDetail stores detail about a record
+type SetDetail struct {
+	ID         string    `json:"id,omitempty"`
+	FiberCount int       `json:"fiberCount,omitempty"`
+	CreatedOn  time.Time `json:"createdOn,omitempty"`
+	DeletedOn  time.Time `json:"deletedOn,omitempty"`
+	IsDeleted  bool      `json:"isDeleted,omitempty"`
+	ReplacedBy string    `json:"replacedBy,omitempty"`
 }
 
 // ReportError stores errors and warnings
@@ -48,6 +79,7 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	FiberType string `json:"fiberType"`
 	RecordID  string `json:"recordId"`
+	FiberID   string `json:"id"`
 }
 
 type EventData struct {
@@ -334,6 +366,11 @@ type PeopleGoldenDS struct {
 }
 
 type FileComplete struct {
+	EventID string `json:"eventId"`
+	OwnerID string `json:"ownerId"`
+}
+
+type FileReady struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`
 }

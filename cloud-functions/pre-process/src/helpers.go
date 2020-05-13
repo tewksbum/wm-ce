@@ -105,7 +105,7 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.TrimSpace(strings.ToLower(column))
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name":
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname":
 		err.LastName = 1
@@ -113,9 +113,9 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3", "address line3", "home addr3", "street3":
 		err.Address3 = 1
@@ -160,7 +160,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1

@@ -82,7 +82,7 @@ type NERCache struct {
 	TimeStamp    time.Time    `json:"time"`
 	ApplyCounter int          `json:"counter"`
 	Recompute    bool         `json:"dirty"`
-	Source       string       `json:"source`
+	Source       string       `json:"source"`
 }
 
 // NERrequest request
@@ -96,18 +96,18 @@ type NERrequest struct {
 type NERentry map[string]interface{}
 
 type FileReport struct {
-	ID                 string                  `json:"id,omitempty"`
-	ProcessingBegin    time.Time               `json:"processingBegin,omitempty"`
-	StatusLabel        string                  `json:"statusLabel,omitempty"`
-	StatusBy           string                  `json:"statusBy,omitempty"`
-	StatusTime         time.Time               `json:"statusTime,omitempty"`
-	Errors             []ReportError           `json:"errors"`
-	Warnings           []ReportError           `json:"warnings"`
-	Audits             []ReportError           `json:"audits"`
-	Counters           []ReportCounter         `json:"counters"`
-	InputStatistics    map[string]ColumnStat   `json:"inputStats"`
-	MatchKeyStatistics map[string]MatchKeyStat `json:"matchKeyStats"`
-	Columns            []string                `json:"columns,omitempty"`
+	ID              string                `json:"id,omitempty"`
+	ProcessingBegin time.Time             `json:"processingBegin,omitempty"`
+	StatusLabel     string                `json:"statusLabel,omitempty"`
+	StatusBy        string                `json:"statusBy,omitempty"`
+	StatusTime      time.Time             `json:"statusTime,omitempty"`
+	Errors          []ReportError         `json:"errors"`
+	Warnings        []ReportError         `json:"warnings"`
+	Audits          []ReportError         `json:"audits"`
+	Counters        []ReportCounter       `json:"counters"`
+	InputStatistics map[string]ColumnStat `json:"inputStats"`
+	Columns         []string              `json:"columns,omitempty"`
+	RecordList      []RecordDetail        `json:"recordList,omitempty"`
 }
 
 // ReportError stores errors and warnings
@@ -118,6 +118,16 @@ type ReportError struct {
 	Field     string `json:"field,omitempty"`
 	Value     string `json:"value,omitempty"`
 	Message   string `json:"message,omitempty"`
+}
+
+// RecordDetail stores detail about a record
+type RecordDetail struct {
+	ID          string    `json:"id,omitempty"`
+	RowNumber   int       `json:"row,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Fibers      []string  `json:"fibers"`
+	Sets        []string  `json:"sets"`
 }
 
 // ReportCounter stores record, purge, murge
@@ -220,11 +230,11 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 	// get the file
 	if fileURL, ok := input.EventData["fileUrl"]; ok {
+		log.Printf("fetching file %v", fileURL)
 		resp, err := http.Get(fmt.Sprintf("%v", fileURL))
 		if err != nil {
 			input.EventData["message"] = "File cannot be downloaded"
 			input.EventData["status"] = "Error"
-
 			report := FileReport{
 				ID:          input.Signature.EventID,
 				StatusLabel: "error: file cannot be downloaded",
@@ -796,6 +806,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				} else {
 					// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 					recordCount++
+					report := FileReport{
+						ID: input.Signature.EventID,
+						RecordList: []RecordDetail{
+							RecordDetail{
+								ID:        output.Signature.RecordID,
+								RowNumber: output.Signature.RowNumber,
+								CreatedOn: time.Now(),
+							},
+						},
+					}
+					publishReport(&report, cfName)
 				}
 			}
 			report2 := FileReport{
