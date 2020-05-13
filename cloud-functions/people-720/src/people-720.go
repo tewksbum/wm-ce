@@ -143,6 +143,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			EventType: fiber.EventType,
 			FiberType: fiberType,
 			RecordID:  fiber.RecordID,
+			FiberID:   fiber.ID.Name,
 		}
 		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
 		output.MatchKeys = GetPeopleOutputFromFiber(&fiber)

@@ -786,6 +786,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		pubs = append(pubs, output)
 
 		output.Signature.FiberID = uuid.New().String()
+
 		recordFibers = append(recordFibers, output.Signature.FiberID)
 		reportFibers = append(reportFibers, FiberDetail{
 			ID:        output.Signature.FiberID,
