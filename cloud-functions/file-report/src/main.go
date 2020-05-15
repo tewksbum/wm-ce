@@ -207,8 +207,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				}
 			}
 
-			if len(input.Columns) > 0 {
-				exists := `if (!ctx._source.containsKey("mapping")) {ctx._source["mapping"] = [];}`
+			if len(input.Columns) > 0 { // this goes into fields
+				exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				// let's make a list
 				for _, column := range input.Columns {
@@ -216,13 +216,13 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 						Name:        column,
 						MapCounters: []MapCounter{},
 					}
-					script := `def column = ctx._source.mapping.find(c -> c.name == params.m.name); if (column == null) {ctx._source.mapping.add(params.m)}`
+					script := `def column = ctx._source.fields.find(c -> c.name == params.m.name); if (column == null) {ctx._source.fields.add(params.m)}`
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)))
 				}
 			}
 
-			if len(input.ColumnMaps) > 0 { // this goes into mapping
-				exists := `if (!ctx._source.containsKey("mapping")) {ctx._source["mapping"] = [];}`
+			if len(input.ColumnMaps) > 0 { // this goes into fields
+				exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, mapping := range input.ColumnMaps {
 					columnMapping := NameMappedCounter{
@@ -234,17 +234,19 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 							},
 						},
 					}
-					script := `def column = ctx._source.mapping.find(c -> c.name == params.map.name); if (column == null) {ctx._source.mapping.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
+					script := `def column = ctx._source.fields.find(c -> c.name == params.map.name); if (column == null) {ctx._source.fields.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)))
 				}
 			}
 
-			if len(input.InputStatistics) > 0 {
-				values := []ColumnStat{}
+			if len(input.InputStatistics) > 0 { // this maps to fields
+				exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, v := range input.InputStatistics {
-					values = append(values, v)
+					v.Mapped = []MapCounter{}
+					script := `def column = ctx._source.fields.find(c -> c.name == params.stat.name); if (column == null) {ctx._source.fields.add(params.stat)} else { column.min = params.stat.min; column.max = params.stat.max; column.sparsity = params.stat.sparsity;}`
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)))
 				}
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"inputStats": values}))
 			}
 
 			if len(input.MatchKeyStatistics) > 0 {

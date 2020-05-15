@@ -26,7 +26,7 @@ type FileReport struct {
 	ColumnMaps         []NameValue           `json:"map,omitempty"`        // this is for input
 	Mapping            []NameMappedCounter   `json:"mapping,omitempty"`    // this is for elastic
 	InputStatistics    map[string]ColumnStat `json:"inputStats,omitempty"` // this is for input, file processor to write this after streaming
-	InputStat          []ColumnStat          `json:"inputStat,omitempty"`  // this is for elastic
+	ColumnStats        []ColumnStat          `json:"fields,omitempty"`     // this is for elastic
 	MatchKeyStatistics map[string]int        `json:"matchKeyStats"`        // this is for input
 	MatchKeyCounts     []KeyCounter          `json:"matchKeyCounts"`       // this is for elastic
 	StatusHistory      []ReportStatus        `json:"history"`
@@ -75,10 +75,11 @@ type SetDetail struct {
 
 // ColumnStat stores input data statistics
 type ColumnStat struct {
-	Name     string  `json:"name"`
-	Min      string  `json:"min"`
-	Max      string  `json:"max"`
-	Sparsity float32 `json:"sparsity"`
+	Name     string       `json:"name"`
+	Min      string       `json:"min"`
+	Max      string       `json:"max"`
+	Sparsity float32      `json:"sparsity"`
+	Mapped   []MapCounter `json:"mapped"`
 }
 
 // ReportError stores errors and warnings
