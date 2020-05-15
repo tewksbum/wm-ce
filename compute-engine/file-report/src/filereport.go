@@ -1,4 +1,4 @@
-package filereport
+package main
 
 import (
 	"context"
@@ -92,9 +92,8 @@ func PullMessages(ctx context.Context, m psMessage) error {
 	return nil
 }
 
-// main for go
 func main() {
-	PullMessages(ctx, psMessage{})
+	PullMessages(context.Background(), psMessage{Data: []byte("{}")})
 }
 
 // ProcessUpdate processes update from pubsub into elastic, returns bool indicating if the message should be retried
@@ -136,11 +135,14 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			report.Fibers = []FiberDetail{}
 			report.Sets = []SetDetail{}
 			report.Counts = []CounterGroup{
-				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{}},
+				CounterGroup{Group: "record", Items: []KeyCounter{}},
 				CounterGroup{Group: "preprocess", Items: []KeyCounter{}},
 				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
 				CounterGroup{Group: "people360", Items: []KeyCounter{}},
 				CounterGroup{Group: "people720", Items: []KeyCounter{}},
+				CounterGroup{Group: "fiber", Items: []KeyCounter{}},
+				CounterGroup{Group: "set", Items: []KeyCounter{}},
+				CounterGroup{Group: "golden", Items: []KeyCounter{}},
 			}
 			report.MatchKeyCounts = []KeyCounter{
 				KeyCounter{Key: "AD1", Count: 0},

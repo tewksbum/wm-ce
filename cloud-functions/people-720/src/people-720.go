@@ -98,7 +98,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
-				Type:      "Fiber",
+				Type:      "People720",
 				Name:      "Reprocess",
 				Count:     len(reprocessFibers),
 				Increment: true,

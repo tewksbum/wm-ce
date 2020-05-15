@@ -293,116 +293,91 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// update entity flags
 	flags.Event = true // every record = event
 
+	reportCounters := []ReportCounter{}
+	recordList := []RecordDetail{}
+
 	if (columnFlags.PeopleFirstName && columnFlags.PeopleLastName) && (columnFlags.PeopleZip || columnFlags.PeopleAddress || columnFlags.PeopleAddress1) {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:(FName+LName)&&(Zip|Address|Address1)",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:(FName+LName)&&(Zip|Address|Address1)",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 
 		flags.People = true
 	} else if columnFlags.PeopleFirstName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:FName+Address1+City",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:FName+Address1+City",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> FName, Add1, City %v", input.Signature.EventID)
 		}
 	} else if columnFlags.PeopleLastName && columnFlags.PeopleAddress1 && columnFlags.PeopleCity {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:LName+Address1+City",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:LName+Address1+City",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> LastName, Add1, City %v", input.Signature.EventID)
 		}
 	} else if columnFlags.PeopleLastName && columnFlags.PeopleAddress && columnFlags.PeopleZip {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:LName+Address+Zip",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:LName+Address+Zip",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> LastName, Add, Zip %v", input.Signature.EventID)
 		}
 	} else if columnFlags.PeopleFirstName && columnFlags.PeoplePhone {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:FName+Phone",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:FName+Phone",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 	} else if columnFlags.PeopleEmail {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:Email",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:Email",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> Email %v", input.Signature.EventID)
 		}
 	} else if columnFlags.PeopleClientID {
-		report := FileReport{
-			ID: input.Signature.EventID,
-			Counters: []ReportCounter{
-				ReportCounter{
-					Type:      "PreProcess",
-					Name:      "Person:ClientID",
-					Count:     1,
-					Increment: true,
-				},
+		reportCounters = append(reportCounters,
+			ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Person:ClientID",
+				Count:     1,
+				Increment: true,
 			},
-		}
-		publishReport(&report, cfName)
+		)
 		flags.People = true
 		if dev {
 			log.Printf("have a people entity >>> ClientId %v", input.Signature.EventID)
@@ -489,49 +464,65 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		// output.Prediction = prediction
 
 		outputJSON, _ := json.Marshal(output)
-		if flags.People {
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PreProcess",
-						Name:      "IsPerson",
-						Count:     1,
-						Increment: true,
-					},
-				},
-				RecordList: []RecordDetail{
-					RecordDetail{
-						ID:       input.Signature.RecordID,
-						IsPerson: "T",
-					},
-				},
-			}
-			publishReport(&report, cfName)
+		// report
 
+		isInteresting := false
+		if flags.People {
+			reportCounters = append(reportCounters, ReportCounter{
+				Type:      "PreProcess",
+				Name:      "IsPeople",
+				Count:     1,
+				Increment: true,
+			})
+			recordList = append(recordList, RecordDetail{
+				ID:       input.Signature.RecordID,
+				IsPerson: "T",
+			})
+			isInteresting = true
+		} else {
+			reportCounters = append(reportCounters, ReportCounter{
+				Type:      "PreProcess",
+				Name:      "IsNotPeople",
+				Count:     1,
+				Increment: true,
+			})
+			recordList = append(recordList, RecordDetail{
+				ID:       input.Signature.RecordID,
+				IsPerson: "F",
+			})
+		}
+		if flags.Event {
+			reportCounters = append(reportCounters, ReportCounter{
+				Type:      "PreProcess",
+				Name:      "IsEvent",
+				Count:     1,
+				Increment: true,
+			})
+			isInteresting = true
+		}
+		if flags.Order {
+			reportCounters = append(reportCounters, ReportCounter{
+				Type:      "PreProcess",
+				Name:      "IsOrder",
+				Count:     1,
+				Increment: true,
+			})
+			isInteresting = true
+		}
+		if !isInteresting {
+			reportCounters = append(reportCounters, ReportCounter{
+				Type:      "PreProcess",
+				Name:      "Purged",
+				Count:     1,
+				Increment: true,
+			})
+		}
+
+		if flags.People {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
 			IncrRedisValue([]string{input.Signature.EventID, "records-completed"})
 			PubMessage(topicPeople, outputJSON)
 		} else {
-			report := FileReport{
-				ID: input.Signature.EventID,
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "PreProcess",
-						Name:      "IsNotPerson",
-						Count:     1,
-						Increment: true,
-					},
-				},
-				RecordList: []RecordDetail{
-					RecordDetail{
-						ID:       input.Signature.RecordID,
-						IsPerson: "F",
-					},
-				},
-			}
-			publishReport(&report, cfName)
-
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "record"})
 			IncrRedisValue([]string{input.Signature.EventID, "records-deleted"})
 		}
@@ -553,13 +544,21 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 		if flags.OrderDetail {
 			PubMessage(topicOrderDetail, outputJSON)
 		}
+
+		report := FileReport{
+			ID:         input.Signature.EventID,
+			Counters:   reportCounters,
+			RecordList: recordList,
+		}
+		publishReport(&report, cfName)
+
 	} else {
 		report := FileReport{
 			ID: input.Signature.EventID,
 			Counters: []ReportCounter{
 				ReportCounter{
 					Type:      "PreProcess",
-					Name:      "Existing",
+					Name:      "DupeMessage",
 					Count:     1,
 					Increment: true,
 				},

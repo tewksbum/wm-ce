@@ -660,7 +660,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				StatusLabel: "finished parsing",
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
+						Type:      "fileprocessor",
 						Name:      "Columns",
 						Count:     len(headers),
 						Increment: false,
@@ -715,7 +715,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID: input.Signature.EventID,
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
+						Type:      "fileprocessor",
 						Name:      "Raw",
 						Count:     len(records),
 						Increment: false,
@@ -746,8 +746,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "Record",
-								Name:      "Blank",
+								Type:      "fileprocessor",
+								Name:      "Purged",
 								Count:     1,
 								Increment: true,
 							},
@@ -827,7 +827,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				StatusLabel:     "finished streaming",
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
+						Type:      "fileprocessor",
 						Name:      "Total",
 						Count:     recordCount,
 						Increment: false,
