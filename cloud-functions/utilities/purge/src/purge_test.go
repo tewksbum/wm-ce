@@ -502,7 +502,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-atu-rha",
+		"targetSelection": "dev-abi-abim",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",

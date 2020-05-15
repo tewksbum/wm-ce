@@ -764,7 +764,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
-		reportCounters = append(reportCounters, ReportCounter{Type: "Fiber", Name: v.Type, Count: 1, Increment: true})
+		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: v.Type, Count: 1, Increment: true})
 		report := FileReport{
 			ID:                 input.Signature.EventID,
 			Counters:           reportCounters,
