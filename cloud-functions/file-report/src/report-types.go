@@ -17,25 +17,25 @@ type FileReport struct {
 	StatusLabel        string                `json:"statusLabel,omitempty"`
 	StatusBy           string                `json:"statusBy,omitempty"`
 	StatusTime         time.Time             `json:"statusTime,omitempty"`
-	Audits             []ReportError         `json:"audits"`
-	Errors             []ReportError         `json:"errors"`
-	Warnings           []ReportError         `json:"warnings"`
-	Counters           []ReportCounter       `json:"counters,omitempty"`   // this is for input
-	Counts             []CounterGroup        `json:"counts"`               // this is for elastic
-	Columns            []string              `json:"columns,omitempty"`    // this is for input, file processor to write this before streaming
-	ColumnMaps         []NameValue           `json:"map,omitempty"`        // this is for input
-	Mapping            []NameMappedCounter   `json:"mapping,omitempty"`    // this is for elastic
-	InputStatistics    map[string]ColumnStat `json:"inputStats,omitempty"` // this is for input, file processor to write this after streaming
-	ColumnStats        []ColumnStat          `json:"fields,omitempty"`     // this is for elastic
-	MatchKeyStatistics map[string]int        `json:"matchKeyStats"`        // this is for input
-	MatchKeyCounts     []KeyCounter          `json:"matchKeyCounts"`       // this is for elastic
-	StatusHistory      []ReportStatus        `json:"history"`
+	Audits             []ReportError         `json:"audits,omitempty"`
+	Errors             []ReportError         `json:"errors,omitempty"`
+	Warnings           []ReportError         `json:"warnings,omitempty"`
+	Counters           []ReportCounter       `json:"counters,omitempty"`       // this is for input
+	Counts             []CounterGroup        `json:"counts"`                   // this is for elastic
+	Columns            []string              `json:"columns,omitempty"`        // this is for input, file processor to write this before streaming
+	ColumnMaps         []NameValue           `json:"map,omitempty"`            // this is for input
+	Mapping            []NameMappedCounter   `json:"mapping,omitempty"`        // this is for elastic
+	InputStatistics    map[string]ColumnStat `json:"inputStats,omitempty"`     // this is for input, file processor to write this after streaming
+	ColumnStats        []ColumnStat          `json:"fields,omitempty"`         // this is for elastic
+	MatchKeyStatistics map[string]int        `json:"matchKeyStats,omitempty"`  // this is for input
+	MatchKeyCounts     []KeyCounter          `json:"matchKeyCounts,omitempty"` // this is for elastic
+	StatusHistory      []ReportStatus        `json:"history,omitempty"`
 	RecordList         []RecordDetail        `json:"recordList,omitempty"`
 	FiberList          []FiberDetail         `json:"fiberList,omitempty"`
 	SetList            []SetDetail           `json:"setList,omitempty"`
-	Records            []RecordDetail        `json:"records"`
-	Fibers             []FiberDetail         `json:"fibers"`
-	Sets               []SetDetail           `json:"sets"`
+	Records            []RecordDetail        `json:"records,omitempty"`
+	Fibers             []FiberDetail         `json:"fibers,omitempty"`
+	Sets               []SetDetail           `json:"sets,omitempty"`
 }
 
 // CounterGroup counter groups

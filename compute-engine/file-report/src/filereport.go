@@ -129,18 +129,12 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			report.StatusLabel = input.StatusLabel
 			report.StatusBy = input.StatusBy
 			report.StatusTime = input.StatusTime
-			report.Errors = []ReportError{}
-			report.Warnings = []ReportError{}
-			report.Audits = []ReportError{}
-			report.Records = []RecordDetail{}
-			report.Fibers = []FiberDetail{}
-			report.Sets = []SetDetail{}
 			report.Counts = []CounterGroup{
-				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{}},
-				CounterGroup{Group: "preprocess", Items: []KeyCounter{}},
-				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
-				CounterGroup{Group: "people360", Items: []KeyCounter{}},
-				CounterGroup{Group: "people720", Items: []KeyCounter{}},
+				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "Reprocess", Count: 0}}},
 			}
 			report.MatchKeyCounts = []KeyCounter{
 				KeyCounter{Key: "AD1", Count: 0},
@@ -174,6 +168,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 			// append to the status history
 			if len(input.StatusLabel) > 0 {
+				exists := `if (!ctx._source.containsKey("history")) {ctx._source["history"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				newStatus := ReportStatus{
 					Label:     input.StatusLabel,
 					Timestamp: input.StatusTime,
@@ -264,24 +260,33 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 			// apend errors and warnings
 			if len(input.Errors) > 0 {
+				exists := `if (!ctx._source.containsKey("errors")) {ctx._source["errors"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, e := range input.Errors {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
 				}
 			}
 
 			if len(input.Warnings) > 0 {
+				exists := `if (!ctx._source.containsKey("warnings")) {ctx._source["warnings"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, e := range input.Warnings {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
 				}
 			}
 
 			if len(input.Audits) > 0 {
+				exists := `if (!ctx._source.containsKey("audits")) {ctx._source["audits"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 				for _, e := range input.Audits {
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
 				}
 			}
 
 			if len(input.RecordList) > 0 {
+				exists := `if (!ctx._source.containsKey("records")) {ctx._source["records"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
 				for _, r := range input.RecordList {
 					var record RecordDetail
 					record.ID = r.ID
@@ -315,6 +320,9 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if len(input.FiberList) > 0 {
+				exists := `if (!ctx._source.containsKey("fibers")) {ctx._source["fibers"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
 				for _, r := range input.FiberList {
 					var fiber FiberDetail
 					fiber.ID = r.ID
@@ -342,6 +350,9 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if len(input.SetList) > 0 {
+				exists := `if (!ctx._source.containsKey("sets")) {ctx._source["sets"] = [];}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
 				for _, r := range input.SetList {
 					var set SetDetail
 					set.ID = r.ID
@@ -477,22 +488,69 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	// fetch the doc from elastic
-	idQuery := elastic.NewTermQuery("_id", input.EventID)
-	searchResult, err := esClient.Search().
-		Index(os.Getenv("REPORT_ESINDEX")). // search in index "twitter"
-		Query(idQuery).                     // specify the query
-		From(0).Size(1).                    // take documents 0-9
-		Pretty(true).                       // pretty print request and response JSON
-		Do(ctx)                             // execute
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Fatalf("Error fetching from elastic: %v", err)
-		fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
-	}
 
-	for _, hit := range searchResult.Hits.Hits {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, string(hit.Source))
+	// fetch the doc from elastic
+	detail := strings.ToLower(r.URL.Query().Get("detail"))
+	if detail == "1" || detail == "true" { // return complete doc
+		getRequest := esClient.Get().
+			Index(os.Getenv("REPORT_ESINDEX")).
+			Id(input.EventID).
+			Pretty(true)
+		getResult, err := getRequest.Do(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
+			log.Fatalf("Error fetching from elastic: %v", err)
+		}
+		if !getResult.Found {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "{success: false, message: \"Result not found\"}")
+			log.Printf("Not founf: %v", input.EventID)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, getResult.Source)
+		}
+	} else {
+		sourceFilter := elastic.NewFetchSourceContext(true).Include("counts", "id", "requestedAt", "processingBegin", "processingEnd", "customerId", "inputFileName", "statusLabel")
+		getRequest := esClient.Get().
+			Index(os.Getenv("REPORT_ESINDEX")).
+			Id(input.EventID).
+			FetchSourceContext(sourceFilter).
+			Pretty(true)
+
+		getResult, err := getRequest.Do(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
+			log.Fatalf("Error fetching from elastic: %v", err)
+		}
+		if !getResult.Found {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "{success: false, message: \"Result not found\"}")
+			log.Printf("Not found: %v", input.EventID)
+		} else {
+			var report FileReport
+			err = json.Unmarshal([]byte(getResult.Source), &report)
+			if err != nil {
+				log.Printf("Error unmarshaling %v", err)
+			}
+			var cleaned []CounterGroup
+			for _, counter := range report.Counts {
+				newCounter := CounterGroup{
+					Group: counter.Group,
+					Items: []KeyCounter{},
+				}
+				for _, item := range counter.Items {
+					if !strings.Contains(item.Key, ":") {
+						newCounter.Items = append(newCounter.Items, item)
+					}
+				}
+				cleaned = append(cleaned, newCounter)
+			}
+			report.Counts = cleaned
+			js, _ := json.Marshal(report)
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, string(js))
+		}
 	}
 }
