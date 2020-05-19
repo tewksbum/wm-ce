@@ -661,21 +661,21 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	return value
 }
 
-func CalcClassYear(title string, sy string, flag bool) (string, string) {
+func CalcClassYear(title string, sy string, status string, flag bool) (string, string) {
 	LogDev(fmt.Sprintf("calculating classyear and status: %v %v", title, sy))
 	if reGraduationYear.MatchString(title) {
-		return title, CalcClassStatus(title)
+		return title, CalcClassStatus(title, status)
 	} else if reClassYearFY1.MatchString(title) { // FY1617
 		twodigityear, err := strconv.Atoi(title[2:4])
 		if err == nil {
 			title = strconv.Itoa(2000 + twodigityear + 4)
-			return title, CalcClassStatus(title)
+			return title, CalcClassStatus(title, status)
 		}
 	} else if reGraduationYear2.MatchString(title) { // given us a 2 year like "20"
 		twodigityear, err := strconv.Atoi(title)
 		if err == nil {
 			title = strconv.Itoa(2000 + twodigityear)
-			return title, CalcClassStatus(title)
+			return title, CalcClassStatus(title, status)
 		}
 	}
 
@@ -699,15 +699,20 @@ func CalcClassYear(title string, sy string, flag bool) (string, string) {
 
 	//It is only one try
 	if titleYearAttr != "" && flag {
-		return CalcClassYear(titleYearAttr, sy, false)
+		return CalcClassYear(titleYearAttr, sy, status, false)
 	}
 
 	// if we can't fine a class match... then don't return one...
 	return "", ""
 }
 
-func CalcClassStatus(cy string) string {
-	LogDev(fmt.Sprintf("Calculating status classyear: %v", cy))
+func CalcClassStatus(cy string, status string) string {
+	LogDev(fmt.Sprintf("Calculating status classyear: %v status: %v", cy, status))
+	//If we have status attribute we use it.
+	if len(status) > 0 {
+		return status
+	}
+	//If not we calculate it.
 	digityear, err := strconv.Atoi(cy)
 	if err == nil {
 		if digityear < time.Now().Year() {

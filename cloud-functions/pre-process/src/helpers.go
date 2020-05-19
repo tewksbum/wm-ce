@@ -174,6 +174,8 @@ func GetPeopleERR(column string) PeopleERR {
 		// also see contains logic...
 		// lots of thing mashed up here... could we / should we split out SchoolYear & ClassStanding?  From a detection standpoint...
 		err.Title = 1
+	case "status":
+		err.Status = 1
 	case "schoolyear":
 		err.SchoolYear = 1
 	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid", "wmid", "gclid":
@@ -236,7 +238,6 @@ func GetPeopleERR(column string) PeopleERR {
 		// strings.Contains(key, "description") ||
 		err.Junk = 1
 	}
-
 	// these should be looked up on a per owner basis
 	if strings.Contains(key, "class") || strings.Contains(key, "year") || strings.Contains(key, "class year") || strings.Contains(key, "classification description") {
 		// this is REALLY broad, dangerous Contains...

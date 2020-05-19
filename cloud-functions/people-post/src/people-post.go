@@ -98,6 +98,7 @@ var MLLabels map[string]string
 
 var titleYearAttr = ""
 var schoolYearAttr = ""
+var statusAttr = ""
 
 func init() {
 	ctx = context.Background()
@@ -180,6 +181,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
+		} else if column.PeopleERR.Status == 1 && column.IsAttribute {
+			statusAttr = column.Value
 		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
 			// we don't want to overwrite a file supplied TITLE w/ an attribute...
 			if column.IsAttribute && titleValue == "" {
@@ -535,7 +538,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		// if we have a TITLE, lets standardize it.
 		if len(v.Output.TITLE.Value) > 0 {
-			v.Output.TITLE.Value, v.Output.STATUS.Value = CalcClassYear(v.Output.TITLE.Value, schoolYearAttr, true)
+			v.Output.TITLE.Value, v.Output.STATUS.Value = CalcClassYear(v.Output.TITLE.Value, schoolYearAttr, statusAttr, true)
 		}
 
 		// let's populate city state if we have zip
