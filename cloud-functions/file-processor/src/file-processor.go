@@ -573,8 +573,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				if len(h) > 0 && reStartsWithPrefix.MatchString(h) {
 					log.Printf("The header column starts with a prefix: %v", h)
 					result := reStartsWithPrefix.FindStringSubmatch(h)
-					if len(result) >= 2 {
-						h = result[1]
+					if len(result) >= 3 {
+						h = result[2]
 					}
 					log.Printf("The header column starts with a prefix result: %v", h)
 				}
