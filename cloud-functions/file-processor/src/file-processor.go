@@ -169,6 +169,7 @@ var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
 var reStartsWithOrdinalNumber = regexp.MustCompile(`^(?i)(1st|2nd|3rd)`)
+var reStartsWithPrefix = regexp.MustCompile(`^(?i)(person )(.+)$`)
 
 var redisTransientExpiration = 3600 * 24
 
@@ -209,6 +210,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
+	log.Printf("Input %v", string(m.Data))
 
 	RowLimit := 0
 	if row, ok := input.EventData["maxRows"]; ok {
@@ -561,12 +563,22 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headers = allrows[maxColumnRowAt]
 			log.Printf("Header row is %v", headers)
 			records = allrows[maxColumnRowAt+1:]
+
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
 			// b. if the header contains any column that starts with a number
 			headerlessTest2 := false
 			headerlessTest1 := false
 			for _, h := range headers {
+				if len(h) > 0 && reStartsWithPrefix.MatchString(h) {
+					log.Printf("The header column starts with a prefix: %v", h)
+					result := reStartsWithPrefix.FindStringSubmatch(h)
+					if len(result) >= 2 {
+						h = result[1]
+					}
+					log.Printf("The header column starts with a prefix result: %v", h)
+				}
+
 				if len(h) > 0 && reStartsWithNumber.MatchString(h) && !reStartsWithOrdinalNumber.MatchString(h) {
 					log.Printf("The header column starts with a number: %v", h)
 					headerlessTest2 = true
@@ -649,6 +661,13 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				return nil
 			}
+			// for i := range headers {
+			// 	if len(headers[i]) > 0 && reStartsWithPrefix.MatchString(headers[i]) {
+			// 		headers[i] = reStartsWithPrefix.Split(headers[i], 2)[1]
+			// 	}
+			// }
+
+			// log.Printf("headersTEST: %v", headers)
 
 			headers = EnsureColumnsHaveNames(RenameDuplicateColumns(headers))
 
