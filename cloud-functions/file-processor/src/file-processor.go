@@ -169,7 +169,7 @@ var reNewline = regexp.MustCompile(`\r?\n`)
 var reNewline2 = regexp.MustCompile(`_x000d_`)
 var reStartsWithNumber = regexp.MustCompile(`^[0-9]`)
 var reStartsWithOrdinalNumber = regexp.MustCompile(`^(?i)(1st|2nd|3rd)`)
-var reStartsWithPrefix = regexp.MustCompile(`^(?i)(person )(.+)$`)
+var reStartsWithPrefix = regexp.MustCompile(`^(?i)(person |mailing )(.+)$`)
 
 var redisTransientExpiration = 3600 * 24
 
@@ -583,22 +583,24 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			// b. if the header contains any column that starts with a number
 			headerlessTest2 := false
 			headerlessTest1 := false
-			for _, h := range headers {
-				if len(h) > 0 && reStartsWithPrefix.MatchString(h) {
-					log.Printf("The header column starts with a prefix: %v", h)
-					result := reStartsWithPrefix.FindStringSubmatch(h)
+			for i := range headers {
+				//Clean Prefix
+				if len(headers[i]) > 0 && reStartsWithPrefix.MatchString(headers[i]) {
+					log.Printf("The header column starts with a prefix: %v", headers[i])
+					result := reStartsWithPrefix.FindStringSubmatch(headers[i])
 					if len(result) >= 3 {
-						h = result[2]
+						headers[i] = result[2]
 					}
-					log.Printf("The header column starts with a prefix result: %v", h)
+					log.Printf("The header column starts with a prefix result: %v", headers[i])
 				}
 
-				if len(h) > 0 && reStartsWithNumber.MatchString(h) && !reStartsWithOrdinalNumber.MatchString(h) {
-					log.Printf("The header column starts with a number: %v", h)
+				if len(headers[i]) > 0 && reStartsWithNumber.MatchString(headers[i]) && !reStartsWithOrdinalNumber.MatchString(headers[i]) {
+					log.Printf("The header column starts with a number: %v", headers[i])
 					headerlessTest2 = true
 					break
 				}
 			}
+
 			if headerlessTest2 {
 				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
 				report := FileReport{
