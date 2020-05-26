@@ -1,7 +1,6 @@
 package cpfile
 
 import (
-	"fmt"
 	"log"
 	"reflect"
 	"strings"
@@ -79,7 +78,7 @@ func GetKVPValue(v []KVP, key string) string {
 }
 
 func schoolYearFormatter(schoolYear, classStanding string) string {
-	LogDev(fmt.Sprintf("schoolYear: %v classStanding: %v", schoolYear, classStanding))
+	// LogDev(fmt.Sprintf("schoolYear: %v classStanding: %v", schoolYear, classStanding))
 	if classStanding == "Freshman" {
 		return "FY" + schoolYear
 	}
@@ -87,7 +86,7 @@ func schoolYearFormatter(schoolYear, classStanding string) string {
 }
 
 func listTypeFormatter(listType string) string {
-	LogDev(fmt.Sprintf("listType: %v", listType))
+	// LogDev(fmt.Sprintf("listType: %v", listType))
 	if len(listType) > 0 {
 		return listType[0:1]
 	}
@@ -101,7 +100,7 @@ func LogDev(s string) {
 }
 
 func validateRole(role string) string {
-	LogDev(fmt.Sprintf("role: %v", role))
+	// LogDev(fmt.Sprintf("role: %v", role))
 	if role == "" {
 		return "Student"
 	}

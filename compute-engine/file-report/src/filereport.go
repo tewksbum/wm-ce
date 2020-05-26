@@ -73,9 +73,9 @@ func init() {
 	}
 
 	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
-	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
-	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
-	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
+	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
+	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 50MB max messages
+	sub.ReceiveSettings.NumGoroutines = 1                       // run this as single threaded for elastic's sake
 }
 
 // PullMessages pulls messages from a pubsub subscription
@@ -130,11 +130,11 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			report.StatusBy = input.StatusBy
 			report.StatusTime = input.StatusTime
 			report.Counts = []CounterGroup{
-				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
-				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
+				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
 				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
-				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
-				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "Reprocess", Count: 0}}},
+				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
+				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
 			}
 			report.MatchKeyCounts = []KeyCounter{
 				KeyCounter{Key: "AD1", Count: 0},
