@@ -828,7 +828,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				Counters: []ReportCounter{
 					ReportCounter{
 						Type:      "fileprocessor",
-						Name:      "Total",
+						Name:      "Outputted",
 						Count:     recordCount,
 						Increment: false,
 					},
