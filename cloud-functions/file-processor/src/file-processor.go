@@ -564,20 +564,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Header row is %v", headers)
 			records = allrows[maxColumnRowAt+1:]
 
-			//Clean Prefix
-			for i := range headers {
-				if len(headers[i]) > 0 && reStartsWithPrefix.MatchString(headers[i]) {
-					log.Printf("The header column starts with a prefix: %v", headers[i])
-					result := reStartsWithPrefix.FindStringSubmatch(headers[i])
-					if len(result) >= 3 {
-						headers[i] = result[2]
-					}
-					log.Printf("The header column starts with a prefix result: %v", headers[i])
-				}
-			}
-
-			log.Printf("headersTEST: %v", headers)
-
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
 			// b. if the header contains any column that starts with a number
@@ -593,7 +579,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					}
 					log.Printf("The header column starts with a prefix result: %v", headers[i])
 				}
-
 				if len(headers[i]) > 0 && reStartsWithNumber.MatchString(headers[i]) && !reStartsWithOrdinalNumber.MatchString(headers[i]) {
 					log.Printf("The header column starts with a number: %v", headers[i])
 					headerlessTest2 = true
