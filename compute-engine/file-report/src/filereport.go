@@ -132,7 +132,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			report.Counts = []CounterGroup{
 				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
 				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
-				CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
+				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
 				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "Purge", Count: 0}}},
 				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "Reprocess", Count: 0}}},
 			}
