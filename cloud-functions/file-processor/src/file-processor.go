@@ -603,23 +603,23 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				return nil
 			}
+			repeatedValueCount := 0
 			for i, h := range headers {
 				if len(h) > 0 {
 					for y, r := range records {
 						if len(r) > i && h == r[i] {
-							// trying to spit out specific thing that was an issue...
-							headerlessTest1 = true
+							repeatedValueCount++
 							log.Printf("%v file has a repeated value row column value: %v %v %v", input.Signature.EventID, y, i, r[i])
-							break
 						}
-					}
-					if headerlessTest1 {
-						break
 					}
 				}
 			}
+			if repeatedValueCount > 10 {
+				// trying to spit out specific thing that was an issue...
+				headerlessTest1 = true
+			}
 			if headerlessTest1 {
-				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
+				log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
 
 				report := FileReport{
 					ID:          input.Signature.EventID,
