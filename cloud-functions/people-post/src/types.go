@@ -198,6 +198,7 @@ type PeopleERR struct {
 	ZipCode              int `json:"ZipCode"`
 	TrustedID            int `json:"TrustedID"`
 	Title                int `json:"Title"`
+	Status               int `json:"Status"`
 	SchoolYear           int `json:"SchoolYear"`
 	Role                 int `json:"Role"`
 	Dorm                 int `json:"Dorm"`

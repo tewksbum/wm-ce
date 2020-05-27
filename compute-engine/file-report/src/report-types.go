@@ -1,4 +1,4 @@
-package filereport
+package main
 
 import "time"
 

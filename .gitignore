@@ -10,3 +10,4 @@ cloud-functions/utilities/batch-reports/~$detail-report.xlsx
 debug.test
 
 .vscode/settings.json
+compute-engine/file-report/src/main

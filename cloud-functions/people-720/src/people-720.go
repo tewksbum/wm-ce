@@ -55,7 +55,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-
+	log.Printf("Checking sets for event id %v", input.EventID)
 	cleanupKey := []string{input.EventID, "cleanup"}
 	if GetRedisIntValue(cleanupKey) == 1 { // already processed
 		return nil
@@ -78,13 +78,17 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}
 
 	var reprocessFibers []string
-	for _, set := range sets {
+	for index, set := range sets {
+		if (index+1)%1000 == 0 {
+			log.Printf("Processed %v sets", (index + 1))
+		}
 		for _, search := range set.Search {
 			msKey := []string{input.EventID, "cleanup", search}
 			setKeys := GetRedisStringsValue(msKey)
 			if !Contains(setKeys, set.ID.Name) {
 				setKeys = append(setKeys, set.ID.Name)
 				SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
+
 			}
 			if len(setKeys) > 1 {
 				// same search mapped to more than 1 swet
@@ -98,7 +102,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
-				Type:      "Fiber",
+				Type:      "People720",
 				Name:      "Reprocess",
 				Count:     len(reprocessFibers),
 				Increment: true,
@@ -108,6 +112,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	publishReport(&report, cfName)
 	var fiberKeys []*datastore.Key
 	var fibers []PeopleFiberDS
+	log.Printf("Reprocessing %v fibers", len(reprocessFibers))
 	for _, fiber := range reprocessFibers {
 		dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
 		dsFiberGetKey.Namespace = ownerNS
@@ -119,6 +124,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", ownerNS, DSKindFiber, fiberKeys, err)
 		}
 	}
+
+	log.Printf("Fetching %v fibers", len(fibers))
 	var outputFibers []PeopleFiberDS
 	for _, fiber := range fibers {
 		if fiber.EventID == input.EventID {

@@ -1,4 +1,4 @@
-package filereport
+package main
 
 import (
 	"context"
@@ -112,7 +112,7 @@ func init() {
 		log.Printf("error opening db %v", err)
 	}
 
-	insertRecord, err = db.Prepare(`insert into records (id, row, createdOn, isPerson, disposition) values (?,?,?,?,?)`)
+	insertRecord, err = db.Prepare(`insert into records (id, eventId, row, createdOn, isPerson, disposition) values (?,?,?,?,?,?)`)
 	if err != nil {
 		log.Fatalf("Unable to prepare statement %v error %v", "insertRecord", err)
 	}
@@ -120,7 +120,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Unable to prepare statement %v error %v", "insertRecordFiber", err)
 	}
-	insertFiber, err = db.Prepare(`insert into fibers (id, createdOn, type, disposition) values (?,?,?,?)`)
+	insertFiber, err = db.Prepare(`insert into fibers (id, eventId, createdOn, type, disposition) values (?,?,?,?,?)`)
 	if err != nil {
 		log.Fatalf("Unable to prepare statement %v error %v", "insertFiber", err)
 	}
@@ -128,7 +128,7 @@ func init() {
 	if err != nil {
 		log.Fatalf("Unable to prepare statement %v error %v", "insertFiberSet", err)
 	}
-	insertSet, err = db.Prepare(`insert into sets (id, fiberCount, createdOn, isDeleted, replacedBy) values (?,?,?,?,?)`)
+	insertSet, err = db.Prepare(`insert into sets (id, eventId, fiberCount, createdOn, isDeleted, replacedBy) values (?,?,?,?,?,?)`)
 	if err != nil {
 		log.Fatalf("Unable to prepare statement %v error %v", "insertSet", err)
 	}
@@ -183,7 +183,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		return true
 	}
 
-	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	if source, ok := m.Attributes["source"]; ok {
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
@@ -357,10 +356,13 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 			if len(input.RecordList) > 0 {
 				for _, r := range input.RecordList {
-					_, err = insertRecord.Exec(r.ID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
-					if err != nil {
-						log.Printf("Error running insertRecord: %v", err)
+					if !r.CreatedOn.IsZero() {
+						_, err = insertRecord.Exec(r.ID, input.ID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
+						if err != nil {
+							log.Printf("Error running insertRecord: %v", err)
+						}
 					}
+
 					if len(r.IsPerson) > 0 {
 						_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
 						if err != nil {
@@ -422,9 +424,11 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 			if len(input.FiberList) > 0 {
 				for _, r := range input.FiberList {
-					_, err = insertFiber.Exec(r.ID, r.CreatedOn, r.Type, r.Disposition)
-					if err != nil {
-						log.Printf("Error running insertFiber: %v", err)
+					if !r.CreatedOn.IsZero() {
+						_, err = insertFiber.Exec(r.ID, input.ID, r.CreatedOn, r.Type, r.Disposition)
+						if err != nil {
+							log.Printf("Error running insertFiber: %v", err)
+						}
 					}
 
 					if len(r.Disposition) > 0 {
@@ -475,10 +479,11 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 			if len(input.SetList) > 0 {
 				for _, r := range input.SetList {
-					//id, fiberCount, createdOn, isDeleted, replacedBy
-					_, err = insertSet.Exec(r.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
-					if err != nil {
-						log.Printf("Error running insertSet: %v", err)
+					if !r.CreatedOn.IsZero() {
+						_, err = insertSet.Exec(r.ID, input.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
+						if err != nil {
+							log.Printf("Error running insertSet: %v", err)
+						}
 					}
 
 					if len(r.ReplacedBy) > 0 {
@@ -524,8 +529,16 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		}
 
 		stats := bulk.Stats()
-		log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
-		if stats.Succeeded == 0 && stats.Failed > 0 { // ???
+		// log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
+		if stats.Failed > 0 {
+			log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
+			log.Printf("%v", string(m.Data))
+		} else {
+			log.Println("-")
+		}
+
+		if stats.Succeeded == 0 && stats.Failed > 0 {
+
 			return true
 		}
 
@@ -635,16 +648,16 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 			Index(os.Getenv("REPORT_ESINDEX")).
 			Id(input.EventID).
 			Pretty(false)
-		getResult, _ := getRequest.Do(ctx)
-		// if err != nil {
-		// 	w.WriteHeader(http.StatusInternalServerError)
-		// 	fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
-		// 	log.Fatalf("Error fetching from elastic: %v", err)
-		// }
+		getResult, err := getRequest.Do(ctx)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
+			log.Fatalf("Error fetching from elastic: %v", err)
+		}
 		if !getResult.Found {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "{success: false, message: \"Not found\"}")
-			log.Printf("Not found: %v", input.EventID)
+			fmt.Fprint(w, "{success: false, message: \"Result not found\"}")
+			log.Printf("Not founf: %v", input.EventID)
 		} else {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(getResult.Source))

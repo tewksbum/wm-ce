@@ -209,6 +209,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
+	log.Printf("Input %v", string(m.Data))
 
 	RowLimit := 0
 	if row, ok := input.EventData["maxRows"]; ok {
@@ -561,6 +562,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			headers = allrows[maxColumnRowAt]
 			log.Printf("Header row is %v", headers)
 			records = allrows[maxColumnRowAt+1:]
+
 			// attempt to detect if file has no header
 			// a. if the header has any column that contains same value that is not blank as the rest of the rows
 			// b. if the header contains any column that starts with a number
@@ -573,6 +575,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					break
 				}
 			}
+
 			if headerlessTest2 {
 				log.Printf("%v is headerless (header column starts with a number), stop processing", input.Signature.EventID)
 				report := FileReport{
@@ -603,23 +606,23 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				return nil
 			}
+			repeatedValueCount := 0
 			for i, h := range headers {
 				if len(h) > 0 {
 					for y, r := range records {
 						if len(r) > i && h == r[i] {
-							// trying to spit out specific thing that was an issue...
-							headerlessTest1 = true
+							repeatedValueCount++
 							log.Printf("%v file has a repeated value row column value: %v %v %v", input.Signature.EventID, y, i, r[i])
-							break
 						}
-					}
-					if headerlessTest1 {
-						break
 					}
 				}
 			}
+			if repeatedValueCount > 10 {
+				// trying to spit out specific thing that was an issue...
+				headerlessTest1 = true
+			}
 			if headerlessTest1 {
-				log.Printf("%v is headerless (header row value is repeated in records), stop processing", input.Signature.EventID)
+				log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
 
 				report := FileReport{
 					ID:          input.Signature.EventID,
@@ -649,7 +652,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 				return nil
 			}
-
 			headers = EnsureColumnsHaveNames(RenameDuplicateColumns(headers))
 
 			report0 := FileReport{
@@ -660,7 +662,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				StatusLabel: "finished parsing",
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
+						Type:      "fileprocessor",
 						Name:      "Columns",
 						Count:     len(headers),
 						Increment: false,
@@ -715,7 +717,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				ID: input.Signature.EventID,
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
+						Type:      "fileprocessor",
 						Name:      "Raw",
 						Count:     len(records),
 						Increment: false,
@@ -746,8 +748,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "Record",
-								Name:      "Blank",
+								Type:      "fileprocessor",
+								Name:      "Purged",
 								Count:     1,
 								Increment: true,
 							},
@@ -827,8 +829,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				StatusLabel:     "finished streaming",
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "Record",
-						Name:      "Total",
+						Type:      "fileprocessor",
+						Name:      "Outputted",
 						Count:     recordCount,
 						Increment: false,
 					},

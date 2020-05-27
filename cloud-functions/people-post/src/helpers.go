@@ -661,21 +661,21 @@ func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	return value
 }
 
-func CalcClassYear(title string, sy string, flag bool) (string, string) {
+func CalcClassYear(title string, sy string, status string, flag bool) (string, string) {
 	LogDev(fmt.Sprintf("calculating classyear and status: %v %v", title, sy))
 	if reGraduationYear.MatchString(title) {
-		return title, CalcClassStatus(title)
+		return title, CalcClassStatus(title, status)
 	} else if reClassYearFY1.MatchString(title) { // FY1617
 		twodigityear, err := strconv.Atoi(title[2:4])
 		if err == nil {
 			title = strconv.Itoa(2000 + twodigityear + 4)
-			return title, CalcClassStatus(title)
+			return title, CalcClassStatus(title, status)
 		}
 	} else if reGraduationYear2.MatchString(title) { // given us a 2 year like "20"
 		twodigityear, err := strconv.Atoi(title)
 		if err == nil {
 			title = strconv.Itoa(2000 + twodigityear)
-			return title, CalcClassStatus(title)
+			return title, CalcClassStatus(title, status)
 		}
 	}
 
@@ -699,15 +699,20 @@ func CalcClassYear(title string, sy string, flag bool) (string, string) {
 
 	//It is only one try
 	if titleYearAttr != "" && flag {
-		return CalcClassYear(titleYearAttr, sy, false)
+		return CalcClassYear(titleYearAttr, sy, status, false)
 	}
 
 	// if we can't fine a class match... then don't return one...
 	return "", ""
 }
 
-func CalcClassStatus(cy string) string {
-	LogDev(fmt.Sprintf("Calculating status classyear: %v", cy))
+func CalcClassStatus(cy string, status string) string {
+	LogDev(fmt.Sprintf("Calculating status classyear: %v status: %v", cy, status))
+	//If we have status attribute we use it.
+	if len(status) > 0 {
+		return status
+	}
+	//If not we calculate it.
 	digityear, err := strconv.Atoi(cy)
 	if err == nil {
 		if digityear < time.Now().Year() {
@@ -727,23 +732,39 @@ func ParseName(v string) NameParsed {
 		fname := result[1]
 		lname := result[2]
 		suffix := result[3]
-
 		if strings.HasSuffix(fname, ",") || strings.HasSuffix(lname, ".") || strings.Contains(fname, ",") {
 			parsed1 := reFullName2.FindStringSubmatch(v)
 			if len(parsed1) >= 3 {
 				lname = parsed1[1]
 				fname = parsed1[2]
 				suffix = ""
-
 			} else {
 				parsed2 := reFullName3.FindStringSubmatch(v)
 				if len(parsed2) >= 2 {
 					lname = parsed2[1]
 					fname = parsed2[2]
 					suffix = ""
+				} else {
+					parsed3 := reFullName5.FindStringSubmatch(v)
+					if len(parsed3) >= 2 {
+						lname = parsed3[1]
+						fname = parsed3[2]
+						suffix = ""
+					}
 				}
 			}
 		}
+		return NameParsed{
+			FNAME:  fname,
+			LNAME:  lname,
+			SUFFIX: suffix,
+		}
+	}
+	result = reFullName4.FindStringSubmatch(v)
+	if len(result) >= 2 {
+		lname := result[1]
+		fname := result[2]
+		suffix := ""
 		return NameParsed{
 			FNAME:  fname,
 			LNAME:  lname,
