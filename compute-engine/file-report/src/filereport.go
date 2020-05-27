@@ -283,7 +283,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				}
 			}
 
-			if len(input.RecordList) > 0 {
+			if len(input.RecordList) > 0 && false {
 				exists := `if (!ctx._source.containsKey("records")) {ctx._source["records"] = [];}`
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 
@@ -319,7 +319,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				}
 			}
 
-			if len(input.FiberList) > 0 {
+			if len(input.FiberList) > 0 && false {
 				exists := `if (!ctx._source.containsKey("fibers")) {ctx._source["fibers"] = [];}`
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 
@@ -349,7 +349,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				}
 			}
 
-			if len(input.SetList) > 0 {
+			if len(input.SetList) > 0 && false {
 				exists := `if (!ctx._source.containsKey("sets")) {ctx._source["sets"] = [];}`
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
 
