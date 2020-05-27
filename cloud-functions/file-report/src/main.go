@@ -2,6 +2,7 @@ package filereport
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -16,20 +17,44 @@ import (
 
 	"github.com/olivere/elastic/v7"
 
+	// cloud sql
+	_ "github.com/go-sql-driver/mysql"
+
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
 )
 
-var test FileReport
-var ctx context.Context
-var esClient *elastic.Client
-var dsClient *datastore.Client
-var fsClient *datastore.Client
-var smClient *secretmanager.Client
-var esSecret elasticSecret
-var ps *pubsub.Client
-var sub *pubsub.Subscription
-var mutex sync.Mutex
+var (
+	test FileReport
+
+	ctx context.Context
+
+	esClient *elastic.Client
+
+	dsClient *datastore.Client
+	fsClient *datastore.Client
+
+	smClient *secretmanager.Client
+
+	esSecret elasticSecret
+
+	ps  *pubsub.Client
+	sub *pubsub.Subscription
+
+	mutex sync.Mutex
+
+	db *sql.DB
+
+	insertRecord            *sql.Stmt
+	insertRecordFiber       *sql.Stmt
+	insertFiber             *sql.Stmt
+	insertFiberSet          *sql.Stmt
+	insertSet               *sql.Stmt
+	updateRecordPerson      *sql.Stmt
+	updateRecordDisposition *sql.Stmt
+	updateFiberDisposition  *sql.Stmt
+	updateSetDeleted        *sql.Stmt
+)
 
 var projectID = os.Getenv("GCP_PROJECT")
 
@@ -76,6 +101,53 @@ func init() {
 	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
 	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
 	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
+
+	dsn := fmt.Sprintf("pipeline@unix(/cloudsql/%v)/pipeline?tls=false&autocommit=true&parseTime=true", os.Getenv("MYSQL_INSTANCE"))
+	if os.Getenv("VENDOR") == "apple" { // detect local
+		dsn = fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_TESTING"))
+	}
+
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		log.Printf("error opening db %v", err)
+	}
+
+	insertRecord, err = db.Prepare(`insert into records (id, row, createdOn, isPerson, disposition) values (?,?,?,?,?)`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "insertRecord", err)
+	}
+	insertRecordFiber, err = db.Prepare(`insert into record_fibers (record_id, fiber_id) values (?,?)`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "insertRecordFiber", err)
+	}
+	insertFiber, err = db.Prepare(`insert into fibers (id, createdOn, type, disposition) values (?,?,?,?)`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "insertFiber", err)
+	}
+	insertFiberSet, err = db.Prepare(`insert into fiber_sets (fiber_id, set_id) values (?,?)`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "insertFiberSet", err)
+	}
+	insertSet, err = db.Prepare(`insert into sets (id, fiberCount, createdOn, isDeleted, replacedBy) values (?,?,?,?,?)`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "insertSet", err)
+	}
+	updateRecordPerson, err = db.Prepare(`update records set isPerson = ? where id = ?`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "updateRecordPerson", err)
+	}
+	updateRecordDisposition, err = db.Prepare(`update records set disposition = ? where id = ?`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "updateRecordDisposition", err)
+	}
+	updateFiberDisposition, err = db.Prepare(`update fibers set disposition = ? where id = ?`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "updateFiberDisposition", err)
+	}
+	updateSetDeleted, err = db.Prepare(`update sets set isDeleted = ?, deletedOn = ?, replacedBy = ? where id = ?`)
+	if err != nil {
+		log.Fatalf("Unable to prepare statement %v error %v", "updateSetDeleted", err)
+	}
 }
 
 // PullMessages pulls messages from a pubsub subscription
@@ -284,96 +356,163 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if len(input.RecordList) > 0 {
-				exists := `if (!ctx._source.containsKey("records")) {ctx._source["records"] = [];}`
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
-
 				for _, r := range input.RecordList {
-					var record RecordDetail
-					record.ID = r.ID
-					record.RowNumber = r.RowNumber
-					record.CreatedOn = r.CreatedOn
-					record.Fibers = []string{}
-					// add record if does not exist
-					script := `def r = ctx._source.records.find(g -> g.id == params.record.id); if (r == null) {ctx._source.records.add(params.record);}`
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("record", record)))
-
-					combinedscript := "def r = ctx._source.records.find(g -> g.id == params.r.id); "
-					// update isPerson
+					_, err = insertRecord.Exec(r.ID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
+					if err != nil {
+						log.Printf("Error running insertRecord: %v", err)
+					}
 					if len(r.IsPerson) > 0 {
-						combinedscript += `r.isPerson = params.r.isPerson; `
+						_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
+						if err != nil {
+							log.Printf("Error running updateRecordPerson: %v", err)
+						}
 					}
 					//update disposition
 					if len(r.Disposition) > 0 {
-						combinedscript += `r.disposition = params.r.disposition; `
+						_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
+						if err != nil {
+							log.Printf("Error running updateRecordDisposition: %v", err)
+						}
 					}
 					// add fiber
 					if len(r.Fibers) > 0 {
-						combinedscript += `r.fibers.addAll(params.r.fibers); `
-					}
-					if len(combinedscript) > 70 {
-						log.Printf("script: %v", combinedscript)
-						js, _ := json.Marshal(r)
-						log.Printf("record: %v", string(js))
-						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+						for _, fiber := range r.Fibers {
+							_, err = insertRecordFiber.Exec(r.ID, fiber)
+							if err != nil {
+								log.Printf("Error running insertRecordFiber: %v", err)
+							}
+						}
 					}
 				}
+
+				// exists := `if (!ctx._source.containsKey("records")) {ctx._source["records"] = [];}`
+				// bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
+				// for _, r := range input.RecordList {
+				// 	var record RecordDetail
+				// 	record.ID = r.ID
+				// 	record.RowNumber = r.RowNumber
+				// 	record.CreatedOn = r.CreatedOn
+				// 	record.Fibers = []string{}
+				// 	// add record if does not exist
+				// 	script := `def r = ctx._source.records.find(g -> g.id == params.record.id); if (r == null) {ctx._source.records.add(params.record);}`
+				// 	bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("record", record)))
+
+				// 	combinedscript := "def r = ctx._source.records.find(g -> g.id == params.r.id); "
+				// 	// update isPerson
+				// 	if len(r.IsPerson) > 0 {
+				// 		combinedscript += `r.isPerson = params.r.isPerson; `
+				// 	}
+				// 	//update disposition
+				// 	if len(r.Disposition) > 0 {
+				// 		combinedscript += `r.disposition = params.r.disposition; `
+				// 	}
+				// 	// add fiber
+				// 	if len(r.Fibers) > 0 {
+				// 		combinedscript += `r.fibers.addAll(params.r.fibers); `
+				// 	}
+				// 	if len(combinedscript) > 70 {
+				// 		log.Printf("script: %v", combinedscript)
+				// 		js, _ := json.Marshal(r)
+				// 		log.Printf("record: %v", string(js))
+				// 		bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+				// 	}
+				// }
 			}
 
 			if len(input.FiberList) > 0 {
-				exists := `if (!ctx._source.containsKey("fibers")) {ctx._source["fibers"] = [];}`
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
-
 				for _, r := range input.FiberList {
-					var fiber FiberDetail
-					fiber.ID = r.ID
-					fiber.CreatedOn = r.CreatedOn
-					fiber.Disposition = r.Disposition
-					fiber.Type = r.Type
-					fiber.Sets = []string{}
-					// create the fiber if not already there
-					script := `def r = ctx._source.fibers.find(g -> g.id == params.fiber.id); if (r == null) {ctx._source.fibers.add(params.fiber);}`
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fiber", fiber)))
+					_, err = insertFiber.Exec(r.ID, r.CreatedOn, r.Type, r.Disposition)
+					if err != nil {
+						log.Printf("Error running insertFiber: %v", err)
+					}
 
-					combinedscript := "def r = ctx._source.fibers.find(g -> g.id == params.r.id); "
-					//update disposition
 					if len(r.Disposition) > 0 {
-						combinedscript += `r.disposition = params.r.disposition; `
+						_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
+						if err != nil {
+							log.Printf("Error running updateFiberDisposition: %v", err)
+						}
 					}
-					// add sets
+					// add Sets
 					if len(r.Sets) > 0 {
-						combinedscript += `r.sets.addAll(params.r.sets); `
-					}
-					if len(combinedscript) > 65 {
-						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+						for _, set := range r.Sets {
+							_, err = insertFiberSet.Exec(r.ID, set)
+							if err != nil {
+								log.Printf("Error running insertFiberSet: %v", err)
+							}
+						}
 					}
 				}
+
+				// exists := `if (!ctx._source.containsKey("fibers")) {ctx._source["fibers"] = [];}`
+				// bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
+				// for _, r := range input.FiberList {
+				// 	var fiber FiberDetail
+				// 	fiber.ID = r.ID
+				// 	fiber.CreatedOn = r.CreatedOn
+				// 	fiber.Disposition = r.Disposition
+				// 	fiber.Type = r.Type
+				// 	fiber.Sets = []string{}
+				// 	// create the fiber if not already there
+				// 	script := `def r = ctx._source.fibers.find(g -> g.id == params.fiber.id); if (r == null) {ctx._source.fibers.add(params.fiber);}`
+				// 	bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("fiber", fiber)))
+
+				// 	combinedscript := "def r = ctx._source.fibers.find(g -> g.id == params.r.id); "
+				// 	//update disposition
+				// 	if len(r.Disposition) > 0 {
+				// 		combinedscript += `r.disposition = params.r.disposition; `
+				// 	}
+				// 	// add sets
+				// 	if len(r.Sets) > 0 {
+				// 		combinedscript += `r.sets.addAll(params.r.sets); `
+				// 	}
+				// 	if len(combinedscript) > 65 {
+				// 		bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+				// 	}
+				// }
 			}
 
 			if len(input.SetList) > 0 {
-				exists := `if (!ctx._source.containsKey("sets")) {ctx._source["sets"] = [];}`
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
-
 				for _, r := range input.SetList {
-					var set SetDetail
-					set.ID = r.ID
-					set.FiberCount = r.FiberCount //this does not change as we do not update set
-					set.CreatedOn = r.CreatedOn
-
-					// create the set if not already there
-					script := `def r = ctx._source.sets.find(g -> g.id == params.set.id); if (r == null) {ctx._source.sets.add(params.set);}`
-					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("set", set)))
-
-					combinedscript := "def r = ctx._source.sets.find(g -> g.id == params.r.id); "
-					if r.IsDeleted {
-						combinedscript += `r.isDeleted = params.r.isDeleted; r.deletedOn = params.r.deletedOn; `
+					//id, fiberCount, createdOn, isDeleted, replacedBy
+					_, err = insertSet.Exec(r.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
+					if err != nil {
+						log.Printf("Error running insertSet: %v", err)
 					}
+
 					if len(r.ReplacedBy) > 0 {
-						combinedscript += `r.replacedBy = params.r.replacedBy; `
-					}
-					if len(combinedscript) > 60 {
-						bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+						_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
+						if err != nil {
+							log.Printf("Error running updateSetDeleted: %v", err)
+						}
 					}
 				}
+
+				// exists := `if (!ctx._source.containsKey("sets")) {ctx._source["sets"] = [];}`
+				// bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
+
+				// for _, r := range input.SetList {
+				// 	var set SetDetail
+				// 	set.ID = r.ID
+				// 	set.FiberCount = r.FiberCount //this does not change as we do not update set
+				// 	set.CreatedOn = r.CreatedOn
+
+				// 	// create the set if not already there
+				// 	script := `def r = ctx._source.sets.find(g -> g.id == params.set.id); if (r == null) {ctx._source.sets.add(params.set);}`
+				// 	bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("set", set)))
+
+				// 	combinedscript := "def r = ctx._source.sets.find(g -> g.id == params.r.id); "
+				// 	if r.IsDeleted {
+				// 		combinedscript += `r.isDeleted = params.r.isDeleted; r.deletedOn = params.r.deletedOn; `
+				// 	}
+				// 	if len(r.ReplacedBy) > 0 {
+				// 		combinedscript += `r.replacedBy = params.r.replacedBy; `
+				// 	}
+				// 	if len(combinedscript) > 60 {
+				// 		bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(combinedscript).Param("r", r)))
+				// 	}
+				// }
 			}
 		}
 
@@ -386,7 +525,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 		stats := bulk.Stats()
 		log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
-		if stats.Succeeded == 0 && stats.Failed > 0 {
+		if stats.Succeeded == 0 && stats.Failed > 0 { // ???
 			return true
 		}
 
@@ -496,16 +635,16 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 			Index(os.Getenv("REPORT_ESINDEX")).
 			Id(input.EventID).
 			Pretty(false)
-		getResult, err := getRequest.Do(ctx)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
-			log.Fatalf("Error fetching from elastic: %v", err)
-		}
+		getResult, _ := getRequest.Do(ctx)
+		// if err != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
+		// 	log.Fatalf("Error fetching from elastic: %v", err)
+		// }
 		if !getResult.Found {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "{success: false, message: \"Result not found\"}")
-			log.Printf("Not founf: %v", input.EventID)
+			fmt.Fprint(w, "{success: false, message: \"Not found\"}")
+			log.Printf("Not found: %v", input.EventID)
 		} else {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(getResult.Source))
