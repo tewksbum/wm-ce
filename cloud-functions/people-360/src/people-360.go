@@ -749,7 +749,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				// we'll decrement some counters here
 				if SetRedisKeyIfNotExists([]string{output.ID, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
 					// let's see what we are deleting
-					if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden"}) == 1 { // this is a golden from the event that just got deleted
+					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
 						reportCounters1 = append(reportCounters1,
 							ReportCounter{
 								Type:      "People360",
@@ -758,7 +758,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 								Increment: true,
 							},
 						)
-						if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden", "advalid"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "People360",
@@ -769,7 +769,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							)
 						}
 
-						if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden", "email"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "People360",
