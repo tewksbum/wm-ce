@@ -8,6 +8,5 @@ export REPORT_ESINDEX=wemade-reports-dev
 export REPORT_SUB=wm-file-report-sub-dev
 export MYSQL_INSTANCE=wemade-core:us-central1:pipeline
 export MYSQL_TESTING=35.194.39.63
-export VENDOR=apple
 export GCP_PROJECT=wemade-core
 go run .
