@@ -372,12 +372,12 @@ func SetRedisKeyIfNotExists(keyparts []string) int {
 	ms := msp.Get()
 	defer ms.Close()
 
-	result, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	result, err := redis.Int(ms.Do("SETNX", strings.Join(keyparts, ":"), 1))
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
 	}
 	log.Printf("SetRedisKeyIfNotExists on %v returned %v", strings.Join(keyparts, ":"), result)
-	return result.(int)
+	return result
 }
 
 func IncrRedisValue(keyparts []string) { // no need to update expiration
