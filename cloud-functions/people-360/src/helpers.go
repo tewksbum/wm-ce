@@ -368,14 +368,16 @@ func GetRedisGuidList(keyparts []string) []string {
 	return result
 }
 
-func SetRedisKeyIfNotExists(keyparts []string) {
+func SetRedisKeyIfNotExists(keyparts []string) int {
 	ms := msp.Get()
 	defer ms.Close()
 
-	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	result, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
 	}
+	log.Printf("SetRedisKeyIfNotExists on %v returned %v", strings.Join(keyparts, ":"), result)
+	return result.(int)
 }
 
 func IncrRedisValue(keyparts []string) { // no need to update expiration

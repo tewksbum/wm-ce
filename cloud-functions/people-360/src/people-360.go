@@ -533,6 +533,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Count:     1,
 				Increment: true,
 			},
+			ReportCounter{
+				Type:      "People360",
+				Name:      "Golden:Unique",
+				Count:     1,
+				Increment: true,
+			},
 		)
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
@@ -611,7 +617,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
 
+		// track golden status in redis for future expire lookup
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden"})
 		if goldenDS.ADVALID == "TRUE" {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "advalid"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "People360",
@@ -619,13 +628,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Count:     1,
 					Increment: true,
 				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Unique:IsAdValid",
+					Count:     1,
+					Increment: true,
+				},
 			)
 		}
 		if len(goldenDS.EMAIL) > 0 {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "email"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "People360",
 					Name:      "Golden:Created:HasEmail",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Unique:HasEmail",
 					Count:     1,
 					Increment: true,
 				},
@@ -723,6 +745,42 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					DeletedOn:  time.Now(),
 					ReplacedBy: output.ID,
 				})
+
+				// we'll decrement some counters here
+				if SetRedisKeyIfNotExists([]string{output.ID, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
+					// let's see what we are deleting
+					if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden"}) == 1 { // this is a golden from the event that just got deleted
+						reportCounters1 = append(reportCounters1,
+							ReportCounter{
+								Type:      "People360",
+								Name:      "Golden:Unique",
+								Count:     -1,
+								Increment: true,
+							},
+						)
+						if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden", "advalid"}) == 1 {
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "People360",
+									Name:      "Golden:Unique:IsAdValid",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+
+						if GetRedisIntValue([]string{input.Signature.EventID, output.ID, "golden", "email"}) == 1 {
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "People360",
+									Name:      "Golden:Unique:HasEmail",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+					}
+				}
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -735,6 +793,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+
 		}
 
 		if input.Signature.FiberType == "default" {
