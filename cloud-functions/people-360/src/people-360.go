@@ -100,7 +100,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Source: input.MatchKeys.ZIP.Source,
 			}
 		}
-
 		existingCheck := 0
 
 		// only perform the duplicate detection if it is coming from post, do not do it otherwise, such as from cleanup
@@ -217,18 +216,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:RECORDID", Count: 1, Increment: true})
+			if inputIsFromPost {
+				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:RECORDID", Count: 1, Increment: true})
+			}
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
+				}
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
+				}
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
+				}
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			keypattern := "*"
@@ -353,14 +360,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			output.MatchKeys = MatchKeysFromFiber
 
 		} else {
-			reportCounters1 = append(reportCounters1,
-				ReportCounter{
-					Type:      "People360",
-					Name:      "Unmatchable",
-					Count:     1,
-					Increment: true,
-				},
-			)
+			if inputIsFromPost {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Unmatchable",
+						Count:     1,
+						Increment: true,
+					},
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Unmatchable:" + input.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 
 		log.Printf("FiberSearchFields is %+v", FiberSearchFields)
@@ -378,30 +393,85 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			dsFiber.Disposition = "update"
 		}
+		if inputIsFromPost {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Total",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Disposition:" + dsFiber.Disposition,
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Disposition:" + fiber.Signature.FiberType + ":" + dsFiber.Disposition,
+					Count:     1,
+					Increment: true,
+				},
+			)
 
-		reportCounters1 = append(reportCounters1,
-			ReportCounter{
-				Type:      "People360",
-				Name:      "Disposition:" + dsFiber.Disposition,
-				Count:     1,
-				Increment: true,
-			},
-		)
-
-		if dsFiber.Disposition == "dupe" {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Dupe",
-				Count:     1,
-				Increment: true,
-			})
-		} else if dsFiber.Disposition == "purge" {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Purge",
-				Count:     1,
-				Increment: true,
-			})
+			if dsFiber.Disposition == "dupe" { // these dupes covers both dupes identified in post as well as no new values identified in 360
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Dupe",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Dupe:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "purge" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Purge",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Purge:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "new" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "New",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "New:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "update" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Update",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Update:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 
 		fiberList := []FiberDetail{
@@ -539,6 +609,27 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		log.Printf("golden search: %+v", goldenDS.Search)
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
+		}
+
+		if goldenDS.ADVALID == "TRUE" {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Created:IsAdValid",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		}
+		if len(goldenDS.EMAIL) > 0 {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Created:HasEmail",
+					Count:     1,
+					Increment: true,
+				},
+			)
 		}
 
 		var SetSearchFields []string
