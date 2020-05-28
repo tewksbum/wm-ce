@@ -115,91 +115,129 @@ func GetPeopleERR(column string) PeopleERR {
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	if hasSuffixList(key, []string{"fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name"}) {
 		err.FirstName = 1
-	} else if hasSuffixList(key, []string{"lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname"}) {
+	}
+	if hasSuffixList(key, []string{"lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname"}) {
 		err.LastName = 1
-	} else if hasSuffixList(key, []string{"mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle"}) {
+	}
+	if hasSuffixList(key, []string{"mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle"}) {
 		err.MiddleName = 1
-	} else if hasSuffixList(key, []string{"suffix", "jr., iii, etc.", "sfix", "student_suffix"}) {
+	}
+	if hasSuffixList(key, []string{"suffix", "jr., iii, etc.", "sfix", "student_suffix"}) {
 		err.Suffix = 1
-	} else if hasSuffixList(key, []string{"ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1"}) {
+	}
+	if hasSuffixList(key, []string{"ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1"}) {
 		err.Address1 = 1
-	} else if hasSuffixList(key, []string{"ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2"}) {
+	}
+	if hasSuffixList(key, []string{"ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2"}) {
 		err.Address2 = 1
-	} else if hasSuffixList(key, []string{"ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3", "address line3", "home addr3", "street3"}) {
+	}
+	if hasSuffixList(key, []string{"ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3", "address line3", "home addr3", "street3"}) {
 		err.Address3 = 1
-	} else if hasSuffixList(key, []string{"ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4", "address street line 4", "home addr4"}) {
+	}
+	if hasSuffixList(key, []string{"ad4", "add4", "ad 4", "address 4", "address line 4", "street line 4", "street address 4", "address4", "street_line4", "street 4", "street address line 4", "addr_line_4", "address street line 4", "home addr4"}) {
 		err.Address4 = 1
-	} else if hasSuffixList(key, []string{"mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province"}) {
+	}
+	if hasSuffixList(key, []string{"mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province"}) {
 		err.Address1 = 1
-	} else if hasSuffixList(key, []string{"city", "city ", "street city", "home city", "city_pr", "pa city", "current city", "parent city", "scity", "active city", "home mailing city", "address city"}) {
+	}
+	if hasSuffixList(key, []string{"city", "city ", "street city", "home city", "city_pr", "pa city", "current city", "parent city", "scity", "active city", "home mailing city", "address city"}) {
 		err.City = 1
-	} else if hasSuffixList(key, []string{"state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state", "state code", "region"}) {
+	}
+	if hasSuffixList(key, []string{"state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state", "state code", "region"}) {
 		err.State = 1
-	} else if hasSuffixList(key, []string{"zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip"}) {
+	}
+	if hasSuffixList(key, []string{"zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip"}) {
 		err.ZipCode = 1
-	} else if hasSuffixList(key, []string{"citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz", "citystatezip"}) {
+	}
+	if hasSuffixList(key, []string{"citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz", "citystatezip"}) {
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
-	} else if hasSuffixList(key, []string{"county"}) {
+	}
+	if hasSuffixList(key, []string{"county"}) {
 		err.County = 1
-	} else if hasSuffixList(key, []string{"country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4"}) {
+	}
+	if hasSuffixList(key, []string{"country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4"}) {
 		err.Country = 1
-	} else if hasSuffixList(key, []string{"address", "student address", "parent address", "home address", "permanent address"}) {
+	}
+	if hasSuffixList(key, []string{"address", "student address", "parent address", "home address", "permanent address"}) {
 		err.FullAddress = 1
-	} else if hasSuffixList(key, []string{"email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2"}) {
+	}
+	if hasSuffixList(key, []string{"email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2"}) {
 		err.Email = 1
-	} else if hasSuffixList(key, []string{"par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-Mail address"}) {
+	}
+	if hasSuffixList(key, []string{"par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-Mail address"}) {
 		// err.Email = 1
 		err.ParentEmail = 1
-	} else if hasSuffixList(key, []string{"gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3"}) {
+	}
+	if hasSuffixList(key, []string{"gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3"}) {
 		err.Gender = 1
-	} else if hasSuffixList(key, []string{"pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first"}) {
+	}
+	if hasSuffixList(key, []string{"pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first"}) {
 		err.ParentFirstName = 1
-	} else if hasSuffixList(key, []string{"plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last"}) {
+	}
+	if hasSuffixList(key, []string{"plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last"}) {
 		err.ParentLastName = 1
-	} else if hasSuffixList(key, []string{"phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile"}) {
+	}
+	if hasSuffixList(key, []string{"phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile"}) {
 		err.Phone = 1
-	} else if hasSuffixList(key, []string{"bday", "birthday"}) {
+	}
+	if hasSuffixList(key, []string{"bday", "birthday"}) {
 		err.Birthday = 1
-	} else if hasSuffixList(key, []string{"age"}) {
+	}
+	if hasSuffixList(key, []string{"age"}) {
 		err.Age = 1
-	} else if hasSuffixList(key, []string{"pname", "pname1", "pname2", "pname 1", "pname 2", "purchaser", "guardian", "guardian name", "guardian_name", "parent", "parent name", "parent_name", "parents names"}) {
+	}
+	if hasSuffixList(key, []string{"pname", "pname1", "pname2", "pname 1", "pname 2", "purchaser", "guardian", "guardian name", "guardian_name", "parent", "parent name", "parent_name", "parents names"}) {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	} else if hasSuffixList(key, []string{"fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name"}) {
+	}
+	if hasSuffixList(key, []string{"fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name"}) {
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
-	} else if hasSuffixList(key, []string{"dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence", "hall assignment"}) {
+	}
+	if hasSuffixList(key, []string{"dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence", "hall assignment"}) {
 		err.Dorm = 1
-	} else if hasSuffixList(key, []string{"room", "room number", "room #"}) {
+	}
+	if hasSuffixList(key, []string{"room", "room number", "room #"}) {
 		err.Room = 1
-	} else if hasSuffixList(key, []string{"organization"}) {
+	}
+	if hasSuffixList(key, []string{"organization"}) {
 		err.Organization = 1
-	} else if hasSuffixList(key, []string{"title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl", "class status", "classstanding", "yos", "incoming classification code"}) {
+	}
+	if hasSuffixList(key, []string{"title", "course year", "grad date", "class", "class year", "grade", "admit status", "student status", "student type", "studenttype", "yr_cde", "enrollment class", "classification description", "classification description 6", "student_classificaiton", "classlvl", "class status", "classstanding", "yos", "incoming classification code"}) {
 		// also see contains logic...
 		// lots of thing mashed up here... could we / should we split out SchoolYear & ClassStanding?  From a detection standpoint...
 		err.Title = 1
-	} else if hasSuffixList(key, []string{"status"}) {
+	}
+	if hasSuffixList(key, []string{"status"}) {
 		err.Status = 1
-	} else if hasSuffixList(key, []string{"schoolyear"}) {
+	}
+	if hasSuffixList(key, []string{"schoolyear"}) {
 		err.SchoolYear = 1
-	} else if hasSuffixList(key, []string{"studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid", "wmid", "gclid"}) {
+	}
+	if hasSuffixList(key, []string{"studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid", "wmid", "gclid"}) {
 		err.TrustedID = 1
-	} else if hasSuffixList(key, []string{"role"}) {
+	}
+	if hasSuffixList(key, []string{"role"}) {
 		err.ContainsStudentRole = 1
-	} else if hasSuffixList(key, []string{"parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "anticipated start term year", "contact owner"}) {
+	}
+	if hasSuffixList(key, []string{"parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "anticipated start term year", "contact owner"}) {
 		err.Junk = 1
-	} else if hasSuffixList(key, []string{"level", "room location description 1"}) {
+	}
+	if hasSuffixList(key, []string{"level", "room location description 1"}) {
 		// may want to unjunk the degree level things...
 		err.Junk = 1
-	} else if hasSuffixList(key, []string{"perme", "permission email"}) {
+	}
+	if hasSuffixList(key, []string{"perme", "permission email"}) {
 		err.PermE = 1
-	} else if hasSuffixList(key, []string{"permm", "permission mail"}) {
+	}
+	if hasSuffixList(key, []string{"permm", "permission mail"}) {
 		err.PermM = 1
-	} else if hasSuffixList(key, []string{"perms", "permission share"}) {
+	}
+	if hasSuffixList(key, []string{"perms", "permission share"}) {
 		err.PermS = 1
 	}
 

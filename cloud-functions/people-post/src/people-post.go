@@ -656,46 +656,49 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-		{
-			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
-		}
+		// {
+		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
+		// }
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
-		} else {
-			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Email", Count: 1, Increment: true})
+			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
 		}
+		// else {
+		// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Email", Count: 1, Increment: true})
+		// }
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Phone+FInitial", Count: 1, Increment: true})
-		} else {
-			if len(v.Output.PHONE.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Phone", Count: 1, Increment: true})
-			}
-			if len(v.Output.FINITIAL.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FInitial", Count: 1, Increment: true})
-			}
+			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Phone+FInitial", Count: 1, Increment: true})
 		}
+		// else {
+		// if len(v.Output.PHONE.Value) == 0 {
+		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Phone", Count: 1, Increment: true})
+		// }
+		// if len(v.Output.FINITIAL.Value) == 0 {
+		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FInitial", Count: 1, Increment: true})
+		// }
+		// }
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
-			reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
-		} else {
-			if len(v.Output.CITY.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
-			}
-			if len(v.Output.STATE.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-State", Count: 1, Increment: true})
-			}
-			if len(v.Output.LNAME.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-LName", Count: 1, Increment: true})
-			}
-			if len(v.Output.FNAME.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FName", Count: 1, Increment: true})
-			}
-			if len(v.Output.AD1.Value) == 0 {
-				reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-AD1", Count: 1, Increment: true})
-			}
+			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
 		}
+		// else {
+		// 	if len(v.Output.CITY.Value) == 0 {
+		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
+		// 	}
+		// 	if len(v.Output.STATE.Value) == 0 {
+		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-State", Count: 1, Increment: true})
+		// 	}
+		// 	if len(v.Output.LNAME.Value) == 0 {
+		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-LName", Count: 1, Increment: true})
+		// 	}
+		// 	if len(v.Output.FNAME.Value) == 0 {
+		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FName", Count: 1, Increment: true})
+		// 	}
+		// 	if len(v.Output.AD1.Value) == 0 {
+		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-AD1", Count: 1, Increment: true})
+		// 	}
+		// }
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)

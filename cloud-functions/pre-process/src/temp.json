@@ -1,0 +1,628 @@
+[{
+	"signature": {
+		"ownerId": "wdc-rl",
+		"source": "Admission",
+		"eventId": "17eed4b5-5a77-44dd-b425-a51f872f9560",
+		"eventType": "UPLOAD",
+		"fiberType": "mpr",
+		"recordId": "b1f35005-9def-4155-b4a1-07e49ec2f1c2-^-1"
+	},
+	"passthrough": {
+		"ADCODE": "WDC1R0LQQQ",
+		"inputType": "P",
+		"listType": "Student",
+		"masterProgramCode": "RHL",
+		"orderByDate": "2020-08-14",
+		"salutation": "To The Parent(s) of:",
+		"schoolCode": "WDC",
+		"schoolColor": "#46166b",
+		"schoolName": "Waldorf University",
+		"schoolYear": "2021",
+		"sponsorCode": "wdc-rl"
+	},
+	"matchkeys": {
+		"salutation": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"nickname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"fname": {
+			"value": "Kevin Washington and Shandra",
+			"source": "Parent_1's fullname",
+			"type": ""
+		},
+		"finitial": {
+			"value": "K",
+			"source": "",
+			"type": ""
+		},
+		"mname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"lname": {
+			"value": "Colon",
+			"source": "Parent_1's fullname",
+			"type": ""
+		},
+		"ad1": {
+			"value": "5505 Stonemoss Dr",
+			"source": "Street Address 1",
+			"type": "Residence"
+		},
+		"ad1no": {
+			"value": "5505",
+			"source": "",
+			"type": ""
+		},
+		"ad2": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad3": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"city": {
+			"value": "McKinney",
+			"source": "City",
+			"type": ""
+		},
+		"state": {
+			"value": "TX",
+			"source": "Last Name ",
+			"type": ""
+		},
+		"zip": {
+			"value": "75070-6657",
+			"source": "Zip",
+			"type": ""
+		},
+		"zip5": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"country": {
+			"value": "US",
+			"source": "WM",
+			"type": ""
+		},
+		"mailroute": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"adtype": {
+			"value": "Residential",
+			"source": "Street Address 1",
+			"type": ""
+		},
+		"ziptype": {
+			"value": "Standard",
+			"source": "",
+			"type": ""
+		},
+		"recordtype": {
+			"value": "S",
+			"source": "",
+			"type": ""
+		},
+		"adbook": {
+			"value": "Bill",
+			"source": "Street Address 1",
+			"type": ""
+		},
+		"adparser": {
+			"value": "smartystreet",
+			"source": "SS",
+			"type": ""
+		},
+		"adcorrect": {
+			"value": "TRUE",
+			"source": "",
+			"type": ""
+		},
+		"advalid": {
+			"value": "TRUE",
+			"source": "",
+			"type": ""
+		},
+		"email": {
+			"value": "shandracolon@gmail.com",
+			"source": "Parent_1's Email",
+			"type": "Private"
+		},
+		"phone": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"trustedId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"clientId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"gender": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"age": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"dob": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"organization": {
+			"value": "WDC",
+			"source": "organization",
+			"type": ""
+		},
+		"title": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"role": {
+			"value": "Parent",
+			"source": "WM",
+			"type": ""
+		},
+		"status": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermE": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermM": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermS": {
+			"value": "",
+			"source": "",
+			"type": ""
+		}
+	}
+}, {
+	"signature": {
+		"ownerId": "wdc-rl",
+		"source": "Admission",
+		"eventId": "17eed4b5-5a77-44dd-b425-a51f872f9560",
+		"eventType": "UPLOAD",
+		"fiberType": "default",
+		"recordId": "b1f35005-9def-4155-b4a1-07e49ec2f1c2"
+	},
+	"passthrough": {
+		"ADCODE": "WDC1R0LQQQ",
+		"inputType": "P",
+		"listType": "Student",
+		"masterProgramCode": "RHL",
+		"orderByDate": "2020-08-14",
+		"salutation": "To The Parent(s) of:",
+		"schoolCode": "WDC",
+		"schoolColor": "#46166b",
+		"schoolName": "Waldorf University",
+		"schoolYear": "2021",
+		"sponsorCode": "wdc-rl"
+	},
+	"matchkeys": {
+		"salutation": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"nickname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"fname": {
+			"value": "Adrian",
+			"source": "First Name ",
+			"type": ""
+		},
+		"finitial": {
+			"value": "A",
+			"source": "",
+			"type": ""
+		},
+		"mname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"lname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad1": {
+			"value": "5505 Stonemoss Dr",
+			"source": "Street Address 1",
+			"type": "Residence"
+		},
+		"ad1no": {
+			"value": "5505",
+			"source": "",
+			"type": ""
+		},
+		"ad2": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad3": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"city": {
+			"value": "McKinney",
+			"source": "City",
+			"type": ""
+		},
+		"state": {
+			"value": "TX",
+			"source": "Last Name ",
+			"type": ""
+		},
+		"zip": {
+			"value": "75070-6657",
+			"source": "Zip",
+			"type": ""
+		},
+		"zip5": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"country": {
+			"value": "US",
+			"source": "WM",
+			"type": ""
+		},
+		"mailroute": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"adtype": {
+			"value": "Residential",
+			"source": "Street Address 1",
+			"type": ""
+		},
+		"ziptype": {
+			"value": "Standard",
+			"source": "",
+			"type": ""
+		},
+		"recordtype": {
+			"value": "S",
+			"source": "",
+			"type": ""
+		},
+		"adbook": {
+			"value": "Bill",
+			"source": "Street Address 1",
+			"type": ""
+		},
+		"adparser": {
+			"value": "smartystreet",
+			"source": "SS",
+			"type": ""
+		},
+		"adcorrect": {
+			"value": "TRUE",
+			"source": "",
+			"type": ""
+		},
+		"advalid": {
+			"value": "TRUE",
+			"source": "",
+			"type": ""
+		},
+		"email": {
+			"value": "adrianwash24@gmail.com",
+			"source": "Student email Address ",
+			"type": "Private"
+		},
+		"phone": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"trustedId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"clientId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"gender": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"age": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"dob": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"organization": {
+			"value": "WDC",
+			"source": "organization",
+			"type": ""
+		},
+		"title": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"role": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"status": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermE": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermM": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermS": {
+			"value": "",
+			"source": "",
+			"type": ""
+		}
+	}
+}, {
+	"signature": {
+		"ownerId": "wdc-rl",
+		"source": "Admission",
+		"eventId": "17eed4b5-5a77-44dd-b425-a51f872f9560",
+		"eventType": "UPLOAD",
+		"fiberType": "mar",
+		"recordId": "b1f35005-9def-4155-b4a1-07e49ec2f1c2"
+	},
+	"passthrough": {
+		"ADCODE": "WDC1R0LQQQ",
+		"inputType": "P",
+		"listType": "Student",
+		"masterProgramCode": "RHL",
+		"orderByDate": "2020-08-14",
+		"salutation": "To The Parent(s) of:",
+		"schoolCode": "WDC",
+		"schoolColor": "#46166b",
+		"schoolName": "Waldorf University",
+		"schoolYear": "2021",
+		"sponsorCode": "wdc-rl"
+	},
+	"matchkeys": {
+		"salutation": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"nickname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"fname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"finitial": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"mname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"lname": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad1": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad1no": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad2": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ad3": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"city": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"state": {
+			"value": "TX",
+			"source": "State",
+			"type": ""
+		},
+		"zip": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"zip5": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"country": {
+			"value": "US",
+			"source": "WM",
+			"type": ""
+		},
+		"mailroute": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"adtype": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"ziptype": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"recordtype": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"adbook": {
+			"value": "Bill",
+			"source": "",
+			"type": ""
+		},
+		"adparser": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"adcorrect": {
+			"value": "FALSE",
+			"source": "",
+			"type": ""
+		},
+		"advalid": {
+			"value": "FALSE",
+			"source": "",
+			"type": ""
+		},
+		"email": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"phone": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"trustedId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"clientId": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"gender": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"age": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"dob": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"organization": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"title": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"role": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"status": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermE": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermM": {
+			"value": "",
+			"source": "",
+			"type": ""
+		},
+		"PermS": {
+			"value": "",
+			"source": "",
+			"type": ""
+		}
+	}
+}]

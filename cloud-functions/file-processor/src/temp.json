@@ -1,0 +1,336 @@
+{
+    "id": "489260b6-1efd-48a8-a72d-043f9ea3e62c",
+    "requestedAt": "2020-05-02T13:35:28.210281195Z",
+    "processingBegin": "2020-05-02T13:35:32.156869267Z",
+    "processingEnd": "2020-05-02T13:36:32.681881925Z",
+    "attributes": [
+        {
+            "k": "PermE",
+            "v": "true"
+        },
+        {
+            "k": "PermM",
+            "v": "true"
+        },
+        {
+            "k": "uploadType",
+            "v": "New"
+        },
+        {
+            "k": "listType",
+            "v": "Student"
+        },
+        {
+            "k": "campaignId",
+            "v": "25196"
+        },
+        {
+            "k": "campaignName",
+            "v": "atu-rha-RHL-2021"
+        },
+        {
+            "k": "classStanding"
+        },
+        {
+            "k": "organization",
+            "v": "ATU"
+        },
+        {
+            "k": "PermS",
+            "v": "true"
+        },
+        {
+            "k": "schoolYear",
+            "v": "2021"
+        }
+    ],
+    "passthroughs": [
+        {
+            "k": "listType",
+            "v": "Student"
+        },
+        {
+            "k": "salutation",
+            "v": "To The Parent(s) of:"
+        },
+        {
+            "k": "schoolCode",
+            "v": "ATU"
+        },
+        {
+            "k": "masterProgramCode",
+            "v": "RHL"
+        },
+        {
+            "k": "schoolYear",
+            "v": "2021"
+        },
+        {
+            "k": "sponsorCode",
+            "v": "atu-rha"
+        },
+        {
+            "k": "ADCODE",
+            "v": "ATU1R0LQQQ"
+        },
+        {
+            "k": "inputType",
+            "v": "New"
+        },
+        {
+            "k": "orderByDate",
+            "v": "2020-08-03"
+        },
+        {
+            "k": "schoolName",
+            "v": "Arkansas Tech"
+        }
+    ],
+    "customerId": "atu-rha",
+    "inputFilePath": "https://storage.googleapis.com/ocm_school_raw_files/drop/test/UGA-mar-test-1000.xlsx",
+    "inputFileName": "UGA-mar-test-1000.xlsx",
+    "owner": "atu-rha",
+    "statusLabel": "set verification started",
+    "statusBy": "wm-dev-people-720",
+    "statusTime": "2020-05-02T13:37:33.808416901Z",
+    "audits": [],
+    "errors": [],
+    "warnings": [],
+    "counts": {
+        "fiber": {
+            "completed": 907,
+            "default": 948,
+            "mar": 1412,
+            "reprocess": 0
+        },
+        "golden": {
+            "created": 2097,
+            "expired": 2048
+        },
+        "people360": {
+            "disposition:dupe": 123,
+            "disposition:new": 832,
+            "disposition:update": 1161
+        },
+        "people720": {},
+        "peoplepost": {
+            "people:-ad1": 1424,
+            "people:-city": 1411,
+            "people:-finitial": 1404,
+            "people:-fname": 1421,
+            "people:-lname": 1430,
+            "people:-phone": 2282,
+            "people:-state": 1415,
+            "people:city+state+lname+fname+ad1": 933,
+            "people:email": 2208,
+            "people:recordid": 2094
+        },
+        "preprocess": {
+            "isperson": 857,
+            "person:(fname+lname)&&(zip|address|address1)": 852
+        },
+        "record": {
+            "columns": 14,
+            "raw": 1000,
+            "total": 1000
+        },
+        "set": {
+            "created": 2197,
+            "expired": 2020
+        }
+    },
+    "mapping": {
+        "ADDRESS LINE 1": {
+            "AD1": 901,
+            "ADBOOK": 937,
+            "ADTYPE": 931
+        },
+        "ADDRESS LINE 2": {
+            "AD2": 5
+        },
+        "ADDRESS LINE 3": {},
+        "ADDRESSEE": {},
+        "CITY": {
+            "CITY": 926
+        },
+        "EMAIL ADDRESS": {
+            "EMAIL": 833
+        },
+        "FIRSTNAME": {
+            "FNAME": 855
+        },
+        "KEYNAME": {
+            "LNAME": 887
+        },
+        "POST CODE": {
+            "ZIP": 931
+        },
+        "RELATED EMAIL ADDRESS": {
+            "EMAIL": 660
+        },
+        "RELATED EMAIL ADDRESS_1": {
+            "EMAIL": 592
+        },
+        "Row": {},
+        "STATE": {
+            "STATE": 929
+        },
+        "TITLE": {}
+    },
+    "inputStats": {
+        "ADDRESS LINE 1": {
+            "min": "10 Arden Cv",
+            "max": "The University of Georgia",
+            "sparsity": 1000
+        },
+        "ADDRESS LINE 2": {
+            "min": "110 International Dr",
+            "max": "Milledge Centre",
+            "sparsity": 6
+        },
+        "ADDRESS LINE 3": {
+            "min": "394 S. Milledge Ave",
+            "max": "394 S. Milledge Ave",
+            "sparsity": 1
+        },
+        "ADDRESSEE": {
+            "min": "Dr. Lydia J. Anderson",
+            "max": "O. o. Annual & Special Giving",
+            "sparsity": 1000
+        },
+        "CITY": {
+            "min": "Acworth",
+            "max": "Young Harris",
+            "sparsity": 1000
+        },
+        "EMAIL ADDRESS": {
+            "min": "ABA06135@uga.edu",
+            "max": "zuridrue@uga.edu",
+            "sparsity": 998
+        },
+        "FIRSTNAME": {
+            "min": "Aaron",
+            "max": "Zuri",
+            "sparsity": 1000
+        },
+        "KEYNAME": {
+            "min": "Aamir",
+            "max": "Brennan",
+            "sparsity": 1000
+        },
+        "POST CODE": {
+            "min": "07704-3438",
+            "max": "97070-6801",
+            "sparsity": 1000
+        },
+        "RELATED EMAIL ADDRESS": {
+            "min": "3085@bellsouth.net",
+            "max": "zsopark@mail.ru",
+            "sparsity": 793
+        },
+        "RELATED EMAIL ADDRESS_1": {
+            "min": "123albright@att.net",
+            "max": "zharati21@gmail.com",
+            "sparsity": 739
+        },
+        "Row": {
+            "min": "1",
+            "max": "999",
+            "sparsity": 1000
+        },
+        "STATE": {
+            "min": "AL",
+            "max": "VA",
+            "sparsity": 999
+        },
+        "TITLE": {
+            "min": "Dr.",
+            "max": "Ms.",
+            "sparsity": 999
+        }
+    },
+    "matchKeyStats": {
+        "AD1": 951,
+        "AD2": 168,
+        "CITY": 951,
+        "COUNTRY": 952,
+        "EMAIL": 952,
+        "FNAME": 954,
+        "LNAME": 952,
+        "PHONE": 0,
+        "STATE": 959,
+        "ZIP": 951
+    },
+    "history": [
+        {
+            "label": "request received",
+            "ts": "2020-05-02T13:35:28.399270014Z",
+            "function": "wm-dev-file-api"
+        },
+        {
+            "label": "processing file began",
+            "ts": "2020-05-02T13:35:30.43171178Z",
+            "function": "wm-dev-file-processor"
+        },
+        {
+            "label": "finished parsing",
+            "ts": "2020-05-02T13:35:31.459115472Z",
+            "function": "wm-dev-file-processor"
+        },
+        {
+            "label": "finished name entity recognition",
+            "ts": "2020-05-02T13:35:32.104587338Z",
+            "function": "wm-dev-file-processor"
+        },
+        {
+            "label": "processing records",
+            "ts": "2020-05-02T13:35:32.156869358Z",
+            "function": "wm-dev-file-processor"
+        },
+        {
+            "label": "records progress 70%",
+            "ts": "2020-05-02T13:36:01.461884488Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "records progress 40%",
+            "ts": "2020-05-02T13:35:51.096407465Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "finished streaming",
+            "ts": "2020-05-02T13:35:49.816454195Z",
+            "function": "wm-dev-file-processor"
+        },
+        {
+            "label": "records progress 30%",
+            "ts": "2020-05-02T13:35:50.2579605Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "records progress 90%",
+            "ts": "2020-05-02T13:36:08.088551993Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "records progress 60%",
+            "ts": "2020-05-02T13:35:57.902057097Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "records progress 100%",
+            "ts": "2020-05-02T13:36:32.681880036Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "records progress 80%",
+            "ts": "2020-05-02T13:36:05.061684511Z",
+            "function": "wm-dev-people-360"
+        },
+        {
+            "label": "set verification started",
+            "ts": "2020-05-02T13:37:33.808416901Z",
+            "function": "wm-dev-people-720"
+        }
+    ]
+}
