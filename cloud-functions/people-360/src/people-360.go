@@ -747,7 +747,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				})
 
 				// we'll decrement some counters here
-				if SetRedisKeyIfNotExists([]string{output.ID, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
+				if SetRedisKeyIfNotExists([]string{set, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
 					// let's see what we are deleting
 					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
 						reportCounters1 = append(reportCounters1,
