@@ -270,7 +270,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count += params.count.count}`
 					} else {
 						//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
-						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)}`
+						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count = params.count.count}`
 					}
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", kc)))
 				}

@@ -216,26 +216,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			if inputIsFromPost {
-				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:RECORDID", Count: 1, Increment: true})
-			}
+			// if inputIsFromPost {
+			// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:RECORDID", Count: 1, Increment: true})
+			// }
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			keypattern := "*"
@@ -791,13 +791,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
 
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
 
 		}
 
 		if input.Signature.FiberType == "default" {
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Fiber:Completed", Count: 1, Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Fiber:Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 
