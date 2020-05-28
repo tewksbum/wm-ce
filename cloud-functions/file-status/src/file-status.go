@@ -63,6 +63,7 @@ type KVP struct {
 
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
+var DSProjectID = os.Getenv("DSPROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var NameSpace = os.Getenv("DATASTORENS")
 var MaxRepetition = 12 * 24 // wait for at most 24 hour for a file to finish processing
@@ -73,11 +74,13 @@ var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var ds *datastore.Client
+var fs *datastore.Client
 
 func init() {
 	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
+	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	topic = ps.Topic(PubSubTopic)
 	topic.PublishSettings.DelayThreshold = 5 * time.Minute
 
@@ -123,7 +126,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	}
 
 	query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
-	if _, err := ds.GetAll(ctx, query, &requests); err != nil {
+	if _, err := fs.GetAll(ctx, query, &requests); err != nil {
 		log.Fatalf("Error querying event: %v", err)
 		return nil
 	} else if len(requests) > 0 {
@@ -137,7 +140,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 			KIP{Key: "fibers-completed", Value: FibersCompleted},
 			KIP{Key: "fibers-deleted", Value: FibersDeleted},
 		}
-		if _, err := ds.Put(ctx, request.Key, &request); err != nil {
+		if _, err := fs.Put(ctx, request.Key, &request); err != nil {
 			log.Fatalf("error updating event: %v", err)
 		}
 	}
