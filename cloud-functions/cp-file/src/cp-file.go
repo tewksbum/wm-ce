@@ -41,6 +41,7 @@ var ds *datastore.Client
 var fs *datastore.Client
 var cs *storage.Client
 var sb *storage.BucketHandle
+var sbb *storage.BucketHandle
 var status *pubsub.Topic
 
 // var setSchema bigquery.Schema
@@ -52,6 +53,7 @@ func init() {
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	cs, _ = storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
+	sbb = cs.Bucket(os.Getenv("BADBUCKET"))
 	topic = ps.Topic(PubSubTopic)
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 
@@ -185,6 +187,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 			"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 		records := [][]string{header}
+		advalid := []string{}
 		badAD1 := 0
 		students := 0
 		for _, g := range goldens {
@@ -259,9 +262,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				"",
 				"",
 			}
+			advalid = append(advalid, g.ADVALID)
 			records = append(records, row)
 		}
-
+		suppressFile := false
 		if badAD1 > int(float64(students)*0.1) { // more than 10% of bad record
 			eventData := EventData{
 				Signature: Signature{
@@ -276,8 +280,16 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			_ = status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
 			})
-			log.Printf("ERROR ADVALID threshold reached, will not write output")
-			return nil
+			suppressFile = true
+
+			for r, record := range records {
+				if r == 0 {
+					records[0] = append(record, "ADVALID")
+				} else {
+					records[r] = append(record, advalid[r-1])
+				}
+			}
+			log.Printf("ERROR ADVALID threshold reached, output in bad bucket")
 		}
 
 		log.Printf("Writing %v records into output file", len(records))
@@ -291,6 +303,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		csvBytes := buf.Bytes()
 
 		file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+		if suppressFile {
+			file = sbb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+		}
 		writer := file.NewWriter(ctx)
 		if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
 			log.Printf("File cannot be copied to bucket %v", err)
