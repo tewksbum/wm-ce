@@ -540,6 +540,27 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Increment: true,
 			},
 		)
+
+		if fiber.Signature.FiberType == "mpr" {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "Golden:MPR",
+					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		} else {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "Golden:NonMPR",
+					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		}
+
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
 				Type:      "People360:Audit",
@@ -635,6 +656,25 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 			)
+			if fiber.Signature.FiberType == "mpr" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:MPR",
+						Name:      "IsAdValid",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:NonMPR",
+						Name:      "IsAdValid",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 		if len(goldenDS.EMAIL) > 0 {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "email"})
@@ -652,6 +692,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 			)
+
+			if fiber.Signature.FiberType == "mpr" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:MPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:NonMPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 
 		var SetSearchFields []string
@@ -781,6 +841,78 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 				}
+
+				if fiber.Signature.FiberType == "mpr" {
+					if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+						// let's see what we are deleting
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "Golden:MPR",
+									Name:      "Unique",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:MPR",
+										Name:      "IsAdValid",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:MPR",
+										Name:      "HasEmail",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+						}
+					}
+				} else {
+					if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+						// let's see what we are deleting
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "Golden:NonMPR",
+									Name:      "Unique",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:NonMPR",
+										Name:      "IsAdValid",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:NonMPR",
+										Name:      "HasEmail",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+						}
+					}
+				}
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -854,7 +986,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Signature: input.Signature,
 					EventData: make(map[string]interface{}),
 				}
-				eventData.EventData["status"] = "Finished"
+				eventData.EventData["status"] = "Records Setted"
 				eventData.EventData["message"] = fmt.Sprintf("Processed %v records and %v fibers, purged %v records and %v fibers", recordCompleted, fiberCompleted, recordDeleted, fiberDeleted)
 				eventData.EventData["records-total"] = recordCount
 				eventData.EventData["records-completed"] = recordCompleted
