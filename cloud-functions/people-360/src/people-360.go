@@ -112,7 +112,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "People360",
+								Type:      "People360:Audit",
 								Name:      "DupeMessage",
 								Count:     1,
 								Increment: true,
@@ -131,7 +131,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "People360",
+								Type:      "People360:Audit",
 								Name:      "Retry",
 								Count:     1,
 								Increment: true,
@@ -144,7 +144,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							ID: input.Signature.EventID,
 							Counters: []ReportCounter{
 								ReportCounter{
-									Type:      "People360",
+									Type:      "People360:Audit",
 									Name:      "RetryExceeded",
 									Count:     1,
 									Increment: true,
@@ -369,7 +369,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Increment: true,
 					},
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Unmatchable:" + input.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -402,13 +402,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Disposition:" + dsFiber.Disposition,
 					Count:     1,
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Disposition:" + fiber.Signature.FiberType + ":" + dsFiber.Disposition,
 					Count:     1,
 					Increment: true,
@@ -423,7 +423,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Dupe:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -432,12 +432,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "purge" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Purge",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Purge:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -446,12 +446,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "new" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "New",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "New:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -460,12 +460,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "update" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Update",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Update:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -528,7 +528,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
-				Type:      "People360",
+				Type:      "People360:Audit",
 				Name:      "Golden:Created",
 				Count:     1,
 				Increment: true,
@@ -542,7 +542,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		)
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
-				Type:      "People360",
+				Type:      "People360:Audit",
 				Name:      "Set:Created",
 				Count:     1,
 				Increment: true,
@@ -623,7 +623,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "advalid"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Golden:Created:IsAdValid",
 					Count:     1,
 					Increment: true,
@@ -640,7 +640,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "email"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Golden:Created:HasEmail",
 					Count:     1,
 					Increment: true,
