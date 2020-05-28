@@ -41,6 +41,7 @@ var ds *datastore.Client
 var fs *datastore.Client
 var cs *storage.Client
 var sb *storage.BucketHandle
+var status *pubsub.Topic
 
 // var setSchema bigquery.Schema
 
@@ -52,6 +53,7 @@ func init() {
 	cs, _ = storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
 	topic = ps.Topic(PubSubTopic)
+	status = ps.Topic(os.Getenv("PSSTATUS"))
 
 	response, _ := http.Get("https://wtfismyip.com/text")
 	data, _ := ioutil.ReadAll(response.Body)
@@ -183,6 +185,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 			"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 		records := [][]string{header}
+		badAD1 := 0
+		students := 0
 		for _, g := range goldens {
 			if len(g.EMAIL) > 0 {
 				emails := strings.Split(g.EMAIL, "|")
@@ -212,9 +216,17 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			if g.ROLE == "Parent" {
 				continue
 			}
+
+			students++
+
 			//only students with address
 			if len(g.AD1) == 0 {
+				badAD1++
 				continue
+			}
+
+			if g.ADVALID != "TRUE" {
+				badAD1++
 			}
 
 			row := []string{
@@ -249,6 +261,24 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 			records = append(records, row)
 		}
+
+		if badAD1 > int(float64(students)*0.1) { // more than 10% of bad record
+			eventData := EventData{
+				Signature: Signature{
+					EventID: input.EventID,
+					OwnerID: input.OwnerID,
+				},
+				EventData: make(map[string]interface{}),
+			}
+			eventData.EventData["status"] = "Error"
+			eventData.EventData["message"] = "AdValid threshold exceeded, source file needs to be reviewed"
+			statusJSON, _ := json.Marshal(eventData)
+			_ = status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+			log.Fatalf("ADVALID threshold reached, will not write output")
+		}
+
 		log.Printf("Writing %v records into output file", len(records))
 
 		// store it in bucket
@@ -302,6 +332,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		}
 
 	} else {
+
 		for _, g := range goldens {
 			contactInfo := ContactInfo{
 				Email:       g.EMAIL,
