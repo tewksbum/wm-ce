@@ -276,7 +276,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			_ = status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
 			})
-			log.Fatalf("ADVALID threshold reached, will not write output")
+			log.Printf("ERROR ADVALID threshold reached, will not write output")
+			return nil
 		}
 
 		log.Printf("Writing %v records into output file", len(records))
