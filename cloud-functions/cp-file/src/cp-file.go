@@ -300,6 +300,20 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Failed to close bucket write stream %v", err)
 			return nil
 		}
+
+		eventData := EventData{
+			Signature: Signature{
+				EventID: input.EventID,
+				OwnerID: input.OwnerID,
+			},
+			EventData: make(map[string]interface{}),
+		}
+		eventData.EventData["status"] = "File Generated"
+		eventData.EventData["message"] = "CP file generated successfully " + file.ObjectName()
+		statusJSON, _ := json.Marshal(eventData)
+		_ = status.Publish(ctx, &pubsub.Message{
+			Data: statusJSON,
+		})
 		// push into pubsub contacts
 		totalContacts := len(output)
 		pageSize := 250
