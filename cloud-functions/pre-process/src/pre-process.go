@@ -73,6 +73,7 @@ var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reStreet3 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reNewline = regexp.MustCompile(`\r?\n`)
+var reStartsWithPrefix = regexp.MustCompile(`^(?i)(person |mailing )(.+)$`)
 
 // MRT's version doesnt compile, substituting with a package
 // var reBrowser = regexp.MustCompile(`(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)`)
@@ -222,14 +223,43 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	var flags OutputFlag
 	var columnFlags ERRFlags
 
+	prefixCount := 0
+	for _, column := range columns {
+		if len(column.Name) > 0 && reStartsWithPrefix.MatchString(column.Name) {
+			prefixStripped := reStartsWithPrefix.FindStringSubmatch(column.Name)
+			//Here we could have diferents prefix. I think this is not completely ok.
+			if len(prefixStripped) >= 3 {
+				// counting how many columns we have w/ prefix
+				prefixCount++
+			}
+			log.Printf("this event has %v columns w/ a shared prefix", prefixCount)
+		}
+	}
+	useSuffixCheck := false
 	// cycle through ALL columns running all ERRs
 	for i, column := range columns {
+		columnName := ""
+		if len(column.Name) > 0 && prefixCount > 3 && reStartsWithPrefix.MatchString(column.Name) {
+			log.Printf("The header column starts with a prefix: %v", column.Name)
+			useSuffixCheck = true
+			prefixStripped := reStartsWithPrefix.FindStringSubmatch(column.Name)
+			// make sure we don't remove the prefix
+			if len(prefixStripped) >= 3 {
+				columnName = prefixStripped[2]
+				log.Printf("The header column starts with a prefix result: %v", columnName)
+			}
+		}
+
 		column.CampaignERR = GetCampaignERR(column.Name)
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
 		column.EventERR = GetEventERR(column.Name)
 		column.OrderERR = GetOrderERR(column.Name)
 		column.OrderDetailERR = GetOrderDetailERR(column.Name)
-		column.PeopleERR = GetPeopleERR(column.Name)
+		if useSuffixCheck {
+			column.PeopleERR = GetPeopleERR(columnName)
+		} else {
+			column.PeopleERR = GetPeopleERR(column.Name)
+		}
 		column.ProductERR = GetProductERR(column.Name)
 
 		// log.Printf("column %v People ERR %v", column.Name, column.PeopleERR)
