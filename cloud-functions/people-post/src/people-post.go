@@ -265,7 +265,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					column.MatchKey1 = "PHONE"
 					LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_PHONE && len(column.Value) >= 10"))
 				}
-			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME {
+			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "FNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME"))
 			} else if column.PeopleERR.FirstName == 1 {
@@ -274,7 +274,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.MiddleName == 1 {
 				column.MatchKey1 = "MNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.MiddleName == 1"))
-			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME {
+			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "LNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME"))
 			} else if column.PeopleERR.LastName == 1 {
@@ -292,7 +292,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.City == 1 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.City == 1"))
-			} else if column.PeopleERR.State == 1 || (column.PeopleERR.ContainsRole == 1 && column.PeopleERR.ContainsState == 1) {
+			} else if column.PeopleERR.State == 1 || (column.PeopleERR.ContainsRole == 1 && column.PeopleERR.ContainsState == 1) && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "STATE"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.State == 1"))
 			} else if column.PeopleERR.ZipCode == 1 {
@@ -319,16 +319,16 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleVER.IS_COUNTRY {
 				column.MatchKey1 = "COUNTRY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
-			} else if column.PeopleERR.ContainsFirstName == 1 {
+			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "FNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1"))
-			} else if column.PeopleERR.ContainsLastName == 1 {
+			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "LNAME"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1"))
 			} else if column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0 {
 				column.MatchKey1 = "CITY"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0"))
-			} else if column.PeopleERR.ContainsAddress == 1 {
+			} else if column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "AD1"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsAddress == 1"))
 			}
