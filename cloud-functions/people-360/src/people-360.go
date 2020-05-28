@@ -534,8 +534,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Increment: true,
 			},
 			ReportCounter{
-				Type:      "People360",
-				Name:      "Golden:Unique",
+				Type:      "Golden",
+				Name:      "Unique",
 				Count:     1,
 				Increment: true,
 			},
@@ -629,8 +629,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
-					Name:      "Golden:Unique:IsAdValid",
+					Type:      "Golden",
+					Name:      "IsAdValid",
 					Count:     1,
 					Increment: true,
 				},
@@ -646,8 +646,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
-					Name:      "Golden:Unique:HasEmail",
+					Type:      "Golden",
+					Name:      "HasEmail",
 					Count:     1,
 					Increment: true,
 				},
@@ -752,8 +752,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
 						reportCounters1 = append(reportCounters1,
 							ReportCounter{
-								Type:      "People360",
-								Name:      "Golden:Unique",
+								Type:      "Golden",
+								Name:      "Unique",
 								Count:     -1,
 								Increment: true,
 							},
@@ -761,8 +761,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
-									Type:      "People360",
-									Name:      "Golden:Unique:IsAdValid",
+									Type:      "Golden",
+									Name:      "IsAdValid",
 									Count:     -1,
 									Increment: true,
 								},
@@ -772,8 +772,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
-									Type:      "People360",
-									Name:      "Golden:Unique:HasEmail",
+									Type:      "Golden",
+									Name:      "HasEmail",
 									Count:     -1,
 									Increment: true,
 								},

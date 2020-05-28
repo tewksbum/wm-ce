@@ -206,6 +206,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
 				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
 				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
+				CounterGroup{Group: "golden", Items: []KeyCounter{}},
 			}
 			report.MatchKeyCounts = []KeyCounter{
 				KeyCounter{Key: "AD1", Count: 0},
