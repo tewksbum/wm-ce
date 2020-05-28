@@ -133,3 +133,10 @@ type ContactInfo struct {
 	Social      string `json:"social"`
 	Why         string `json:"why"`
 }
+
+type EventData struct {
+	Signature   Signature              `json:"signature"`
+	Passthrough map[string]string      `json:"passthrough"`
+	Attributes  map[string]string      `json:"attributes"`
+	EventData   map[string]interface{} `json:"eventData"`
+}
