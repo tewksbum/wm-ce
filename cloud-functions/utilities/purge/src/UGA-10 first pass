@@ -1,0 +1,582 @@
+{
+    "id": "3abc397d-f1db-403b-a3e6-8039606b7f3c",
+    "requestedAt": "2020-05-28T00:28:18.450223645Z",
+    "processingBegin": "2020-05-28T00:28:21.671135178Z",
+    "processingEnd": "2020-05-28T00:28:35.772510346Z",
+    "attributes": [
+        {
+            "k": "PermS",
+            "v": "true"
+        },
+        {
+            "k": "schoolYear",
+            "v": "2021"
+        },
+        {
+            "k": "campaignName",
+            "v": "atu-rha-RHL-2021"
+        },
+        {
+            "k": "classStanding"
+        },
+        {
+            "k": "listType",
+            "v": "Student"
+        },
+        {
+            "k": "organization",
+            "v": "ATU"
+        },
+        {
+            "k": "PermE",
+            "v": "true"
+        },
+        {
+            "k": "uploadType",
+            "v": "New"
+        },
+        {
+            "k": "PermM",
+            "v": "true"
+        },
+        {
+            "k": "campaignId",
+            "v": "25196"
+        }
+    ],
+    "passthroughs": [
+        {
+            "k": "salutation",
+            "v": "To The Parent(s) of:"
+        },
+        {
+            "k": "schoolName",
+            "v": "Arkansas Tech"
+        },
+        {
+            "k": "schoolYear",
+            "v": "2021"
+        },
+        {
+            "k": "ADCODE",
+            "v": "ATU1R0LQQQ"
+        },
+        {
+            "k": "listType",
+            "v": "Student"
+        },
+        {
+            "k": "inputType",
+            "v": "New"
+        },
+        {
+            "k": "schoolCode",
+            "v": "ATU"
+        },
+        {
+            "k": "masterProgramCode",
+            "v": "RHL"
+        },
+        {
+            "k": "orderByDate",
+            "v": "2020-08-03"
+        },
+        {
+            "k": "sponsorCode",
+            "v": "atu-rha"
+        }
+    ],
+    "customerId": "atu-rha",
+    "inputFilePath": "https://storage.googleapis.com/tewks_test/uga10.xlsx",
+    "inputFileName": "uga10.xlsx",
+    "owner": "atu-rha",
+    "statusLabel": "records progress 100%",
+    "statusBy": "wm-dev-people-360",
+    "statusTime": "2020-05-28T00:28:35.772509126Z",
+    "counts": [
+        {
+            "group": "fileprocessor",
+            "items": [
+                {
+                    "key": "purge",
+                    "count": 0
+                },
+                {
+                    "count": 10,
+                    "key": "raw"
+                },
+                {
+                    "count": 10,
+                    "key": "outputted"
+                },
+                {
+                    "count": 13,
+                    "key": "columns"
+                }
+            ]
+        },
+        {
+            "group": "preprocess",
+            "items": [
+                {
+                    "key": "purge",
+                    "count": 0
+                },
+                {
+                    "count": 10,
+                    "key": "person:(fname+lname)&&(zip|address|address1)"
+                },
+                {
+                    "count": 10,
+                    "key": "ispeople"
+                },
+                {
+                    "count": 10,
+                    "key": "isevent"
+                }
+            ]
+        },
+        {
+            "group": "peoplepost",
+            "items": [
+                {
+                    "count": 18,
+                    "key": "people:recordid"
+                },
+                {
+                    "count": 11,
+                    "key": "people:-email"
+                },
+                {
+                    "count": 18,
+                    "key": "people:-phone"
+                },
+                {
+                    "count": 8,
+                    "key": "people:-finitial"
+                },
+                {
+                    "count": 8,
+                    "key": "people:-city"
+                },
+                {
+                    "count": 8,
+                    "key": "people:-state"
+                },
+                {
+                    "count": 8,
+                    "key": "people:-lname"
+                },
+                {
+                    "count": 8,
+                    "key": "people:-fname"
+                },
+                {
+                    "count": 8,
+                    "key": "mar"
+                },
+                {
+                    "count": 18,
+                    "key": "total"
+                },
+                {
+                    "count": 7,
+                    "key": "people:email"
+                },
+                {
+                    "count": 10,
+                    "key": "people:city+state+lname+fname+ad1"
+                },
+                {
+                    "count": 10,
+                    "key": "default"
+                }
+            ]
+        },
+        {
+            "group": "people360",
+            "items": [
+                {
+                    "key": "purge",
+                    "count": 0
+                },
+                {
+                    "count": 16,
+                    "key": "match:recordid"
+                },
+                {
+                    "count": 9,
+                    "key": "match:fname+lname+ad1+city+state+role"
+                },
+                {
+                    "count": 16,
+                    "key": "total"
+                },
+                {
+                    "count": 9,
+                    "key": "disposition:new"
+                },
+                {
+                    "count": 9,
+                    "key": "disposition:default:new"
+                },
+                {
+                    "count": 9,
+                    "key": "new"
+                },
+                {
+                    "count": 9,
+                    "key": "new:default"
+                },
+                {
+                    "count": 16,
+                    "key": "golden:created"
+                },
+                {
+                    "count": 9,
+                    "key": "golden:unique"
+                },
+                {
+                    "count": 16,
+                    "key": "set:created"
+                },
+                {
+                    "count": 9,
+                    "key": "singletons"
+                },
+                {
+                    "count": 9,
+                    "key": "fiber:completed"
+                },
+                {
+                    "count": 6,
+                    "key": "match:email+role"
+                },
+                {
+                    "count": 12,
+                    "key": "golden:created:hasemail"
+                },
+                {
+                    "count": 6,
+                    "key": "golden:unique:hasemail"
+                },
+                {
+                    "count": 7,
+                    "key": "disposition:update"
+                },
+                {
+                    "count": 7,
+                    "key": "disposition:mar:update"
+                },
+                {
+                    "count": 7,
+                    "key": "update"
+                },
+                {
+                    "count": 7,
+                    "key": "update:mar"
+                },
+                {
+                    "count": 7,
+                    "key": "sets"
+                },
+                {
+                    "count": 7,
+                    "key": "set:expired"
+                },
+                {
+                    "count": 7,
+                    "key": "golden:expired"
+                }
+            ]
+        },
+        {
+            "group": "people720",
+            "items": [
+                {
+                    "key": "reprocess",
+                    "count": 0
+                }
+            ]
+        }
+    ],
+    "matchKeyCounts": [
+        {
+            "key": "AD1",
+            "count": 10
+        },
+        {
+            "key": "AD2",
+            "count": 0
+        },
+        {
+            "key": "FNAME",
+            "count": 10
+        },
+        {
+            "key": "LNAME",
+            "count": 10
+        },
+        {
+            "key": "EMAIL",
+            "count": 7
+        },
+        {
+            "key": "PHONE",
+            "count": 0
+        },
+        {
+            "key": "CITY",
+            "count": 10
+        },
+        {
+            "key": "STATE",
+            "count": 10
+        },
+        {
+            "key": "ZIP",
+            "count": 10
+        },
+        {
+            "key": "COUNTRY",
+            "count": 10
+        }
+    ],
+    "history": [
+        {
+            "label": "request received",
+            "ts": "2020-05-28T00:28:19.569997236Z",
+            "function": "wm-dev-file-api"
+        },
+        {
+            "function": "wm-dev-file-processor",
+            "label": "processing file began",
+            "ts": "2020-05-28T00:28:20.075574601Z"
+        },
+        {
+            "function": "wm-dev-file-processor",
+            "label": "finished name entity recognition",
+            "ts": "2020-05-28T00:28:21.456550039Z"
+        },
+        {
+            "function": "wm-dev-file-processor",
+            "label": "processing records",
+            "ts": "2020-05-28T00:28:21.671135295Z"
+        },
+        {
+            "function": "wm-dev-file-processor",
+            "label": "finished streaming",
+            "ts": "2020-05-28T00:28:23.514614233Z"
+        },
+        {
+            "function": "wm-dev-file-processor",
+            "label": "finished parsing",
+            "ts": "2020-05-28T00:28:20.844470416Z"
+        },
+        {
+            "function": "wm-dev-people-360",
+            "label": "records progress 40%",
+            "ts": "2020-05-28T00:28:28.612776548Z"
+        },
+        {
+            "function": "wm-dev-people-360",
+            "label": "records progress 90%",
+            "ts": "2020-05-28T00:28:30.361923603Z"
+        },
+        {
+            "function": "wm-dev-people-360",
+            "label": "records progress 50%",
+            "ts": "2020-05-28T00:28:28.838184177Z"
+        },
+        {
+            "function": "wm-dev-people-360",
+            "label": "records progress 100%",
+            "ts": "2020-05-28T00:28:35.772509126Z"
+        }
+    ],
+    "audits": [
+        {
+            "file_level": true,
+            "message": "detected file format is xlsx",
+            "value": "https://storage.googleapis.com/tewks_test/uga10.xlsx"
+        },
+        {
+            "file_level": true,
+            "message": "detected content type is application/zip",
+            "value": "https://storage.googleapis.com/tewks_test/uga10.xlsx"
+        }
+    ],
+    "fields": [
+        {
+            "min": "",
+            "max": "",
+            "name": "ADDRESS LINE 3",
+            "mapped": [],
+            "sparsity": 0
+        },
+        {
+            "min": "Mr. Afnan B. Ali",
+            "max": "Ms. Rachel M. Anderson",
+            "name": "ADDRESSEE",
+            "mapped": [],
+            "sparsity": 10
+        },
+        {
+            "min": "Athens",
+            "max": "Tiger",
+            "name": "CITY",
+            "mapped": [
+                {
+                    "name": "CITY",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "4andersons@bellsouth.net",
+            "max": "shama.ali0207@gmail.com",
+            "name": "RELATED EMAIL ADDRESS_1",
+            "mapped": [
+                {
+                    "name": "EMAIL",
+                    "count": 7
+                }
+            ],
+            "sparsity": 7
+        },
+        {
+            "min": "GA",
+            "max": "GA",
+            "name": "STATE",
+            "mapped": [
+                {
+                    "name": "STATE",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "Mr.",
+            "max": "Ms.",
+            "name": "TITLE",
+            "mapped": [],
+            "sparsity": 10
+        },
+        {
+            "min": "1195 Pennefeather Ln",
+            "max": "PO Box 490",
+            "name": "ADDRESS LINE 1",
+            "mapped": [
+                {
+                    "name": "AD1",
+                    "count": 8
+                },
+                {
+                    "name": "ADTYPE",
+                    "count": 10
+                },
+                {
+                    "name": "ADBOOK",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "",
+            "max": "",
+            "name": "ADDRESS LINE 2",
+            "mapped": [],
+            "sparsity": 0
+        },
+        {
+            "min": "a21prkvw@gmail.com",
+            "max": "wagin3297@gmail.com",
+            "name": "EMAIL ADDRESS",
+            "mapped": [
+                {
+                    "name": "AD1",
+                    "count": 4
+                }
+            ],
+            "sparsity": 9
+        },
+        {
+            "min": "Afnan",
+            "max": "Tyler",
+            "name": "FIRSTNAME",
+            "mapped": [
+                {
+                    "name": "FNAME",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "Addington",
+            "max": "Bland",
+            "name": "KEYNAME",
+            "mapped": [
+                {
+                    "name": "LNAME",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "30024-7702",
+            "max": "30813-0257",
+            "name": "POST CODE",
+            "mapped": [
+                {
+                    "name": "ZIP",
+                    "count": 10
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "min": "3085@bellsouth.net",
+            "max": "a21maria@bellsouth.net",
+            "name": "RELATED EMAIL ADDRESS",
+            "mapped": [
+                {
+                    "name": "AD1",
+                    "count": 6
+                }
+            ],
+            "sparsity": 10
+        },
+        {
+            "name": "PermM",
+            "mapped": [
+                {
+                    "name": "MNAME",
+                    "count": 10
+                }
+            ]
+        },
+        {
+            "name": "campaignId",
+            "mapped": [
+                {
+                    "name": "CLIENTID",
+                    "count": 10
+                }
+            ]
+        },
+        {
+            "name": "organization",
+            "mapped": [
+                {
+                    "name": "ORGANIZATION",
+                    "count": 10
+                }
+            ]
+        }
+    ]
+}
