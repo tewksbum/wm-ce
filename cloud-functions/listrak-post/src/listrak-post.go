@@ -156,11 +156,11 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 					ExternalContactID: "",
 					Segments: []SegmentationField{
 						{
-							ID:    listrakAmbassadorSegment["firstname"],
+							ID:    listrakSegment["firstname"],
 							Value: c.FirstName,
 						},
 						{
-							ID:    listrakAmbassadorSegment["lastname"],
+							ID:    listrakSegment["lastname"],
 							Value: c.LastName,
 						},
 						{
@@ -256,6 +256,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 
 			}
 			jsonValue, _ := json.Marshal(output)
+			log.Printf("Posting to %v output: %v", ListrakEndpoint, string(jsonValue))
 			flag := false
 			for {
 				req2, err2 := http.NewRequest("POST", ListrakEndpoint, bytes.NewBuffer(jsonValue))
