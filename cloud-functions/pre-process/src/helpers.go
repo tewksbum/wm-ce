@@ -141,7 +141,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FullAddress = 1
 	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-Mail address":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
@@ -182,7 +182,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "contact owner":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "contact owner", "agreed to be listed", "communication: release: permaddress":
 		err.Junk = 1
 	case "level", "room location description 1":
 		// may want to unjunk the degree level things...
