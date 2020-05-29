@@ -189,7 +189,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		records := [][]string{header}
 		advalid := []string{}
 		badAD1 := 0
-		students := 0
+		goodAD := 0
+		studentsUS := 0
 		for _, g := range goldens {
 			if len(g.EMAIL) > 0 {
 				emails := strings.Split(g.EMAIL, "|")
@@ -219,8 +220,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			if g.ROLE == "Parent" {
 				continue
 			}
-
-			students++
+			if g.COUNTRY == "US" {
+				studentsUS++
+			}
 
 			//only students with address
 			if len(g.AD1) == 0 {
@@ -230,6 +232,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 			if g.ADVALID != "TRUE" {
 				badAD1++
+			} else {
+				goodAD++
 			}
 
 			row := []string{
@@ -266,7 +270,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			records = append(records, row)
 		}
 		suppressFile := false
-		if badAD1 > int(float64(students)*0.1) { // more than 10% of bad record
+		if goodAD >= int(float64(studentsUS)*0.9) {
+			// good to go
+		} else { // more than 10% of bad record
 			eventData := EventData{
 				Signature: Signature{
 					EventID: input.EventID,
