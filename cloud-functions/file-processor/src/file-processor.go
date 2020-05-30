@@ -404,6 +404,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					return fmt.Errorf("unable to parse xlsx: %v", err)
 				}
 				sheetData, err := xlsxFile.ToSlice()
+
 				if err != nil {
 					report := FileReport{
 						ID:          input.Signature.EventID,
@@ -506,6 +507,36 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			log.Printf("found %v rows in file", len(allrows))
+
+			//scan for empty columns.
+			//start in the second row
+			deletedColumns := 0
+			for i := 0; i < len(allrows[0]); i++ {
+				var counter int
+				if len(allrows[1][i]) == 0 {
+					for j := 2; j < len(allrows); j++ {
+						if len(allrows[j]) > i {
+							if len(allrows[j][i]) == 0 {
+								counter++
+							} else {
+								break
+							}
+						} else {
+							counter++
+						}
+					}
+					if counter == (len(allrows) - 2) {
+						deletedColumns++
+						for h := 0; h < len(allrows); h++ {
+							if len(allrows[h]) > i {
+								allrows[h] = append(allrows[h][:i], allrows[h][i+1:]...)
+							}
+						}
+						i--
+					}
+				}
+			}
+			log.Printf("Has been deleted %v columns", deletedColumns)
 
 			// now scan through records
 			// method 1, find the row with the most number of columns, scan the first 20 rows for this
