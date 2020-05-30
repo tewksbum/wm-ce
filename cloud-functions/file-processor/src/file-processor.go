@@ -356,6 +356,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var records [][]string
 			var allrows [][]string
 
+			log.Printf("Start parseFileURL")
 			parsedFileName := ""
 			parsedFileURL, err := url.Parse(fmt.Sprintf("%v", fileURL))
 			if err != nil {
@@ -363,6 +364,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				parsedFileName = strings.ToLower(filepath.Base(parsedFileURL.Path))
 			}
 
+			log.Printf("End parseFileURL")
 			{
 				report := FileReport{
 					ID: input.Signature.EventID,
@@ -381,8 +383,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				publishReport(&report, cfName)
 			}
-
+			log.Printf("Choose file extension")
 			if fileKind.Extension == "xlsx" || contentType == "application/zip" || strings.HasSuffix(parsedFileName, ".xlsx") {
+				log.Printf("Start OpenBinary")
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)
 				if err != nil {
 					report := FileReport{
@@ -403,6 +406,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("ERROR unable to parse xlsx: %v", err)
 					return fmt.Errorf("unable to parse xlsx: %v", err)
 				}
+				log.Printf("End OpenBinary")
+				log.Printf("Start xlsxFile.ToSlice()")
 				sheetData, err := xlsxFile.ToSlice()
 
 				if err != nil {
@@ -435,6 +440,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
+				log.Printf("End xlsxFile.ToSlice()")
 				origSheet, wcSheet, cpSheet := -1, -1, -1
 				for i, sheet := range xlsxFile.Sheets {
 					switch strings.ToLower(sheet.Name) {
