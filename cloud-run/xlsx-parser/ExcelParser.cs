@@ -24,7 +24,7 @@ namespace Wemade.Functions
         {
 
             string fileUrl = req.Query["fileUrl"];
-            log.LogInformation("processing " + fileUrl);
+            log.LogInformation($"processing {fileUrl}");
             var downloadRequest = WebRequest.Create(fileUrl);
             var downloadResponse = await downloadRequest.GetResponseAsync();
             Stream downloadStream = downloadResponse.GetResponseStream();
@@ -57,12 +57,11 @@ namespace Wemade.Functions
             catch (Exception ex)
             {
                 responseMessage = JsonConvert.SerializeObject(new {error = ex.Message, stack = ex.StackTrace });
-                log.LogWarning("error encountered: " + responseMessage);
+                log.LogWarning($"error encountered: {responseMessage}");
 
             }
 
-            var totalMemory = System.GC.GetTotalAllocatedBytes() / 1024 / 1024;
-            log.LogWarning("total memory used: " + totalMemory);
+            log.LogWarning($"total memory used: {System.GC.GetTotalAllocatedBytes() / 1024 / 1024}MB" );
 
 
             return new OkObjectResult(responseMessage);
