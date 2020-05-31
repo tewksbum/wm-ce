@@ -779,14 +779,14 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 				}
 
-				// count unique values
+				// detect blank or pretty blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					report := FileReport{
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "fileprocessor",
-								Name:      "Purged",
+								Type:      "FileProcessor",
+								Name:      "Purge",
 								Count:     1,
 								Increment: true,
 							},
