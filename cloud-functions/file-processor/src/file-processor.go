@@ -356,6 +356,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var records [][]string
 			var allrows [][]string
 
+			log.Printf("Start parseFileURL")
 			parsedFileName := ""
 			parsedFileURL, err := url.Parse(fmt.Sprintf("%v", fileURL))
 			if err != nil {
@@ -363,6 +364,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				parsedFileName = strings.ToLower(filepath.Base(parsedFileURL.Path))
 			}
 
+			log.Printf("End parseFileURL")
 			{
 				report := FileReport{
 					ID: input.Signature.EventID,
@@ -381,8 +383,9 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				publishReport(&report, cfName)
 			}
-
+			log.Printf("Choose file extension")
 			if fileKind.Extension == "xlsx" || contentType == "application/zip" || strings.HasSuffix(parsedFileName, ".xlsx") {
+				log.Printf("Start OpenBinary")
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)
 				if err != nil {
 					report := FileReport{
@@ -403,7 +406,10 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("ERROR unable to parse xlsx: %v", err)
 					return fmt.Errorf("unable to parse xlsx: %v", err)
 				}
+				log.Printf("End OpenBinary")
+				log.Printf("Start xlsxFile.ToSlice()")
 				sheetData, err := xlsxFile.ToSlice()
+
 				if err != nil {
 					report := FileReport{
 						ID:          input.Signature.EventID,
@@ -434,6 +440,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
+				log.Printf("End xlsxFile.ToSlice()")
 				origSheet, wcSheet, cpSheet := -1, -1, -1
 				for i, sheet := range xlsxFile.Sheets {
 					switch strings.ToLower(sheet.Name) {
@@ -506,6 +513,36 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 			log.Printf("found %v rows in file", len(allrows))
+
+			//scan for empty columns.
+			//start in the second row
+			deletedColumns := 0
+			for i := 0; i < len(allrows[0]); i++ {
+				var counter int
+				if len(allrows[1][i]) == 0 {
+					for j := 2; j < len(allrows); j++ {
+						if len(allrows[j]) > i {
+							if len(allrows[j][i]) == 0 {
+								counter++
+							} else {
+								break
+							}
+						} else {
+							counter++
+						}
+					}
+					if counter == (len(allrows) - 2) {
+						deletedColumns++
+						for h := 0; h < len(allrows); h++ {
+							if len(allrows[h]) > i {
+								allrows[h] = append(allrows[h][:i], allrows[h][i+1:]...)
+							}
+						}
+						i--
+					}
+				}
+			}
+			log.Printf("Has been deleted %v columns", deletedColumns)
 
 			// now scan through records
 			// method 1, find the row with the most number of columns, scan the first 20 rows for this
@@ -742,14 +779,14 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 				}
 
-				// count unique values
+				// detect blank or pretty blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
 					report := FileReport{
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "fileprocessor",
-								Name:      "Purged",
+								Type:      "FileProcessor",
+								Name:      "Purge",
 								Count:     1,
 								Increment: true,
 							},
