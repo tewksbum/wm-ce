@@ -415,7 +415,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					}
 
 					log.Printf("ERROR unable to parse xlsx: %v", err)
-					return fmt.Errorf("unable to parse xlsx: %v", err)
+					return nil
 				}
 				log.Printf("End OpenBinary")
 				log.Printf("Start xlsxFile.ToSlice()")
