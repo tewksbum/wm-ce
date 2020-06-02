@@ -403,7 +403,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					}
 					publishReport(&report, cfName)
 
-					input.EventData["message"] = "Enable to parse xlsx"
+					input.EventData["message"] = "Unable to parse xlsx"
 					input.EventData["status"] = "Error"
 					statusJSON, _ := json.Marshal(input)
 					psresult := status.Publish(ctx, &pubsub.Message{
