@@ -86,6 +86,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			inputIsFromPost = true
 		}
 	}
+	LogDev(fmt.Sprintf("input is from post: %v", inputIsFromPost))
+
 	for _, input := range inputs {
 		// assign first initial and zip5
 		if len(input.MatchKeys.FNAME.Value) > 0 {
