@@ -11,6 +11,67 @@ type PubSubMessage struct {
 	Attributes map[string]string `json:"attributes"`
 }
 
+type FileReport struct {
+	ID              string          `json:"id,omitempty"`
+	ProcessingBegin time.Time       `json:"processingBegin,omitempty"`
+	ProcessingEnd   time.Time       `json:"processingEnd,omitempty"`
+	StatusLabel     string          `json:"statusLabel,omitempty"`
+	StatusBy        string          `json:"statusBy,omitempty"`
+	StatusTime      time.Time       `json:"statusTime,omitempty"`
+	Errors          []ReportError   `json:"errors"`
+	Warnings        []ReportError   `json:"warnings"`
+	Counters        []ReportCounter `json:"counters"`
+	FiberList       []FiberDetail   `json:"fiberList,omitempty"`
+	SetList         []SetDetail     `json:"setList,omitempty"`
+}
+
+// RecordDetail stores detail about a record
+type RecordDetail struct {
+	ID          string    `json:"id,omitempty"`
+	RowNumber   int       `json:"row,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	IsPerson    string    `json:"isPerson,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Fibers      []string  `json:"fibers"`
+}
+
+// FiberDetail stores detail about a record
+type FiberDetail struct {
+	ID          string    `json:"id,omitempty"`
+	CreatedOn   time.Time `json:"createdOn,omitempty"`
+	Type        string    `json:"type,omitempty"`
+	Disposition string    `json:"disposition,omitempty"`
+	Sets        []string  `json:"sets"`
+}
+
+// SetDetail stores detail about a record
+type SetDetail struct {
+	ID         string    `json:"id,omitempty"`
+	FiberCount int       `json:"fiberCount,omitempty"`
+	CreatedOn  time.Time `json:"createdOn,omitempty"`
+	DeletedOn  time.Time `json:"deletedOn,omitempty"`
+	IsDeleted  bool      `json:"isDeleted,omitempty"`
+	ReplacedBy string    `json:"replacedBy,omitempty"`
+}
+
+// ReportError stores errors and warnings
+type ReportError struct {
+	FileLevel bool   `json:"file_level,omitempty"`
+	Row       int    `json:"row,omitempty"`
+	RecordID  string `json:"record_id,omitempty"`
+	Field     string `json:"field,omitempty"`
+	Value     string `json:"value,omitempty"`
+	Message   string `json:"message,omitempty"`
+}
+
+// ReportCounter stores record, purge, murge
+type ReportCounter struct {
+	Type      string `json:"type,omitempty"`
+	Name      string `json:"name,omitempty"`
+	Count     int    `json:"count,omitempty"`
+	Increment bool   `json:"inc,omitempty"`
+}
+
 type Signature struct {
 	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
@@ -18,6 +79,7 @@ type Signature struct {
 	EventType string `json:"eventType"`
 	FiberType string `json:"fiberType"`
 	RecordID  string `json:"recordId"`
+	FiberID   string `json:"id"`
 }
 
 type EventData struct {
@@ -304,6 +366,11 @@ type PeopleGoldenDS struct {
 }
 
 type FileComplete struct {
+	EventID string `json:"eventId"`
+	OwnerID string `json:"ownerId"`
+}
+
+type FileReady struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`
 }

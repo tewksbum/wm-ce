@@ -1,6 +1,7 @@
 package people360
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
@@ -8,9 +9,24 @@ import (
 	"strings"
 	"unicode"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
 )
+
+func publishReport(report *FileReport, cfName string) {
+	reportJSON, _ := json.Marshal(report)
+	reportPub := topicR.Publish(ctx, &pubsub.Message{
+		Data: reportJSON,
+		Attributes: map[string]string{
+			"source": cfName,
+		},
+	})
+	_, err := reportPub.Get(ctx)
+	if err != nil {
+		log.Printf("ERROR Could not pub to reporting pubsub: %v", err)
+	}
+}
 
 func GetSmallestYear(values []string) string {
 	if len(values) == 0 {
@@ -160,11 +176,16 @@ func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []stri
 	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
-func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string) {
+func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string, values []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
-	f.Set(reflect.ValueOf(value))
-	// LogDev(fmt.Sprintf("SetPeople360GoldenOutputFieldValue: %v %v", field, value))
+	// if the field to be set is EMAIL, and the existing golden record value does not already contain the new value, then add it as
+	// a | delimited value
+	if field == "EMAIL" {
+		f.Set(reflect.ValueOf(strings.Join(values, "|")))
+	} else {
+		f.Set(reflect.ValueOf(value))
+	}
 }
 
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
@@ -178,6 +199,9 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
+		if key == "FiberID" {
+			continue
+		}
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
 		if key == "RecordID" {
 			SetPeople360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
@@ -203,7 +227,7 @@ func PopulateSetOutputMatchKeys(target *PeopleSetDS, values []MatchKey360) {
 func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
-		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key))
+		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
 	}
 }
 
@@ -214,6 +238,15 @@ func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 		}
 	}
 	return ""
+}
+
+func GetGoldenValuesFromMatchKeys(values []MatchKey360, key string) []string {
+	for _, m := range values {
+		if m.Key == key {
+			return m.Values
+		}
+	}
+	return []string{}
 }
 
 func GetSetValuesFromMatchKeys(values []MatchKey360, key string) []string {
@@ -335,14 +368,16 @@ func GetRedisGuidList(keyparts []string) []string {
 	return result
 }
 
-func SetRedisKeyIfNotExists(keyparts []string) {
+func SetRedisKeyIfNotExists(keyparts []string) int {
 	ms := msp.Get()
 	defer ms.Close()
 
-	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	result, err := redis.Int(ms.Do("SETNX", strings.Join(keyparts, ":"), 1))
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
 	}
+	log.Printf("SetRedisKeyIfNotExists on %v returned %v", strings.Join(keyparts, ":"), result)
+	return result
 }
 
 func IncrRedisValue(keyparts []string) { // no need to update expiration
