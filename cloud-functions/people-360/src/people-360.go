@@ -572,11 +572,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		// append to the output value
-		if inputIsFromPost { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
-			output.Signatures = append(FiberSignatures, input.Signature)
-		}
-
+		output.Signatures = append(FiberSignatures, input.Signature)
 		output.Signature = Signature360{
 			OwnerID:   input.Signature.OwnerID,
 			Source:    input.Signature.Source,
