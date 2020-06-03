@@ -701,7 +701,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	}
 		// }
 
-		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env+env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
