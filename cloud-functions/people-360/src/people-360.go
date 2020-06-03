@@ -112,7 +112,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "People360",
+								Type:      "People360:Audit",
 								Name:      "DupeMessage",
 								Count:     1,
 								Increment: true,
@@ -131,7 +131,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
 							ReportCounter{
-								Type:      "People360",
+								Type:      "People360:Audit",
 								Name:      "Retry",
 								Count:     1,
 								Increment: true,
@@ -144,7 +144,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							ID: input.Signature.EventID,
 							Counters: []ReportCounter{
 								ReportCounter{
-									Type:      "People360",
+									Type:      "People360:Audit",
 									Name:      "RetryExceeded",
 									Count:     1,
 									Increment: true,
@@ -216,26 +216,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			if inputIsFromPost {
-				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:RECORDID", Count: 1, Increment: true})
-			}
+			// if inputIsFromPost {
+			// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:RECORDID", Count: 1, Increment: true})
+			// }
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				if inputIsFromPost {
-					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
-				}
+				// if inputIsFromPost {
+				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
+				// }
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			keypattern := "*"
@@ -369,7 +369,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Increment: true,
 					},
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Unmatchable:" + input.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -402,13 +402,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Disposition:" + dsFiber.Disposition,
 					Count:     1,
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Disposition:" + fiber.Signature.FiberType + ":" + dsFiber.Disposition,
 					Count:     1,
 					Increment: true,
@@ -423,7 +423,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Dupe:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -432,12 +432,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "purge" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Purge",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Purge:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -446,12 +446,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "new" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "New",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "New:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -460,12 +460,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			} else if dsFiber.Disposition == "update" {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Update",
 						Count:     1,
 						Increment: true,
 					}, ReportCounter{
-						Type:      "People360",
+						Type:      "People360:Audit",
 						Name:      "Update:" + fiber.Signature.FiberType,
 						Count:     1,
 						Increment: true,
@@ -528,21 +528,42 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
-				Type:      "People360",
+				Type:      "People360:Audit",
 				Name:      "Golden:Created",
 				Count:     1,
 				Increment: true,
 			},
 			ReportCounter{
-				Type:      "People360",
-				Name:      "Golden:Unique",
+				Type:      "Golden",
+				Name:      "Unique",
 				Count:     1,
 				Increment: true,
 			},
 		)
+
+		if fiber.Signature.FiberType == "mpr" {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "Golden:MPR",
+					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		} else {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "Golden:NonMPR",
+					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		}
+
 		reportCounters1 = append(reportCounters1,
 			ReportCounter{
-				Type:      "People360",
+				Type:      "People360:Audit",
 				Name:      "Set:Created",
 				Count:     1,
 				Increment: true,
@@ -623,35 +644,74 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "advalid"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Golden:Created:IsAdValid",
 					Count:     1,
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
-					Name:      "Golden:Unique:IsAdValid",
+					Type:      "Golden",
+					Name:      "IsAdValid",
 					Count:     1,
 					Increment: true,
 				},
 			)
+			if fiber.Signature.FiberType == "mpr" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:MPR",
+						Name:      "IsAdValid",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:NonMPR",
+						Name:      "IsAdValid",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 		if len(goldenDS.EMAIL) > 0 {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "email"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
-					Type:      "People360",
+					Type:      "People360:Audit",
 					Name:      "Golden:Created:HasEmail",
 					Count:     1,
 					Increment: true,
 				},
 				ReportCounter{
-					Type:      "People360",
-					Name:      "Golden:Unique:HasEmail",
+					Type:      "Golden",
+					Name:      "HasEmail",
 					Count:     1,
 					Increment: true,
 				},
 			)
+
+			if fiber.Signature.FiberType == "mpr" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:MPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "Golden:NonMPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 
 		var SetSearchFields []string
@@ -747,13 +807,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				})
 
 				// we'll decrement some counters here
-				if SetRedisKeyIfNotExists([]string{output.ID, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
+				if SetRedisKeyIfNotExists([]string{set, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
 					// let's see what we are deleting
 					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
 						reportCounters1 = append(reportCounters1,
 							ReportCounter{
-								Type:      "People360",
-								Name:      "Golden:Unique",
+								Type:      "Golden",
+								Name:      "Unique",
 								Count:     -1,
 								Increment: true,
 							},
@@ -761,8 +821,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
-									Type:      "People360",
-									Name:      "Golden:Unique:IsAdValid",
+									Type:      "Golden",
+									Name:      "IsAdValid",
 									Count:     -1,
 									Increment: true,
 								},
@@ -772,12 +832,84 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
-									Type:      "People360",
-									Name:      "Golden:Unique:HasEmail",
+									Type:      "Golden",
+									Name:      "HasEmail",
 									Count:     -1,
 									Increment: true,
 								},
 							)
+						}
+					}
+				}
+
+				if fiber.Signature.FiberType == "mpr" {
+					if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+						// let's see what we are deleting
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "Golden:MPR",
+									Name:      "Unique",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:MPR",
+										Name:      "IsAdValid",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:MPR",
+										Name:      "HasEmail",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+						}
+					}
+				} else {
+					if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+						// let's see what we are deleting
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "Golden:NonMPR",
+									Name:      "Unique",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:NonMPR",
+										Name:      "IsAdValid",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+								reportCounters1 = append(reportCounters1,
+									ReportCounter{
+										Type:      "Golden:NonMPR",
+										Name:      "HasEmail",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
 						}
 					}
 				}
@@ -791,13 +923,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
 
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
 
 		}
 
 		if input.Signature.FiberType == "default" {
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Fiber:Completed", Count: 1, Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Fiber:Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 
@@ -854,7 +986,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Signature: input.Signature,
 					EventData: make(map[string]interface{}),
 				}
-				eventData.EventData["status"] = "Finished"
+				eventData.EventData["status"] = "Records Setted"
 				eventData.EventData["message"] = fmt.Sprintf("Processed %v records and %v fibers, purged %v records and %v fibers", recordCompleted, fiberCompleted, recordDeleted, fiberDeleted)
 				eventData.EventData["records-total"] = recordCount
 				eventData.EventData["records-completed"] = recordCompleted
