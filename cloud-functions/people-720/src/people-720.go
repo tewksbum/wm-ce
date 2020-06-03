@@ -104,7 +104,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	eventSets = nil // clear eventFibers to release memory
 
 	// reorganize sets as a map
-	var setSearchMap map[string][]string
+	setSearchMap := make(map[string][]string)
 	for _, s := range eventSetSearchKeys { // each set
 		for _, ss := range s.Search { // each search key of each set
 			if len(ss) > 0 { // in case we have a blank
