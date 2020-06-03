@@ -781,6 +781,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		log.Printf("set search: %+v", setDS.Search)
+		if len(setDS.EventID) == 0 {
+			setJSON, _ := json.Marshal(setDS)
+			log.Printf("ERROR*** set has blank event id: %v", string(setJSON))
+		}
 
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
