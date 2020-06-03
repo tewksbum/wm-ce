@@ -33,11 +33,14 @@ var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 
+var cfName = os.Getenv("FUNCTION_NAME")
+
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
 
+var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -46,11 +49,12 @@ var cleanup *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var msp *redis.Pool
+var cpTopic *pubsub.Topic
 
-// var setSchema bigquery.Schema
+var topicR *pubsub.Topic
 
 func init() {
-	ctx := context.Background()
+	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
@@ -58,6 +62,7 @@ func init() {
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
+	cpTopic = ps.Topic(os.Getenv("PSCPFILE"))
 	// delay the clean up by 1 min
 	cleanup.PublishSettings.DelayThreshold = 60 * time.Second
 	msp = &redis.Pool{
@@ -65,6 +70,7 @@ func init() {
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
+	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -73,10 +79,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-
+	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
 	if value, ok := m.Attributes["source"]; ok {
-		if value == "post" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
+		if value == "post" || value == "test" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
 			inputIsFromPost = true
 		}
 	}
@@ -94,7 +100,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Source: input.MatchKeys.ZIP.Source,
 			}
 		}
-
 		existingCheck := 0
 
 		// only perform the duplicate detection if it is coming from post, do not do it otherwise, such as from cleanup
@@ -103,6 +108,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 				if existingCheck == 1 { // this fiber has already been processed
 					LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
+					report := FileReport{
+						ID: input.Signature.EventID,
+						Counters: []ReportCounter{
+							ReportCounter{
+								Type:      "People360",
+								Name:      "DupeMessage",
+								Count:     1,
+								Increment: true,
+							},
+						},
+					}
+					publishReport(&report, cfName)
 					return nil
 				}
 			} else if input.Signature.FiberType == "mar" {
@@ -110,7 +127,31 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				if existingCheck == 0 { // default fiber has not been processed
 					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
 					retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+					report := FileReport{
+						ID: input.Signature.EventID,
+						Counters: []ReportCounter{
+							ReportCounter{
+								Type:      "People360",
+								Name:      "Retry",
+								Count:     1,
+								Increment: true,
+							},
+						},
+					}
+					publishReport(&report, cfName)
 					if retryCount < 30 {
+						report := FileReport{
+							ID: input.Signature.EventID,
+							Counters: []ReportCounter{
+								ReportCounter{
+									Type:      "People360",
+									Name:      "RetryExceeded",
+									Count:     1,
+									Increment: true,
+								},
+							},
+						}
+						publishReport(&report, cfName)
 						return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
 					}
 				}
@@ -121,10 +162,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		OutputPassthrough := ConvertPassthrough(input.Passthrough)
 		var fiber PeopleFiber
 		fiber.CreatedAt = time.Now()
-		fiber.ID = uuid.New().String()
+		fiber.ID = input.Signature.FiberID
 		fiber.MatchKeys = input.MatchKeys
 		fiber.Passthrough = OutputPassthrough
 		fiber.Signature = input.Signature
+
+		log.Printf("fiber id is %v", fiber.ID)
 
 		// fiber in DS
 		dsFiber := GetFiberDS(&fiber)
@@ -154,6 +197,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var FiberSignatures []Signature
 		var FiberSearchFields []string
 		output.ID = uuid.New().String()
+		output.Signatures = []Signature{}
 		MatchKeyList := structs.Names(&PeopleOutput{})
 		FiberMatchKeys := make(map[string][]string)
 		// collect all fiber match key values
@@ -163,7 +207,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		var matchedFibers []string
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
-
+		reportCounters1 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
@@ -172,14 +216,26 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+			if inputIsFromPost {
+				reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:RECORDID", Count: 1, Increment: true})
+			}
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
+				}
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
+				}
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
+				if inputIsFromPost {
+					reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
+				}
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 			keypattern := "*"
@@ -303,6 +359,23 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			output.MatchKeys = MatchKeysFromFiber
 
+		} else {
+			if inputIsFromPost {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Unmatchable",
+						Count:     1,
+						Increment: true,
+					},
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Unmatchable:" + input.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
 		}
 
 		log.Printf("FiberSearchFields is %+v", FiberSearchFields)
@@ -320,6 +393,94 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			dsFiber.Disposition = "update"
 		}
+		if inputIsFromPost {
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Total",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Disposition:" + dsFiber.Disposition,
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Disposition:" + fiber.Signature.FiberType + ":" + dsFiber.Disposition,
+					Count:     1,
+					Increment: true,
+				},
+			)
+
+			if dsFiber.Disposition == "dupe" { // these dupes covers both dupes identified in post as well as no new values identified in 360
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Dupe",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Dupe:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "purge" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Purge",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Purge:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "new" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "New",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "New:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			} else if dsFiber.Disposition == "update" {
+				reportCounters1 = append(reportCounters1,
+					ReportCounter{
+						Type:      "People360",
+						Name:      "Update",
+						Count:     1,
+						Increment: true,
+					}, ReportCounter{
+						Type:      "People360",
+						Name:      "Update:" + fiber.Signature.FiberType,
+						Count:     1,
+						Increment: true,
+					},
+				)
+			}
+		}
+
+		fiberList := []FiberDetail{
+			FiberDetail{
+				ID:          input.Signature.FiberID,
+				Disposition: dsFiber.Disposition,
+			},
+		}
+
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
 		// write fiber search key
@@ -355,8 +516,38 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if !matchable {
 			LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
+
+			report := FileReport{
+				ID:        input.Signature.EventID,
+				Counters:  reportCounters1,
+				FiberList: fiberList,
+			}
+			publishReport(&report, cfName)
 			continue
 		}
+
+		reportCounters1 = append(reportCounters1,
+			ReportCounter{
+				Type:      "People360",
+				Name:      "Golden:Created",
+				Count:     1,
+				Increment: true,
+			},
+			ReportCounter{
+				Type:      "People360",
+				Name:      "Golden:Unique",
+				Count:     1,
+				Increment: true,
+			},
+		)
+		reportCounters1 = append(reportCounters1,
+			ReportCounter{
+				Type:      "People360",
+				Name:      "Set:Created",
+				Count:     1,
+				Increment: true,
+			},
+		)
 
 		// append to the output value
 		if inputIsFromPost { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
@@ -426,6 +617,43 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
 
+		// track golden status in redis for future expire lookup
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden"})
+		if goldenDS.ADVALID == "TRUE" {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "advalid"})
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Created:IsAdValid",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Unique:IsAdValid",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		}
+		if len(goldenDS.EMAIL) > 0 {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "email"})
+			reportCounters1 = append(reportCounters1,
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Created:HasEmail",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360",
+					Name:      "Golden:Unique:HasEmail",
+					Count:     1,
+					Increment: true,
+				},
+			)
+		}
+
 		var SetSearchFields []string
 		// populate search fields for set from a) existing sets b) new fiber c) golden
 		if len(FiberSearchFields) > 0 {
@@ -443,6 +671,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+
 		if len(goldenDS.Search) > 0 {
 			for _, search := range goldenDS.Search {
 				if !Contains(SetSearchFields, search) {
@@ -459,7 +688,40 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		setDS.Search = SetSearchFields
+		setList := []SetDetail{
+			SetDetail{
+				ID:         output.ID,
+				CreatedOn:  time.Now(),
+				FiberCount: len(setDS.Fibers),
+			},
+		}
+		fiberList = append(fiberList,
+			FiberDetail{
+				ID: fiber.ID,
+				Sets: []string{
+					output.ID,
+				},
+			},
+		)
+
+		if len(setDS.Fibers) == 1 {
+			reportCounters1 = append(reportCounters1, ReportCounter{
+				Type:      "People360",
+				Name:      "Singletons",
+				Count:     1,
+				Increment: true,
+			})
+		} else if len(setDS.Fibers) > 1 {
+			reportCounters1 = append(reportCounters1, ReportCounter{
+				Type:      "People360",
+				Name:      "Sets",
+				Count:     1,
+				Increment: true,
+			})
+		}
+
 		log.Printf("set search: %+v", setDS.Search)
+
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
 		}
@@ -477,6 +739,48 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 				goldenKey.Namespace = dsNameSpace
 				GoldenKeys = append(GoldenKeys, goldenKey)
+				setList = append(setList, SetDetail{
+					ID:         set,
+					IsDeleted:  true,
+					DeletedOn:  time.Now(),
+					ReplacedBy: output.ID,
+				})
+
+				// we'll decrement some counters here
+				if SetRedisKeyIfNotExists([]string{output.ID, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
+					// let's see what we are deleting
+					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+						reportCounters1 = append(reportCounters1,
+							ReportCounter{
+								Type:      "People360",
+								Name:      "Golden:Unique",
+								Count:     -1,
+								Increment: true,
+							},
+						)
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "People360",
+									Name:      "Golden:Unique:IsAdValid",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+							reportCounters1 = append(reportCounters1,
+								ReportCounter{
+									Type:      "People360",
+									Name:      "Golden:Unique:HasEmail",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+					}
+				}
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -486,9 +790,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if err := fs.DeleteMulti(ctx, GoldenKeys); err != nil {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
+
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+
 		}
 
 		if input.Signature.FiberType == "default" {
+			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360", Name: "Fiber:Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 
@@ -517,6 +826,28 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if fiberCompleted+fiberDeleted >= recordCount && recordCount > 0 {
 				fiberFinished = true
 			}
+
+			if recordCount > 0 {
+				percentRecordFinished := fmt.Sprintf("%d%%", 10*int(10.0*float32(recordCompleted+recordDeleted)/float32(recordCount)))
+				progressKey := []string{input.Signature.EventID, percentRecordFinished}
+				if percentRecordFinished != "0%" { // do not write 0%
+					if GetRedisIntValue(progressKey) == 1 { // already published this status
+					} else {
+						SetRedisTempKey(progressKey)
+						report := FileReport{
+							ID:          input.Signature.EventID,
+							StatusLabel: "records progress " + percentRecordFinished,
+							StatusBy:    cfName,
+							StatusTime:  time.Now(),
+						}
+						if percentRecordFinished == "100%" {
+							report.ProcessingEnd = time.Now()
+						}
+						publishReport(&report, cfName)
+					}
+				}
+			}
+
 			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v", recordFinished, fiberFinished))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
@@ -541,7 +872,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 				cleanupKey := []string{input.Signature.EventID, "cleanup-sent"}
 				if GetRedisIntValue(cleanupKey) == 1 { // already processed
-
+					report := FileReport{
+						ID:            input.Signature.EventID,
+						ProcessingEnd: time.Now(),
+						StatusLabel:   "records already done",
+						StatusBy:      cfName,
+						StatusTime:    time.Now(),
+					}
+					publishReport(&report, cfName)
 				} else {
 					SetRedisTempKey(cleanupKey)
 					if inputIsFromPost { // only pub this message if the source is from post, do not pub if 720
@@ -562,6 +900,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		} else if input.Signature.FiberType == "mar" {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
+		}
+
+		{
+			report := FileReport{
+				ID:        input.Signature.EventID,
+				Counters:  reportCounters1,
+				SetList:   setList,
+				FiberList: fiberList,
+			}
+			publishReport(&report, cfName)
 		}
 
 		// push into pubsub
@@ -589,6 +937,22 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				"source": "360",
 			},
 		})
+
+		//Send to cp-file for eventType == "Form Submission"
+		if input.Signature.EventType == "Form Submission" {
+			outputCP := FileReady{
+				EventID: input.Signature.EventID,
+				OwnerID: input.Signature.OwnerID,
+			}
+			outputCPJSON, _ := json.Marshal(outputCP)
+			cpresult := cpTopic.Publish(ctx, &pubsub.Message{
+				Data: outputCPJSON,
+			})
+			_, err = cpresult.Get(ctx)
+			if err != nil {
+				log.Fatalf("%v Could not pub cleanup to pubsub: %v", input.Signature.EventID, err)
+			}
+		}
 	}
 
 	return nil
