@@ -86,6 +86,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			inputIsFromPost = true
 		}
 	}
+	LogDev(fmt.Sprintf("input is from post: %v", inputIsFromPost))
+
 	for _, input := range inputs {
 		// assign first initial and zip5
 		if len(input.MatchKeys.FNAME.Value) > 0 {
@@ -570,11 +572,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		// append to the output value
-		if inputIsFromPost { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
-			output.Signatures = append(FiberSignatures, input.Signature)
-		}
-
+		output.Signatures = append(FiberSignatures, input.Signature)
 		output.Signature = Signature360{
 			OwnerID:   input.Signature.OwnerID,
 			Source:    input.Signature.Source,
@@ -781,6 +779,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		log.Printf("set search: %+v", setDS.Search)
+		if len(setDS.EventID) == 0 {
+			setJSON, _ := json.Marshal(setDS)
+			log.Printf("ERROR*** set has blank event id: %v", string(setJSON))
+		}
 
 		if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 			log.Printf("Error: storing set with sig %v, error %v", input.Signature, err)
