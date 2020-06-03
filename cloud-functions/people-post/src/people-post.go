@@ -24,7 +24,8 @@ import (
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
-var dev = os.Getenv("ENVIRONMENT") == "dev"
+var env = os.Getenv("ENVIRONMENT")
+var dev = (env == "dev")
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
 var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
 var AddressParserPath = os.Getenv("ADDRESSPATH")
@@ -700,7 +701,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	}
 		// }
 
-		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
