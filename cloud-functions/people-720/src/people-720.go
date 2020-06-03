@@ -70,34 +70,91 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}
 	publishReport(&report0, cfName)
 
-	var sets []PeopleSetDS
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &sets); err != nil {
+
+	// we'll fetch the fibers associated with the event, and then run search key against sets, if we get more than 1 hit, we'll send this fiber back to 360
+	var eventFibers []PeopleFiberDS // this is for raw fibers
+	fiberQuery := datastore.NewQuery(DSKindFiber).Namespace(ownerNS).Filter("eventid =", input.EventID)
+	if _, err := fs.GetAll(ctx, fiberQuery, &eventFibers); err != nil {
+		log.Fatalf("Error querying fibers: %v", err)
+		return nil
+	}
+	var eventFiberSearchKeys []PeopleFiberDSProjected
+	for _, f := range eventFibers {
+		eventFiberSearchKeys = append(eventFiberSearchKeys, PeopleFiberDSProjected{
+			ID:     f.ID,
+			Search: f.Search,
+		})
+	}
+	eventFibers = nil // clear eventFibers to release memory
+
+	var eventSets []PeopleSetDS // this is for raw sets
+	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &eventSets); err != nil {
 		log.Fatalf("Error querying sets: %v", err)
 		return nil
 	}
 
-	var reprocessFibers []string
-	for index, set := range sets {
-		if (index+1)%1000 == 0 {
-			log.Printf("Processed %v sets", (index + 1))
-		}
-		for _, search := range set.Search {
-			msKey := []string{input.EventID, "cleanup", search}
-			setKeys := GetRedisStringsValue(msKey)
-			if !Contains(setKeys, set.ID.Name) {
-				setKeys = append(setKeys, set.ID.Name)
-				SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
-
-			}
-			if len(setKeys) > 1 {
-				// same search mapped to more than 1 swet
-				reprocessFibers = append(reprocessFibers, set.Fibers...)
-			}
-		}
-
+	var eventSetSearchKeys []PeopleSetDSProjected
+	for _, f := range eventSets {
+		eventSetSearchKeys = append(eventSetSearchKeys, PeopleSetDSProjected{
+			ID:     f.ID,
+			Search: f.Search,
+		})
 	}
-	sets = nil
+	eventSets = nil // clear eventFibers to release memory
+
+	// reorganize sets as a map
+	var setSearchMap map[string][]string
+	for _, s := range eventSetSearchKeys { // each set
+		for _, ss := range s.Search { // each search key of each set
+			if len(ss) > 0 { // in case we have a blank
+				if setIDs, ok := setSearchMap[ss]; ok {
+					if !Contains(setIDs, s.ID.Name) {
+						setSearchMap[ss] = append(setIDs, s.ID.Name)
+					}
+				} else {
+					setSearchMap[ss] = []string{s.ID.Name}
+				}
+			}
+		}
+	}
+
+	// loop through fiber list and find where search key appears in more than 1 set search key
+	var reprocessFibers []string
+	for _, f := range eventFiberSearchKeys { // each fiber
+		for _, fs := range f.Search { // each search key of each fiber
+			if setIDs, ok := setSearchMap[fs]; ok { // in the search key map
+				if len(setIDs) > 1 {
+					reprocessFibers = append(reprocessFibers, f.ID.Name)
+					break // go on to next fiber
+				}
+			} else {
+				log.Printf("WARN fiber id %v search key %v not in a set", f.ID.Name, fs)
+			}
+		}
+	}
+
+	//// OLD CODE, look in sets instead
+	// for index, set := range sets {
+	// 	if (index+1)%1000 == 0 {
+	// 		log.Printf("Processed %v sets", (index + 1))
+	// 	}
+	// 	for _, search := range set.Search {
+	// 		msKey := []string{input.EventID, "cleanup", search}
+	// 		setKeys := GetRedisStringsValue(msKey)
+	// 		if !Contains(setKeys, set.ID.Name) {
+	// 			setKeys = append(setKeys, set.ID.Name)
+	// 			SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
+
+	// 		}
+	// 		if len(setKeys) > 1 {
+	// 			// same search mapped to more than 1 swet
+	// 			reprocessFibers = append(reprocessFibers, set.Fibers...)
+	// 		}
+	// 	}
+
+	// }
+	// sets = nil
 	report := FileReport{
 		ID: input.EventID,
 		Counters: []ReportCounter{
