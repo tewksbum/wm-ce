@@ -212,6 +212,26 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		}
 		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
 		output.MatchKeys = GetPeopleOutputFromFiber(&fiber)
+		searchFields := fiber.Search
+		if len(searchFields) > 0 {
+			for _, search := range searchFields {
+				msKey := []string{fiber.OwnerID, "search", search}
+				searchValue := strings.Replace(search, "'", `''`, -1)
+				querySets := []PeopleSetDS{}
+				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("search =", searchValue), &querySets); err != nil {
+					log.Printf("Error querying sets: %v", err)
+				}
+				log.Printf("Fiber type %v Search %v found %v sets", fiberType, search, len(querySets))
+				for _, s := range querySets {
+					if len(s.Fibers) > 0 {
+						for _, f := range s.Fibers {
+							AppendRedisTempKey(msKey, f)
+						}
+					}
+				}
+			}
+		}
+
 		pubs = append(pubs, output)
 
 		outputJSON, _ := json.Marshal(pubs)
