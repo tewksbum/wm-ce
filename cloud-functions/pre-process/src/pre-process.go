@@ -239,7 +239,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	// cycle through ALL columns running all ERRs
 	for i, column := range columns {
 		LogDev(fmt.Sprintf("checking column: %v", column.Name))
-		columnName := ""
+		columnName := column.Name
 		if len(column.Name) > 0 && prefixCount > 3 && reStartsWithPrefix.MatchString(column.Name) {
 			log.Printf("The header column starts with a prefix: %v", column.Name)
 			useSuffixCheck = true
@@ -250,7 +250,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				log.Printf("The header column starts with a prefix result: %v", columnName)
 			}
 		}
-		LogDev(fmt.Sprintf("Prefix'd column: %v", column.Name))
+		LogDev(fmt.Sprintf("d'Prefix column: %v", columnName))
+		LogDev(fmt.Sprintf("column: %v", column.Name))
 
 		column.CampaignERR = GetCampaignERR(column.Name)
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
