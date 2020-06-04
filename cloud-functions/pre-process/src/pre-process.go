@@ -29,7 +29,7 @@ var PSOrder = os.Getenv("PSOUTPUTORDER")
 var PSConsignment = os.Getenv("PSOUTPUTCONSIGNMENT")
 var PSOrderDetail = os.Getenv("PSOUTPUTORDERDETAIL")
 var Env = os.Getenv("ENVIRONMENT")
-var dev = Env == "dev"
+var dev = Env == "dev" // don't love this convention...
 var DSKind = os.Getenv("DSKIND")
 
 var MLUrl = os.Getenv("PREDICTION")
@@ -238,7 +238,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 	useSuffixCheck := false
 	// cycle through ALL columns running all ERRs
 	for i, column := range columns {
-		columnName := ""
+		LogDev(fmt.Sprintf("checking column: %v", column.Name))
+		columnName := column.Name
 		if len(column.Name) > 0 && prefixCount > 3 && reStartsWithPrefix.MatchString(column.Name) {
 			log.Printf("The header column starts with a prefix: %v", column.Name)
 			useSuffixCheck = true
@@ -249,6 +250,8 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				log.Printf("The header column starts with a prefix result: %v", columnName)
 			}
 		}
+		LogDev(fmt.Sprintf("d'Prefix column: %v", columnName))
+		LogDev(fmt.Sprintf("column: %v", column.Name))
 
 		column.CampaignERR = GetCampaignERR(column.Name)
 		column.ConsignmentERR = GetConsignmentERR(column.Name)
