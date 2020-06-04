@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +25,8 @@ import (
 
 var ProjectID = os.Getenv("PROJECTID")
 var PubSubTopic = os.Getenv("PSOUTPUT")
-var dev = os.Getenv("ENVIRONMENT") == "dev"
+var env = os.Getenv("ENVIRONMENT")
+var dev = (env == "dev")
 var SmartyStreetsEndpoint = os.Getenv("SMARTYSTREET")
 var AddressParserBaseUrl = os.Getenv("ADDRESSURL")
 var AddressParserPath = os.Getenv("ADDRESSPATH")
@@ -146,14 +148,19 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		cfName = "people-post"
 	}
 
+	sort.Slice(input.Columns, func(i, j int) bool {
+		return strings.ToLower(input.Columns[i].Name) < strings.ToLower(input.Columns[j].Name)
+	})
+	LogDev(fmt.Sprintf("input columns output: %v", input.Columns))
+
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
 		// start with some sanitization
 		column.Value = strings.TrimSpace(column.Value)
-		column.Value = reNewline.ReplaceAllString(column.Value, " ")
+		column.Value = reNewline.ReplaceAllString(column.Value, " ") //TODO: Jie this removes carriage return... do we want this here?
 		column.Value = strings.Replace(column.Value, "  ", " ", -1)
-		column.Value = strings.Replace(column.Value, "  ", " ", -1)
-		if len(column.Value) == 0 { //dont need to work with blank values
+		column.Value = strings.Replace(column.Value, "  ", " ", -1) //TODO: why are we running this twice in a row?
+		if len(column.Value) == 0 {                                 //dont need to work with blank values
 			continue
 		}
 
@@ -184,6 +191,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Status == 1 && column.IsAttribute {
 			statusAttr = column.Value
 		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
+			// !reNameTitle makes sure the value is not like a Mr. Mrs.
 			// we don't want to overwrite a file supplied TITLE w/ an attribute...
 			if column.IsAttribute && titleValue == "" {
 				titleValue = column.Value
@@ -195,7 +203,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					titleYearAttr = column.Value
 				}
 			}
-
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
 			column.MatchKey = ""
 			column.PeopleERR.Country = 0 // override this is NOT a country
@@ -700,7 +707,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	}
 		// }
 
-		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", dev, input.Signature.OwnerID))
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {

@@ -83,6 +83,10 @@ type People360Input struct {
 	MatchKeys   PeopleOutput      `json:"matchkeys"`
 }
 
+type PeopleFiberDSProjected struct {
+	ID     *datastore.Key `datastore:"__key__"`
+	Search []string       `datastore:"search"`
+}
 type PeopleFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`
@@ -208,6 +212,11 @@ type People360Output struct {
 	ExpiredSets  []string         `json:"expiredSets"`
 	Passthroughs []Passthrough360 `json:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
+}
+
+type PeopleSetDSProjected struct {
+	ID     *datastore.Key `datastore:"__key__"`
+	Search []string       `datastore:"search"`
 }
 
 type PeopleSetDS struct {

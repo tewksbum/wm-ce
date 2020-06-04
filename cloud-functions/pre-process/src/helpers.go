@@ -105,17 +105,17 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.TrimSpace(strings.ToLower(column))
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first", "first name (given name)":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname", "last ame":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname", "last ame", "last name (surname)":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle":
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1", "home address (street)", "street1_line1":
 		err.Address1 = 1
-	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2":
+	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2", "street1_line2":
 		err.Address2 = 1
 	case "ad3", "add3", "ad 3", "address 3", "address line 3", "street line 3", "street address 3", "address3", "street_line3", "street 3", "street address line 3", "addr_line_3", "line3", "line 3", "address street line 3", "address line3", "home addr3", "street3":
 		err.Address3 = 1
@@ -123,25 +123,25 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Address4 = 1
 	case "mailing street", "mailing_street", "mailing address street", "mailing state", "mailing province":
 		err.Address1 = 1
-	case "city", "city ", "street city", "home city", "city_pr", "pa city", "current city", "parent city", "scity", "active city", "home mailing city", "address city":
+	case "city", "city ", "street city", "home city", "city_pr", "pa city", "current city", "parent city", "scity", "active city", "home mailing city", "address city", "city1":
 		err.City = 1
-	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state", "state code", "region":
+	case "state", "st", "state ", "state_province", "st ", "state province", "street state", "parent state", "home state province", "state/province", "state_territory_cd", "state_pr", "pa state", "stateorprovince", "home state", "state_code", "active region", "home mailing state", "address state", "state code", "region", "state (u.s.)", "state1":
 		err.State = 1
-	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip":
+	case "zip", "zip1", "zip code", "zip_code", "zipcode", "zip ", "postal_code", "postal code", "postalcode", "zip postcode", "street zip", "postcode", "post code", "postal", "home_postal", "perm_zip", "permanenthomezippostalcode", "home zip postcode", "parent zip", "zip_pr", "pa zipcode", "zip5", "zip+4", "home zip", "active postal", "home mailing zip", "address zip", "zip/postal code":
 		err.ZipCode = 1
-	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz", "citystatezip":
+	case "citystzip", "city/st/zip ", "city/state/zip", "city/state", "city, state zip", "city, state, zip", "address line 2 - calculated", "address line 3 - calculated", "Home Csz Svsu", "csz", "home (preferred) csz", "citystatezip", "city  state  zip (include country if not us)":
 		err.City = 1
 		err.State = 1
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4", "natn_desc1":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
-	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2":
+	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
@@ -182,7 +182,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.TrustedID = 1
 	case "role":
 		err.ContainsStudentRole = 1
-	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "contact owner", "agreed to be listed", "communication: release: permaddress":
+	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "contact owner", "agreed to be listed", "communication: release: permaddress", "staff assigned name":
 		err.Junk = 1
 	case "level", "room location description 1":
 		// may want to unjunk the degree level things...

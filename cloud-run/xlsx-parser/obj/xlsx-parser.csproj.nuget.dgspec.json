@@ -1,0 +1,72 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/jyang/Documents/work/wemade/repo/ce/cloud-run/xlsx-parser/xlsx-parser.csproj": {}
+  },
+  "projects": {
+    "/Users/jyang/Documents/work/wemade/repo/ce/cloud-run/xlsx-parser/xlsx-parser.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/jyang/Documents/work/wemade/repo/ce/cloud-run/xlsx-parser/xlsx-parser.csproj",
+        "projectName": "xlsx-parser",
+        "projectPath": "/Users/jyang/Documents/work/wemade/repo/ce/cloud-run/xlsx-parser/xlsx-parser.csproj",
+        "packagesPath": "/Users/jyang/.nuget/packages/",
+        "outputPath": "/Users/jyang/Documents/work/wemade/repo/ce/cloud-run/xlsx-parser/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/jyang/.config/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netcoreapp3.1"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netcoreapp3.1": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netcoreapp3.1": {
+          "dependencies": {
+            "DocumentFormat.OpenXml": {
+              "target": "Package",
+              "version": "[2.11.0, )"
+            },
+            "Google.Cloud.Diagnostics.AspNetCore": {
+              "target": "Package",
+              "version": "[4.0.0, )"
+            },
+            "Microsoft.NET.Sdk.Functions": {
+              "target": "Package",
+              "version": "[3.0.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.300/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

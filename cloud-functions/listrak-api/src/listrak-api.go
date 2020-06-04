@@ -179,6 +179,8 @@ func ListrakProcessRequest(w http.ResponseWriter, r *http.Request) {
 				Data: outputJSON,
 				Attributes: map[string]string{
 					"eventid": input.EventID,
+					"listid":  os.Getenv("LISTRAKCP"),
+					"form":    "cp",
 				},
 			})
 			psid, err := psresult.Get(ctx)

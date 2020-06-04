@@ -1,26 +1,22 @@
+timeout: 10m
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
-    args: ['functions', 
+    args: ["functions", 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
-    "--memory", "2048MB",
-    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--trigger-http", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "540",
+    "--timeout", "240",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "1",
-    "--vpc-connector", "${_VPC_CONNECTOR}",
-    "--retry"
+    "--max-instances", "2"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: people-720
-    _TRIGGER_TOPIC: people-finished
-    _ENTRY_POINT: People720
-    _VPC_CONNECTOR: cf-connector-4
+    _FUNCTION_NAME: purge-util
+    _ENTRY_POINT: ProcessRequest
 options:
     substitution_option: 'ALLOW_LOOSE'
