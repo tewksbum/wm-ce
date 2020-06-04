@@ -10,7 +10,7 @@ import (
 func TestProcessRequestALL(t *testing.T) {
 	json := `
 	{
-		"namespace": "prod-rmt-hrl"
+		"namespace": "prod-wne-sa"
 	}`
 
 	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
