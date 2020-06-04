@@ -129,6 +129,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 					break // go on to next fiber
 				}
 			} else {
+				reprocessFibers = append(reprocessFibers, f.ID.Name) // reprocess these too
 				log.Printf("WARN fiber id %v search key %v not in a set", f.ID.Name, fs)
 			}
 		}
