@@ -133,8 +133,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			} else {
 				if f.Disposition != "purge" && f.Disposition != "dupe" {
 					reprocessFibers = append(reprocessFibers, f.ID.Name) // reprocess these too
-					log.Printf("WARN fiber id %v type %v search key %v not in a set, fiber disposition is %v", f.ID.Name, f.FiberType, fs, f.Disposition)
 				}
+				log.Printf("WARN fiber id %v type %v disposition %v search key %v not in a set", f.ID.Name, f.FiberType, f.Disposition, fs)
 			}
 		}
 	}
