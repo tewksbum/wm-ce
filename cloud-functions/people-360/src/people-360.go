@@ -485,27 +485,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
-		// write fiber search key
-		var searchFields []string
-		if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
-			// get this into redis
-			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			if len(dsFiber.EMAIL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(dsFiber.PHONE.Value) > 0 && len(dsFiber.FINITIAL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.PHONE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(dsFiber.CITY.Value) > 0 && len(dsFiber.STATE.Value) > 0 && len(dsFiber.LNAME.Value) > 0 && len(dsFiber.FNAME.Value) > 0 && len(dsFiber.AD1.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.FNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.LNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.AD1.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.CITY.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.STATE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(searchFields) > 0 {
-				for _, search := range searchFields {
-					msKey := []string{input.Signature.OwnerID, "search", search}
-					AppendRedisTempKey(msKey, dsFiber.ID.Name)
-				}
+		// if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
+		if dsFiber.Disposition != "purge" {
+			for _, search := range dsFiber.Search {
+				msKey := []string{input.Signature.OwnerID, "search", search}
+				AppendRedisTempKey(msKey, dsFiber.ID.Name)
 			}
 		}
+
 		// store the fiber
 		if _, err := fs.Put(ctx, dsKey, &dsFiber); err != nil {
 			log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
@@ -738,6 +725,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
+		// put the set search key in redis
 		if len(SetSearchFields) > 0 {
 			for _, search := range SetSearchFields {
 				msSet := []string{input.Signature.OwnerID, "set", search}
