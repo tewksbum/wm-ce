@@ -124,7 +124,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 					return nil
 				}
-			} else if input.Signature.FiberType == "mar" {
+			} else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
 				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 				if existingCheck == 0 { // default fiber has not been processed
 					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
