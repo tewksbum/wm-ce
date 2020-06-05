@@ -8,18 +8,139 @@ import (
 )
 
 func TestProcessRequestALL(t *testing.T) {
-	json := `
-	{
-		"namespace": "prod-wne-sa"
-	}`
+	list := []string{
+		"wne-sa",
+		"oxf-res",
+		"ctc-rel",
+		"way-rha",
+		"oxf-res",
+		"pap-rha",
+		"way-rha",
+		"msa-rha",
+		"pap-rha",
+		"upt-rsa",
+		"swu-hrl",
+		"rmt-hrl",
+		"fms-rl",
+		"lhu-rha",
+		"ppc-bn",
+		"shd-reh",
+		"swc-rla",
+		"uil-hsl",
+		"sut-ia",
+		"uoc-rl",
+		"uoc-rl",
+		"uca-rha",
+		"swc-rla",
+		"swc-rla",
+		"oll-rl",
+		"gwy-rha",
+		"etn-nrh",
+		"abr-sa",
+		"crt-rl",
+		"gwy-rha",
+		"hnu-hrl",
+		"btc-sab",
+		"laf-rhc",
+		"btc-sab",
+		"msn-sl",
+		"fch-hrs",
+		"use-bk",
+		"chm-rl",
+		"uaz-rha",
+		"uaz-rha",
+		"fch-hrs",
+		"gwy-rha",
+		"etn-nrhh",
+		"bar-hrl",
+		"scl-rha",
+		"uaz-rha",
+		"bem-drl",
+		"sut-uh",
+		"mcy-rl",
+		"sta-rl",
+		"bem-drl",
+		"sel-uh",
+		"ssu-rha",
+		"chm-rl",
+		"fch-hrs",
+		"gsu-rha",
+		"crt-rl",
+		"mcy-rl",
+		"onu-bn",
+		"mss-saa",
+		"uti-rha",
+		"psc-rl",
+		"emi-rha",
+		"sel-uh",
+		"gsa-uh",
+		"lyn-hrl",
+		"psc-rl",
+		"fld-rha",
+		"etn-nrhh",
+		"tga-cll",
+		"stk-sa",
+		"cld-rl",
+		"laf-rhc",
+		"unm-rha",
+		"chm-rl",
+		"mts-pfa",
+		"fms-rl",
+		"okc-hrl",
+		"blf-rl",
+		"isu-rha",
+		"asy-rl",
+		"okc-hrl",
+		"uiu-arh",
+		"mru-hrl",
+		"riv-rls",
+		"btc-sab2",
+		"ncl-sa",
+		"gsu-rha",
+		"asy-rl",
+		"uis-rha",
+		"uti-rha",
+		"jau-rlh",
+		"wri-rlh",
+		"ecu-rha",
+		"lom-rha",
+		"cnp-rha",
+		"unm-rha",
+		"mtd-rha",
+		"ott-rsa",
+		"ucg-rl",
+		"stk-sa",
+		"wis-hrl",
+		"ecu-rha",
+		"uis-rha",
+		"trs-bn",
+		"cnp-rha",
+		"sos-rh",
+		"ste-rl",
+		"mid-rha",
+		"cly-bbanb",
+		"ums-bn",
+		"gsa-uh",
+		"wag-re",
+		"fdk-ho",
+		"ohu-trac",
+		"flc-rha",
+		"ulb-rl",
+		"fdk-ho",
+		"wpi-rs",
+	}
+	for _, item := range list {
+		json := fmt.Sprintf(`{"namespace": "prod-%v"}`, item)
+		req := httptest.NewRequest("POST", "/", strings.NewReader(json))
+		req.Header.Add("Content-Type", "application/json")
 
-	req := httptest.NewRequest("POST", "/", strings.NewReader(json))
-	req.Header.Add("Content-Type", "application/json")
+		rr := httptest.NewRecorder()
+		ProcessRequest(rr, req)
 
-	rr := httptest.NewRecorder()
-	ProcessRequest(rr, req)
+		got := rr.Body.String()
 
-	got := rr.Body.String()
+		fmt.Println(got)
 
-	fmt.Println(got)
+	}
+
 }

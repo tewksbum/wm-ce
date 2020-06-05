@@ -84,8 +84,10 @@ type People360Input struct {
 }
 
 type PeopleFiberDSProjected struct {
-	ID     *datastore.Key `datastore:"__key__"`
-	Search []string       `datastore:"search"`
+	ID          *datastore.Key `datastore:"__key__"`
+	Search      []string       `datastore:"search"`
+	Disposition string         `datastore:"disposition"`
+	FiberType   string         `datastore:"fibertype"`
 }
 type PeopleFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`

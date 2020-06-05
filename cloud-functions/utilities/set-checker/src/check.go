@@ -29,6 +29,7 @@ var ds *datastore.Client
 var fs *datastore.Client
 var sb *storage.BucketHandle
 var sbb *storage.BucketHandle
+var sb2 *storage.BucketHandle
 
 func init() {
 	ctx = context.Background()
@@ -37,6 +38,7 @@ func init() {
 	cs, _ := storage.NewClient(ctx)
 	sb = cs.Bucket(os.Getenv("BUCKET"))
 	sbb = cs.Bucket(os.Getenv("BADBUCKET"))
+	sb2 = cs.Bucket("wm_missed_uploaded_prod")
 	log.Printf("init completed")
 }
 
@@ -250,7 +252,7 @@ func getSetsWithBlankEventId(namespace string) {
 
 			file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".csv")
 			if suppressFile {
-				file = sbb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+				file = sb2.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".csv")
 			}
 			writer := file.NewWriter(ctx)
 			if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
