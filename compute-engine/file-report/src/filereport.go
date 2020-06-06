@@ -153,7 +153,9 @@ func init() {
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		mutex.Lock()
 		processUpdate(ctx, msg)
+		mutex.Unlock()
 		msg.Ack()
 	})
 	if err != nil {
@@ -366,38 +368,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	if len(input.RecordList) > 0 {
-		for _, r := range input.RecordList {
-			if !r.CreatedOn.IsZero() {
-				_, err = insertRecord.Exec(r.ID, input.ID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
-				if err != nil {
-					log.Printf("Error running insertRecord: %v", err)
-				}
-			}
-
-			if len(r.IsPerson) > 0 {
-				_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
-				if err != nil {
-					log.Printf("Error running updateRecordPerson: %v", err)
-				}
-			}
-			//update disposition
-			if len(r.Disposition) > 0 {
-				_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
-				if err != nil {
-					log.Printf("Error running updateRecordDisposition: %v", err)
-				}
-			}
-			// add fiber
-			if len(r.Fibers) > 0 {
-				for _, fiber := range r.Fibers {
-					_, err = insertRecordFiber.Exec(r.ID, fiber)
-					if err != nil {
-						log.Printf("Error running insertRecordFiber: %v", err)
-					}
-				}
-			}
-		}
-
+		go processRecordList(input.RecordList, input.ID)
 	}
 
 	if len(input.FiberList) > 0 {
@@ -445,10 +416,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 		}
 	}
-	mutex.Lock()
-
 	err = bulk.Flush()
-	mutex.Unlock()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
 		return true
@@ -471,5 +439,40 @@ func runElasticUpdate(eu *elastic.UpdateService) {
 	_, err := eu.DetectNoop(true).Do(ctx)
 	if err != nil {
 		log.Printf("error updating es %v", err)
+	}
+}
+
+func processRecordList(records []RecordDetail, eventID string) {
+	var err error
+	for _, r := range records {
+		if !r.CreatedOn.IsZero() {
+			_, err = insertRecord.Exec(r.ID, eventID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
+			if err != nil {
+				log.Printf("Error running insertRecord: %v", err)
+			}
+		}
+
+		if len(r.IsPerson) > 0 {
+			_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
+			if err != nil {
+				log.Printf("Error running updateRecordPerson: %v", err)
+			}
+		}
+		//update disposition
+		if len(r.Disposition) > 0 {
+			_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
+			if err != nil {
+				log.Printf("Error running updateRecordDisposition: %v", err)
+			}
+		}
+		// add fiber
+		if len(r.Fibers) > 0 {
+			for _, fiber := range r.Fibers {
+				_, err = insertRecordFiber.Exec(r.ID, fiber)
+				if err != nil {
+					log.Printf("Error running insertRecordFiber: %v", err)
+				}
+			}
+		}
 	}
 }
