@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -241,17 +240,12 @@ func main() {
 
 // Run starts the Bulker.
 func (b *Bulker) Run() error {
-	// Recreate Elasticsearch index
-	if err := b.ensureIndex(); err != nil {
-		return err
-	}
-
 	// Start bulk processor
 	p, err := b.c.BulkProcessor().
 		Workers(b.workers).              // # of workers
 		BulkActions(1000).               // # of queued requests before committed
 		BulkSize(4096).                  // # of bytes in requests before committed
-		FlushInterval(30 * time.Second). // autocommit every 10 seconds
+		FlushInterval(30 * time.Second). // autocommit every 30 seconds
 		Stats(true).                     // gather statistics
 		Before(b.before).                // call "before" before every commit
 		After(b.after).                  // call "after" after every commit
@@ -325,29 +319,6 @@ func (b *Bulker) after(id int64, requests []elastic.BulkableRequest, response *e
 // Stats returns statistics from bulk processor.
 func (b *Bulker) Stats() elastic.BulkProcessorStats {
 	return b.Stats()
-}
-
-// ensureIndex creates the index in Elasticsearch.
-// It will be dropped if it already exists.
-func (b *Bulker) ensureIndex() error {
-	if b.index == "" {
-		return errors.New("no index name")
-	}
-	exists, err := b.c.IndexExists(b.index).Do(ctx)
-	if err != nil {
-		return err
-	}
-	if exists {
-		_, err = b.c.DeleteIndex(b.index).Do(ctx)
-		if err != nil {
-			return err
-		}
-	}
-	_, err = b.c.CreateIndex(b.index).Do(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // ProcessUpdate processes update from pubsub into elastic, returns bool indicating if the message should be retried
