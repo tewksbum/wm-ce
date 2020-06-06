@@ -7,7 +7,7 @@ After=multi-user.target
 Restart=on-failure
 Type=simple
 EnvironmentFile=/opt/exception-report/prod/compute-engine/file-report/src/env-dev.txt
-ExecStart=/opt/exception-report/prod/compute-engine/file-report/src/exception-report-prod
+ExecStart=/opt/exception-report/prod/compute-engine/file-report/src/exception-report
 StandardOutput=/var/log/exception-report/prod.log
 StandardError=/var/log/exception-report/prod.log
 
