@@ -261,3 +261,14 @@ func TestReportDetail(t *testing.T) {
 	got := rr.Body.String()
 	fmt.Println(got)
 }
+
+func TestBadCounter(t *testing.T) {
+	json := `{"id":"943bb0c9-389c-48de-a6b4-a44dda30db97","processingBegin":"0001-01-01T00:00:00Z","statusTime":"0001-01-01T00:00:00Z","errors":null,"warnings":null,"audits":null,"counters":[{"type":"FileProcessor","name":"Purge","count":1,"inc":true}],"inputStats":null}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
