@@ -8,7 +8,8 @@ A typical deploy process:
 cd github
 git pull origin dev
 cd compute-engine/file-report/src
-go build -o exception-report .
+go build -o dev-exception-report .
+go build -o prod-exception-report .
 sudo systemctl daemon-reload
 sudo systemctl restart exception-report-dev
 sudo systemctl restart exception-report-prod
