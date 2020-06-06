@@ -100,9 +100,9 @@ func init() {
 	}
 
 	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
-	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
-	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
-	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
+	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
+	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 50MB max messages
+	sub.ReceiveSettings.NumGoroutines = 4                       // run this as single threaded for elastic's sake
 
 	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
@@ -152,9 +152,7 @@ func init() {
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		mutex.Lock()
 		ProcessUpdate(ctx, msg)
-		defer mutex.Unlock()
 		msg.Ack()
 	})
 	if err != nil {
@@ -555,7 +553,9 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		input = FileReport{}
 		defer bulk.Close()
 		// run the bulk request
+		mutex.Lock()
 		err = bulk.Flush()
+		mutex.Unlock()
 		if err != nil {
 			log.Printf("error running bulk update %v", err)
 			return true
