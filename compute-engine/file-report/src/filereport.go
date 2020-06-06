@@ -310,6 +310,14 @@ func (b *Bulker) after(id int64, requests []elastic.BulkableRequest, response *e
 		atomic.AddInt64(&b.failureCalls, 1)
 		b.throttle = true // bulk processor in trouble
 	} else {
+		for i, r := range response.Items {
+			for k, v := range r {
+				if len(v.Result) == 0 {
+
+					log.Printf("%v error %v for input %v", k, v.Error, requests[i])
+				}
+			}
+		}
 		atomic.AddInt64(&b.successCalls, 1)
 		b.throttle = false // bulk processor ok
 	}
