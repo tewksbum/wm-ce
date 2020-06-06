@@ -6,7 +6,7 @@ After=multi-user.target
 [Service]
 Restart=on-failure
 Type=simple
-EnvironmentFile=/opt/exception-report/github/compute-engine/file-report/src/env-dev.txt
+EnvironmentFile=/opt/exception-report/github/compute-engine/file-report/src/env-prod.txt
 ExecStart=/opt/exception-report/github/compute-engine/file-report/src/prod-exception-report
 StandardOutput=syslog
 StandardError=syslog
