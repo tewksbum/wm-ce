@@ -52,7 +52,7 @@ func TestCounter1(t *testing.T) {
 	json := `{
 		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
 		"counters": [
-			{"type": "Record", "name": "Total", "inc": false, "count": 100}
+			{"type": "FileProcessor", "name": "Total", "inc": false, "count": 100}
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)

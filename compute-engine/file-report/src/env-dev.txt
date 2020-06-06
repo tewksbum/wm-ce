@@ -1,0 +1,10 @@
+GOOGLE_APPLICATION_CREDENTIALS=/home/jyang_trellist/keys/wemade-core.json
+PROJECTID=wemade-core
+DSPROJECTID=fire-core-wm
+DATASTORENS=wemade-dev
+ELASTIC_SECRET=projects/180297787522/secrets/elastic/versions/2
+REPORT_ESINDEX=wemade-reports-dev
+REPORT_SUB=wm-file-report-sub-dev
+MYSQL_INSTANCE=wemade-core:us-central1:pipeline
+MYSQL_HOST=10.45.160.3
+GCP_PROJECT=wemade-core

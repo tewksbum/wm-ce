@@ -98,9 +98,9 @@ func init() {
 	}
 
 	sub = ps.Subscription(os.Getenv("REPORT_SUB"))
-	sub.ReceiveSettings.Synchronous = true                     // run this synchronous
-	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
-	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
+	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
+	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 50MB max messages
+	sub.ReceiveSettings.NumGoroutines = 1                       // run this as single threaded for elastic's sake
 
 	dsn := fmt.Sprintf("pipeline@unix(/cloudsql/%v)/pipeline?tls=false&autocommit=true&parseTime=true", os.Getenv("MYSQL_INSTANCE"))
 	if os.Getenv("VENDOR") == "apple" { // detect local
@@ -202,11 +202,15 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			report.StatusBy = input.StatusBy
 			report.StatusTime = input.StatusTime
 			report.Counts = []CounterGroup{
-				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
-				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
-				CounterGroup{Group: "peoplepost", Items: []KeyCounter{}},
-				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}}},
+				CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "raw", Count: 0}, KeyCounter{Key: "columns", Count: 0}, KeyCounter{Key: "outputted", Count: 0}}},
+				CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
+				CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "default", Count: 0}, KeyCounter{Key: "mar", Count: 0}, KeyCounter{Key: "mpr", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+				CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "unmatchable", Count: 0}, KeyCounter{Key: "dupe", Count: 0}, KeyCounter{Key: "singletons", Count: 0}, KeyCounter{Key: "sets", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
 				CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
+				CounterGroup{Group: "golden", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+				CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+				CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+				CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
 			}
 			report.MatchKeyCounts = []KeyCounter{
 				KeyCounter{Key: "AD1", Count: 0},
@@ -231,7 +235,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			log.Printf("%v", string(js))
 			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
-
+			idReport := IDOnly{ID: input.ID}
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 			if !input.ProcessingBegin.IsZero() {
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}))
 			}
@@ -252,9 +257,18 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if len(input.Counters) > 0 {
-				exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = [];}`
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
-
+				exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = params.init}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists).Param("init", []CounterGroup{
+					CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "raw", Count: 0}, KeyCounter{Key: "columns", Count: 0}, KeyCounter{Key: "outputted", Count: 0}}},
+					CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
+					CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "default", Count: 0}, KeyCounter{Key: "mar", Count: 0}, KeyCounter{Key: "mpr", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+					CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "unmatchable", Count: 0}, KeyCounter{Key: "dupe", Count: 0}, KeyCounter{Key: "singletons", Count: 0}, KeyCounter{Key: "sets", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+					CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
+					CounterGroup{Group: "golden", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
+				})))
 				for _, counter := range input.Counters {
 					script := ""
 

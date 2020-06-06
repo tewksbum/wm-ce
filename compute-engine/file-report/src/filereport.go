@@ -1,4 +1,4 @@
-package main
+package filereport
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -54,11 +55,12 @@ var (
 	updateRecordDisposition *sql.Stmt
 	updateFiberDisposition  *sql.Stmt
 	updateSetDeleted        *sql.Stmt
+
+	projectID = os.Getenv("GCP_PROJECT")
 )
 
-var projectID = os.Getenv("GCP_PROJECT")
-
 func init() {
+	log.Printf("starting exception-report")
 	var err error
 	ctx = context.Background()
 
@@ -102,10 +104,7 @@ func init() {
 	sub.ReceiveSettings.MaxOutstandingBytes = 50 * 1024 * 1024 // 50MB max messages
 	sub.ReceiveSettings.NumGoroutines = 1                      // run this as single threaded for elastic's sake
 
-	dsn := fmt.Sprintf("pipeline@unix(/cloudsql/%v)/pipeline?tls=false&autocommit=true&parseTime=true", os.Getenv("MYSQL_INSTANCE"))
-	if os.Getenv("VENDOR") == "apple" { // detect local
-		dsn = fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_TESTING"))
-	}
+	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
 	db, err = sql.Open("mysql", dsn)
 	if err != nil {
@@ -166,7 +165,23 @@ func PullMessages(ctx context.Context, m psMessage) error {
 
 // main for go
 func main() {
+	// add stystemd watchdog
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs)
+
+	// method invoked upon seeing signal
+	go func() {
+		s := <-sigs
+		log.Printf("RECEIVED SIGNAL: %s", s)
+		Cleanup()
+		os.Exit(1)
+	}()
 	PullMessages(ctx, psMessage{})
+}
+
+// Cleanup for go
+func Cleanup() {
+	log.Println("CLEANUP APP BEFORE EXIT!!!")
 }
 
 // ProcessUpdate processes update from pubsub into elastic, returns bool indicating if the message should be retried
@@ -184,9 +199,10 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	if source, ok := m.Attributes["source"]; ok {
+		var report FileReport
+
 		if strings.Contains(source, "file-api") {
 			// initialize arrays and run insert
-			var report FileReport
 			report.ID = input.ID
 			report.RequestedAt = input.RequestedAt
 			report.ProcessingBegin = input.ProcessingBegin
@@ -232,8 +248,12 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 			js, _ := json.Marshal(report)
 			log.Printf("%v", string(js))
+
 			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
+			// in case we dont have the doc yet
+			idReport := IDOnly{ID: input.ID}
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 
 			if !input.ProcessingBegin.IsZero() {
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}))
@@ -255,9 +275,18 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if len(input.Counters) > 0 {
-				exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = [];}`
-				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists)))
-
+				exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = params.init}`
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(exists).Param("init", []CounterGroup{
+					CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "raw", Count: 0}, KeyCounter{Key: "columns", Count: 0}, KeyCounter{Key: "outputted", Count: 0}}},
+					CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
+					CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "default", Count: 0}, KeyCounter{Key: "mar", Count: 0}, KeyCounter{Key: "mpr", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+					CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "unmatchable", Count: 0}, KeyCounter{Key: "dupe", Count: 0}, KeyCounter{Key: "singletons", Count: 0}, KeyCounter{Key: "sets", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+					CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
+					CounterGroup{Group: "golden", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
+					CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
+				})))
 				for _, counter := range input.Counters {
 					script := ""
 
@@ -272,7 +301,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count += params.count.count}`
 					} else {
 						//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
-						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {counter.count = params.count.count}`
+						script = `def group = ctx._source.counts.find(g -> g.group == "` + t + `"); def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)}`
 					}
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(input.ID).Script(elastic.NewScript(script).Param("count", kc)))
 				}
@@ -524,7 +553,10 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				// }
 			}
 		}
-
+		report = FileReport{}
+		err = nil
+		input = FileReport{}
+		defer bulk.Close()
 		// run the bulk request
 		err = bulk.Flush()
 		if err != nil {
@@ -537,8 +569,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		if stats.Failed > 0 {
 			log.Printf("Bulk action created %d, updated %d with %d success and %d failure", stats.Created, stats.Updated, stats.Succeeded, stats.Failed)
 			log.Printf("%v", string(m.Data))
-		} else {
-			log.Println("-")
 		}
 
 		if stats.Succeeded == 0 && stats.Failed > 0 {
@@ -550,6 +580,8 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		log.Printf("ERROR source is missing from message attributes %v", err)
 		return false
 	}
+
+	input = FileReport{}
 
 	return false
 }

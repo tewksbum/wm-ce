@@ -1,4 +1,4 @@
-package main
+package filereport
 
 import "time"
 
@@ -36,6 +36,11 @@ type FileReport struct {
 	Records            []RecordDetail        `json:"records,omitempty"`
 	Fibers             []FiberDetail         `json:"fibers,omitempty"`
 	Sets               []SetDetail           `json:"sets,omitempty"`
+}
+
+// IDOnly is a special report type for upsert
+type IDOnly struct {
+	ID string `json:"id,omitempty"`
 }
 
 // CounterGroup counter groups

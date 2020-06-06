@@ -1,0 +1,15 @@
+[Unit]
+Description=Exception Report Dev
+Requires=network.target
+After=multi-user.target
+
+[Service]
+Restart=on-failure
+Type=simple
+EnvironmentFile=/opt/exception-report/prod/compute-engine/file-report/src/env-dev.txt
+ExecStart=/opt/exception-report/dev/compute-engine/file-report/src/exception-report-dev
+StandardOutput=/var/log/exception-report/dev.log
+StandardError=/var/log/exception-report/dev.log
+
+[Install]
+WantedBy=multi-user.target
