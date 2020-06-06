@@ -178,7 +178,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 		log.Printf("ERROR unable to unmarshal request %v", err)
 		return false
 	}
-	bulk, err := esClient.BulkProcessor().Name("BulkUpdate").Stats(true).Workers(1).Do(ctx)
+	bulk, err := esClient.BulkProcessor().Name("BulkUpdate").Stats(true).After(after).Workers(1).Do(ctx)
 	if err != nil {
 		log.Printf("error starting bulk processor %v", err)
 		return true
@@ -510,6 +510,18 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	return false
+}
+
+func after(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
+
+	for i, r := range response.Items {
+		for k, v := range r {
+			if len(v.Result) == 0 {
+
+				log.Printf("%v error %v for input %v", k, v.Error, requests[i])
+			}
+		}
+	}
 }
 
 func runElasticIndex(eu *elastic.IndexService) {

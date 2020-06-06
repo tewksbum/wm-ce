@@ -154,6 +154,27 @@ func TestColumnStat(t *testing.T) {
 	ProcessUpdate(context.Background(), &message)
 }
 
+func TestError(t *testing.T) {
+	json := `{
+		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
+		"inputStats": {
+			"First Name": {
+				"name": "First Name",
+				"min": "Abbey",
+				"max": "Williams",
+				"sparsity": 99
+			}
+		}
+	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
 func TestMatchKeyStats(t *testing.T) {
 	json := `{
 		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
