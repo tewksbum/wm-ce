@@ -220,7 +220,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 	// in case we dont have the doc yet
 	idReport := IDOnly{ID: input.ID}
-	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true).RetryOnConflict(0))
+	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true).RetryOnConflict(5))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
 		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(FileReport{
@@ -231,26 +231,26 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			CustomerID:    input.CustomerID,
 			Attributes:    input.Attributes,
 			Passthroughs:  input.Passthroughs,
-		}).DocAsUpsert(true).RetryOnConflict(0))
+		}).DocAsUpsert(true).RetryOnConflict(5))
 	}
 
 	if !input.ProcessingBegin.IsZero() {
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}).RetryOnConflict(5))
 	}
 	if !input.ProcessingEnd.IsZero() {
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}).RetryOnConflict(5))
 	}
 	// append to the status history
 	if len(input.StatusLabel) > 0 {
 		exists := `if (!ctx._source.containsKey("history")) {ctx._source["history"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		newStatus := ReportStatus{
 			Label:     input.StatusLabel,
 			Timestamp: input.StatusTime,
 			Function:  input.StatusBy,
 		}
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}).RetryOnConflict(0))
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)).RetryOnConflict(5))
 	}
 
 	if len(input.Counters) > 0 {
@@ -265,7 +265,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
-		})))
+		})).RetryOnConflict(5))
 		for _, counter := range input.Counters {
 			script := ""
 			kc := KeyCounter{
@@ -283,13 +283,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
 			}
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.Columns) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		// let's make a list
 		for _, column := range input.Columns {
 			columnMapping := NameMappedCounter{
@@ -297,13 +297,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				MapCounters: []MapCounter{},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.m.name); if (column == null) {ctx._source.fields.add(params.m)}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.ColumnMaps) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for _, mapping := range input.ColumnMaps {
 			columnMapping := NameMappedCounter{
 				Name: mapping.Name,
@@ -315,55 +315,55 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.map.name); if (column == null) {ctx._source.fields.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.InputStatistics) > 0 { // this maps to fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for _, v := range input.InputStatistics {
 			v.Mapped = []MapCounter{}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.stat.name); if (column == null) {ctx._source.fields.add(params.stat)} else { column.min = params.stat.min; column.max = params.stat.max; column.sparsity = params.stat.sparsity;}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.MatchKeyStatistics) > 0 {
 		exists := `if (!ctx._source.containsKey("matchKeyCounts")) {ctx._source["matchKeyCounts"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for k, v := range input.MatchKeyStatistics {
 			count := KeyCounter{
 				Key:   k,
 				Count: v,
 			}
 			script := `def mk = ctx._source.matchKeyCounts.find(g -> g.key == params.count.key); if (mk == null) {ctx._source.matchKeyCounts.add(params.count);} else {mk.count += params.count.count}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)).RetryOnConflict(5))
 		}
 	}
 
 	// apend errors and warnings
 	if len(input.Errors) > 0 {
 		exists := `if (!ctx._source.containsKey("errors")) {ctx._source["errors"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for _, e := range input.Errors {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.Warnings) > 0 {
 		exists := `if (!ctx._source.containsKey("warnings")) {ctx._source["warnings"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for _, e := range input.Warnings {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)).RetryOnConflict(5))
 		}
 	}
 
 	if len(input.Audits) > 0 {
 		exists := `if (!ctx._source.containsKey("audits")) {ctx._source["audits"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(0))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
 		for _, e := range input.Audits {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)).RetryOnConflict(0))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)).RetryOnConflict(5))
 		}
 	}
 
