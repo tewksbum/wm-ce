@@ -38,6 +38,11 @@ type FileReport struct {
 	Sets               []SetDetail           `json:"sets,omitempty"`
 }
 
+// IDOnly is a special report type for upsert
+type IDOnly struct {
+	ID string `json:"id,omitempty"`
+}
+
 // CounterGroup counter groups
 type CounterGroup struct {
 	Group string       `json:"group"`
