@@ -246,9 +246,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 					Function:  input.StatusBy,
 				},
 			}
-			js, _ := json.Marshal(report)
-			log.Printf("%v", string(js))
-
 			bulk.Add(elastic.NewBulkIndexRequest().Index(os.Getenv("REPORT_ESINDEX")).Id(report.ID).Doc(report))
 		} else {
 			// in case we dont have the doc yet
