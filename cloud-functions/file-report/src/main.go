@@ -513,11 +513,9 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 }
 
 func after(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
-
 	for i, r := range response.Items {
 		for k, v := range r {
 			if len(v.Result) == 0 {
-
 				log.Printf("%v error %v for input %v", k, v.Error, requests[i])
 			}
 		}
