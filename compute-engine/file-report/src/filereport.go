@@ -445,8 +445,10 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 		}
 	}
+	mutex.Lock()
 
 	err = bulk.Flush()
+	mutex.Unlock()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
 		return true
