@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -11,9 +10,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"syscall"
-	"time"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -60,18 +57,12 @@ var (
 
 	projectID = os.Getenv("GCP_PROJECT")
 	index     = os.Getenv("REPORT_ESINDEX")
-
-	workers int
-
-	bulkRunner *Bulker
 )
 
 func init() {
 	log.Printf("starting exception-report")
 	var err error
 	ctx = context.Background()
-
-	workers = 1
 
 	dsClient, err = datastore.NewClient(ctx, os.Getenv("PROJECTID"))
 	fsClient, err = datastore.NewClient(ctx, os.Getenv("DSPROJECTID"))
@@ -159,28 +150,6 @@ func init() {
 	}
 }
 
-func printStats(b *Bulker) {
-	stats := b.p.Stats()
-	var buf bytes.Buffer
-	for i, w := range stats.Workers {
-		if i > 0 {
-			buf.WriteString(" ")
-		}
-		buf.WriteString(fmt.Sprintf("%d=[%04d]", i, w.Queued))
-	}
-
-	fmt.Printf("%s | calls B=%04d,A=%04d,S=%04d,F=%04d | stats I=%05d,S=%05d,F=%05d | %v\n",
-		time.Now().Format("15:04:05"),
-		b.beforeCalls,
-		b.afterCalls,
-		b.successCalls,
-		b.failureCalls,
-		stats.Indexed,
-		stats.Succeeded,
-		stats.Failed,
-		buf.String())
-}
-
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
@@ -193,7 +162,7 @@ func PullMessages(ctx context.Context, m psMessage) error {
 	return nil
 }
 
-func getMessages() error {
+func getMessages() {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		processUpdate(ctx, msg)
 		msg.Ack()
@@ -201,27 +170,11 @@ func getMessages() error {
 	if err != nil {
 		log.Printf("receive error: %v", err)
 	}
-	return nil
 }
 
 // main for go
 func main() {
 	errc := make(chan error)
-
-	// Run the bulker
-	bulkRunner = &Bulker{c: esClient, workers: workers}
-	err := bulkRunner.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer bulkRunner.Close()
-
-	// Run the statistics printer
-	go func(b *Bulker) {
-		for range time.Tick(60 * time.Second) {
-			printStats(b)
-		}
-	}(bulkRunner)
 
 	// Watch for SIGINT and SIGTERM from the console.
 	go func() {
@@ -231,6 +184,7 @@ func main() {
 		errc <- nil
 	}()
 
+	go getMessages()
 	// Wait for problems.
 	if err := <-errc; err != nil {
 		log.Print(err)
@@ -238,98 +192,17 @@ func main() {
 	}
 }
 
-// Run starts the Bulker.
-func (b *Bulker) Run() error {
-	// Start bulk processor
-	p, err := b.c.BulkProcessor().
-		Workers(b.workers).              // # of workers
-		BulkActions(1000).               // # of queued requests before committed
-		BulkSize(4096).                  // # of bytes in requests before committed
-		FlushInterval(30 * time.Second). // autocommit every 30 seconds
-		Stats(true).                     // gather statistics
-		Before(b.before).                // call "before" before every commit
-		After(b.after).                  // call "after" after every commit
-		Do(ctx)
-	if err != nil {
-		return err
-	}
-
-	b.p = p
-
-	// Start indexer that pushes data into bulk processor
-	b.stopC = make(chan struct{})
-	go getMessages()
-	return nil
-}
-
-// Close the bulker.
-func (b *Bulker) Close() error {
-	b.stopC <- struct{}{}
-	<-b.stopC
-	close(b.stopC)
-	return nil
-}
-
-// indexer is a goroutine that periodically pushes data into
-// bulk processor unless being "throttled" or "stopped".
-func (b *Bulker) indexer(u *elastic.BulkUpdateRequest) {
-	var stop bool
-
-	for !stop {
-		select {
-		case <-b.stopC:
-			stop = true
-
-		default:
-			b.throttleMu.Lock()
-			throttled := b.throttle
-			b.throttleMu.Unlock()
-
-			if !throttled {
-				b.p.Add(u)
-			}
-
-		}
-	}
-
-	b.stopC <- struct{}{} // ack stopping
-}
-
-// before is invoked from bulk processor before every commit.
-func (b *Bulker) before(id int64, requests []elastic.BulkableRequest) {
-	atomic.AddInt64(&b.beforeCalls, 1)
-}
-
-// after is invoked by bulk processor after every commit.
-// The err variable indicates success or failure.
-func (b *Bulker) after(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
-	atomic.AddInt64(&b.afterCalls, 1)
-
-	b.throttleMu.Lock()
-	if err != nil {
-		atomic.AddInt64(&b.failureCalls, 1)
-		b.throttle = true // bulk processor in trouble
-	} else {
-		for i, r := range response.Items {
-			for k, v := range r {
-				if len(v.Result) == 0 {
-
-					log.Printf("%v error %v for input %v", k, v.Error, requests[i])
-				}
+func afterUpdate(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
+	for i, r := range response.Items {
+		for k, v := range r {
+			if len(v.Result) == 0 {
+				log.Printf("%v error %v for input %v", k, v.Error, requests[i])
 			}
 		}
-		atomic.AddInt64(&b.successCalls, 1)
-		b.throttle = false // bulk processor ok
 	}
-	b.throttleMu.Unlock()
 }
 
-// Stats returns statistics from bulk processor.
-func (b *Bulker) Stats() elastic.BulkProcessorStats {
-	return b.Stats()
-}
-
-// ProcessUpdate processes update from pubsub into elastic, returns bool indicating if the message should be retried
+// processUpdate processes update from pubsub into elastic, returns bool indicating if the message should be retried
 func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	var input FileReport
 	err := json.Unmarshal(m.Data, &input)
@@ -337,7 +210,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 		log.Printf("ERROR unable to unmarshal request %v", err)
 		return false
 	}
-	// bulk, err := esClient.BulkProcessor().Name("BulkUpdate").Stats(true).Workers(1).Do(ctx)
+	bulk, err := esClient.BulkProcessor().Name("BulkUpdate").Stats(true).After(afterUpdate).Workers(1).Do(ctx)
 	if err != nil {
 		log.Printf("error starting bulk processor %v", err)
 		return true
@@ -345,10 +218,10 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 	// in case we dont have the doc yet
 	idReport := IDOnly{ID: input.ID}
-	go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true))
+	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(FileReport{
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(FileReport{
 			RequestedAt:   input.RequestedAt,
 			Owner:         input.Owner,
 			InputFileName: input.InputFileName,
@@ -360,27 +233,27 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	if !input.ProcessingBegin.IsZero() {
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}))
 	}
 	if !input.ProcessingEnd.IsZero() {
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}))
 	}
 	// append to the status history
 	if len(input.StatusLabel) > 0 {
 		exists := `if (!ctx._source.containsKey("history")) {ctx._source["history"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		newStatus := ReportStatus{
 			Label:     input.StatusLabel,
 			Timestamp: input.StatusTime,
 			Function:  input.StatusBy,
 		}
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}))
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)))
 	}
 
 	if len(input.Counters) > 0 {
 		exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = params.init}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists).Param("init", []CounterGroup{
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists).Param("init", []CounterGroup{
 			CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "raw", Count: 0}, KeyCounter{Key: "columns", Count: 0}, KeyCounter{Key: "outputted", Count: 0}}},
 			CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
 			CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "default", Count: 0}, KeyCounter{Key: "mar", Count: 0}, KeyCounter{Key: "mpr", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
@@ -408,13 +281,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
 			}
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)))
 		}
 	}
 
 	if len(input.Columns) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		// let's make a list
 		for _, column := range input.Columns {
 			columnMapping := NameMappedCounter{
@@ -422,13 +295,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				MapCounters: []MapCounter{},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.m.name); if (column == null) {ctx._source.fields.add(params.m)}`
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)))
 		}
 	}
 
 	if len(input.ColumnMaps) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for _, mapping := range input.ColumnMaps {
 			columnMapping := NameMappedCounter{
 				Name: mapping.Name,
@@ -440,55 +313,55 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.map.name); if (column == null) {ctx._source.fields.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)))
 		}
 	}
 
 	if len(input.InputStatistics) > 0 { // this maps to fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for _, v := range input.InputStatistics {
 			v.Mapped = []MapCounter{}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.stat.name); if (column == null) {ctx._source.fields.add(params.stat)} else { column.min = params.stat.min; column.max = params.stat.max; column.sparsity = params.stat.sparsity;}`
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)))
 		}
 	}
 
 	if len(input.MatchKeyStatistics) > 0 {
 		exists := `if (!ctx._source.containsKey("matchKeyCounts")) {ctx._source["matchKeyCounts"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for k, v := range input.MatchKeyStatistics {
 			count := KeyCounter{
 				Key:   k,
 				Count: v,
 			}
 			script := `def mk = ctx._source.matchKeyCounts.find(g -> g.key == params.count.key); if (mk == null) {ctx._source.matchKeyCounts.add(params.count);} else {mk.count += params.count.count}`
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)))
 		}
 	}
 
 	// apend errors and warnings
 	if len(input.Errors) > 0 {
 		exists := `if (!ctx._source.containsKey("errors")) {ctx._source["errors"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for _, e := range input.Errors {
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)))
 		}
 	}
 
 	if len(input.Warnings) > 0 {
 		exists := `if (!ctx._source.containsKey("warnings")) {ctx._source["warnings"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for _, e := range input.Warnings {
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)))
 		}
 	}
 
 	if len(input.Audits) > 0 {
 		exists := `if (!ctx._source.containsKey("audits")) {ctx._source["audits"] = [];}`
-		go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)))
 		for _, e := range input.Audits {
-			go bulkRunner.indexer(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)))
 		}
 	}
 
@@ -571,6 +444,12 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				}
 			}
 		}
+	}
+
+	err = bulk.Flush()
+	if err != nil {
+		log.Printf("error running bulk update %v", err)
+		return true
 	}
 
 	err = nil
