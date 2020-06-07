@@ -103,7 +103,7 @@ func init() {
 	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
 	sub.ReceiveSettings.MaxOutstandingMessages = 1024 * 1024    // 1M max message
 	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 500MB max message bytes
-	sub.ReceiveSettings.NumGoroutines = 1                       // run this as single threaded for elastic's sake
+	sub.ReceiveSettings.NumGoroutines = 1                       // there are only 2 CPU in the VM, one for dev, one for prod
 
 	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
@@ -153,9 +153,9 @@ func init() {
 // PullMessages pulls messages from a pubsub subscription
 func PullMessages(ctx context.Context, m psMessage) error {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		mutex.Lock()
+		//mutex.Lock()
 		processUpdate(ctx, msg)
-		mutex.Unlock()
+		//mutex.Unlock()
 		msg.Ack()
 	})
 	if err != nil {
