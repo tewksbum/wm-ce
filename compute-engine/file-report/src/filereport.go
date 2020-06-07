@@ -273,7 +273,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				Count: counter.Count,
 			}
 			cg := CounterGroup{
-				Group: counter.Type,
+				Group: strings.ToLower(counter.Type),
 				Items: []KeyCounter{kc},
 			}
 			if counter.Increment {
