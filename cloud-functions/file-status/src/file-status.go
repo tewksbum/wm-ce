@@ -107,7 +107,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if val, ok := input.EventData["message"]; ok {
 		Message = val.(string)
 	}
-	RecordsTotal, RecordsCompleted, RecordsDeleted, FibersCompleted, FibersDeleted := 0, 0, 0, 0, 0
+	RecordsTotal, RecordsCompleted, RecordsDeleted, FibersCompleted, FibersDeleted, ParentEmails, StudentEmails, CertifiedAddresses, BadAddresses, RowCount := 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	if val, ok := input.EventData["records-total"]; ok {
 		RecordsTotal = int(val.(float64))
@@ -124,6 +124,21 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if val, ok := input.EventData["fibers-deleted"]; ok {
 		FibersDeleted = int(val.(float64))
 	}
+	if val, ok := input.EventData["parent-emails"]; ok {
+		ParentEmails = int(val.(float64))
+	}
+	if val, ok := input.EventData["student-emails"]; ok {
+		StudentEmails = int(val.(float64))
+	}
+	if val, ok := input.EventData["certified-addresses"]; ok {
+		CertifiedAddresses = int(val.(float64))
+	}
+	if val, ok := input.EventData["bad-addresses"]; ok {
+		BadAddresses = int(val.(float64))
+	}
+	if val, ok := input.EventData["row-count"]; ok {
+		RowCount = int(val.(float64))
+	}
 
 	query := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.Signature.EventID).Limit(1)
 	if _, err := fs.GetAll(ctx, query, &requests); err != nil {
@@ -139,6 +154,11 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 			KIP{Key: "records-deleted", Value: RecordsDeleted},
 			KIP{Key: "fibers-completed", Value: FibersCompleted},
 			KIP{Key: "fibers-deleted", Value: FibersDeleted},
+			KIP{Key: "parent-emails", Value: ParentEmails},
+			KIP{Key: "student-emails", Value: StudentEmails},
+			KIP{Key: "certified-addresses", Value: CertifiedAddresses},
+			KIP{Key: "bad-addresses", Value: BadAddresses},
+			KIP{Key: "row-count", Value: RowCount},
 		}
 		if _, err := fs.Put(ctx, request.Key, &request); err != nil {
 			log.Fatalf("error updating event: %v", err)

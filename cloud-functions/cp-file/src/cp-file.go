@@ -180,6 +180,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	log.Printf("Loaded %v matching golden", len(goldens))
 
 	if event.EventType != "Form Submission" {
+		countStudentEmails := 0
+		countParentEmails := 0
 
 		// assemble the csv
 		header := []string{
@@ -195,6 +197,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			if len(g.EMAIL) > 0 {
 				emails := strings.Split(g.EMAIL, "|")
 				if len(emails) > 0 {
+					if validateRole(g.ROLE) == "Student" {
+						countStudentEmails++
+					}
+					countParentEmails++
 					for _, email := range emails {
 						contactInfo := ContactInfo{
 							FirstName:   g.FNAME,
@@ -331,6 +337,12 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		}
 		eventData.EventData["status"] = "File Generated"
 		eventData.EventData["message"] = "CP file generated successfully " + file.ObjectName()
+		eventData.EventData["parent-emails"] = countParentEmails
+		eventData.EventData["student-emails"] = countStudentEmails
+		eventData.EventData["certified-addresses"] = goodAD
+		eventData.EventData["bad-addresses"] = badAD1
+		eventData.EventData["row-count"] = strconv.Itoa(len(records) - 1)
+
 		statusJSON, _ := json.Marshal(eventData)
 		_ = status.Publish(ctx, &pubsub.Message{
 			Data: statusJSON,

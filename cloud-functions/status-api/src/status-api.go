@@ -54,6 +54,7 @@ type FileStatus struct {
 	SubmittedOn time.Time
 	Status      string
 	Message     string
+	Counters    []KIP
 }
 
 type KVP struct {
@@ -183,8 +184,13 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.Status = request.Status
 		report.Message = request.Message
 		report.SubmittedOn = request.Created
-
+		report.Counters = request.Counters
 	}
+
+	eventData.EventData["parent-emails"] = countParentEmails
+	eventData.EventData["student-emails"] = countStudentEmails
+	eventData.EventData["certified-addresses"] = goodAD
+	eventData.EventData["bad-addresses"] = badAD1
 
 	outputJSON, err := json.Marshal(report)
 	if err != nil {
