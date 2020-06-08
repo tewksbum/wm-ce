@@ -173,6 +173,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	report := FileStatus{
 		RequestID: input.RequestID,
 	}
+
 	var requests []Event
 	var request Event
 	eventQuery := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
@@ -186,12 +187,6 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.SubmittedOn = request.Created
 		report.Counters = request.Counters
 	}
-
-	eventData.EventData["parent-emails"] = countParentEmails
-	eventData.EventData["student-emails"] = countStudentEmails
-	eventData.EventData["certified-addresses"] = goodAD
-	eventData.EventData["bad-addresses"] = badAD1
-
 	outputJSON, err := json.Marshal(report)
 	if err != nil {
 		log.Fatalf("Error writing json %v", err)
