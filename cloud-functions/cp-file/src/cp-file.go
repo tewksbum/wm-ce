@@ -197,11 +197,12 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			if len(g.EMAIL) > 0 {
 				emails := strings.Split(g.EMAIL, "|")
 				if len(emails) > 0 {
-					if validateRole(g.ROLE) == "Student" {
-						countStudentEmails++
-					}
-					countParentEmails++
 					for _, email := range emails {
+						if validateRole(g.ROLE) == "Student" {
+							countStudentEmails++
+						} else {
+							countParentEmails++
+						}
 						contactInfo := ContactInfo{
 							FirstName:   g.FNAME,
 							LastName:    g.LNAME,
