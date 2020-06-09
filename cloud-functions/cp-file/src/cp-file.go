@@ -232,7 +232,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 
 			//only students with address
+
 			if len(g.AD1) == 0 {
+				log.Printf("g.AD1 == 0 then g.ADVALID is %v", g.ADVALID)
 				badAD1++
 				continue
 			}
@@ -336,6 +338,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			},
 			EventData: make(map[string]interface{}),
 		}
+
+		log.Printf("row count: %v", strconv.Itoa(len(records)-1))
 		eventData.EventData["status"] = "File Generated"
 		eventData.EventData["message"] = "CP file generated successfully " + file.ObjectName()
 		eventData.EventData["parent-emails"] = countParentEmails
