@@ -203,7 +203,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 							log.Printf("countStudentEmails: %v", countStudentEmails)
 						} else {
 							countParentEmails++
-							log.Printf("countParentEmails: %v", countParentEmails)\
+							log.Printf("countParentEmails: %v", countParentEmails)
 						}
 						contactInfo := ContactInfo{
 							FirstName:   g.FNAME,
