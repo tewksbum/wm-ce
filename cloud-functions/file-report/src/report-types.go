@@ -21,7 +21,7 @@ type FileReport struct {
 	Errors             []ReportError         `json:"errors,omitempty"`
 	Warnings           []ReportError         `json:"warnings,omitempty"`
 	Counters           []ReportCounter       `json:"counters,omitempty"`       // this is for input
-	Counts             []CounterGroup        `json:"counts"`                   // this is for elastic
+	Counts             []CounterGroup        `json:"counts,omitempty"`         // this is for elastic
 	Columns            []string              `json:"columns,omitempty"`        // this is for input, file processor to write this before streaming
 	ColumnMaps         []NameValue           `json:"map,omitempty"`            // this is for input
 	Mapping            []NameMappedCounter   `json:"mapping,omitempty"`        // this is for elastic
@@ -36,6 +36,11 @@ type FileReport struct {
 	Records            []RecordDetail        `json:"records,omitempty"`
 	Fibers             []FiberDetail         `json:"fibers,omitempty"`
 	Sets               []SetDetail           `json:"sets,omitempty"`
+}
+
+// IDOnly is a special report type for upsert
+type IDOnly struct {
+	ID string `json:"id,omitempty"`
 }
 
 // CounterGroup counter groups

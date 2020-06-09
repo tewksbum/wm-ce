@@ -54,6 +54,7 @@ type FileStatus struct {
 	SubmittedOn time.Time
 	Status      string
 	Message     string
+	Counters    []KIP
 }
 
 type KVP struct {
@@ -172,6 +173,7 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 	report := FileStatus{
 		RequestID: input.RequestID,
 	}
+
 	var requests []Event
 	var request Event
 	eventQuery := datastore.NewQuery("Event").Namespace(NameSpace).Filter("EventID =", input.RequestID).Limit(1)
@@ -183,9 +185,8 @@ func ProcessRequest(w http.ResponseWriter, r *http.Request) {
 		report.Status = request.Status
 		report.Message = request.Message
 		report.SubmittedOn = request.Created
-
+		report.Counters = request.Counters
 	}
-
 	outputJSON, err := json.Marshal(report)
 	if err != nil {
 		log.Fatalf("Error writing json %v", err)

@@ -82,8 +82,10 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	var eventFiberSearchKeys []PeopleFiberDSProjected
 	for _, f := range eventFibers {
 		eventFiberSearchKeys = append(eventFiberSearchKeys, PeopleFiberDSProjected{
-			ID:     f.ID,
-			Search: f.Search,
+			ID:          f.ID,
+			Search:      f.Search,
+			Disposition: f.Disposition,
+			FiberType:   f.FiberType,
 		})
 	}
 	eventFibers = nil // clear eventFibers to release memory
@@ -129,8 +131,10 @@ func People720(ctx context.Context, m PubSubMessage) error {
 					break // go on to next fiber
 				}
 			} else {
-				reprocessFibers = append(reprocessFibers, f.ID.Name) // reprocess these too
-				log.Printf("WARN fiber id %v search key %v not in a set", f.ID.Name, fs)
+				if f.Disposition != "purge" && f.Disposition != "dupe" {
+					reprocessFibers = append(reprocessFibers, f.ID.Name) // reprocess these too
+				}
+				log.Printf("WARN fiber id %v type %v disposition %v search key %v not in a set", f.ID.Name, f.FiberType, f.Disposition, fs)
 			}
 		}
 	}
@@ -198,9 +202,10 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		var output People360Input
 
 		fiberType := fiber.FiberType
-		if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
-			fiberType = "default"
-		}
+		// if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
+		// 	fiberType = "default"
+		// }
+
 		output.Signature = Signature{
 			OwnerID:   fiber.OwnerID,
 			Source:    fiber.Source,
@@ -210,6 +215,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			RecordID:  fiber.RecordID,
 			FiberID:   fiber.ID.Name,
 		}
+
 		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
 		output.MatchKeys = GetPeopleOutputFromFiber(&fiber)
 		searchFields := fiber.Search

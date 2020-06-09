@@ -20,6 +20,9 @@ type elasticSecret struct {
 	Password string `json:"password"`
 }
 
+// Bulker is an example for a process that needs to push data into
+// Elasticsearch via BulkProcessor.
+
 type customer struct {
 	Name        string
 	AccessKey   string
