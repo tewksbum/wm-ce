@@ -200,8 +200,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					for _, email := range emails {
 						if validateRole(g.ROLE) == "Student" {
 							countStudentEmails++
+							log.Printf("countStudentEmails: %v", countStudentEmails)
 						} else {
 							countParentEmails++
+							log.Printf("countParentEmails: %v", countParentEmails)\
 						}
 						contactInfo := ContactInfo{
 							FirstName:   g.FNAME,
@@ -339,14 +341,15 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			EventData: make(map[string]interface{}),
 		}
 
-		log.Printf("row count: %v", strconv.Itoa(len(records)-1))
 		eventData.EventData["status"] = "File Generated"
 		eventData.EventData["message"] = "CP file generated successfully " + file.ObjectName()
 		eventData.EventData["parent-emails"] = countParentEmails
 		eventData.EventData["student-emails"] = countStudentEmails
 		eventData.EventData["certified-addresses"] = goodAD
 		eventData.EventData["bad-addresses"] = badAD1
-		eventData.EventData["row-count"] = strconv.Itoa(len(records) - 1)
+		eventData.EventData["row-count"] = len(records) - 1
+
+		log.Printf("eventData: %v", eventData)
 
 		statusJSON, _ := json.Marshal(eventData)
 		_ = status.Publish(ctx, &pubsub.Message{
