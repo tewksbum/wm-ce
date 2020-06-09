@@ -128,7 +128,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 	} else if len(events) > 0 {
 		event = events[0]
 	} else {
-		log.Fatalf("Event ID not found: %v", input.EventID)
+		log.Printf("Event ID not found: %v", input.EventID)
 		return nil
 	}
 	output := []ContactInfo{}
