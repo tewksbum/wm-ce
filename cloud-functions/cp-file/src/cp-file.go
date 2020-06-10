@@ -200,10 +200,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					for _, email := range emails {
 						if validateRole(g.ROLE) == "Student" {
 							countStudentEmails++
-							log.Printf("countStudentEmails: %v", countStudentEmails)
 						} else {
 							countParentEmails++
-							log.Printf("countParentEmails: %v", countParentEmails)
 						}
 						contactInfo := ContactInfo{
 							FirstName:   g.FNAME,
@@ -236,7 +234,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			//only students with address
 
 			if len(g.AD1) == 0 {
-				log.Printf("g.AD1 == 0 then g.ADVALID is %v", g.ADVALID)
 				badAD1++
 				continue
 			}
@@ -348,8 +345,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		eventData.EventData["certified-addresses"] = goodAD
 		eventData.EventData["bad-addresses"] = badAD1
 		eventData.EventData["row-count"] = len(records) - 1
-
-		log.Printf("eventData: %v", eventData)
 
 		statusJSON, _ := json.Marshal(eventData)
 		_ = status.Publish(ctx, &pubsub.Message{
