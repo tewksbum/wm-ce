@@ -247,7 +247,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	// 	searchFields := fiber.Search
 	// 	if len(searchFields) > 0 {
 	// 		for _, search := range searchFields {
-	// 			msKey := []string{fiber.OwnerID, "search", search}
+	// 			msKey := []string{fiber.OwnerID, "search-fibers", search}
 	// 			searchValue := strings.Replace(search, "'", `''`, -1)
 	// 			querySets := []PeopleSetDS{}
 	// 			if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("search =", searchValue), &querySets); err != nil {
