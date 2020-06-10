@@ -250,7 +250,7 @@ func PreProcess(ctx context.Context, m PubSubMessage) error {
 				log.Printf("The header column starts with a prefix result: %v", columnName)
 			}
 		}
-		LogDev(fmt.Sprintf("d'Prefix column: %v", columnName))
+		LogDev(fmt.Sprintf("d'Prefix column : %v", columnName))
 		LogDev(fmt.Sprintf("column: %v", column.Name))
 
 		column.CampaignERR = GetCampaignERR(column.Name)
