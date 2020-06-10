@@ -148,6 +148,15 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
+func ContainsSignature(sigs []Signature, sig Signature) bool {
+	for _, v := range sigs {
+		if v.FiberID == sig.FiberID {
+			return true
+		}
+	}
+	return false
+}
+
 func ConvertPassthrough(v map[string]string) []Passthrough360 {
 	var result []Passthrough360
 	if len(v) > 0 {
