@@ -42,7 +42,7 @@ func init() {
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	msp = &redis.Pool{
 		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
+		IdleTimeout: 10 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
@@ -82,6 +82,9 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error querying fibers: %v", err)
 		return nil
 	}
+	if eventFibers == nil {
+		return nil
+	}
 	publishReport(&FileReport{
 		ID: input.EventID,
 		Counters: []ReportCounter{
@@ -108,6 +111,9 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	var eventSets []PeopleSetDS // this is for raw sets
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &eventSets); err != nil {
 		log.Fatalf("Error querying sets: %v", err)
+		return nil
+	}
+	if eventSets == nil {
 		return nil
 	}
 
