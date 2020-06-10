@@ -360,6 +360,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							Counters: reportCounters,
 							SetList:  setList,
 						}, cfName)
+
+						log.Printf("Merged sets %v into a set %v", setIDs, newSetID)
 						break // go on to next fiber
 					}
 				} else {
