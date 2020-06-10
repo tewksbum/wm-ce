@@ -19,6 +19,17 @@ type FileReport struct {
 	Errors          []ReportError   `json:"errors"`
 	Warnings        []ReportError   `json:"warnings"`
 	Counters        []ReportCounter `json:"counters"`
+	SetList         []SetDetail     `json:"setList,omitempty"`
+}
+
+// SetDetail stores detail about a record
+type SetDetail struct {
+	ID         string    `json:"id,omitempty"`
+	FiberCount int       `json:"fiberCount,omitempty"`
+	CreatedOn  time.Time `json:"createdOn,omitempty"`
+	DeletedOn  time.Time `json:"deletedOn,omitempty"`
+	IsDeleted  bool      `json:"isDeleted,omitempty"`
+	ReplacedBy string    `json:"replacedBy,omitempty"`
 }
 
 // ReportError stores errors and warnings
