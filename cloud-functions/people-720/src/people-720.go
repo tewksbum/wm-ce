@@ -55,7 +55,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-	log.Printf("Checking sets for event id %v", input.EventID)
+	log.Printf("Checking sets for event %v", string(m.Data))
+
 	cleanupKey := []string{input.EventID, "cleanup"}
 	if GetRedisIntValue(cleanupKey) == 1 { // already processed
 		return nil
@@ -79,6 +80,18 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error querying fibers: %v", err)
 		return nil
 	}
+	publishReport(&FileReport{
+		ID: input.EventID,
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "People720",
+				Name:      "fibers:before",
+				Count:     len(eventFibers),
+				Increment: true,
+			},
+		},
+	}, cfName)
+
 	var eventFiberSearchKeys []PeopleFiberDSProjected
 	for _, f := range eventFibers {
 		eventFiberSearchKeys = append(eventFiberSearchKeys, PeopleFiberDSProjected{
@@ -95,6 +108,18 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error querying sets: %v", err)
 		return nil
 	}
+
+	publishReport(&FileReport{
+		ID: input.EventID,
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "People720",
+				Name:      "sets:before",
+				Count:     len(eventSets),
+				Increment: true,
+			},
+		},
+	}, cfName)
 
 	var eventSetSearchKeys []PeopleSetDSProjected
 	for _, f := range eventSets {
@@ -160,7 +185,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 
 	// }
 	// sets = nil
-	report := FileReport{
+	publishReport(&FileReport{
 		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
@@ -170,8 +195,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 				Increment: true,
 			},
 		},
-	}
-	publishReport(&report, cfName)
+	}, cfName)
 	var fiberKeys []*datastore.Key
 	var fibers []PeopleFiberDS
 	log.Printf("Reprocessing %v fibers", len(reprocessFibers))
@@ -197,78 +221,80 @@ func People720(ctx context.Context, m PubSubMessage) error {
 
 	log.Printf("total reprocess fiber count %v", len(outputFibers))
 
-	for _, fiber := range outputFibers {
-		var pubs []People360Input
-		var output People360Input
-
-		fiberType := fiber.FiberType
-		// if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
-		// 	fiberType = "default"
-		// }
-
-		output.Signature = Signature{
-			OwnerID:   fiber.OwnerID,
-			Source:    fiber.Source,
-			EventID:   input.EventID,
-			EventType: fiber.EventType,
-			FiberType: fiberType,
-			RecordID:  fiber.RecordID,
-			FiberID:   fiber.ID.Name,
-		}
-
-		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
-		output.MatchKeys = GetPeopleOutputFromFiber(&fiber)
-		searchFields := fiber.Search
-		if len(searchFields) > 0 {
-			for _, search := range searchFields {
-				msKey := []string{fiber.OwnerID, "search", search}
-				searchValue := strings.Replace(search, "'", `''`, -1)
-				querySets := []PeopleSetDS{}
-				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("search =", searchValue), &querySets); err != nil {
-					log.Printf("Error querying sets: %v", err)
-				}
-				log.Printf("Fiber type %v Search %v found %v sets", fiberType, search, len(querySets))
-				for _, s := range querySets {
-					if len(s.Fibers) > 0 {
-						for _, f := range s.Fibers {
-							AppendRedisTempKey(msKey, f)
-						}
-					}
-				}
-			}
-		}
-
-		pubs = append(pubs, output)
-
-		outputJSON, _ := json.Marshal(pubs)
-		psresult := topic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-			Attributes: map[string]string{
-				"type":   "people",
-				"source": "cleanup",
-			},
-		})
-		psid, err := psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not pub to pubsub: %v", input.EventID, err)
-		} else {
-			log.Printf("%v pubbed fiber rerun as message id %v: %v", input.EventID, psid, string(outputJSON))
-		}
-	}
-
-	prresult := ready.Publish(ctx, &pubsub.Message{
-		Data: m.Data,
-		Attributes: map[string]string{
-			"type":   "people",
-			"source": "ready",
-		},
-	})
-	prid, err := prresult.Get(ctx)
-	if err != nil {
-		log.Fatalf("%v Could not pub ready to pubsub: %v", input.EventID, err)
-	} else {
-		log.Printf("%v pubbed ready as message id %v: %v", input.EventID, prid, string(m.Data))
-	}
-
 	return nil
+
+	// for _, fiber := range outputFibers {
+	// 	var pubs []People360Input
+	// 	var output People360Input
+
+	// 	fiberType := fiber.FiberType
+	// 	// if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
+	// 	// 	fiberType = "default"
+	// 	// }
+
+	// 	output.Signature = Signature{
+	// 		OwnerID:   fiber.OwnerID,
+	// 		Source:    fiber.Source,
+	// 		EventID:   input.EventID,
+	// 		EventType: fiber.EventType,
+	// 		FiberType: fiberType,
+	// 		RecordID:  fiber.RecordID,
+	// 		FiberID:   fiber.ID.Name,
+	// 	}
+
+	// 	output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
+	// 	output.MatchKeys = GetPeopleOutputFromFiber(&fiber)
+	// 	searchFields := fiber.Search
+	// 	if len(searchFields) > 0 {
+	// 		for _, search := range searchFields {
+	// 			msKey := []string{fiber.OwnerID, "search", search}
+	// 			searchValue := strings.Replace(search, "'", `''`, -1)
+	// 			querySets := []PeopleSetDS{}
+	// 			if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("search =", searchValue), &querySets); err != nil {
+	// 				log.Printf("Error querying sets: %v", err)
+	// 			}
+	// 			log.Printf("Fiber type %v Search %v found %v sets", fiberType, search, len(querySets))
+	// 			for _, s := range querySets {
+	// 				if len(s.Fibers) > 0 {
+	// 					for _, f := range s.Fibers {
+	// 						AppendRedisTempKey(msKey, f)
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+	// 	pubs = append(pubs, output)
+
+	// 	outputJSON, _ := json.Marshal(pubs)
+	// 	psresult := topic.Publish(ctx, &pubsub.Message{
+	// 		Data: outputJSON,
+	// 		Attributes: map[string]string{
+	// 			"type":   "people",
+	// 			"source": "cleanup",
+	// 		},
+	// 	})
+	// 	psid, err := psresult.Get(ctx)
+	// 	if err != nil {
+	// 		log.Fatalf("%v Could not pub to pubsub: %v", input.EventID, err)
+	// 	} else {
+	// 		log.Printf("%v pubbed fiber rerun as message id %v: %v", input.EventID, psid, string(outputJSON))
+	// 	}
+	// }
+
+	// prresult := ready.Publish(ctx, &pubsub.Message{
+	// 	Data: m.Data,
+	// 	Attributes: map[string]string{
+	// 		"type":   "people",
+	// 		"source": "ready",
+	// 	},
+	// })
+	// prid, err := prresult.Get(ctx)
+	// if err != nil {
+	// 	log.Fatalf("%v Could not pub ready to pubsub: %v", input.EventID, err)
+	// } else {
+	// 	log.Printf("%v pubbed ready as message id %v: %v", input.EventID, prid, string(m.Data))
+	// }
+
+	// return nil
 }
