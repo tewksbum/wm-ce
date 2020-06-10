@@ -376,14 +376,14 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			if !r.CreatedOn.IsZero() {
 				_, err = insertFiber.Exec(r.ID, input.ID, r.CreatedOn, r.Type, r.Disposition)
 				if err != nil {
-					log.Printf("Error running insertFiber: %v", err)
+					log.Printf("Error running insertFiber: %v, %v", r.ID, err)
 				}
 			}
 
 			if len(r.Disposition) > 0 {
 				_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
 				if err != nil {
-					log.Printf("Error running updateFiberDisposition: %v", err)
+					log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
 				}
 			}
 			// add Sets
@@ -391,7 +391,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				for _, set := range r.Sets {
 					_, err = insertFiberSet.Exec(r.ID, set)
 					if err != nil {
-						log.Printf("Error running insertFiberSet: %v", err)
+						log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
 					}
 				}
 			}
@@ -404,14 +404,14 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			if !r.CreatedOn.IsZero() {
 				_, err = insertSet.Exec(r.ID, input.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
 				if err != nil {
-					log.Printf("Error running insertSet: %v", err)
+					log.Printf("Error running insertSet: %v, %v", r.ID, err)
 				}
 			}
 
 			if len(r.ReplacedBy) > 0 {
 				_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
 				if err != nil {
-					log.Printf("Error running updateSetDeleted: %v", err)
+					log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 				}
 			}
 		}
@@ -448,21 +448,21 @@ func processRecordList(records []RecordDetail, eventID string) {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertRecord.Exec(r.ID, eventID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
 			if err != nil {
-				log.Printf("Error running insertRecord: %v", err)
+				log.Printf("Error running insertRecord: %v %v", r.ID, err)
 			}
 		}
 
 		if len(r.IsPerson) > 0 {
 			_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
 			if err != nil {
-				log.Printf("Error running updateRecordPerson: %v", err)
+				log.Printf("Error running updateRecordPerson: %v %v", r.ID, err)
 			}
 		}
 		//update disposition
 		if len(r.Disposition) > 0 {
 			_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
 			if err != nil {
-				log.Printf("Error running updateRecordDisposition: %v", err)
+				log.Printf("Error running updateRecordDisposition: %v %v", r.ID, err)
 			}
 		}
 		// add fiber
@@ -470,7 +470,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 			for _, fiber := range r.Fibers {
 				_, err = insertRecordFiber.Exec(r.ID, fiber)
 				if err != nil {
-					log.Printf("Error running insertRecordFiber: %v", err)
+					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
 			}
 		}
