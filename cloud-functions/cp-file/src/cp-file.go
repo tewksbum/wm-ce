@@ -1,18 +1,14 @@
 package cpfile
 
 import (
-	"bytes"
 	"context"
-	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -29,6 +25,9 @@ var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var Bucket = os.Getenv("BUCKET")
+var BadBucket = os.Getenv("BADBUCKET")
+var Threshold = getEnvFloat("THRESHOLD")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -40,8 +39,6 @@ var topic *pubsub.Topic
 var ds *datastore.Client
 var fs *datastore.Client
 var cs *storage.Client
-var sb *storage.BucketHandle
-var sbb *storage.BucketHandle
 var status *pubsub.Topic
 
 // var setSchema bigquery.Schema
@@ -52,8 +49,6 @@ func init() {
 	ds, _ = datastore.NewClient(ctx, ProjectID)
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	cs, _ = storage.NewClient(ctx)
-	sb = cs.Bucket(os.Getenv("BUCKET"))
-	sbb = cs.Bucket(os.Getenv("BADBUCKET"))
 	topic = ps.Topic(PubSubTopic)
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 
@@ -189,7 +184,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
 			"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
 		records := [][]string{header}
-		advalid := []string{}
+		header = append(header, "ADVALID")
+		badrecords := [][]string{header}
 		badAD1 := 0
 		goodAD := 0
 		studentsUS := 0
@@ -231,19 +227,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				studentsUS++
 			}
 
-			//only students with address
-
-			if len(g.AD1) == 0 {
-				badAD1++
-				continue
-			}
-
-			if g.ADVALID != "TRUE" {
-				badAD1++
-			} else {
-				goodAD++
-			}
-
 			row := []string{
 				GetKVPValue(event.Passthrough, "schoolCode"),
 				"",
@@ -274,13 +257,48 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				"",
 				"",
 			}
-			advalid = append(advalid, g.ADVALID)
-			records = append(records, row)
+			//only students with address
+			if len(g.AD1) == 0 || g.ADVALID != "TRUE" {
+				badAD1++
+				row = append(row, "FALSE")
+				badrecords = append(badrecords, row)
+			} else {
+				goodAD++
+				records = append(records, row)
+			}
 		}
-		suppressFile := false
-		if goodAD >= int(float64(studentsUS)*0.9) {
+
+		if goodAD >= int(float64(studentsUS)*Threshold) {
 			// good to go
-		} else { // more than 10% of bad record
+			filename := copyFileToBucket(ctx, event, records, Bucket)
+			log.Printf("Writing %v records into output file", len(records)-1)
+			if len(badrecords) > 0 {
+				// store it bad bucket
+				copyFileToBucket(ctx, event, badrecords, BadBucket)
+				log.Printf("Writing %v records into bad bucket output file", len(badrecords)-1)
+			}
+			eventData := EventData{
+				Signature: Signature{
+					EventID: input.EventID,
+					OwnerID: input.OwnerID,
+				},
+				EventData: make(map[string]interface{}),
+			}
+
+			eventData.EventData["status"] = "File Generated"
+			eventData.EventData["message"] = "CP file generated successfully " + filename
+			eventData.EventData["parent-emails"] = countParentEmails
+			eventData.EventData["student-emails"] = countStudentEmails
+			eventData.EventData["certified-addresses"] = goodAD
+			eventData.EventData["bad-addresses"] = badAD1
+			eventData.EventData["row-count"] = len(records) - 1
+
+			statusJSON, _ := json.Marshal(eventData)
+			_ = status.Publish(ctx, &pubsub.Message{
+				Data: statusJSON,
+			})
+
+		} else { // more than 20% of bad record
 			eventData := EventData{
 				Signature: Signature{
 					EventID: input.EventID,
@@ -290,66 +308,23 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 			eventData.EventData["status"] = "Error"
 			eventData.EventData["message"] = "AdValid threshold exceeded, source file needs to be reviewed"
+			eventData.EventData["parent-emails"] = countParentEmails
+			eventData.EventData["student-emails"] = countStudentEmails
 			statusJSON, _ := json.Marshal(eventData)
 			_ = status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
 			})
-			suppressFile = true
 
 			for r, record := range records {
-				if r == 0 {
-					records[0] = append(record, "ADVALID")
-				} else {
-					records[r] = append(record, advalid[r-1])
+				if r != 0 {
+					record = append(record, "TRUE")
+					badrecords = append(badrecords, record)
 				}
 			}
+			copyFileToBucket(ctx, event, badrecords, BadBucket)
 			log.Printf("ERROR ADVALID threshold reached, output in bad bucket")
 		}
 
-		log.Printf("Writing %v records into output file", len(records))
-
-		// store it in bucket
-		var buf bytes.Buffer
-		csv := csv.NewWriter(&buf)
-		csv.WriteAll(records)
-		csv.Flush()
-
-		csvBytes := buf.Bytes()
-
-		file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
-		if suppressFile {
-			file = sbb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + input.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
-		}
-		writer := file.NewWriter(ctx)
-		if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
-			log.Printf("File cannot be copied to bucket %v", err)
-			return nil
-		}
-		if err := writer.Close(); err != nil {
-			log.Printf("Failed to close bucket write stream %v", err)
-			return nil
-		}
-
-		eventData := EventData{
-			Signature: Signature{
-				EventID: input.EventID,
-				OwnerID: input.OwnerID,
-			},
-			EventData: make(map[string]interface{}),
-		}
-
-		eventData.EventData["status"] = "File Generated"
-		eventData.EventData["message"] = "CP file generated successfully " + file.ObjectName()
-		eventData.EventData["parent-emails"] = countParentEmails
-		eventData.EventData["student-emails"] = countStudentEmails
-		eventData.EventData["certified-addresses"] = goodAD
-		eventData.EventData["bad-addresses"] = badAD1
-		eventData.EventData["row-count"] = len(records) - 1
-
-		statusJSON, _ := json.Marshal(eventData)
-		_ = status.Publish(ctx, &pubsub.Message{
-			Data: statusJSON,
-		})
 		// push into pubsub contacts
 		totalContacts := len(output)
 		pageSize := 250

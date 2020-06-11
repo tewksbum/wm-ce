@@ -13,7 +13,8 @@ const topicName = "wm-status-updater-prod";
 const projectID = "wemade-core";
 
 const bucketName = "wm_cp_upload_prod";
-const bucketNameDest = "gs://wm_cp_uploaded/prod/";
+// const bucketNameDest = "gs://wm_cp_uploaded/prod/";
+const bucketNameDest = "gs://wm_cp_uploaded_prod/";
 
 const pubSubClient = new PubSub({ projectID });
 const sftp = new Client();
