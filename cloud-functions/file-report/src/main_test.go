@@ -52,7 +52,7 @@ func TestCounter1(t *testing.T) {
 	json := `{
 		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
 		"counters": [
-			{"type": "Record", "name": "Total", "inc": false, "count": 100}
+			{"type": "FileProcessor", "name": "Total", "inc": false, "count": 100}
 		]
 	}`
 	re := regexp.MustCompile(`\r?\n`)
@@ -134,6 +134,27 @@ func TestColumnMap2(t *testing.T) {
 }
 
 func TestColumnStat(t *testing.T) {
+	json := `{
+		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
+		"inputStats": {
+			"First Name": {
+				"name": "First Name",
+				"min": "Abbey",
+				"max": "Williams",
+				"sparsity": 99
+			}
+		}
+	}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
+}
+
+func TestError(t *testing.T) {
 	json := `{
 		"id": "9cfdc586-6a7c-4347-9a15-25fa9cf57907",
 		"inputStats": {
@@ -260,4 +281,15 @@ func TestReportDetail(t *testing.T) {
 	GetReport(rr, req)
 	got := rr.Body.String()
 	fmt.Println(got)
+}
+
+func TestBadCounter(t *testing.T) {
+	json := `{"id":"943bb0c9-389c-48de-a6b4-a44dda30db97","processingBegin":"0001-01-01T00:00:00Z","statusTime":"0001-01-01T00:00:00Z","errors":null,"warnings":null,"audits":null,"counters":[{"type":"FileProcessor","name":"Purge","count":1,"inc":true}],"inputStats":null}`
+	re := regexp.MustCompile(`\r?\n`)
+	var message pubsub.Message
+	message.Data = []byte(re.ReplaceAllString(json, ""))
+	message.Attributes = map[string]string{
+		"source": "wm-file-processor-dev",
+	}
+	ProcessUpdate(context.Background(), &message)
 }

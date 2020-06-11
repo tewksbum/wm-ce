@@ -124,7 +124,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 					return nil
 				}
-			} else if input.Signature.FiberType == "mar" {
+			} else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
 				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
 				if existingCheck == 0 { // default fiber has not been processed
 					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
@@ -240,18 +240,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				// }
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
-			keypattern := "*"
-			redisKeys := GetRedisKeys(keypattern)
-			redisValues := GetRedisValues(redisKeys)
-			LogDev(fmt.Sprintf("redis matching keys: %+v, values %+v", redisKeys, redisValues))
 
 			// read the FiberIDs from Redis
 			searchKeys := []string{}
 			searchSets := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
-					msKey := []string{input.Signature.OwnerID, "search", search}
-					msSet := []string{input.Signature.OwnerID, "set", search}
+					msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+					msSet := []string{input.Signature.OwnerID, "search-sets", search}
 					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
 					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
@@ -485,27 +481,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		dsFiber.Search = GetPeopleFiberSearchFields(&dsFiber)
 
-		// write fiber search key
-		var searchFields []string
-		if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
-			// get this into redis
-			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			if len(dsFiber.EMAIL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(dsFiber.PHONE.Value) > 0 && len(dsFiber.FINITIAL.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.PHONE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(dsFiber.CITY.Value) > 0 && len(dsFiber.STATE.Value) > 0 && len(dsFiber.LNAME.Value) > 0 && len(dsFiber.FNAME.Value) > 0 && len(dsFiber.AD1.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(dsFiber.FNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.LNAME.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.AD1.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.CITY.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.STATE.Value)), strings.TrimSpace(strings.ToUpper(dsFiber.ROLE.Value))))
-			}
-			if len(searchFields) > 0 {
-				for _, search := range searchFields {
-					msKey := []string{input.Signature.OwnerID, "search", search}
-					AppendRedisTempKey(msKey, dsFiber.ID.Name)
-				}
+		// if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
+		if dsFiber.Disposition != "purge" {
+			for _, search := range dsFiber.Search {
+				msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+				AppendRedisTempKey(msKey, dsFiber.ID.Name)
 			}
 		}
+
 		// store the fiber
 		if _, err := fs.Put(ctx, dsKey, &dsFiber); err != nil {
 			log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
@@ -738,14 +721,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 		}
 
+		// put the set search key in redis
 		if len(SetSearchFields) > 0 {
 			for _, search := range SetSearchFields {
-				msSet := []string{input.Signature.OwnerID, "set", search}
+				msSet := []string{input.Signature.OwnerID, "search-sets", search}
 				AppendRedisTempKey(msSet, setDS.ID.Name)
 			}
 		}
 
 		setDS.Search = SetSearchFields
+
+		// write each of the search key into each of the fiber in redis
+		for _, search := range SetSearchFields {
+			msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+			for _, f := range setDS.Fibers {
+				AppendRedisTempKey(msKey, f)
+			}
+		}
+
 		setList := []SetDetail{
 			SetDetail{
 				ID:         output.ID,

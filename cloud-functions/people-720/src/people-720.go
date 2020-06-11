@@ -11,7 +11,9 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
+	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/uuid"
 )
 
 var ProjectID = os.Getenv("PROJECTID")
@@ -40,7 +42,7 @@ func init() {
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	msp = &redis.Pool{
 		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
+		IdleTimeout: 10 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
@@ -55,7 +57,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
-	log.Printf("Checking sets for event id %v", input.EventID)
+	log.Printf("Checking sets for event %v", string(m.Data))
+
 	cleanupKey := []string{input.EventID, "cleanup"}
 	if GetRedisIntValue(cleanupKey) == 1 { // already processed
 		return nil
@@ -79,11 +82,28 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error querying fibers: %v", err)
 		return nil
 	}
+	if eventFibers == nil {
+		return nil
+	}
+	publishReport(&FileReport{
+		ID: input.EventID,
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "People720",
+				Name:      "fibers:before",
+				Count:     len(eventFibers),
+				Increment: true,
+			},
+		},
+	}, cfName)
+
 	var eventFiberSearchKeys []PeopleFiberDSProjected
 	for _, f := range eventFibers {
 		eventFiberSearchKeys = append(eventFiberSearchKeys, PeopleFiberDSProjected{
-			ID:     f.ID,
-			Search: f.Search,
+			ID:          f.ID,
+			Search:      f.Search,
+			Disposition: f.Disposition,
+			FiberType:   f.FiberType,
 		})
 	}
 	eventFibers = nil // clear eventFibers to release memory
@@ -93,6 +113,21 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error querying sets: %v", err)
 		return nil
 	}
+	if eventSets == nil {
+		return nil
+	}
+
+	publishReport(&FileReport{
+		ID: input.EventID,
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "People720",
+				Name:      "sets:before",
+				Count:     len(eventSets),
+				Increment: true,
+			},
+		},
+	}, cfName)
 
 	var eventSetSearchKeys []PeopleSetDSProjected
 	for _, f := range eventSets {
@@ -119,135 +154,247 @@ func People720(ctx context.Context, m PubSubMessage) error {
 		}
 	}
 
-	// loop through fiber list and find where search key appears in more than 1 set search key
-	var reprocessFibers []string
-	for _, f := range eventFiberSearchKeys { // each fiber
-		for _, fs := range f.Search { // each search key of each fiber
-			if setIDs, ok := setSearchMap[fs]; ok { // in the search key map
-				if len(setIDs) > 1 {
-					reprocessFibers = append(reprocessFibers, f.ID.Name)
-					break // go on to next fiber
-				}
-			} else {
-				reprocessFibers = append(reprocessFibers, f.ID.Name) // reprocess these too
-				log.Printf("WARN fiber id %v search key %v not in a set", f.ID.Name, fs)
-			}
-		}
-	}
+	for { // keep running this until we no longer have sets sharing the same search key
+		log.Println("running a loop")
+		// loop through fiber list and find where search key appears in more than 1 set search key
+		var reprocessFibers []string
+		var missingFibers []string
+		for _, f := range eventFiberSearchKeys { // each fiber
+			for _, s := range f.Search { // each search key of each fiber
+				if setIDs, ok := setSearchMap[s]; ok { // in the search key map
+					if len(setIDs) > 1 {
+						reprocessFibers = append(reprocessFibers, f.ID.Name)
 
-	//// OLD CODE, look in sets instead
-	// for index, set := range sets {
-	// 	if (index+1)%1000 == 0 {
-	// 		log.Printf("Processed %v sets", (index + 1))
-	// 	}
-	// 	for _, search := range set.Search {
-	// 		msKey := []string{input.EventID, "cleanup", search}
-	// 		setKeys := GetRedisStringsValue(msKey)
-	// 		if !Contains(setKeys, set.ID.Name) {
-	// 			setKeys = append(setKeys, set.ID.Name)
-	// 			SetRedisTempKeyWithValue(msKey, strings.Join(setKeys, ","))
-
-	// 		}
-	// 		if len(setKeys) > 1 {
-	// 			// same search mapped to more than 1 swet
-	// 			reprocessFibers = append(reprocessFibers, set.Fibers...)
-	// 		}
-	// 	}
-
-	// }
-	// sets = nil
-	report := FileReport{
-		ID: input.EventID,
-		Counters: []ReportCounter{
-			ReportCounter{
-				Type:      "People720",
-				Name:      "Reprocess",
-				Count:     len(reprocessFibers),
-				Increment: true,
-			},
-		},
-	}
-	publishReport(&report, cfName)
-	var fiberKeys []*datastore.Key
-	var fibers []PeopleFiberDS
-	log.Printf("Reprocessing %v fibers", len(reprocessFibers))
-	for _, fiber := range reprocessFibers {
-		dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
-		dsFiberGetKey.Namespace = ownerNS
-		fiberKeys = append(fiberKeys, dsFiberGetKey)
-		fibers = append(fibers, PeopleFiberDS{})
-	}
-	if len(fiberKeys) > 0 {
-		if err := fs.GetMulti(ctx, fiberKeys, fibers); err != nil && err != datastore.ErrNoSuchEntity {
-			log.Fatalf("Error fetching fibers ns %v kind %v, keys %v: %v,", ownerNS, DSKindFiber, fiberKeys, err)
-		}
-	}
-
-	log.Printf("Fetching %v fibers", len(fibers))
-	var outputFibers []PeopleFiberDS
-	for _, fiber := range fibers {
-		if fiber.EventID == input.EventID {
-			outputFibers = append(outputFibers, fiber)
-		}
-	}
-
-	log.Printf("total reprocess fiber count %v", len(outputFibers))
-
-	for _, fiber := range outputFibers {
-		var pubs []People360Input
-		var output People360Input
-
-		fiberType := fiber.FiberType
-		if fiberType == "mar" { // force fiber type to avoid the wait logic in 360
-			fiberType = "default"
-		}
-		output.Signature = Signature{
-			OwnerID:   fiber.OwnerID,
-			Source:    fiber.Source,
-			EventID:   input.EventID,
-			EventType: fiber.EventType,
-			FiberType: fiberType,
-			RecordID:  fiber.RecordID,
-			FiberID:   fiber.ID.Name,
-		}
-		output.Passthrough = ConvertPassthrough360SliceToMap(fiber.Passthrough)
-		output.MatchKeys = GetPeopleOutputFromFiber(&fiber)
-		searchFields := fiber.Search
-		if len(searchFields) > 0 {
-			for _, search := range searchFields {
-				msKey := []string{fiber.OwnerID, "search", search}
-				searchValue := strings.Replace(search, "'", `''`, -1)
-				querySets := []PeopleSetDS{}
-				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("search =", searchValue), &querySets); err != nil {
-					log.Printf("Error querying sets: %v", err)
-				}
-				log.Printf("Fiber type %v Search %v found %v sets", fiberType, search, len(querySets))
-				for _, s := range querySets {
-					if len(s.Fibers) > 0 {
-						for _, f := range s.Fibers {
-							AppendRedisTempKey(msKey, f)
+						// load the existing sets
+						var reportCounters []ReportCounter
+						var existingSetKeys []*datastore.Key
+						var existingSets []PeopleSetDS
+						for _, setID := range setIDs {
+							dsSetGetKey := datastore.NameKey(DSKindSet, setID, nil)
+							dsSetGetKey.Namespace = ownerNS
+							existingSetKeys = append(existingSetKeys, dsSetGetKey)
+							existingSets = append(existingSets, PeopleSetDS{})
 						}
+						if len(existingSetKeys) > 0 {
+							if err := fs.GetMulti(ctx, existingSetKeys, existingSets); err != nil && err != datastore.ErrNoSuchEntity {
+								log.Printf("ERROR fetching sets ns %v kind %v, keys %v: %v,", ownerNS, DSKindSet, existingSetKeys, err)
+							}
+						}
+
+						var allFiberIDs []string
+						var allFiberKeys []*datastore.Key
+						var allFibers []PeopleFiberDS
+
+						newSetSignatures := []Signature{}
+						for _, es := range existingSets {
+							for _, ef := range es.Fibers {
+								if !Contains(allFiberIDs, ef) {
+									allFiberIDs = append(allFiberIDs, ef)
+									dsFiberGetKey := datastore.NameKey(DSKindFiber, ef, nil)
+									dsFiberGetKey.Namespace = ownerNS
+									allFiberKeys = append(allFiberKeys, dsFiberGetKey)
+									allFibers = append(allFibers, PeopleFiberDS{})
+								}
+							}
+						}
+						if len(allFiberKeys) > 0 {
+							if err := fs.GetMulti(ctx, allFiberKeys, allFibers); err != nil && err != datastore.ErrNoSuchEntity {
+								log.Printf("ERROR fetching fibers ns %v kind %v, keys %v: %v,", ownerNS, DSKindFiber, allFiberKeys, err)
+							}
+						}
+
+						var MatchKeysFromFiber []MatchKey360
+						MatchKeyList := structs.Names(&PeopleOutput{})
+						FiberMatchKeys := make(map[string][]string)
+						// collect all fiber match key values
+						for _, name := range MatchKeyList {
+							FiberMatchKeys[name] = []string{}
+						}
+
+						// build signatures and matchkeys for the new set
+						for _, ef := range allFibers {
+							fiberSignature := Signature{
+								OwnerID:   ef.OwnerID,
+								Source:    ef.Source,
+								EventID:   ef.EventID,
+								EventType: ef.EventType,
+								RecordID:  ef.RecordID,
+								FiberID:   ef.ID.Name,
+							}
+							if !ContainsSignature(newSetSignatures, fiberSignature) {
+								newSetSignatures = append(newSetSignatures, fiberSignature)
+							}
+							for _, name := range MatchKeyList {
+								value := strings.TrimSpace(GetMatchKeyFieldFromDSFiber(&ef, name).Value)
+								if len(value) > 0 && !Contains(FiberMatchKeys[name], value) {
+									FiberMatchKeys[name] = append(FiberMatchKeys[name], value)
+								}
+							}
+						}
+
+						// check to see if there are any new values
+						for _, name := range MatchKeyList {
+							mk360 := MatchKey360{
+								Key:    name,
+								Values: FiberMatchKeys[name],
+							}
+							MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
+						}
+
+						newSetID := uuid.New().String()
+						var setDS PeopleSetDS
+						setKey := datastore.NameKey(DSKindSet, newSetID, nil)
+						setKey.Namespace = ownerNS
+						setDS.ID = setKey
+						setDS.Fibers = allFiberIDs
+						setDS.CreatedAt = time.Now()
+						PopulateSetOutputSignatures(&setDS, newSetSignatures)
+						PopulateSetOutputMatchKeys(&setDS, MatchKeysFromFiber)
+
+						var goldenDS PeopleGoldenDS
+						goldenKey := datastore.NameKey(DSKindGolden, newSetID, nil)
+						goldenKey.Namespace = ownerNS
+						goldenDS.ID = goldenKey
+						goldenDS.CreatedAt = time.Now()
+						PopulateGoldenOutputMatchKeys(&goldenDS, MatchKeysFromFiber)
+						goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
+						if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
+							log.Printf("Error: storing golden record error %v", err)
+						}
+
+						// populate search fields for set from a) existing sets b) new fiber c) golden
+						var newSetSearchFields []string
+						for _, ef := range allFibers {
+							for _, search := range ef.Search {
+								if !Contains(newSetSearchFields, search) {
+									newSetSearchFields = append(newSetSearchFields, search)
+								}
+							}
+						}
+						if len(goldenDS.Search) > 0 {
+							for _, search := range goldenDS.Search {
+								if !Contains(newSetSearchFields, search) {
+									newSetSearchFields = append(newSetSearchFields, search)
+								}
+							}
+						}
+
+						setDS.Search = newSetSearchFields
+						if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
+							log.Printf("Error: storing set error %v", err)
+						}
+
+						// put the set search key in redis -- is this still necessary?  we are already in 720
+						if len(newSetSearchFields) > 0 {
+							for _, search := range newSetSearchFields {
+								msSet := []string{input.OwnerID, "search-sets", search}
+								AppendRedisTempKey(msSet, setDS.ID.Name)
+							}
+						}
+						// write each of the search key into each of the fiber in redis
+						for _, search := range newSetSearchFields {
+							msKey := []string{input.OwnerID, "search-fibers", search}
+							for _, f := range setDS.Fibers {
+								AppendRedisTempKey(msKey, f)
+							}
+						}
+
+						reportCounters = append(reportCounters,
+							ReportCounter{
+								Type:      "People720",
+								Name:      "Sets",
+								Count:     1,
+								Increment: true,
+							})
+
+						setList := []SetDetail{ // the new set
+							SetDetail{
+								ID:         newSetID,
+								CreatedOn:  time.Now(),
+								FiberCount: len(setDS.Fibers),
+							},
+						}
+						// expire the existing sets and goldens
+						var expiringSetKeys []*datastore.Key
+						var expiringGoldenKeys []*datastore.Key
+
+						for _, set := range setIDs {
+							setKey := datastore.NameKey(DSKindSet, set, nil)
+							setKey.Namespace = ownerNS
+							expiringSetKeys = append(expiringSetKeys, setKey)
+							goldenKey := datastore.NameKey(DSKindGolden, set, nil)
+							goldenKey.Namespace = ownerNS
+							expiringGoldenKeys = append(expiringGoldenKeys, goldenKey)
+
+							setList = append(setList, SetDetail{ // the expired set
+								ID:         set,
+								IsDeleted:  true,
+								DeletedOn:  time.Now(),
+								ReplacedBy: newSetID,
+							})
+						}
+
+						LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", expiringSetKeys, expiringGoldenKeys))
+						if err := fs.DeleteMulti(ctx, expiringSetKeys); err != nil {
+							log.Printf("Error: deleting expired sets: %v", err)
+						}
+						if err := fs.DeleteMulti(ctx, expiringGoldenKeys); err != nil {
+							log.Printf("Error: deleting expired golden records: %v", err)
+						}
+						reportCounters = append(reportCounters,
+							ReportCounter{
+								Type:      "People720",
+								Name:      "Expired",
+								Count:     len(setIDs),
+								Increment: true,
+							})
+
+						// remove expired set id from searchKeyMap and add new one
+						for _, s := range newSetSearchFields {
+							updatedSetList := []string{newSetID}
+							for _, l := range setSearchMap[s] {
+								if !Contains(setIDs, l) {
+									updatedSetList = append(updatedSetList, l)
+								}
+							}
+							setSearchMap[s] = updatedSetList
+						}
+
+						// publish report
+						publishReport(&FileReport{
+							ID:       input.EventID,
+							Counters: reportCounters,
+							SetList:  setList,
+						}, cfName)
+
+						log.Printf("Merged sets %v into a set %v", setIDs, newSetID)
+						break // go on to next fiber
 					}
+				} else {
+					if f.Disposition != "purge" && f.Disposition != "dupe" {
+						missingFibers = append(missingFibers, f.ID.Name) // reprocess these too
+					}
+					log.Printf("WARN fiber id %v type %v disposition %v search key %v not in a set", f.ID.Name, f.FiberType, f.Disposition, fs)
 				}
 			}
 		}
-
-		pubs = append(pubs, output)
-
-		outputJSON, _ := json.Marshal(pubs)
-		psresult := topic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-			Attributes: map[string]string{
-				"type":   "people",
-				"source": "cleanup",
-			},
-		})
-		psid, err := psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not pub to pubsub: %v", input.EventID, err)
+		if len(reprocessFibers) == 0 { // we are done
+			break
 		} else {
-			log.Printf("%v pubbed fiber rerun as message id %v: %v", input.EventID, psid, string(outputJSON))
+			publishReport(&FileReport{
+				ID: input.EventID,
+				Counters: []ReportCounter{
+					ReportCounter{
+						Type:      "People720",
+						Name:      "Reprocess",
+						Count:     len(reprocessFibers),
+						Increment: true,
+					},
+				},
+			}, cfName)
+
 		}
+
 	}
 
 	prresult := ready.Publish(ctx, &pubsub.Message{

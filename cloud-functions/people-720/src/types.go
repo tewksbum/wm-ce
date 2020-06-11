@@ -19,6 +19,17 @@ type FileReport struct {
 	Errors          []ReportError   `json:"errors"`
 	Warnings        []ReportError   `json:"warnings"`
 	Counters        []ReportCounter `json:"counters"`
+	SetList         []SetDetail     `json:"setList,omitempty"`
+}
+
+// SetDetail stores detail about a record
+type SetDetail struct {
+	ID         string    `json:"id,omitempty"`
+	FiberCount int       `json:"fiberCount,omitempty"`
+	CreatedOn  time.Time `json:"createdOn,omitempty"`
+	DeletedOn  time.Time `json:"deletedOn,omitempty"`
+	IsDeleted  bool      `json:"isDeleted,omitempty"`
+	ReplacedBy string    `json:"replacedBy,omitempty"`
 }
 
 // ReportError stores errors and warnings
@@ -84,8 +95,10 @@ type People360Input struct {
 }
 
 type PeopleFiberDSProjected struct {
-	ID     *datastore.Key `datastore:"__key__"`
-	Search []string       `datastore:"search"`
+	ID          *datastore.Key `datastore:"__key__"`
+	Search      []string       `datastore:"search"`
+	Disposition string         `datastore:"disposition"`
+	FiberType   string         `datastore:"fibertype"`
 }
 type PeopleFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`

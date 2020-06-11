@@ -148,6 +148,15 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
+func ContainsSignature(sigs []Signature, sig Signature) bool {
+	for _, v := range sigs {
+		if v.FiberID == sig.FiberID {
+			return true
+		}
+	}
+	return false
+}
+
 func ConvertPassthrough(v map[string]string) []Passthrough360 {
 	var result []Passthrough360
 	if len(v) > 0 {
@@ -224,6 +233,9 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
+		if key == "FiberID" {
+			continue
+		}
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
 		if key == "RecordID" {
 			SetPeople360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
