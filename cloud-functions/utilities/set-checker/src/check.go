@@ -80,6 +80,7 @@ func getSetsWithBlankEventId(namespace string) {
 		log.Fatalf("Error querying sets: %v", err)
 	}
 	fiberIDs := []string{}
+	setIDs := []string{}
 	mySets := []PeopleSetDS{}
 	for _, set := range sets {
 		total++
@@ -90,6 +91,7 @@ func getSetsWithBlankEventId(namespace string) {
 				}
 			}
 			mySets = append(mySets, set)
+			setIDs = append(setIDs, set.ID.Name)
 		}
 	}
 
@@ -134,7 +136,6 @@ func getSetsWithBlankEventId(namespace string) {
 	// now that we have the matching fibers for the sets that are missing event id, we can look up the event id from the fiber
 	eventToSetIDMap := make(map[string][]string)
 	for _, s := range mySets {
-		log.Printf("checking set %v", s.ID.Name)
 		for _, f := range s.Fibers {
 			if fiber, ok := fiberIDMap[f]; ok {
 				eventID := fiber.EventID
@@ -212,7 +213,7 @@ func getSetsWithBlankEventId(namespace string) {
 					"",
 					"",
 					GetKVPValue(event.Passthrough, "schoolName"),
-					GetKVPValue(event.Passthrough, "inputType"),
+					"Z",
 					schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
 					GetKVPValue(event.Passthrough, "masterProgramCode"),
 					GetKVPValue(event.Passthrough, "ADCODE"),
@@ -250,9 +251,9 @@ func getSetsWithBlankEventId(namespace string) {
 			csvBytes := buf.Bytes()
 			suppressFile := true
 
-			file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+			file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".z.csv")
 			if suppressFile {
-				file = sb2.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+				file = sb2.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + eventID + "." + strconv.Itoa(len(records)-1) + ".z.csv")
 			}
 			writer := file.NewWriter(ctx)
 			if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
@@ -261,6 +262,8 @@ func getSetsWithBlankEventId(namespace string) {
 			if err := writer.Close(); err != nil {
 				log.Printf("Failed to close bucket write stream %v", err)
 			}
+			log.Printf("%v\t%v\t%v\t%v", namespace, GetKVPValue(event.Passthrough, "sponsorCode"), eventID, len(records))
+
 		}
 	}
 
