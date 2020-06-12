@@ -258,6 +258,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
+			CounterGroup{Group: "people720:audit", Items: []KeyCounter{}},
 		})).RetryOnConflict(retryOnConflitCount))
 		for _, counter := range input.Counters {
 			script := ""

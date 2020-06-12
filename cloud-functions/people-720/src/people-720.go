@@ -275,6 +275,50 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							Increment: true,
 						})
 
+						reportCounters = append(reportCounters,
+							ReportCounter{
+								Type:      "People720:Audit",
+								Name:      "Golden:Created",
+								Count:     1,
+								Increment: true,
+							},
+							ReportCounter{
+								Type:      "Golden",
+								Name:      "Unique",
+								Count:     1,
+								Increment: true,
+							},
+						)
+
+						if goldenDS.ROLE == "Parent" {
+							reportCounters = append(reportCounters,
+								ReportCounter{
+									Type:      "Golden:MPR",
+									Name:      "Unique",
+									Count:     1,
+									Increment: true,
+								},
+							)
+						} else {
+							reportCounters = append(reportCounters,
+								ReportCounter{
+									Type:      "Golden:NonMPR",
+									Name:      "Unique",
+									Count:     1,
+									Increment: true,
+								},
+							)
+						}
+
+						reportCounters = append(reportCounters,
+							ReportCounter{
+								Type:      "People720:Audit",
+								Name:      "Set:Created",
+								Count:     1,
+								Increment: true,
+							},
+						)
+
 						SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden"})
 						if goldenDS.ADVALID == "TRUE" {
 							SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "advalid"})
