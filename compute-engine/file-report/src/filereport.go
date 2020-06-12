@@ -372,50 +372,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	if len(input.FiberList) > 0 {
-		for _, r := range input.FiberList {
-			if !r.CreatedOn.IsZero() {
-				_, err = insertFiber.Exec(r.ID, input.ID, r.CreatedOn, r.Type, r.Disposition)
-				if err != nil {
-					log.Printf("Error running insertFiber: %v, %v", r.ID, err)
-				}
-			}
-
-			if len(r.Disposition) > 0 {
-				_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
-				if err != nil {
-					log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
-				}
-			}
-			// add Sets
-			if len(r.Sets) > 0 {
-				for _, set := range r.Sets {
-					_, err = insertFiberSet.Exec(r.ID, set)
-					if err != nil {
-						log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
-					}
-				}
-			}
-		}
-
+		go processFiberList(input.FiberList, input.ID)
 	}
 
 	if len(input.SetList) > 0 {
-		for _, r := range input.SetList {
-			if !r.CreatedOn.IsZero() {
-				_, err = insertSet.Exec(r.ID, input.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
-				if err != nil {
-					log.Printf("Error running insertSet: %v, %v", r.ID, err)
-				}
-			}
-
-			if len(r.ReplacedBy) > 0 {
-				_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
-				if err != nil {
-					log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
-				}
-			}
-		}
+		go processSetList(input.SetList, input.ID)
 	}
+
 	err = bulk.Flush()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
@@ -472,6 +435,53 @@ func processRecordList(records []RecordDetail, eventID string) {
 				if err != nil {
 					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
+			}
+		}
+	}
+}
+
+func processFiberList(records []FiberDetail, eventID string) {
+	var err error
+	for _, r := range records {
+		if !r.CreatedOn.IsZero() {
+			_, err = insertFiber.Exec(r.ID, eventID, r.CreatedOn, r.Type, r.Disposition)
+			if err != nil {
+				log.Printf("Error running insertFiber: %v, %v", r.ID, err)
+			}
+		}
+
+		if len(r.Disposition) > 0 {
+			_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
+			if err != nil {
+				log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
+			}
+		}
+		// add Sets
+		if len(r.Sets) > 0 {
+			for _, set := range r.Sets {
+				_, err = insertFiberSet.Exec(r.ID, set)
+				if err != nil {
+					log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
+				}
+			}
+		}
+	}
+}
+
+func processSetList(sets []SetDetail, eventID string) {
+	var err error
+	for _, r := range sets {
+		if !r.CreatedOn.IsZero() {
+			_, err = insertSet.Exec(r.ID, eventID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
+			if err != nil {
+				log.Printf("Error running insertSet: %v, %v", r.ID, err)
+			}
+		}
+
+		if len(r.ReplacedBy) > 0 {
+			_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
+			if err != nil {
+				log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 			}
 		}
 	}
