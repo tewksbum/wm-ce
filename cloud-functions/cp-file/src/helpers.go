@@ -1,8 +1,14 @@
 package cpfile
 
 import (
+	"bytes"
+	"context"
+	"encoding/csv"
+	"io"
 	"log"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -105,4 +111,42 @@ func validateRole(role string) string {
 		return "Student"
 	}
 	return role
+}
+
+func copyFileToBucket(ctx context.Context, event Event, records [][]string, bucket string) (filename string) {
+	//Bucket
+	sb := cs.Bucket(bucket)
+	// store it in bucket
+	var buf bytes.Buffer
+	csv := csv.NewWriter(&buf)
+	csv.WriteAll(records)
+	csv.Flush()
+
+	csvBytes := buf.Bytes()
+
+	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + event.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+
+	writer := file.NewWriter(ctx)
+	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
+		log.Printf("File cannot be copied to bucket %v", err)
+		return ""
+	}
+	if err := writer.Close(); err != nil {
+		log.Printf("Failed to close bucket write stream %v", err)
+		return ""
+	}
+	return file.ObjectName()
+}
+
+func getEnvFloat(key string) float64 {
+	s := os.Getenv(key)
+	if s == "" {
+		s = "0"
+	}
+
+	v, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0
+	}
+	return v
 }
