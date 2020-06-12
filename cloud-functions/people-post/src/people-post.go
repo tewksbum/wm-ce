@@ -711,8 +711,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
-				fiberRedisKey := []string{input.Signature.OwnerID, "search-fibers", search}
-				setRedisKey := []string{input.Signature.OwnerID, "search-sets", search}
+				fiberRedisKey := []string{input.Signature.OwnerID, "search-fibers", search} // existing fibers
+				setRedisKey := []string{input.Signature.OwnerID, "search-sets", search}     // existing sets
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
