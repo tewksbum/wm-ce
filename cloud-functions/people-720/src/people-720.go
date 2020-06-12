@@ -507,6 +507,78 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									}
 								}
 							}
+
+							if goldenDS.ROLE == "Parent" {
+								if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+									// let's see what we are deleting
+									if GetRedisIntValue([]string{input.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+										reportCounters = append(reportCounters,
+											ReportCounter{
+												Type:      "Golden:MPR",
+												Name:      "Unique",
+												Count:     -1,
+												Increment: true,
+											},
+										)
+										if GetRedisIntValue([]string{input.EventID, set, "golden", "advalid"}) == 1 {
+											reportCounters = append(reportCounters,
+												ReportCounter{
+													Type:      "Golden:MPR",
+													Name:      "IsAdValid",
+													Count:     -1,
+													Increment: true,
+												},
+											)
+										}
+
+										if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
+											reportCounters = append(reportCounters,
+												ReportCounter{
+													Type:      "Golden:MPR",
+													Name:      "HasEmail",
+													Count:     -1,
+													Increment: true,
+												},
+											)
+										}
+									}
+								}
+							} else {
+								if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+									// let's see what we are deleting
+									if GetRedisIntValue([]string{input.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+										reportCounters = append(reportCounters,
+											ReportCounter{
+												Type:      "Golden:NonMPR",
+												Name:      "Unique",
+												Count:     -1,
+												Increment: true,
+											},
+										)
+										if GetRedisIntValue([]string{input.EventID, set, "golden", "advalid"}) == 1 {
+											reportCounters = append(reportCounters,
+												ReportCounter{
+													Type:      "Golden:NonMPR",
+													Name:      "IsAdValid",
+													Count:     -1,
+													Increment: true,
+												},
+											)
+										}
+
+										if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
+											reportCounters = append(reportCounters,
+												ReportCounter{
+													Type:      "Golden:NonMPR",
+													Name:      "HasEmail",
+													Count:     -1,
+													Increment: true,
+												},
+											)
+										}
+									}
+								}
+							}
 						}
 
 						LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", expiringSetKeys, expiringGoldenKeys))
