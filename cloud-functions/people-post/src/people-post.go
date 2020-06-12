@@ -711,28 +711,21 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Searchfields %+v", searchFields)
 		if len(searchFields) > 0 {
 			for _, search := range searchFields {
-				msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+				fiberRedisKey := []string{input.Signature.OwnerID, "search-fibers", search} // existing fibers
+				setRedisKey := []string{input.Signature.OwnerID, "search-sets", search}     // existing sets
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
 					log.Fatalf("Error querying sets: %v", err)
 				}
-				var matchedFibers []string
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
-							AppendRedisTempKey(msKey, f)
+							AppendRedisTempKey(fiberRedisKey, f)
 						}
 					}
-				}
-
-				// load search keys into memstore, load existing first
-				if len(matchedFibers) > 0 {
-					msKey := []string{input.Signature.OwnerID, "search-sets", search}
-					for _, mf := range matchedFibers {
-						AppendRedisTempKey(msKey, mf)
-					}
+					AppendRedisTempKey(setRedisKey, s.ID.Name)
 				}
 			}
 		}
