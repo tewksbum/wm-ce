@@ -534,12 +534,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Count:     1,
 					Increment: true,
 				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:MPR",
+					Count:     1,
+					Increment: true,
+				},
 			)
 		} else {
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "Golden:NonMPR",
 					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:NonMPR",
 					Count:     1,
 					Increment: true,
 				},
