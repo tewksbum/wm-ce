@@ -534,12 +534,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Count:     1,
 					Increment: true,
 				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:MPR",
+					Count:     1,
+					Increment: true,
+				},
 			)
 		} else {
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "Golden:NonMPR",
 					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:NonMPR",
 					Count:     1,
 					Increment: true,
 				},
@@ -755,21 +767,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		if len(setDS.Fibers) == 1 {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Singletons",
-				Count:     1,
-				Increment: true,
-			})
-		} else if len(setDS.Fibers) > 1 {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Sets",
-				Count:     1,
-				Increment: true,
-			})
+		setCardinality := "noset"
+		if len(expiredSetCollection) == 1 {
+			setCardinality = "oneset"
+		} else if len(expiredSetCollection) > 1 {
+			setCardinality = "multisets"
 		}
+		reportCounters1 = append(reportCounters1, ReportCounter{
+			Type:      "People360",
+			Name:      setCardinality,
+			Count:     1,
+			Increment: true,
+		})
 
 		log.Printf("set search: %+v", setDS.Search)
 		if len(setDS.EventID) == 0 {
