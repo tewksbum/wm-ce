@@ -670,7 +670,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				headerlessTest1 = true
 			}
 			if headerlessTest1 {
-				log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
+				// log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
 
 				report := FileReport{
 					ID:          input.Signature.EventID,
