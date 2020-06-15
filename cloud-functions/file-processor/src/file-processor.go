@@ -665,7 +665,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
-			if repeatedValueCount > 10 {
+			if repeatedValueCount > 10 && repeatedValueCount < len(records) {
 				// trying to spit out specific thing that was an issue...
 				headerlessTest1 = true
 			}
