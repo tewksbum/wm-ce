@@ -85,8 +85,11 @@ func reMilityBaseCity(val string) bool {
 	return false
 }
 
-func StandardizeAddressSS(mkOutput *PeopleOutput) {
+func StandardizeAddressSmartyStreet(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
+	if mkOutput.COUNTRY.Value == "US" {
+		addressInput = mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
+	}
 	LogDev(fmt.Sprintf("addressInput passed TO parser %v", addressInput))
 	if len(strings.TrimSpace(addressInput)) > 10 {
 		a := CorrectAddress(reNewline.ReplaceAllString(addressInput, ""))
