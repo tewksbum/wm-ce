@@ -189,6 +189,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		badAD1 := 0
 		goodAD := 0
 		studentsUS := 0
+		international := 0
 		for _, g := range goldens {
 			if len(g.EMAIL) > 0 {
 				emails := strings.Split(g.EMAIL, "|")
@@ -225,6 +226,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 			if g.COUNTRY == "US" {
 				studentsUS++
+			} else {
+				international++
 			}
 
 			row := []string{
@@ -258,21 +261,21 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				"",
 			}
 			//only students with address
-			if len(g.AD1) == 0 || g.ADVALID != "TRUE" {
+			if g.ADVALID == "TRUE" || g.COUNTRY != "US" {
+				goodAD++
+				records = append(records, row)
+			} else {
 				badAD1++
 				row = append(row, "FALSE")
 				badrecords = append(badrecords, row)
-			} else {
-				goodAD++
-				records = append(records, row)
 			}
 		}
 
-		if goodAD >= int(float64(studentsUS)*Threshold) {
+		if goodAD >= int(float64((studentsUS))*Threshold) {
 			// good to go
 			filename := copyFileToBucket(ctx, event, records, Bucket)
 			log.Printf("Writing %v records into output file", len(records)-1)
-			if len(badrecords) > 0 {
+			if len(badrecords) > 1 {
 				// store it bad bucket
 				copyFileToBucket(ctx, event, badrecords, BadBucket)
 				log.Printf("Writing %v records into bad bucket output file", len(badrecords)-1)
