@@ -774,24 +774,10 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			publishReport(&report, cfName)
 
-			for r, d := range records {
-
-				output.Signature.RecordID = uuid.New().String()
-				output.Signature.RowNumber = r + 1
-
-				if output.Signature.RowNumber == 1 {
-					report := FileReport{
-						ID:              input.Signature.EventID,
-						ProcessingBegin: time.Now(),
-						StatusLabel:     "processing records",
-						StatusBy:        cfName,
-						StatusTime:      time.Now(),
-					}
-					publishReport(&report, cfName)
-				}
-
+			for i, d := range records {
 				// detect blank or pretty blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
+					records = append(records[:i], records[i+1:]...)
 					report := FileReport{
 						ID: input.Signature.EventID,
 						Counters: []ReportCounter{
@@ -807,9 +793,28 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 					continue
 				}
+			}
 
-				if RowLimit > 1 && r > RowLimit-1 {
-					break
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
+
+			// apply output limit
+			if RowLimit > 1 && len(records) > RowLimit {
+				records = records[0:RowLimit]
+			}
+
+			for r, d := range records {
+				output.Signature.RecordID = uuid.New().String()
+				output.Signature.RowNumber = r + 1
+
+				if output.Signature.RowNumber == 1 {
+					report := FileReport{
+						ID:              input.Signature.EventID,
+						ProcessingBegin: time.Now(),
+						StatusLabel:     "processing records",
+						StatusBy:        cfName,
+						StatusTime:      time.Now(),
+					}
+					publishReport(&report, cfName)
 				}
 
 				fields := make(map[string]string)
@@ -869,6 +874,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 				}
 			}
+
 			report2 := FileReport{
 				ID:              input.Signature.EventID,
 				InputStatistics: columnStats,
@@ -897,8 +903,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if err != nil {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
-
-			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
 
 		} else {
 			report := FileReport{
