@@ -261,17 +261,17 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				"",
 			}
 			//only students with address
-			if (len(g.AD1) == 0 || g.ADVALID != "TRUE") && g.COUNTRY == "US" {
+			if g.ADVALID == "TRUE" || g.COUNTRY != "US" {
+				goodAD++
+				records = append(records, row)
+			} else {
 				badAD1++
 				row = append(row, "FALSE")
 				badrecords = append(badrecords, row)
-			} else {
-				goodAD++
-				records = append(records, row)
 			}
 		}
 
-		if goodAD >= int(float64((studentsUS+international))*Threshold) {
+		if goodAD >= int(float64((studentsUS))*Threshold) {
 			// good to go
 			filename := copyFileToBucket(ctx, event, records, Bucket)
 			log.Printf("Writing %v records into output file", len(records)-1)
