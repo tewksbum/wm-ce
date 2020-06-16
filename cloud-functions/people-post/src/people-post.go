@@ -630,7 +630,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "" && v.Type != "mar" {
 			v.Output.ADVALID.Value = "FALSE"
 			v.Output.ADCORRECT.Value = "FALSE"
-			StandardizeAddressSS(&(v.Output))
+			StandardizeAddressSmartyStreet(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
 		}
 
