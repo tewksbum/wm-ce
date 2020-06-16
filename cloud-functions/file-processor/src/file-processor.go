@@ -777,31 +777,39 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			publishReport(&report, cfName)
 
 			// prepurge records
+			totalPurged := 0
 			for i, d := range records {
 				// detect blank or pretty blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
-					records = append(records[:i], records[i+1:]...)
-					report := FileReport{
-						ID: input.Signature.EventID,
-						Counters: []ReportCounter{
-							ReportCounter{
-								Type:      "FileProcessor",
-								Name:      "Purge",
-								Count:     1,
-								Increment: true,
-							},
-						},
+					if i == len(records)-1 { // last element
+						records = records[:len(records)-1]
+						break
 					}
-					publishReport(&report, cfName)
+					records = append(records[:i], records[i+1:]...)
+					totalPurged++
 				}
 			}
-
-			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
+			if totalPurged > 0 {
+				report := FileReport{
+					ID: input.Signature.EventID,
+					Counters: []ReportCounter{
+						ReportCounter{
+							Type:      "FileProcessor",
+							Name:      "Purge",
+							Count:     totalPurged,
+							Increment: true,
+						},
+					},
+				}
+				publishReport(&report, cfName)
+			}
 
 			// apply output limit
 			if RowLimit > 1 && len(records) > RowLimit {
 				records = records[0:RowLimit]
 			}
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
 
 			// output the records
 			for r, d := range records {
@@ -1134,7 +1142,7 @@ func PersistNER(key string, ner NERresponse) {
 
 	_, err := ms.Do("SET", key, string(cacheJSON))
 	if err != nil {
-		log.Fatalf("error storing NER %v", err)
+		log.Printf("error storing NER %v", err)
 	}
 }
 
