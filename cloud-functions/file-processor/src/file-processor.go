@@ -774,6 +774,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			publishReport(&report, cfName)
 
+			// prepurge records
 			for i, d := range records {
 				// detect blank or pretty blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
@@ -790,8 +791,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						},
 					}
 					publishReport(&report, cfName)
-
-					continue
 				}
 			}
 
@@ -802,6 +801,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				records = records[0:RowLimit]
 			}
 
+			// output the records
 			for r, d := range records {
 				output.Signature.RecordID = uuid.New().String()
 				output.Signature.RowNumber = r + 1
