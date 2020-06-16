@@ -794,12 +794,12 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
-
 			// apply output limit
 			if RowLimit > 1 && len(records) > RowLimit {
 				records = records[0:RowLimit]
 			}
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
 
 			// output the records
 			for r, d := range records {
