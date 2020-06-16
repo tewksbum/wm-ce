@@ -148,6 +148,15 @@ func Contains(slice []string, item string) bool {
 	return false
 }
 
+func ContainsSignature(sigs []Signature, sig Signature) bool {
+	for _, v := range sigs {
+		if v.FiberID == sig.FiberID {
+			return true
+		}
+	}
+	return false
+}
+
 func ConvertPassthrough(v map[string]string) []Passthrough360 {
 	var result []Passthrough360
 	if len(v) > 0 {
@@ -224,6 +233,9 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
+		if key == "FiberID" {
+			continue
+		}
 		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
 		if key == "RecordID" {
 			SetPeople360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
@@ -381,14 +393,16 @@ func GetRedisGuidList(keyparts []string) []string {
 	return result
 }
 
-func SetRedisKeyIfNotExists(keyparts []string) {
+func SetRedisKeyIfNotExists(keyparts []string) int {
 	ms := msp.Get()
 	defer ms.Close()
 
-	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	result, err := redis.Int(ms.Do("SETNX", strings.Join(keyparts, ":"), 1))
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
 	}
+	log.Printf("SetRedisKeyIfNotExists on %v returned %v", strings.Join(keyparts, ":"), result)
+	return result
 }
 
 func IncrRedisValue(keyparts []string) { // no need to update expiration

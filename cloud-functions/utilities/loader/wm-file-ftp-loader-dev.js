@@ -13,7 +13,8 @@ const topicName = "wm-status-updater-dev";
 const projectID = "wemade-core";
 
 const bucketName = "wm_cp_upload_dev";
-const bucketNameDest = "gs://wm_cp_uploaded/dev/";
+//const bucketName = "wm_cp_uploaded/dev";
+const bucketNameDest = "gs://wm_cp_uploaded_dev/";
 
 const pubSubClient = new PubSub({ projectID });
 const sftp = new Client();
@@ -62,8 +63,8 @@ const getBucketFiles = async () => {
         remotePath = "/WeMade/test/";
       }
 
-      if (remotePath) {
-        const ok = await uploadSFTPFile(file);
+ if (remotePath) {
+       const ok = await uploadSFTPFile(file);
         console.log(`Uploaded file.name: ${ok}`);
         if (ok) {
           //copy the file to the uploaded folder
@@ -82,7 +83,7 @@ const getBucketFiles = async () => {
               " count:" +
               splitFilename[4],
           };
-          await publishMessage(data);
+          //await publishMessage(data);
         }
       } else {
         data = {

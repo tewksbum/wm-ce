@@ -240,18 +240,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				// }
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
-			keypattern := "*"
-			redisKeys := GetRedisKeys(keypattern)
-			redisValues := GetRedisValues(redisKeys)
-			LogDev(fmt.Sprintf("redis matching keys: %+v, values %+v", redisKeys, redisValues))
 
 			// read the FiberIDs from Redis
 			searchKeys := []string{}
 			searchSets := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
-					msKey := []string{input.Signature.OwnerID, "search", search}
-					msSet := []string{input.Signature.OwnerID, "set", search}
+					msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+					msSet := []string{input.Signature.OwnerID, "search-sets", search}
 					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
 					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
@@ -488,7 +484,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		// if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
 		if dsFiber.Disposition != "purge" {
 			for _, search := range dsFiber.Search {
-				msKey := []string{input.Signature.OwnerID, "search", search}
+				msKey := []string{input.Signature.OwnerID, "search-fibers", search}
 				AppendRedisTempKey(msKey, dsFiber.ID.Name)
 			}
 		}
@@ -538,12 +534,24 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					Count:     1,
 					Increment: true,
 				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:MPR",
+					Count:     1,
+					Increment: true,
+				},
 			)
 		} else {
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "Golden:NonMPR",
 					Name:      "Unique",
+					Count:     1,
+					Increment: true,
+				},
+				ReportCounter{
+					Type:      "People360:Audit",
+					Name:      "Golden:Created:NonMPR",
 					Count:     1,
 					Increment: true,
 				},
@@ -728,12 +736,21 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		// put the set search key in redis
 		if len(SetSearchFields) > 0 {
 			for _, search := range SetSearchFields {
-				msSet := []string{input.Signature.OwnerID, "set", search}
+				msSet := []string{input.Signature.OwnerID, "search-sets", search}
 				AppendRedisTempKey(msSet, setDS.ID.Name)
 			}
 		}
 
 		setDS.Search = SetSearchFields
+
+		// write each of the search key into each of the fiber in redis
+		for _, search := range SetSearchFields {
+			msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+			for _, f := range setDS.Fibers {
+				AppendRedisTempKey(msKey, f)
+			}
+		}
+
 		setList := []SetDetail{
 			SetDetail{
 				ID:         output.ID,
@@ -750,21 +767,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		if len(setDS.Fibers) == 1 {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Singletons",
-				Count:     1,
-				Increment: true,
-			})
-		} else if len(setDS.Fibers) > 1 {
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      "Sets",
-				Count:     1,
-				Increment: true,
-			})
+		setCardinality := "noset"
+		if len(expiredSetCollection) == 1 {
+			setCardinality = "oneset"
+		} else if len(expiredSetCollection) > 1 {
+			setCardinality = "multisets"
 		}
+		reportCounters1 = append(reportCounters1, ReportCounter{
+			Type:      "People360",
+			Name:      setCardinality,
+			Count:     1,
+			Increment: true,
+		})
 
 		log.Printf("set search: %+v", setDS.Search)
 		if len(setDS.EventID) == 0 {

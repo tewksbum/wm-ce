@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
@@ -57,6 +58,8 @@ var (
 
 	projectID = os.Getenv("GCP_PROJECT")
 	index     = os.Getenv("REPORT_ESINDEX")
+
+	retryOnConflitCount = 10
 )
 
 func init() {
@@ -103,7 +106,7 @@ func init() {
 	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
 	sub.ReceiveSettings.MaxOutstandingMessages = 1024 * 1024    // 1M max message
 	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 500MB max message bytes
-	sub.ReceiveSettings.NumGoroutines = 1                       // there are only 2 CPU in the VM, one for dev, one for prod
+	sub.ReceiveSettings.NumGoroutines = 2                       // there are only 2 CPU in the VM, one for dev, one for prod
 
 	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
@@ -111,6 +114,10 @@ func init() {
 	if err != nil {
 		log.Printf("error opening db %v", err)
 	}
+
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(0)
+	db.SetConnMaxLifetime(10 * time.Minute)
 
 	insertRecord, err = db.Prepare(`insert into records (id, eventId, row, createdOn, isPerson, disposition) values (?,?,?,?,?,?)`)
 	if err != nil {
@@ -150,20 +157,6 @@ func init() {
 	}
 }
 
-// PullMessages pulls messages from a pubsub subscription
-func PullMessages(ctx context.Context, m psMessage) error {
-	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		//mutex.Lock()
-		processUpdate(ctx, msg)
-		//mutex.Unlock()
-		msg.Ack()
-	})
-	if err != nil {
-		log.Printf("receive error: %v", err)
-	}
-	return nil
-}
-
 func getMessages() {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		processUpdate(ctx, msg)
@@ -198,7 +191,7 @@ func afterUpdate(id int64, requests []elastic.BulkableRequest, response *elastic
 	for i, r := range response.Items {
 		for k, v := range r {
 			if len(v.Result) == 0 {
-				log.Printf("%v error %v for input %v", k, v.Error, requests[i])
+				log.Printf("%v error %v for index=%v id=%v input=%v", k, v.Error, v.Error.Index, v.Error.ResourceId, requests[i])
 			}
 		}
 	}
@@ -220,7 +213,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 	// in case we dont have the doc yet
 	idReport := IDOnly{ID: input.ID}
-	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true).RetryOnConflict(5))
+	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true).RetryOnConflict(retryOnConflitCount))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
 		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(FileReport{
@@ -231,41 +224,42 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 			CustomerID:    input.CustomerID,
 			Attributes:    input.Attributes,
 			Passthroughs:  input.Passthroughs,
-		}).DocAsUpsert(true).RetryOnConflict(5))
+		}).DocAsUpsert(true).RetryOnConflict(retryOnConflitCount))
 	}
 
 	if !input.ProcessingBegin.IsZero() {
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingBegin": input.ProcessingBegin}).RetryOnConflict(retryOnConflitCount))
 	}
 	if !input.ProcessingEnd.IsZero() {
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"processingEnd": input.ProcessingEnd}).RetryOnConflict(retryOnConflitCount))
 	}
 	// append to the status history
 	if len(input.StatusLabel) > 0 {
 		exists := `if (!ctx._source.containsKey("history")) {ctx._source["history"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		newStatus := ReportStatus{
 			Label:     input.StatusLabel,
 			Timestamp: input.StatusTime,
 			Function:  input.StatusBy,
 		}
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}).RetryOnConflict(5))
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(map[string]interface{}{"statusLabel": input.StatusLabel, "statusBy": input.StatusBy, "statusTime": input.StatusTime}).RetryOnConflict(retryOnConflitCount))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.history.add(params.historyEntry)").Param("historyEntry", newStatus)).RetryOnConflict(retryOnConflitCount))
 	}
 
 	if len(input.Counters) > 0 {
 		exists := `if (!ctx._source.containsKey("counts")) {ctx._source["counts"] = params.init}`
 		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists).Param("init", []CounterGroup{
 			CounterGroup{Group: "fileprocessor", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "raw", Count: 0}, KeyCounter{Key: "columns", Count: 0}, KeyCounter{Key: "outputted", Count: 0}}},
-			CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "purge", Count: 0}, KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
+			CounterGroup{Group: "preprocess", Items: []KeyCounter{KeyCounter{Key: "ispeople", Count: 0}, KeyCounter{Key: "isevent", Count: 0}}},
 			CounterGroup{Group: "peoplepost", Items: []KeyCounter{KeyCounter{Key: "default", Count: 0}, KeyCounter{Key: "mar", Count: 0}, KeyCounter{Key: "mpr", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
-			CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "unmatchable", Count: 0}, KeyCounter{Key: "dupe", Count: 0}, KeyCounter{Key: "singletons", Count: 0}, KeyCounter{Key: "sets", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
+			CounterGroup{Group: "people360", Items: []KeyCounter{KeyCounter{Key: "unmatchable", Count: 0}, KeyCounter{Key: "dupe", Count: 0}, KeyCounter{Key: "noset", Count: 0}, KeyCounter{Key: "oneset", Count: 0}, KeyCounter{Key: "multisets", Count: 0}, KeyCounter{Key: "total", Count: 0}}},
 			CounterGroup{Group: "people720", Items: []KeyCounter{KeyCounter{Key: "reprocess", Count: 0}}},
 			CounterGroup{Group: "golden", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "golden:mpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
-		})).RetryOnConflict(5))
+			CounterGroup{Group: "people720:audit", Items: []KeyCounter{}},
+		})).RetryOnConflict(retryOnConflitCount))
 		for _, counter := range input.Counters {
 			script := ""
 			kc := KeyCounter{
@@ -281,15 +275,15 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])} else {counter.count += params.cg.items[0].count}}`
 			} else {
 				//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
-				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
+				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])} else {counter.count  = params.cg.items[0].count}}`
 			}
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.Columns) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		// let's make a list
 		for _, column := range input.Columns {
 			columnMapping := NameMappedCounter{
@@ -297,13 +291,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				MapCounters: []MapCounter{},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.m.name); if (column == null) {ctx._source.fields.add(params.m)}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("m", columnMapping)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.ColumnMaps) > 0 { // this goes into fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for _, mapping := range input.ColumnMaps {
 			columnMapping := NameMappedCounter{
 				Name: mapping.Name,
@@ -315,55 +309,55 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 				},
 			}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.map.name); if (column == null) {ctx._source.fields.add(params.map)} else { def mapping = column.mapped.find(m -> m.name == params.map.mapped[0].name); if (mapping == null) {column.mapped.add(params.map.mapped[0]);} else {mapping.count++;}}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("map", columnMapping)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.InputStatistics) > 0 { // this maps to fields
 		exists := `if (!ctx._source.containsKey("fields")) {ctx._source["fields"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for _, v := range input.InputStatistics {
 			v.Mapped = []MapCounter{}
 			script := `def column = ctx._source.fields.find(c -> c.name == params.stat.name); if (column == null) {ctx._source.fields.add(params.stat)} else { column.min = params.stat.min; column.max = params.stat.max; column.sparsity = params.stat.sparsity;}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("stat", v)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.MatchKeyStatistics) > 0 {
 		exists := `if (!ctx._source.containsKey("matchKeyCounts")) {ctx._source["matchKeyCounts"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for k, v := range input.MatchKeyStatistics {
 			count := KeyCounter{
 				Key:   k,
 				Count: v,
 			}
 			script := `def mk = ctx._source.matchKeyCounts.find(g -> g.key == params.count.key); if (mk == null) {ctx._source.matchKeyCounts.add(params.count);} else {mk.count += params.count.count}`
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("count", count)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	// apend errors and warnings
 	if len(input.Errors) > 0 {
 		exists := `if (!ctx._source.containsKey("errors")) {ctx._source["errors"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for _, e := range input.Errors {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.errors.add(params.error)").Param("error", e)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.Warnings) > 0 {
 		exists := `if (!ctx._source.containsKey("warnings")) {ctx._source["warnings"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for _, e := range input.Warnings {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.warnings.add(params.warn)").Param("warn", e)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
 	if len(input.Audits) > 0 {
 		exists := `if (!ctx._source.containsKey("audits")) {ctx._source["audits"] = [];}`
-		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(5))
+		bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(exists)).RetryOnConflict(retryOnConflitCount))
 		for _, e := range input.Audits {
-			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)).RetryOnConflict(5))
+			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript("ctx._source.audits.add(params.audit)").Param("audit", e)).RetryOnConflict(retryOnConflitCount))
 		}
 	}
 
@@ -372,50 +366,13 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	if len(input.FiberList) > 0 {
-		for _, r := range input.FiberList {
-			if !r.CreatedOn.IsZero() {
-				_, err = insertFiber.Exec(r.ID, input.ID, r.CreatedOn, r.Type, r.Disposition)
-				if err != nil {
-					log.Printf("Error running insertFiber: %v", err)
-				}
-			}
-
-			if len(r.Disposition) > 0 {
-				_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
-				if err != nil {
-					log.Printf("Error running updateFiberDisposition: %v", err)
-				}
-			}
-			// add Sets
-			if len(r.Sets) > 0 {
-				for _, set := range r.Sets {
-					_, err = insertFiberSet.Exec(r.ID, set)
-					if err != nil {
-						log.Printf("Error running insertFiberSet: %v", err)
-					}
-				}
-			}
-		}
-
+		go processFiberList(input.FiberList, input.ID)
 	}
 
 	if len(input.SetList) > 0 {
-		for _, r := range input.SetList {
-			if !r.CreatedOn.IsZero() {
-				_, err = insertSet.Exec(r.ID, input.ID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
-				if err != nil {
-					log.Printf("Error running insertSet: %v", err)
-				}
-			}
-
-			if len(r.ReplacedBy) > 0 {
-				_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
-				if err != nil {
-					log.Printf("Error running updateSetDeleted: %v", err)
-				}
-			}
-		}
+		go processSetList(input.SetList, input.ID)
 	}
+
 	err = bulk.Flush()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
@@ -448,21 +405,21 @@ func processRecordList(records []RecordDetail, eventID string) {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertRecord.Exec(r.ID, eventID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
 			if err != nil {
-				log.Printf("Error running insertRecord: %v", err)
+				log.Printf("Error running insertRecord: %v %v", r.ID, err)
 			}
 		}
 
 		if len(r.IsPerson) > 0 {
 			_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
 			if err != nil {
-				log.Printf("Error running updateRecordPerson: %v", err)
+				log.Printf("Error running updateRecordPerson: %v %v", r.ID, err)
 			}
 		}
 		//update disposition
 		if len(r.Disposition) > 0 {
 			_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
 			if err != nil {
-				log.Printf("Error running updateRecordDisposition: %v", err)
+				log.Printf("Error running updateRecordDisposition: %v %v", r.ID, err)
 			}
 		}
 		// add fiber
@@ -470,8 +427,55 @@ func processRecordList(records []RecordDetail, eventID string) {
 			for _, fiber := range r.Fibers {
 				_, err = insertRecordFiber.Exec(r.ID, fiber)
 				if err != nil {
-					log.Printf("Error running insertRecordFiber: %v", err)
+					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
+			}
+		}
+	}
+}
+
+func processFiberList(records []FiberDetail, eventID string) {
+	var err error
+	for _, r := range records {
+		if !r.CreatedOn.IsZero() {
+			_, err = insertFiber.Exec(r.ID, eventID, r.CreatedOn, r.Type, r.Disposition)
+			if err != nil {
+				log.Printf("Error running insertFiber: %v, %v", r.ID, err)
+			}
+		}
+
+		if len(r.Disposition) > 0 {
+			_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
+			if err != nil {
+				log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
+			}
+		}
+		// add Sets
+		if len(r.Sets) > 0 {
+			for _, set := range r.Sets {
+				_, err = insertFiberSet.Exec(r.ID, set)
+				if err != nil {
+					log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
+				}
+			}
+		}
+	}
+}
+
+func processSetList(sets []SetDetail, eventID string) {
+	var err error
+	for _, r := range sets {
+		if !r.CreatedOn.IsZero() {
+			_, err = insertSet.Exec(r.ID, eventID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
+			if err != nil {
+				log.Printf("Error running insertSet: %v, %v", r.ID, err)
+			}
+		}
+
+		if len(r.ReplacedBy) > 0 {
+			_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
+			if err != nil {
+				log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 			}
 		}
 	}
