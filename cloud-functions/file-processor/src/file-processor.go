@@ -888,7 +888,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			input.EventData["status"] = "Streamed"
 			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
-			input.EventData["recordcount"] = len(records)
+			input.EventData["recordcount"] = recordCount
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
