@@ -778,15 +778,16 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			// prepurge records
 			totalPurged := 0
+			totalKept := 0
 			for i, d := range records {
-				// detect blank or pretty blank lines
+				// detect blank or almost blank lines
 				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
-					if i == len(records)-1 { // last element
-						records = records[:len(records)-1]
-						break
-					}
-					records = append(records[:i], records[i+1:]...)
 					totalPurged++
+				} else {
+					if i != totalKept {
+						records[totalKept] = d
+					}
+					totalKept++
 				}
 			}
 			if totalPurged > 0 {
@@ -803,6 +804,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				}
 				publishReport(&report, cfName)
 			}
+			records = records[:totalKept]
 
 			// apply output limit
 			if RowLimit > 1 && len(records) > RowLimit {
