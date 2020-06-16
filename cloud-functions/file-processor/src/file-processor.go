@@ -159,6 +159,8 @@ type MatchKeyStat struct {
 // ProjectID is the env var of project id
 var ProjectID = os.Getenv("PROJECTID")
 var DSProjectID = os.Getenv("DSPROJECTID")
+var env = os.Getenv("ENVIRONMENT")
+var dev = (env == "dev")
 
 // BucketName the GS storage bucket name
 var BucketName = os.Getenv("GSBUCKET")
@@ -356,7 +358,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			var records [][]string
 			var allrows [][]string
 
-			log.Printf("Start parseFileURL")
+			LogDev(fmt.Sprintf("Start parseFileURL"))
 			parsedFileName := ""
 			parsedFileURL, err := url.Parse(fmt.Sprintf("%v", fileURL))
 			if err != nil {
@@ -364,7 +366,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				parsedFileName = strings.ToLower(filepath.Base(parsedFileURL.Path))
 			}
 
-			log.Printf("End parseFileURL")
+			LogDev(fmt.Sprintf("End parseFileURL"))
 			{
 				report := FileReport{
 					ID: input.Signature.EventID,
@@ -385,7 +387,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			log.Printf("Choose file extension")
 			if fileKind.Extension == "xlsx" || contentType == "application/zip" || strings.HasSuffix(parsedFileName, ".xlsx") {
-				log.Printf("Start OpenBinary")
+				LogDev(fmt.Sprintf("Start OpenBinary"))
 				xlsxFile, err := xlsx.OpenBinary(fileBytes)
 				if err != nil {
 					report := FileReport{
@@ -417,8 +419,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					log.Printf("ERROR unable to parse xlsx: %v", err)
 					return nil
 				}
-				log.Printf("End OpenBinary")
-				log.Printf("Start xlsxFile.ToSlice()")
+
+				LogDev(fmt.Sprintf("End OpenBinary.Start xlsxFile.ToSlice()"))
 				sheetData, err := xlsxFile.ToSlice()
 
 				if err != nil {
@@ -451,7 +453,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					return fmt.Errorf("unable to read excel data: %v", err)
 				}
 
-				log.Printf("End xlsxFile.ToSlice()")
+				LogDev(fmt.Sprintf("End xlsxFile.ToSlice()"))
 				origSheet, wcSheet, cpSheet := -1, -1, -1
 				for i, sheet := range xlsxFile.Sheets {
 					switch strings.ToLower(sheet.Name) {
@@ -530,7 +532,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			deletedColumns := 0
 			for i := 0; i < len(allrows[0]); i++ {
 				var counter int
-				if len(allrows[1][i]) == 0 {
+				if len(allrows[1]) > i && len(allrows[1][i]) == 0 {
 					for j := 2; j < len(allrows); j++ {
 						if len(allrows[j]) > i {
 							if len(allrows[j][i]) == 0 {
@@ -1180,4 +1182,10 @@ func GetRedisIntValues(keys [][]string) []int {
 		log.Printf("Error getting redis values %v, error %v", formattedKeys, err)
 	}
 	return values
+}
+
+func LogDev(s string) {
+	if dev {
+		log.Printf(s)
+	}
 }
