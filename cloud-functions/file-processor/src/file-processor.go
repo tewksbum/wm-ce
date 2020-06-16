@@ -672,7 +672,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				headerlessTest1 = true
 			}
 			if headerlessTest1 {
-				log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
+				// log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
 
 				report := FileReport{
 					ID:          input.Signature.EventID,
@@ -890,7 +890,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			input.EventData["status"] = "Streamed"
 			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
-			input.EventData["recordcount"] = len(records)
+			input.EventData["recordcount"] = recordCount
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
