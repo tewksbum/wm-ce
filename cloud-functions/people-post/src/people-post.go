@@ -549,7 +549,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// let's populate city state if we have zip
-		if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
+		if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value == "united states") || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
 			if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
 				v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
 				if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
@@ -599,7 +599,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
 		}
 		// standardize "US" for any US State address
-		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") {
+		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value) == "united states" || v.Output.COUNTRY.Value == "") {
 			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
 			v.Output.COUNTRY.Value = "US"
 			v.Output.COUNTRY.Source = "WM"
