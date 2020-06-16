@@ -292,7 +292,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			eventData.EventData["message"] = "CP file generated successfully " + filename
 			eventData.EventData["parent-emails"] = countParentEmails
 			eventData.EventData["student-emails"] = countStudentEmails
-			eventData.EventData["certified-addresses"] = goodAD
+			eventData.EventData["advalid-count"] = goodAD
 			eventData.EventData["bad-addresses"] = badAD1
 			eventData.EventData["row-count"] = len(records) - 1
 

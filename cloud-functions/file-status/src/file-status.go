@@ -107,7 +107,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if val, ok := input.EventData["message"]; ok {
 		Message = val.(string)
 	}
-	RecordsTotal, RecordsCompleted, RecordsDeleted, FibersCompleted, FibersDeleted, ParentEmails, StudentEmails, CertifiedAddresses, BadAddresses, RowCount := 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+	RecordsTotal, RecordsCompleted, RecordsDeleted, FibersCompleted, FibersDeleted, ParentEmails, StudentEmails, AdValid, BadAddresses, RowCount := 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 	if val, ok := input.EventData["records-total"]; ok {
 		RecordsTotal = int(val.(float64))
@@ -130,8 +130,8 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 	if val, ok := input.EventData["student-emails"]; ok {
 		StudentEmails = int(val.(float64))
 	}
-	if val, ok := input.EventData["certified-addresses"]; ok {
-		CertifiedAddresses = int(val.(float64))
+	if val, ok := input.EventData["advalid-count"]; ok {
+		AdValid = int(val.(float64))
 	}
 	if val, ok := input.EventData["bad-addresses"]; ok {
 		BadAddresses = int(val.(float64))
@@ -156,7 +156,7 @@ func CheckStatus(ctx context.Context, m PubSubMessage) error {
 			KIP{Key: "fibers-deleted", Value: FibersDeleted},
 			KIP{Key: "parent-emails", Value: ParentEmails},
 			KIP{Key: "student-emails", Value: StudentEmails},
-			KIP{Key: "certified-addresses", Value: CertifiedAddresses},
+			KIP{Key: "advalid-count", Value: AdValid},
 			KIP{Key: "bad-addresses", Value: BadAddresses},
 			KIP{Key: "row-count", Value: RowCount},
 		}
