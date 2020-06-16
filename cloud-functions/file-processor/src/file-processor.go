@@ -672,7 +672,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				headerlessTest1 = true
 			}
 			if headerlessTest1 {
-				log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
+				// log.Printf("%v is headerless (header row value is repeated in records %v times), stop processing", input.Signature.EventID, repeatedValueCount)
 
 				report := FileReport{
 					ID:          input.Signature.EventID,
@@ -776,8 +776,43 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			}
 			publishReport(&report, cfName)
 
-			for r, d := range records {
+			// prepurge records
+			totalPurged := 0
+			for i, d := range records {
+				// detect blank or pretty blank lines
+				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
+					if i == len(records)-1 { // last element
+						records = records[:len(records)-1]
+						break
+					}
+					records = append(records[:i], records[i+1:]...)
+					totalPurged++
+				}
+			}
+			if totalPurged > 0 {
+				report := FileReport{
+					ID: input.Signature.EventID,
+					Counters: []ReportCounter{
+						ReportCounter{
+							Type:      "FileProcessor",
+							Name:      "Purge",
+							Count:     totalPurged,
+							Increment: true,
+						},
+					},
+				}
+				publishReport(&report, cfName)
+			}
 
+			// apply output limit
+			if RowLimit > 1 && len(records) > RowLimit {
+				records = records[0:RowLimit]
+			}
+
+			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
+
+			// output the records
+			for r, d := range records {
 				output.Signature.RecordID = uuid.New().String()
 				output.Signature.RowNumber = r + 1
 
@@ -790,28 +825,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 						StatusTime:      time.Now(),
 					}
 					publishReport(&report, cfName)
-				}
-
-				// detect blank or pretty blank lines
-				if CountUniqueValues(d) <= 2 && maxColumns >= 4 {
-					report := FileReport{
-						ID: input.Signature.EventID,
-						Counters: []ReportCounter{
-							ReportCounter{
-								Type:      "FileProcessor",
-								Name:      "Purge",
-								Count:     1,
-								Increment: true,
-							},
-						},
-					}
-					publishReport(&report, cfName)
-
-					continue
-				}
-
-				if RowLimit > 1 && r > RowLimit-1 {
-					break
 				}
 
 				fields := make(map[string]string)
@@ -871,6 +884,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 				}
 			}
+
 			report2 := FileReport{
 				ID:              input.Signature.EventID,
 				InputStatistics: columnStats,
@@ -890,7 +904,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			input.EventData["status"] = "Streamed"
 			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
-			input.EventData["recordcount"] = len(records)
+			input.EventData["recordcount"] = recordCount
 			statusJSON, _ := json.Marshal(input)
 			psresult := status.Publish(ctx, &pubsub.Message{
 				Data: statusJSON,
@@ -899,8 +913,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if err != nil {
 				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 			}
-
-			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, recordCount)
 
 		} else {
 			report := FileReport{
@@ -1130,7 +1142,7 @@ func PersistNER(key string, ner NERresponse) {
 
 	_, err := ms.Do("SET", key, string(cacheJSON))
 	if err != nil {
-		log.Fatalf("error storing NER %v", err)
+		log.Printf("error storing NER %v", err)
 	}
 }
 
