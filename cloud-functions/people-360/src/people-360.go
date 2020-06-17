@@ -627,7 +627,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
 		goldenJSON, _ := json.Marshal(goldenDS)
-		log.Printf("writing golden %v", goldenJSON)
+		log.Printf("writing golden %v", string(goldenJSON))
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
