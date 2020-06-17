@@ -54,8 +54,6 @@ func init() {
 
 func People720(ctx context.Context, m PubSubMessage) error {
 
-	return nil
-
 	var input FileComplete
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
@@ -192,6 +190,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 						}
 						setsJSON, _ := json.Marshal(existingSets)
 						log.Printf("search key %v found multi sets %v", s, string(setsJSON))
+						continue
 						var allFiberIDs []string
 						var allFiberKeys []*datastore.Key
 						var allFibers []PeopleFiberDS
