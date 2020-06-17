@@ -184,6 +184,9 @@ func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value s
 	if field == "EMAIL" {
 		f.Set(reflect.ValueOf(strings.Join(values, "|")))
 	} else {
+		if len(value) == 0 {
+			log.Printf("Golden key %v setting to blank, available values %v", field, values)
+		}
 		f.Set(reflect.ValueOf(value))
 	}
 }
@@ -234,26 +237,18 @@ func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360)
 func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 	for _, m := range values {
 		if m.Key == key {
-			if len(m.Value) == 0 {
-				log.Printf("Golden %v has no value 1", key)
-			}
 			return m.Value
 		}
 	}
-	log.Printf("Golden %v has no value", key)
 	return ""
 }
 
 func GetGoldenValuesFromMatchKeys(values []MatchKey360, key string) []string {
 	for _, m := range values {
 		if m.Key == key {
-			if len(m.Values) == 0 {
-				log.Printf("Golden %v has no values 1", key)
-			}
 			return m.Values
 		}
 	}
-	log.Printf("Golden %v has no values", key)
 	return []string{}
 }
 
