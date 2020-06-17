@@ -237,6 +237,7 @@ func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 			return m.Value
 		}
 	}
+	log.Printf("Golden %v has no value", key)
 	return ""
 }
 
@@ -246,6 +247,7 @@ func GetGoldenValuesFromMatchKeys(values []MatchKey360, key string) []string {
 			return m.Values
 		}
 	}
+	log.Printf("Golden %v has no values", key)
 	return []string{}
 }
 
