@@ -53,6 +53,9 @@ func init() {
 }
 
 func People720(ctx context.Context, m PubSubMessage) error {
+
+	return nil
+
 	var input FileComplete
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
