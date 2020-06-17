@@ -234,6 +234,9 @@ func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360)
 func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 	for _, m := range values {
 		if m.Key == key {
+			if len(m.Value) == 0 {
+				log.Printf("Golden %v has no value 1", key)
+			}
 			return m.Value
 		}
 	}
@@ -244,6 +247,9 @@ func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 func GetGoldenValuesFromMatchKeys(values []MatchKey360, key string) []string {
 	for _, m := range values {
 		if m.Key == key {
+			if len(m.Values) == 0 {
+				log.Printf("Golden %v has no values 1", key)
+			}
 			return m.Values
 		}
 	}
