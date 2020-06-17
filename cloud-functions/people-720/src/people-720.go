@@ -169,7 +169,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			for _, s := range f.Search { // each search key of each fiber
 				if setIDs, ok := setSearchMap[s]; ok { // in the search key map
 					if len(setIDs) > 1 {
-						log.Printf("search key %v found multi sets %v", s, setIDs)
+
 						reprocessFibers = append(reprocessFibers, f.ID.Name)
 
 						// load the existing sets
@@ -187,7 +187,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								log.Printf("ERROR fetching sets ns %v kind %v, keys %v: %v,", ownerNS, DSKindSet, existingSetKeys, err)
 							}
 						}
-
+						setsJSON, _ := json.Marshal(existingSets)
+						log.Printf("search key %v found multi sets %v", s, string(setsJSON))
 						var allFiberIDs []string
 						var allFiberKeys []*datastore.Key
 						var allFibers []PeopleFiberDS
