@@ -352,6 +352,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// fix zip code that has leading 0 stripped out
+		if column.MatchKey1 == "ZIP" && IsInt(column.Value) && len(column.Value) == 8 {
+			column.Value = LeftPad2Len(column.Value, "0", 9)
+		}
+
 		if column.MatchKey1 == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
 			column.Value = LeftPad2Len(column.Value, "0", 5)
 		}
