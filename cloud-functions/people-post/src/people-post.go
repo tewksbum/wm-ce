@@ -599,7 +599,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.STATE.Value = lookupState(v.Output.STATE.Value)
 		}
 		// standardize "US" for any US State address
-		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || strings.ToLower(v.Output.COUNTRY.Value) == "United States" || v.Output.COUNTRY.Value == "") {
+		if reState.MatchString(v.Output.STATE.Value) && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || v.Output.COUNTRY.Value == "United States of America" || v.Output.COUNTRY.Value == "United States" || v.Output.COUNTRY.Value == "") {
 			LogDev(fmt.Sprintf("overriding country by state value: %v", v.Output.STATE.Value))
 			v.Output.COUNTRY.Value = "US"
 			v.Output.COUNTRY.Source = "WM"
