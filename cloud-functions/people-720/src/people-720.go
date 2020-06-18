@@ -190,7 +190,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 						}
 						setsJSON, _ := json.Marshal(existingSets)
 						log.Printf("search key %v found multi sets %v: %v", s, setIDs, string(setsJSON))
-						continue
+
 						var allFiberIDs []string
 						var allFiberKeys []*datastore.Key
 						var allFibers []PeopleFiberDS
