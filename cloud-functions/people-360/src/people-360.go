@@ -308,6 +308,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							break
 						}
 
+					} else {
+						break
 					}
 				}
 			}
