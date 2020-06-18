@@ -268,7 +268,16 @@ func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360)
 func GetGoldenValueFromMatchKeys(values []MatchKey360, key string) string {
 	for _, m := range values {
 		if m.Key == key {
-			return m.Value
+			// TODO: review this logic
+			if len(m.Value) > 0 {
+				return m.Value
+			} else {
+				for _, v := range m.Values {
+					if len(v) > 0 {
+						return v
+					}
+				}
+			}
 		}
 	}
 	return ""
