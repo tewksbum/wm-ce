@@ -182,10 +182,6 @@ func main() {
 		errc <- nil
 	}()
 
-	// Receive messages for 5 seconds.
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
-
 	// Create a channel to handle messages to as they come in.
 	cm := make(chan *pubsub.Message)
 	defer close(cm)
@@ -193,7 +189,7 @@ func main() {
 	go func() {
 		for msg := range cm {
 			processUpdate(ctx, msg)
-			time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
+			//time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
 			msg.Ack()
 		}
 	}()
