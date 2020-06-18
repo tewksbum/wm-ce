@@ -108,7 +108,7 @@ func init() {
 	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
 	sub.ReceiveSettings.MaxOutstandingMessages = 1024 * 1024    // 1M max message
 	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 500MB max message bytes
-	sub.ReceiveSettings.NumGoroutines = 1                       // there are only 2 CPU in the VM, one for dev, one for prod
+	sub.ReceiveSettings.NumGoroutines = 2                       // there are only 2 CPU in the VM, one for dev, one for prod
 
 	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
