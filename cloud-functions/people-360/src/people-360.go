@@ -293,9 +293,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				Fibers = append(Fibers, PeopleFiberDS{})
 			}
 			// loop 10 times if we can't load the fiber
-			retryLoop := 0
-			for {
-				if len(FiberKeys) > 0 {
+			if len(FiberKeys) > 0 {
+				retryLoop := 0
+				for {
 					if err := fs.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
 						log.Printf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
 						if strings.HasSuffix(err.Error(), "no such entity") {
