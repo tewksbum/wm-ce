@@ -139,16 +139,16 @@ func GetPeopleERR(column string) PeopleERR {
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
-	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:":
+	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:", "winthrop email":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
 		err.Gender = 1
-	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first":
+	case "pfname", "pfname1", "pfname2", "parent first name", "parent_first_name", "parent fname", "parent_fname", "father_first", "mother_first", "father first", "mother first", "parent/guardian first name":
 		err.ParentFirstName = 1
-	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last":
+	case "plname", "plname1", "plname2", "parent last name", "parent_last_name", "parent lname", "parent_lname", "father_last", "mother_last", "father last", "mother last", "parent/guardian last name":
 		err.ParentLastName = 1
 	case "phone", "phone1", "hphone", "cphone", "mphone", "phone mobile cell", "mobile":
 		err.Phone = 1
