@@ -191,7 +191,11 @@ func afterUpdate(id int64, requests []elastic.BulkableRequest, response *elastic
 	for i, r := range response.Items {
 		for k, v := range r {
 			if len(v.Result) == 0 {
-				log.Printf("%v error %v for index=%v id=%v input=%v", k, v.Error, v.Error.Index, v.Error.ResourceId, requests[i])
+				errorJSON, _ := json.Marshal(v.Error)
+				requestSource, _ := requests[i].Source()
+				log.Printf("%v error %v for input=%v, %v", k, string(errorJSON), requestSource, requests[i].String())
+				errorJSON = nil
+				requestSource = nil
 			}
 		}
 	}
