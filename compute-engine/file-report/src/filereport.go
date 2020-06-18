@@ -404,21 +404,21 @@ func processRecordList(records []RecordDetail, eventID string) {
 	for _, r := range records {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertRecord.Exec(r.ID, eventID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertRecord: %v %v", r.ID, err)
 			}
 		}
 
 		if len(r.IsPerson) > 0 {
 			_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordPerson: %v %v", r.ID, err)
 			}
 		}
 		//update disposition
 		if len(r.Disposition) > 0 {
 			_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordDisposition: %v %v", r.ID, err)
 			}
 		}
@@ -426,7 +426,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 		if len(r.Fibers) > 0 {
 			for _, fiber := range r.Fibers {
 				_, err = insertRecordFiber.Exec(r.ID, fiber)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
 			}
@@ -439,14 +439,14 @@ func processFiberList(records []FiberDetail, eventID string) {
 	for _, r := range records {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertFiber.Exec(r.ID, eventID, r.CreatedOn, r.Type, r.Disposition)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertFiber: %v, %v", r.ID, err)
 			}
 		}
 
 		if len(r.Disposition) > 0 {
 			_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
 			}
 		}
@@ -454,7 +454,7 @@ func processFiberList(records []FiberDetail, eventID string) {
 		if len(r.Sets) > 0 {
 			for _, set := range r.Sets {
 				_, err = insertFiberSet.Exec(r.ID, set)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
 				}
 			}
@@ -467,14 +467,14 @@ func processSetList(sets []SetDetail, eventID string) {
 	for _, r := range sets {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertSet.Exec(r.ID, eventID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertSet: %v, %v", r.ID, err)
 			}
 		}
 
 		if len(r.ReplacedBy) > 0 {
 			_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 			}
 		}
