@@ -160,6 +160,7 @@ func init() {
 func getMessages() {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		processUpdate(ctx, msg)
+		time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
 		msg.Ack()
 	})
 	if err != nil {
