@@ -59,7 +59,7 @@ var (
 	projectID = os.Getenv("GCP_PROJECT")
 	index     = os.Getenv("REPORT_ESINDEX")
 
-	retryOnConflitCount = 10
+	retryOnConflitCount = 5
 )
 
 func init() {
@@ -106,7 +106,7 @@ func init() {
 	sub.ReceiveSettings.Synchronous = true                      // run this synchronous
 	sub.ReceiveSettings.MaxOutstandingMessages = 1024 * 1024    // 1M max message
 	sub.ReceiveSettings.MaxOutstandingBytes = 500 * 1024 * 1024 // 500MB max message bytes
-	sub.ReceiveSettings.NumGoroutines = 2                       // there are only 2 CPU in the VM, one for dev, one for prod
+	sub.ReceiveSettings.NumGoroutines = 1                       // there are only 2 CPU in the VM, one for dev, one for prod
 
 	dsn := fmt.Sprintf("pipeline@tcp(%v:3306)/pipeline?tls=skip-verify&autocommit=true&parseTime=true", os.Getenv("MYSQL_HOST"))
 
@@ -188,16 +188,19 @@ func main() {
 }
 
 func afterUpdate(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
-	for i, r := range response.Items {
-		for k, v := range r {
-			if len(v.Result) == 0 {
-				errorJSON, _ := json.Marshal(v)
-				requestSource, _ := requests[i].Source()
-				log.Printf("%v error %v for input=%v, %v", k, string(errorJSON), requestSource, requests[i].String())
-				errorJSON = nil
-				requestSource = nil
+	if response != nil && response.Items != nil {
+		for i, r := range response.Items {
+			for k, v := range r {
+				if len(v.Result) == 0 {
+					errorJSON, _ := json.Marshal(v)
+					requestSource, _ := requests[i].Source()
+					log.Printf("%v error %v for input=%v, %v", k, string(errorJSON), requestSource, requests[i].String())
+					errorJSON = nil
+					requestSource = nil
+				}
 			}
 		}
+		response = nil
 	}
 }
 
