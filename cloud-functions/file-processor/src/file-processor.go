@@ -530,27 +530,35 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			//scan for empty columns.
 			//start in the second row
 			deletedColumns := 0
+			//Check the length of the header.
 			for i := 0; i < len(allrows[0]); i++ {
 				var counter int
-				if len(allrows[1]) > i && len(allrows[1][i]) == 0 {
+				//Check if the 1st row is shorter than the header and if the element is empty.
+				if len(allrows[1]) > i && len(strings.TrimSpace(allrows[1][i])) == 0 {
+					//if the element is empty we will iterate vertically
 					for j := 2; j < len(allrows); j++ {
+						//check if the row length is shorter than the header.
 						if len(allrows[j]) > i {
-							if len(allrows[j][i]) == 0 {
+							//check if the element is empty
+							if len(strings.TrimSpace(allrows[j][i])) == 0 {
 								counter++
 							} else {
 								break
 							}
 						} else {
+							//if the row is shorter we count the row and check the others.
 							counter++
 						}
 					}
+					//check if the column is empty. Minus 2 because it is excluded the header and 1st row.
 					if counter == (len(allrows) - 2) {
-						deletedColumns++
+						deletedColumns++ //count the amount of column delete
 						for h := 0; h < len(allrows); h++ {
 							if len(allrows[h]) > i {
 								allrows[h] = append(allrows[h][:i], allrows[h][i+1:]...)
 							}
 						}
+						//adjusting the index of the first row to compare the next column.
 						i--
 					}
 				}

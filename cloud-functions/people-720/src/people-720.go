@@ -53,6 +53,7 @@ func init() {
 }
 
 func People720(ctx context.Context, m PubSubMessage) error {
+
 	var input FileComplete
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
@@ -169,6 +170,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			for _, s := range f.Search { // each search key of each fiber
 				if setIDs, ok := setSearchMap[s]; ok { // in the search key map
 					if len(setIDs) > 1 {
+
 						reprocessFibers = append(reprocessFibers, f.ID.Name)
 
 						// load the existing sets
@@ -186,6 +188,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								log.Printf("ERROR fetching sets ns %v kind %v, keys %v: %v,", ownerNS, DSKindSet, existingSetKeys, err)
 							}
 						}
+						setsJSON, _ := json.Marshal(existingSets)
+						log.Printf("search key %v found multi sets %v: %v", s, setIDs, string(setsJSON))
 
 						var allFiberIDs []string
 						var allFiberKeys []*datastore.Key

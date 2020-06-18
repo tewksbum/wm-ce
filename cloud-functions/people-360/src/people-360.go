@@ -292,9 +292,25 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				FiberKeys = append(FiberKeys, dsFiberGetKey)
 				Fibers = append(Fibers, PeopleFiberDS{})
 			}
+			// loop 10 times if we can't load the fiber
 			if len(FiberKeys) > 0 {
-				if err := fs.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
-					log.Printf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
+				retryLoop := 0
+				for {
+					if err := fs.GetMulti(ctx, FiberKeys, Fibers); err != nil && err != datastore.ErrNoSuchEntity {
+						log.Printf("Error fetching fibers ns %v kind %v, keys %v: %v,", dsNameSpace, DSKindFiber, FiberKeys, err)
+						if strings.HasSuffix(err.Error(), "no such entity") {
+							if retryLoop > 10 {
+								break
+							}
+							time.Sleep(1 * time.Second)
+							retryLoop++
+						} else {
+							break
+						}
+
+					} else {
+						break
+					}
 				}
 			}
 
@@ -315,6 +331,10 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					FiberType: fiber.FiberType,
 					RecordID:  fiber.RecordID,
 				})
+
+				if len(fiber.RecordID) == 0 {
+					log.Printf("WARN fier is missing signature fields %v", fiber)
+				}
 
 				if fiber.FiberType == "default" {
 					matchedDefaultFiber++
@@ -626,7 +646,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenDS.CreatedAt = output.CreatedAt
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
-		log.Printf("golden search: %+v", goldenDS.Search)
+		goldenJSON, _ := json.Marshal(goldenDS)
+		log.Printf("writing golden %v", string(goldenJSON))
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
@@ -984,7 +1005,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted))
+			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, ))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
 					Signature: input.Signature,

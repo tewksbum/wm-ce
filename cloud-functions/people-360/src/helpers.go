@@ -184,6 +184,9 @@ func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value s
 	if field == "EMAIL" {
 		f.Set(reflect.ValueOf(strings.Join(values, "|")))
 	} else {
+		if len(value) == 0 {
+			log.Printf("Golden key %v setting to blank, available values %v", field, values)
+		}
 		f.Set(reflect.ValueOf(value))
 	}
 }
