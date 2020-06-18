@@ -23,6 +23,8 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -180,7 +182,30 @@ func main() {
 		errc <- nil
 	}()
 
-	go getMessages()
+	// Receive messages for 5 seconds.
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	// Create a channel to handle messages to as they come in.
+	cm := make(chan *pubsub.Message)
+	defer close(cm)
+	// Handle individual messages in a goroutine.
+	go func() {
+		for msg := range cm {
+			processUpdate(ctx, msg)
+			time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
+			msg.Ack()
+		}
+	}()
+
+	// Receive blocks until the passed in context is done.
+	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		cm <- msg
+	})
+	if err != nil && status.Code(err) != codes.Canceled {
+		log.Panicf("Receive: %v", err)
+	}
+
 	// Wait for problems.
 	if err := <-errc; err != nil {
 		log.Print(err)
