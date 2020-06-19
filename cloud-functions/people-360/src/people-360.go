@@ -81,6 +81,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
+	defaultIsPurged := false
 	if value, ok := m.Attributes["source"]; ok {
 		if value == "post" || value == "test" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
 			inputIsFromPost = true
@@ -188,10 +189,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					len(input.MatchKeys.FNAME.Value) > 0 &&
 					len(input.MatchKeys.AD1.Value) > 0) {
 				matchable = true
+			} else {
+				defaultIsPurged = true
 			}
 		} else if input.Signature.FiberType != "dupe" {
 			// MAR and MPR are matchable always
 			matchable = true
+			if input.Signature.FiberType == "mar" && defaultIsPurged {
+				matchable = false
+			}
 		}
 
 		HasNewValues := false
@@ -1005,7 +1011,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, ))
+			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
 					Signature: input.Signature,
