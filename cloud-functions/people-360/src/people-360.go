@@ -125,40 +125,41 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 					return nil
 				}
-			} else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
-				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
-				if existingCheck == 0 { // default fiber has not been processed
-					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-					retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-					report := FileReport{
-						ID: input.Signature.EventID,
-						Counters: []ReportCounter{
-							ReportCounter{
-								Type:      "People360:Audit",
-								Name:      "Retry",
-								Count:     1,
-								Increment: true,
-							},
-						},
-					}
-					publishReport(&report, cfName)
-					if retryCount < 30 {
-						report := FileReport{
-							ID: input.Signature.EventID,
-							Counters: []ReportCounter{
-								ReportCounter{
-									Type:      "People360:Audit",
-									Name:      "RetryExceeded",
-									Count:     1,
-									Increment: true,
-								},
-							},
-						}
-						publishReport(&report, cfName)
-						return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
-					}
-				}
 			}
+			// else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
+			// 	existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+			// 	if existingCheck == 0 { // default fiber has not been processed
+			// 		IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			// 		retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			// 		report := FileReport{
+			// 			ID: input.Signature.EventID,
+			// 			Counters: []ReportCounter{
+			// 				ReportCounter{
+			// 					Type:      "People360:Audit",
+			// 					Name:      "Retry",
+			// 					Count:     1,
+			// 					Increment: true,
+			// 				},
+			// 			},
+			// 		}
+			// 		publishReport(&report, cfName)
+			// 		if retryCount < 30 {
+			// 			report := FileReport{
+			// 				ID: input.Signature.EventID,
+			// 				Counters: []ReportCounter{
+			// 					ReportCounter{
+			// 						Type:      "People360:Audit",
+			// 						Name:      "RetryExceeded",
+			// 						Count:     1,
+			// 						Increment: true,
+			// 					},
+			// 				},
+			// 			}
+			// 			publishReport(&report, cfName)
+			// 			return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
+			// 		}
+			// 	}
+			// }
 		}
 
 		// store the fiber
