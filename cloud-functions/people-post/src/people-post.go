@@ -555,29 +555,29 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// let's populate city state if we have zip
-		if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value) == "united states" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
-			if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
-				v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
-					v.Output.CITY.Source = "WM"
-					v.Output.STATE.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v, v.Output.CITY.Value: %v, v.Output.CITY.Source: %v ", v.Output.STATE.Value, v.Output.STATE.Source, v.Output.CITY.Value, v.Output.CITY.Source))
+		// if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value) == "united states" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
+		// 	if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
+		// 		v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
+		// 			v.Output.CITY.Source = "WM"
+		// 			v.Output.STATE.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v, v.Output.CITY.Value: %v, v.Output.CITY.Source: %v ", v.Output.STATE.Value, v.Output.STATE.Source, v.Output.CITY.Value, v.Output.CITY.Source))
 
-			} else if len(v.Output.STATE.Value) == 0 {
-				_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.STATE.Value) > 0 {
-					v.Output.STATE.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
-			} else if len(v.Output.CITY.Value) == 0 {
-				v.Output.CITY.Value, _ = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.CITY.Value) > 0 {
-					v.Output.CITY.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.CITY.Value: %v, v.Output.CITY.Source: %v", v.Output.CITY.Value, v.Output.CITY.Source))
-			}
-		}
+		// 	} else if len(v.Output.STATE.Value) == 0 {
+		// 		_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.STATE.Value) > 0 {
+		// 			v.Output.STATE.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
+		// 	} else if len(v.Output.CITY.Value) == 0 {
+		// 		v.Output.CITY.Value, _ = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.CITY.Value) > 0 {
+		// 			v.Output.CITY.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.CITY.Value: %v, v.Output.CITY.Source: %v", v.Output.CITY.Value, v.Output.CITY.Source))
+		// 	}
+		// }
 
 		// copy address fields from MPR to default if value is missing
 		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {
