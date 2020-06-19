@@ -12,4 +12,5 @@ require (
 	github.com/google/uuid v1.1.1
 	golang.org/x/net v0.0.0-20200425230154-ff2c4b7c35a0 // indirect
 	google.golang.org/genproto v0.0.0-20200424135956-bca184e23272 // indirect
+	googlemaps.github.io/maps v1.2.1
 )

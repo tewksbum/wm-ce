@@ -54,3 +54,15 @@ func TestPost(t *testing.T) {
 	message.Data = []byte(re.ReplaceAllString(json, ""))
 	PostProcessPeople(context.Background(), message)
 }
+
+func TestGoogleGeocode(t *testing.T) {
+	po := PeopleOutput{
+		AD1:     MatchKeyField{Value: "1002 S 45th st"},
+		AD2:     MatchKeyField{Value: "apartment 4b"},
+		CITY:    MatchKeyField{Value: ""},
+		STATE:   MatchKeyField{Value: ""},
+		ZIP:     MatchKeyField{Value: "19104"},
+		COUNTRY: MatchKeyField{Value: "US"},
+	}
+	CorrectAddressSmartyStreet(&po)
+}
