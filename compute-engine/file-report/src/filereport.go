@@ -403,6 +403,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	err = bulk.Flush()
+	defer bulk.Close()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
 		return true
@@ -436,6 +437,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertRecord: %v %v", r.ID, err)
 			}
+			defer insertRecord.Close()
 		}
 
 		if len(r.IsPerson) > 0 {
@@ -443,6 +445,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordPerson: %v %v", r.ID, err)
 			}
+			defer updateRecordPerson.Close()
 		}
 		//update disposition
 		if len(r.Disposition) > 0 {
@@ -450,6 +453,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordDisposition: %v %v", r.ID, err)
 			}
+			defer updateRecordDisposition.Close()
 		}
 		// add fiber
 		if len(r.Fibers) > 0 {
@@ -458,6 +462,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
+				defer insertRecordFiber.Close()
 			}
 		}
 	}
@@ -471,6 +476,7 @@ func processFiberList(records []FiberDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertFiber: %v, %v", r.ID, err)
 			}
+			defer insertFiber.Close()
 		}
 
 		if len(r.Disposition) > 0 {
@@ -478,6 +484,7 @@ func processFiberList(records []FiberDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
 			}
+			defer updateFiberDisposition.Close()
 		}
 		// add Sets
 		if len(r.Sets) > 0 {
@@ -486,6 +493,7 @@ func processFiberList(records []FiberDetail, eventID string) {
 				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
 				}
+				defer insertFiberSet.Close()
 			}
 		}
 	}
@@ -499,6 +507,7 @@ func processSetList(sets []SetDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertSet: %v, %v", r.ID, err)
 			}
+			defer insertSet.Close()
 		}
 
 		if len(r.ReplacedBy) > 0 {
@@ -506,6 +515,7 @@ func processSetList(sets []SetDetail, eventID string) {
 			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 			}
+			defer updateSetDeleted.Close()
 		}
 	}
 }
