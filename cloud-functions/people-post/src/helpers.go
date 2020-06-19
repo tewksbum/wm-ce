@@ -148,8 +148,6 @@ func StandardizeAddressGoogleMap(mkOutput *PeopleOutput) {
 				mkOutput.ADPARSER.Source = "GM"
 				mkOutput.ADVALID.Value = "TRUE"
 			}
-			gmJSON, _ := json.Marshal(gmResult)
-			log.Printf("Google Maps returned %v", string(gmJSON))
 
 		}
 	}

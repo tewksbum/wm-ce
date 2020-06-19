@@ -591,7 +591,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkField(&(v.Output), f, mk.Value, mk.Source)
 				}
 			}
-
 		}
 
 		// // do a state lookup, no longer necessary
