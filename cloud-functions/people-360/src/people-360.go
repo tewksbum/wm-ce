@@ -1012,7 +1012,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished))
+			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
 					Signature: input.Signature,
