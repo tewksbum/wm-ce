@@ -23,6 +23,8 @@ import (
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var (
@@ -59,7 +61,7 @@ var (
 	projectID = os.Getenv("GCP_PROJECT")
 	index     = os.Getenv("REPORT_ESINDEX")
 
-	retryOnConflitCount = 10
+	retryOnConflitCount = 5
 )
 
 func init() {
@@ -160,6 +162,7 @@ func init() {
 func getMessages() {
 	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		processUpdate(ctx, msg)
+		time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
 		msg.Ack()
 	})
 	if err != nil {
@@ -179,7 +182,26 @@ func main() {
 		errc <- nil
 	}()
 
-	go getMessages()
+	// Create a channel to handle messages to as they come in.
+	cm := make(chan *pubsub.Message)
+	defer close(cm)
+	// Handle individual messages in a goroutine.
+	go func() {
+		for msg := range cm {
+			processUpdate(ctx, msg)
+			//time.Sleep(100 * time.Millisecond) //throttle for elastic, get around elastic queue capacity issue
+			msg.Ack()
+		}
+	}()
+
+	// Receive blocks until the passed in context is done.
+	err := sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+		cm <- msg
+	})
+	if err != nil && status.Code(err) != codes.Canceled {
+		log.Panicf("Receive: %v", err)
+	}
+
 	// Wait for problems.
 	if err := <-errc; err != nil {
 		log.Print(err)
@@ -188,12 +210,19 @@ func main() {
 }
 
 func afterUpdate(id int64, requests []elastic.BulkableRequest, response *elastic.BulkResponse, err error) {
-	for i, r := range response.Items {
-		for k, v := range r {
-			if len(v.Result) == 0 {
-				log.Printf("%v error %v for index=%v id=%v input=%v", k, v.Error, v.Error.Index, v.Error.ResourceId, requests[i])
+	if response != nil && response.Items != nil {
+		for i, r := range response.Items {
+			for k, v := range r {
+				if len(v.Result) == 0 {
+					errorJSON, _ := json.Marshal(v)
+					requestSource, _ := requests[i].Source()
+					log.Printf("%v error %v for input=%v, %v", k, string(errorJSON), requestSource, requests[i].String())
+					errorJSON = nil
+					requestSource = nil
+				}
 			}
 		}
+		response = nil
 	}
 }
 
@@ -404,21 +433,21 @@ func processRecordList(records []RecordDetail, eventID string) {
 	for _, r := range records {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertRecord.Exec(r.ID, eventID, r.RowNumber, r.CreatedOn, r.IsPerson, r.Disposition)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertRecord: %v %v", r.ID, err)
 			}
 		}
 
 		if len(r.IsPerson) > 0 {
 			_, err = updateRecordPerson.Exec(r.IsPerson, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordPerson: %v %v", r.ID, err)
 			}
 		}
 		//update disposition
 		if len(r.Disposition) > 0 {
 			_, err = updateRecordDisposition.Exec(r.Disposition, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateRecordDisposition: %v %v", r.ID, err)
 			}
 		}
@@ -426,7 +455,7 @@ func processRecordList(records []RecordDetail, eventID string) {
 		if len(r.Fibers) > 0 {
 			for _, fiber := range r.Fibers {
 				_, err = insertRecordFiber.Exec(r.ID, fiber)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertRecordFiber: %v %v", r.ID, err)
 				}
 			}
@@ -439,14 +468,14 @@ func processFiberList(records []FiberDetail, eventID string) {
 	for _, r := range records {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertFiber.Exec(r.ID, eventID, r.CreatedOn, r.Type, r.Disposition)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertFiber: %v, %v", r.ID, err)
 			}
 		}
 
 		if len(r.Disposition) > 0 {
 			_, err = updateFiberDisposition.Exec(r.Disposition, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateFiberDisposition: %v %v", r.ID, err)
 			}
 		}
@@ -454,7 +483,7 @@ func processFiberList(records []FiberDetail, eventID string) {
 		if len(r.Sets) > 0 {
 			for _, set := range r.Sets {
 				_, err = insertFiberSet.Exec(r.ID, set)
-				if err != nil {
+				if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 					log.Printf("Error running insertFiberSet: %v, %v", r.ID, err)
 				}
 			}
@@ -467,14 +496,14 @@ func processSetList(sets []SetDetail, eventID string) {
 	for _, r := range sets {
 		if !r.CreatedOn.IsZero() {
 			_, err = insertSet.Exec(r.ID, eventID, r.FiberCount, r.CreatedOn, r.IsDeleted, r.ReplacedBy)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running insertSet: %v, %v", r.ID, err)
 			}
 		}
 
 		if len(r.ReplacedBy) > 0 {
 			_, err = updateSetDeleted.Exec(r.IsDeleted, r.DeletedOn, r.ReplacedBy, r.ID)
-			if err != nil {
+			if err != nil && !strings.Contains(err.Error(), "Duplicate entry") {
 				log.Printf("Error running updateSetDeleted: %v, %v", r.ID, err)
 			}
 		}

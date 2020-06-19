@@ -83,7 +83,8 @@ var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var ctx context.Context
-var zipMap map[string]CityState // intended to be part of address correction
+
+// var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -114,8 +115,8 @@ func init() {
 
 	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
-	sb, _ := storage.NewClient(ctx)
-	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
+	// sb, _ := storage.NewClient(ctx)
+	// zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
@@ -126,7 +127,7 @@ func init() {
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 
-	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
+	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
@@ -305,39 +306,41 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			} else if column.PeopleERR.ZipCode == 1 {
 				column.MatchKey1 = "ZIP"
 				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 {
+				// start of the VER checks...
+			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 && !column.PeopleVER.IS_COUNTRY {
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 && !column.PeopleVER.IS_COUNTRY {
 				column.MatchKey1 = "AD2"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0 {
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "AD3"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_STATE && column.PeopleERR.ContainsState == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
 				column.MatchKey1 = "STATE"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0"))
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0"))
 			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "ZIP"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 && column.PeopleERR.ContainsCountry == 0 {
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
+			} else if column.PeopleVER.IS_CITY && column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 && column.PeopleERR.ContainsCountry == 0 {
 				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_COUNTRY {
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsCountry == 0"))
+			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.ContainsCountry == 1 {
 				column.MatchKey1 = "COUNTRY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
 			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "FNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1"))
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1"))
 			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleERR.Junk == 0 {
 				column.MatchKey1 = "LNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1"))
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1"))
 			} else if column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0 {
 				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0"))
+				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0"))
 			} else if column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.Junk == 0 {
+				// we should likely dump this one...
 				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsAddress == 1"))
+				LogDev(fmt.Sprintf("acd - BAD MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.Junk == 0"))
 			}
 		}
 
@@ -553,29 +556,29 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// let's populate city state if we have zip
-		if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value) == "united states" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
-			if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
-				v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
-					v.Output.CITY.Source = "WM"
-					v.Output.STATE.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v, v.Output.CITY.Value: %v, v.Output.CITY.Source: %v ", v.Output.STATE.Value, v.Output.STATE.Source, v.Output.CITY.Value, v.Output.CITY.Source))
+		// if len(v.Output.ZIP.Value) >= 5 && (v.Output.COUNTRY.Value == "US" || v.Output.COUNTRY.Value == "USA" || strings.ToLower(v.Output.COUNTRY.Value) == "united states of america" || strings.ToLower(v.Output.COUNTRY.Value) == "united states" || v.Output.COUNTRY.Value == "") && v.Type != "mar" {
+		// 	if len(v.Output.CITY.Value) == 0 && len(v.Output.STATE.Value) == 0 {
+		// 		v.Output.CITY.Value, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.CITY.Value) > 0 || len(v.Output.STATE.Value) > 0 {
+		// 			v.Output.CITY.Source = "WM"
+		// 			v.Output.STATE.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v, v.Output.CITY.Value: %v, v.Output.CITY.Source: %v ", v.Output.STATE.Value, v.Output.STATE.Source, v.Output.CITY.Value, v.Output.CITY.Source))
 
-			} else if len(v.Output.STATE.Value) == 0 {
-				_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.STATE.Value) > 0 {
-					v.Output.STATE.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
-			} else if len(v.Output.CITY.Value) == 0 {
-				v.Output.CITY.Value, _ = populateCityStateFromZip(v.Output.ZIP.Value)
-				if len(v.Output.CITY.Value) > 0 {
-					v.Output.CITY.Source = "WM"
-				}
-				LogDev(fmt.Sprintf("v.Output.CITY.Value: %v, v.Output.CITY.Source: %v", v.Output.CITY.Value, v.Output.CITY.Source))
-			}
-		}
+		// 	} else if len(v.Output.STATE.Value) == 0 {
+		// 		_, v.Output.STATE.Value = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.STATE.Value) > 0 {
+		// 			v.Output.STATE.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.STATE.Value: %v, v.Output.STATE.Source: %v", v.Output.STATE.Value, v.Output.STATE.Source))
+		// 	} else if len(v.Output.CITY.Value) == 0 {
+		// 		v.Output.CITY.Value, _ = populateCityStateFromZip(v.Output.ZIP.Value)
+		// 		if len(v.Output.CITY.Value) > 0 {
+		// 			v.Output.CITY.Source = "WM"
+		// 		}
+		// 		LogDev(fmt.Sprintf("v.Output.CITY.Value: %v, v.Output.CITY.Source: %v", v.Output.CITY.Value, v.Output.CITY.Source))
+		// 	}
+		// }
 
 		// copy address fields from MPR to default if value is missing
 		if v.Type == "default" && defaultMissingAddress && mprIndexWithAddress > -1 {

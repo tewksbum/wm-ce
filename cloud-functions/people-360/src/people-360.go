@@ -81,6 +81,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 	}
 	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
+	defaultIsPurged := false
 	if value, ok := m.Attributes["source"]; ok {
 		if value == "post" || value == "test" { // append signature only if the pubsub comes from post, do not append if it comes from cleanup
 			inputIsFromPost = true
@@ -124,40 +125,41 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					publishReport(&report, cfName)
 					return nil
 				}
-			} else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
-				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
-				if existingCheck == 0 { // default fiber has not been processed
-					IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-					retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
-					report := FileReport{
-						ID: input.Signature.EventID,
-						Counters: []ReportCounter{
-							ReportCounter{
-								Type:      "People360:Audit",
-								Name:      "Retry",
-								Count:     1,
-								Increment: true,
-							},
-						},
-					}
-					publishReport(&report, cfName)
-					if retryCount < 30 {
-						report := FileReport{
-							ID: input.Signature.EventID,
-							Counters: []ReportCounter{
-								ReportCounter{
-									Type:      "People360:Audit",
-									Name:      "RetryExceeded",
-									Count:     1,
-									Increment: true,
-								},
-							},
-						}
-						publishReport(&report, cfName)
-						return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
-					}
-				}
 			}
+			// else if input.Signature.FiberType == "mar" && inputIsFromPost { // if it came from 720, skip the default check for mar
+			// 	existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+			// 	if existingCheck == 0 { // default fiber has not been processed
+			// 		IncrRedisValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			// 		retryCount := GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar-retry"})
+			// 		report := FileReport{
+			// 			ID: input.Signature.EventID,
+			// 			Counters: []ReportCounter{
+			// 				ReportCounter{
+			// 					Type:      "People360:Audit",
+			// 					Name:      "Retry",
+			// 					Count:     1,
+			// 					Increment: true,
+			// 				},
+			// 			},
+			// 		}
+			// 		publishReport(&report, cfName)
+			// 		if retryCount < 30 {
+			// 			report := FileReport{
+			// 				ID: input.Signature.EventID,
+			// 				Counters: []ReportCounter{
+			// 					ReportCounter{
+			// 						Type:      "People360:Audit",
+			// 						Name:      "RetryExceeded",
+			// 						Count:     1,
+			// 						Increment: true,
+			// 					},
+			// 				},
+			// 			}
+			// 			publishReport(&report, cfName)
+			// 			return fmt.Errorf("Default fiber not yet processed, retryn count  %v < max of 30, wait for retry", retryCount)
+			// 		}
+			// 	}
+			// }
 		}
 
 		// store the fiber
@@ -188,10 +190,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					len(input.MatchKeys.FNAME.Value) > 0 &&
 					len(input.MatchKeys.AD1.Value) > 0) {
 				matchable = true
+			} else {
+				defaultIsPurged = true
 			}
 		} else if input.Signature.FiberType != "dupe" {
 			// MAR and MPR are matchable always
 			matchable = true
+			// except when default is already purged then mar needs to be purged too
+			if input.Signature.FiberType == "mar" && defaultIsPurged {
+				matchable = false
+			}
 		}
 
 		HasNewValues := false
@@ -1005,7 +1013,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, ))
+			LogDev(fmt.Sprintf("record finished ? %v; fiber finished ? %v, rc = %v, rf = %v, rd = %v, fc = %v, fd =%v", recordFinished, fiberFinished, recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted))
 			if recordFinished && fiberFinished {
 				eventData := EventData{
 					Signature: input.Signature,

@@ -15,7 +15,6 @@ import (
 	"unicode"
 
 	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/storage"
 	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
 )
@@ -364,51 +363,50 @@ func SetMkFieldWithType(v *PeopleOutput, field string, value string, source stri
 // 	return result
 // }
 
-func populateCityStateFromZip(zip string) (string, string) {
-	checkZip := zip
-	if len(checkZip) >= 5 {
-		checkZip = checkZip[0:5]
-	}
-	if cs, ok := zipMap[checkZip]; ok {
-		return cs.City, cs.State
-	}
-	return "", ""
-}
+// func populateCityStateFromZip(zip string) (string, string) {
+// 	checkZip := zip
+// 	if len(checkZip) >= 5 {
+// 		checkZip = checkZip[0:5]
+// 	}
+// 	if cs, ok := zipMap[checkZip]; ok {
+// 		return cs.City, cs.State
+// 	}
+// 	return "", ""
+// }
 
-func readZipMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]CityState, error) {
-	result := make(map[string]CityState)
-	cszList, err := readCityStateZip(ctx, client, bucket, object)
-	if err != nil {
-		log.Printf("error loading city state zip list %v", err)
+// func readZipMap(ctx context.Context, client *storage.Client, bucket, object string) (map[string]CityState, error) {
+// 	result := make(map[string]CityState)
+// 	cszList, err := readCityStateZip(ctx, client, bucket, object)
+// 	if err != nil {
+// 		log.Printf("error loading city state zip list %v", err)
 
-	} else {
-		for _, csz := range cszList {
-			result[csz.Zip] = CityState{
-				City:  (csz.Cities)[0],
-				State: csz.State,
-			}
-		}
-	}
-	return result, nil
-
-}
+// 	} else {
+// 		for _, csz := range cszList {
+// 			result[csz.Zip] = CityState{
+// 				City:  (csz.Cities)[0],
+// 				State: csz.State,
+// 			}
+// 		}
+// 	}
+// 	return result, nil
+// }
 
 // intended to be part of address correction
-func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
-	var result []CityStateZip
-	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer rc.Close()
+// func readCityStateZip(ctx context.Context, client *storage.Client, bucket, object string) ([]CityStateZip, error) {
+// 	var result []CityStateZip
+// 	rc, err := client.Bucket(bucket).Object(object).NewReader(ctx)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rc.Close()
 
-	data, err := ioutil.ReadAll(rc)
-	if err != nil {
-		return nil, err
-	}
-	json.Unmarshal(data, &result)
-	return result, nil
-}
+// 	data, err := ioutil.ReadAll(rc)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	json.Unmarshal(data, &result)
+// 	return result, nil
+// }
 
 func IndexOf(element string, data []string) int {
 	for k, v := range data {
