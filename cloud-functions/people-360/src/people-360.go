@@ -195,6 +195,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else if input.Signature.FiberType != "dupe" {
 			// MAR and MPR are matchable always
 			matchable = true
+			// except when default is already purged then mar needs to be purged too
 			if input.Signature.FiberType == "mar" && defaultIsPurged {
 				matchable = false
 			}
