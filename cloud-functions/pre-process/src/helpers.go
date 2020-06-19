@@ -180,7 +180,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.SchoolYear = 1
 	case "studentid", "student id", "student_id", "id", "applicant", "pkid", "student number", "student no", "studentnumber", "student id #", "uin", "student g#", "ps_id", "tech id", "tech id #", "idnumber", "bannerid", "splash id", "gid", "wmid", "gclid":
 		err.TrustedID = 1
-	case "role":
+	case "role", "listtype":
 		err.ContainsStudentRole = 1
 	case "parent(s) of", "v-lookup", "vlookup", "unique", "institution_descr", "mailer type", "file output date", "crm", "com", "distribution designation", "q distribution", "b distribution", "c distribution", "salutation slug", "program", "adcode", "empty", "school code", "addressee", "addr_type_cd", "salutation", "degr. stat", "degree sou", "degree", "gpa", "major1", "major2", "major3", "minor1", "minor2", "minor3", "residence type", "return code", "bldg_cde", "current enrollment status code", "planned enrollment session code", "application type", "restrict flag", "address type", "contact owner", "agreed to be listed", "communication: release: permaddress", "staff assigned name", "a2s attribute", "act score", "adms attribute", "admt-code", "registered", "sat score", "spad attribute", "ucol attribute", "current status", "meal plan", "insurance company", "disability or medical condition", "medical condition", "medication":
 		err.Junk = 1
@@ -195,10 +195,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.PermS = 1
 	}
 
-	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
+	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") || (strings.Contains(key, "preferred") && strings.Contains(key, "name")) {
 		err.ContainsFirstName = 1
 	}
-	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") {
+	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") || strings.Contains(key, "surname") {
 		err.ContainsLastName = 1
 	}
 	if strings.Contains(key, "name") {
@@ -207,28 +207,28 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) || strings.Contains(key, "line 1") || strings.Contains(key, "line1") {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") || strings.Contains(key, "line2") || strings.Contains(key, "line 2") {
 		err.Address2 = 1
 	}
 	if err.Address2 == 0 && err.ContainsAddress == 0 && strings.Contains(key, "street") {
 		err.ContainsAddress = 1
 	}
 
-	if strings.Contains(key, "city") {
+	if strings.Contains(key, "city") || strings.Contains(key, "town") || strings.Contains(key, "municipal") {
 		err.ContainsCity = 1
 	}
-	if strings.Contains(key, "state") {
+	if strings.Contains(key, "state") || strings.Contains(key, "province") {
 		err.ContainsState = 1
 	}
-	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
+	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") || strings.Contains(key, "postcode") {
 		err.ContainsZipCode = 1
 		err.ZipCode = 1
 	}
-	if strings.Contains(key, "country") {
+	if strings.Contains(key, "country") || strings.Contains(key, "nation") || strings.Contains(key, "territory") || strings.Contains(key, "homeland") {
 		err.ContainsCountry = 1
 	}
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
