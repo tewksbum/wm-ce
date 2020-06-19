@@ -83,7 +83,8 @@ var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 
 var ctx context.Context
-var zipMap map[string]CityState // intended to be part of address correction
+
+// var zipMap map[string]CityState // intended to be part of address correction
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
@@ -114,8 +115,8 @@ func init() {
 
 	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
-	sb, _ := storage.NewClient(ctx)
-	zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
+	// sb, _ := storage.NewClient(ctx)
+	// zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
@@ -126,7 +127,7 @@ func init() {
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 
-	log.Printf("init completed, pubsub topic name: %v, zipmap size %v", topic, len(zipMap))
+	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
 func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
