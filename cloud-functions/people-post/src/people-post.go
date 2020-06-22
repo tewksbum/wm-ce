@@ -187,10 +187,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Gender == 1 {
 			column.MatchKey1 = "GENDER"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Gender == 1"))
-		} else if column.PeopleERR.ContainsStudentRole == 1 {
+		} else if column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute { //preffer the attribute.
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
+			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute"))
 		} else if column.PeopleERR.Status == 1 && column.IsAttribute {
 			statusAttr = column.Value
 		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
