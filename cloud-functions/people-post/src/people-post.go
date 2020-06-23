@@ -615,6 +615,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.COUNTRY.Source = "WM"
 		}
 
+		// if ad1 and ad2 are equals, drop ad2
+		if v.Output.AD1.Value == v.Output.AD2.Value {
+			v.Output.AD2.Value = ""
+			v.Output.AD2.Source = ""
+		}
+
 		// swap ad1 and ad2 if ad2 is not blank but ad1 is
 		if len(v.Output.AD1.Value) == 0 && len(v.Output.AD2.Value) > 0 {
 			v.Output.AD1.Value = v.Output.AD2.Value
