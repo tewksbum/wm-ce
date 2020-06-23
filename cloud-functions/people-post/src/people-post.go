@@ -526,6 +526,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 				}
+			} else if ad2.Value == GetMkField(&(v.Output), "AD1").Value {
+				SetMkField(&(v.Output), "AD2", "", "WM")
 			}
 			if len(GetMkField(&(v.Output), "AD1").Value) == 0 {
 				defaultMissingAddress = true
