@@ -141,7 +141,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FullAddress = 1
 	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:", "winthrop email":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email", "p1_email":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
