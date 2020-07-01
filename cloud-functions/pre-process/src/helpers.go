@@ -243,7 +243,7 @@ func GetPeopleERR(column string) PeopleERR {
 		// this is REALLY broad, dangerous Contains...
 		err.ContainsTitle = 1
 	}
-	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") || strings.Contains(key, "guardian") || strings.Contains(key, "related") {
+	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") || strings.Contains(key, "guardian") || strings.Contains(key, "related") || strings.HasPrefix(key, "p1_") {
 		err.ContainsRole = 1
 	}
 	// correct some assignments
