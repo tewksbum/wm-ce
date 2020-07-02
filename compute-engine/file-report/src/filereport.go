@@ -403,6 +403,7 @@ func processUpdate(ctx context.Context, m *pubsub.Message) bool {
 	}
 
 	err = bulk.Flush()
+	defer bulk.Close()
 	if err != nil {
 		log.Printf("error running bulk update %v", err)
 		return true

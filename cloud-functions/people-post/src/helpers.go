@@ -14,6 +14,8 @@ import (
 	"time"
 	"unicode"
 
+	"googlemaps.github.io/maps"
+
 	"cloud.google.com/go/pubsub"
 	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
@@ -82,6 +84,74 @@ func reMilityBaseCity(val string) bool {
 	// 	return true
 	// }
 	return false
+}
+
+func StandardizeAddressGoogleMap(mkOutput *PeopleOutput) {
+	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
+	if mkOutput.COUNTRY.Value == "US" {
+		addressInput = mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
+		if len(strings.TrimSpace(addressInput)) > 10 {
+			gmResult, err := gm.Geocode(ctx, &maps.GeocodingRequest{
+				Address: addressInput,
+			})
+			if err != nil {
+				log.Printf("Google Maps error %v", err)
+			}
+
+			if len(gmResult) > 0 && len(gmResult[0].FormattedAddress) > 0 {
+				// pick the first result
+				log.Printf("Google Maps returned %v", gmResult[0].FormattedAddress)
+				streetNumber := ""
+				streetName := ""
+				unitNumber := ""
+				unitType := ""
+				city := ""
+				state := ""
+				zip := ""
+				zip4 := ""
+				country := ""
+				for _, component := range gmResult[0].AddressComponents {
+					if Contains(component.Types, "street_number") {
+						streetNumber = component.ShortName
+					} else if Contains(component.Types, "route") {
+						streetName = component.ShortName
+					} else if Contains(component.Types, "locality") {
+						city = component.ShortName
+					} else if Contains(component.Types, "administrative_area_level_1") {
+						state = component.ShortName
+					} else if Contains(component.Types, "country") {
+						country = component.ShortName
+					} else if Contains(component.Types, "postal_code") {
+						zip = component.ShortName
+					} else if Contains(component.Types, "postal_code_suffix") {
+						zip4 = component.ShortName
+					} else if Contains(component.Types, "subpremise") {
+						unitNumber = component.ShortName
+					}
+
+				}
+				mkOutput.ADCORRECT.Value = "TRUE"
+				mkOutput.AD1.Value = streetNumber + " " + streetName
+				mkOutput.AD1NO.Value = streetNumber
+				if len(unitNumber) > 0 && len(unitType) == 0 {
+
+				}
+				mkOutput.AD2.Value = strings.TrimSpace(unitType + " " + unitNumber)
+				mkOutput.CITY.Value = city
+				mkOutput.STATE.Value = state
+				mkOutput.ZIP.Value = zip
+				if len(zip) > 0 && len(zip4) > 0 {
+					mkOutput.ZIP.Value = zip + "-" + zip4
+				}
+				mkOutput.COUNTRY.Value = country
+				mkOutput.ADPARSER.Value = "googlemap"
+				mkOutput.ADPARSER.Source = "GM"
+				mkOutput.ADVALID.Value = "TRUE"
+			}
+
+		}
+	}
+
 }
 
 func StandardizeAddressSmartyStreet(mkOutput *PeopleOutput) {

@@ -195,10 +195,10 @@ func GetPeopleERR(column string) PeopleERR {
 		err.PermS = 1
 	}
 
-	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") {
+	if (strings.Contains(key, "first") && strings.Contains(key, "name")) || (strings.Contains(key, "nick") && strings.Contains(key, "name")) || strings.Contains(key, "fname") || (strings.Contains(key, "preferred") && strings.Contains(key, "name")) {
 		err.ContainsFirstName = 1
 	}
-	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") {
+	if (strings.Contains(key, "last") && strings.Contains(key, "name")) || strings.Contains(key, "lname") || strings.Contains(key, "surname") {
 		err.ContainsLastName = 1
 	}
 	if strings.Contains(key, "name") {
@@ -207,28 +207,28 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "email") || strings.Contains(key, "e-mail") {
 		err.ContainsEmail = 1
 	}
-	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) {
+	if (strings.Contains(key, "address") || strings.Contains(key, "addr") || strings.Contains(key, "addrss") || strings.Contains(key, "street 1")) && (!strings.Contains(key, "room") && !strings.Contains(key, "hall")) || strings.Contains(key, "line 1") || strings.Contains(key, "line1") {
 		// TODO: unpack this room & hall when we fix MAR
 		err.ContainsAddress = 1
 	}
-	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") {
+	if strings.Contains(key, "street 2") || strings.Contains(key, "streetcd2") || strings.Contains(key, "address 2") || strings.Contains(key, "address2") || strings.Contains(key, "line2") || strings.Contains(key, "line 2") {
 		err.Address2 = 1
 	}
 	if err.Address2 == 0 && err.ContainsAddress == 0 && strings.Contains(key, "street") {
 		err.ContainsAddress = 1
 	}
 
-	if strings.Contains(key, "city") {
+	if strings.Contains(key, "city") || strings.Contains(key, "town") || strings.Contains(key, "municipal") {
 		err.ContainsCity = 1
 	}
-	if strings.Contains(key, "state") {
+	if strings.Contains(key, "state") || strings.Contains(key, "province") {
 		err.ContainsState = 1
 	}
-	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") {
+	if strings.Contains(key, "zip") || strings.Contains(key, "postalcode") || strings.Contains(key, "postal code") || strings.Contains(key, "postcode") {
 		err.ContainsZipCode = 1
 		err.ZipCode = 1
 	}
-	if strings.Contains(key, "country") {
+	if strings.Contains(key, "country") || strings.Contains(key, "nation") || strings.Contains(key, "territory") || strings.Contains(key, "homeland") {
 		err.ContainsCountry = 1
 	}
 	if strings.Contains(key, "phone") || strings.Contains(key, "mobile") {
@@ -246,7 +246,6 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") || strings.Contains(key, "guardian") || strings.Contains(key, "related") || strings.HasPrefix(key, "p1_") {
 		err.ContainsRole = 1
 	}
-
 	// correct some assignments
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.Country == 1 {
 		err.Address1 = 0

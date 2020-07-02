@@ -19,6 +19,8 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 
+	"googlemaps.github.io/maps"
+
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
 )
@@ -94,10 +96,9 @@ var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
 var fs *datastore.Client
+var gm *maps.Client
 
 var topicR *pubsub.Topic
-
-var MLLabels map[string]string
 
 var titleYearAttr = ""
 var schoolYearAttr = ""
@@ -114,7 +115,6 @@ func init() {
 	topicR = ps.Topic(os.Getenv("PSREPORT"))
 
 	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
-	MLLabels = map[string]string{"0": "", "1": "AD1", "2": "AD2", "3": "CITY", "4": "COUNTRY", "5": "EMAIL", "6": "FNAME", "7": "LNAME", "8": "PHONE", "9": "STATE", "10": "ZIP"}
 	// sb, _ := storage.NewClient(ctx)
 	// zipMap, _ = readZipMap(ctx, sb, StorageBucket, "data/zip_city_state.json") // intended to be part of address correction
 	ap = http.Client{
@@ -126,6 +126,8 @@ func init() {
 		IdleTimeout: 240 * time.Second,
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
+
+	gm, _ = maps.NewClient(maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
 
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
@@ -185,10 +187,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		} else if column.PeopleERR.Gender == 1 {
 			column.MatchKey1 = "GENDER"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Gender == 1"))
-		} else if column.PeopleERR.ContainsStudentRole == 1 {
+		} else if column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute { //preffer the attribute.
 			// TODO: a contains here seems VERY dangerous...
 			column.MatchKey1 = "ROLE"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1"))
+			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute"))
 		} else if column.PeopleERR.Status == 1 && column.IsAttribute {
 			statusAttr = column.Value
 		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
@@ -589,7 +591,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					SetMkField(&(v.Output), f, mk.Value, mk.Source)
 				}
 			}
-
 		}
 
 		// // do a state lookup, no longer necessary
@@ -645,6 +646,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			v.Output.ADCORRECT.Value = "FALSE"
 			StandardizeAddressSmartyStreet(&(v.Output))
 			// StandardizeAddressLP(&(v.Output)) // not using libpostal right now...
+			if v.Output.ADVALID.Value == "TRUE" {
+
+			} else { // try google
+				StandardizeAddressGoogleMap(&(v.Output))
+			}
 		}
 
 		// try to stick a value into STATE if it is blank and we believe it is international
