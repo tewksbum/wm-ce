@@ -91,12 +91,12 @@ func schoolYearFormatter(schoolYear, classStanding string) string {
 	return schoolYear
 }
 
-func listTypeFormatter(listType string) string {
+func roleFormatter(role string) string {
 	// LogDev(fmt.Sprintf("listType: %v", listType))
-	if len(listType) > 0 {
-		return listType[0:1]
+	if len(role) > 0 {
+		return role[0:1]
 	}
-	return listType
+	return role
 }
 
 func LogDev(s string) {
