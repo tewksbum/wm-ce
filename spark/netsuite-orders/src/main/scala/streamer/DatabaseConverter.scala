@@ -16,7 +16,7 @@ package streamer
 import java.sql.{Connection,DriverManager}
 import org.apache.spark.sql._
 import org.apache.spark.sql.SQLContext._
-import streamer.OrderProcessor.NetsuiteOrder
+import streamer.models.NetsuiteOrder
 
 object DatabaseConverter {
 
@@ -41,7 +41,7 @@ object DatabaseConverter {
         println("saving order")
         psOrderFact.clearParameters()
         psOrderFact.setString(1, order.orderNumber)
-        psOrderFact.setDouble(2, order.amount)
+        psOrderFact.setDouble(2, order.totals.total)
         psOrderFact.executeUpdate() 
       }
       psOrderFact.close
