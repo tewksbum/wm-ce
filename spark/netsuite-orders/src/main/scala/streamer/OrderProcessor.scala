@@ -20,10 +20,9 @@ import org.apache.spark.streaming.dstream.DStream
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.DefaultFormats
-
+import streamer.models.NetsuiteOrder
 
 object OrderProcessor {
-  case class NetsuiteOrder(orderNumber: String, amount: Float)
 
   implicit val formats = DefaultFormats
 
