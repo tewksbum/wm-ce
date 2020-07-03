@@ -12,3 +12,6 @@ debug.test
 .vscode/settings.json
 compute-engine/file-report/src/main
 output.csv
+**/target/
+
+dependency-reduced-pom.xml
