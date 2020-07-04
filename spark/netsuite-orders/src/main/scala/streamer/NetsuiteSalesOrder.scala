@@ -1,4 +1,4 @@
-package streamer.models
+package streamer
 
 case class Totals(
   merchandiseCostTotal: Double,

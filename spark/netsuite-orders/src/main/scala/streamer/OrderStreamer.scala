@@ -1,22 +1,9 @@
-/*
- Copyright Google Inc. 2018
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
-
 package streamer
 
 import java.nio.charset.StandardCharsets
 
-import streamer.DatabaseConverter.saveRDDToMySQL
-import streamer.DatabaseConverter.saveRawToMySQL
+import streamer.DatabaseConverter.saveRDDToDB
+import streamer.DatabaseConverter.saveRawToDB
 import streamer.OrderProcessor.processOrders
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
@@ -57,7 +44,7 @@ object OrderStreamer {
       windowLength.toInt,
       slidingInterval.toInt,
       //decoupled handler that saves each separate result for processed to database
-      saveRDDToMySQL(_, windowLength.toInt)
+      saveRDDToDB(_, windowLength.toInt)
     )
     
 	  ssc
