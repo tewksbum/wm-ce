@@ -16,10 +16,7 @@ object DatabaseConverter {
   }
   
 
-  def saveRDDToDB(orders: Array[NetsuiteOrder],
-                         windowLength: Int): Unit = {
-
-    //val ordersDF = orders.toSeq.toDF
+  def saveRDDToDB(orders: Array[NetsuiteOrder], windowLength: Int): Unit = {
     if (orders.length > 0) {
       val con : java.sql.Connection = getConnection ()
       val psOrderFact = con.prepareStatement("insert into test_order (order_number, amount) values (?,?)")
@@ -33,11 +30,9 @@ object DatabaseConverter {
       psOrderFact.close
     }
     println(s"Window ending after ${windowLength} seconds with ${orders.length} orders\n")
-
   }
 
-  def saveRawToDB(orders: Array[String],
-                         windowLength: Int): Unit = {
+  def saveRawToDB(orders: Array[String], windowLength: Int): Unit = {
     println(s"processing ${orders.length} orders")
     if (orders.length > 0) {
       val con : java.sql.Connection = getConnection ()
@@ -52,22 +47,6 @@ object DatabaseConverter {
       psOrderFact.close
     }
     println(s"Window ending after ${windowLength} seconds with ${orders.length} orders\n")
-    // val datastore: Datastore = DatastoreOptions.getDefaultInstance().getService()
-    // val keyFactoryBuilder = (s: String) => datastore.newKeyFactory().setKind(s)
 
-    // val entity: FullEntity[IncompleteKey] = convertToEntity(tags, keyFactoryBuilder)
-
-    // datastore.add(entity)
-
-    // // Display some info in the job's logs
-    // println("\n-------------------------")
-    // println(s"Window ending ${Timestamp.now()} for the past ${windowLength} seconds\n")
-    // if (tags.length == 0) {
-    //   println("No trending hashtags in this window.")
-    // }
-    // else {
-    //   println("Trending hashtags in this window:")
-    //   tags.foreach(hashtag => println(s"${hashtag.tag}, ${hashtag.amount}"))
-    // }
   }
 }

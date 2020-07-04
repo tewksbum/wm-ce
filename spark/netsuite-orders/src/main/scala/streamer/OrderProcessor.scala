@@ -18,13 +18,16 @@ object OrderProcessor {
   def processOrders(input: DStream[String],
                               windowLength: Int,
                               slidingInterval: Int,
-                              //handler: Array[NetsuiteOrder] => Unit): Unit = {
                               handler: Array[NetsuiteOrder] => Unit): Unit = {
     val orders: DStream[NetsuiteOrder] = input
       .window(Seconds(windowLength), Seconds(slidingInterval)) //create a window
       .transform(extractNetsuiteOrder(_)) //apply transformation
 
     orders.foreachRDD(rdd => {
+      val sqlContext = SqlContextSingleton.getInstance(rdd.sparkContext)
+      import sqlContext.implicits._
+      val df = rdd.toDF()
+      df.printSchema()
       handler(rdd.collect()) //take top N hashtags and save to external source
     })
   }
