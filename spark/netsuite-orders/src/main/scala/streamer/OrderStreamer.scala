@@ -1,4 +1,4 @@
-package streamer
+ package streamer
 
 import java.nio.charset.StandardCharsets
 
@@ -12,69 +12,77 @@ import org.apache.spark.streaming.dstream.ReceiverInputDStream
 import org.apache.spark.streaming.pubsub.{PubsubUtils, SparkGCPCredentials, SparkPubsubMessage}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 
+import com.typesafe.config.ConfigFactory
+
+// import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
+// import com.google.cloud.secretmanager.v1.{SecretManagerServiceClient, SecretManagerServiceSettings}
 
 object OrderStreamer {
 
-  def createContext(projectID: String, windowLength: String, slidingInterval: String, checkpointDirectory: String)
+  var projectID:String = "wemade-core"
+  var subscription:String = "wm-order-intake-sparkles"
+  var windowLength:Int = 10 // 10 second
+  var slidingInterval:Int = 10
+  var totalRunningTime:Int = 0
+  var checkpointDirectory:String = "/tmp"  
+  var secretVersion:String = "projects/180297787522/secrets/mariadb/versions/1"
+  var jdbcUrl:String = "jdbc:mariadb://10.128.0.32:3306/segment?user=spark&password=sMehnXVuJ0LKQcndEtvv"
+
+  def createContext(projectID: String, windowLength: Int, slidingInterval: Int, jdbcUrl: String)
     : StreamingContext = {
 
     // [START stream_setup]
     val sparkConf = new SparkConf().setAppName("NetsuiteOrderStreamer")
-    val ssc = new StreamingContext(sparkConf, Seconds(slidingInterval.toInt))
+    val ssc = new StreamingContext(sparkConf, Seconds(slidingInterval))
 
-    // // Set the checkpoint directory
-    // val yarnTags = sparkConf.get("spark.yarn.tags")
-    // val jobId = yarnTags.split(",").filter(_.startsWith("dataproc_job")).head
-    // ssc.checkpoint(checkpointDirectory + '/' + jobId)
-    
+    var gcpCred = SparkGCPCredentials.builder.build()
+
     // Create stream
     val pubsubStream: ReceiverInputDStream[SparkPubsubMessage] = PubsubUtils
       .createStream(
         ssc,
         projectID,
         None,
-        "wm-order-intake-sparkles",  // Cloud Pub/Sub subscription name
-        SparkGCPCredentials.builder.build(), 
+        subscription,  // Cloud Pub/Sub subscription name
+        gcpCred, 
         StorageLevel.MEMORY_AND_DISK_SER_2)
       
     // [END stream_setup]
     var messagesStream : DStream[String] = pubsubStream.map(message => new String(message.getData(), StandardCharsets.UTF_8))
     //process the stream
     processOrders(messagesStream,
-      windowLength.toInt,
-      slidingInterval.toInt,
+      windowLength,
+      slidingInterval,
       //decoupled handler that saves each separate result for processed to database
-      saveRDDToDB(_, windowLength.toInt)
+      saveRDDToDB(_, windowLength.toInt, jdbcUrl)
     )
     
 	  ssc
   }
 
   def main(args: Array[String]): Unit = {
-    // if (args.length != 5) {
-    //   System.err.println(
-    //     """
-    //       | Usage: TrendingHashtags <projectID> <windowLength> <slidingInterval> <totalRunningTime>
-    //       |
-    //       |     <projectID>: ID of Google Cloud project
-    //       |     <windowLength>: The duration of the window, in seconds
-    //       |     <slidingInterval>: The interval at which the window calculation is performed, in seconds
-    //       |     <totalRunningTime>: Total running time for the application, in minutes. If 0, runs indefinitely until termination.
-    //       |     <checkpointDirectory>: Directory used to store RDD checkpoint data
-    //       |
-    //     """.stripMargin)
-    //   System.exit(1)
-    // }
 
-    val windowLength = "10" // 10 second
-    val projectID = "wemade-core"
-    val slidingInterval = "10"
-    val totalRunningTime = "0"
-    var checkpointDirectory = "/tmp"
+    val config = ConfigFactory.load();
+    projectID = config.getString("project.id")
+    projectID = config.getString("project.id")
+    subscription = config.getString("pubsub.subscription")
+    windowLength = config.getInt("pubsub.windowlength")
+    slidingInterval = config.getInt("pubsub.slidinginterval")
+    totalRunningTime = config.getInt("pubsub.runningtime")
+    checkpointDirectory = config.getString("spark.checkpoint.dir")
+    secretVersion = config.getString("config.secretversion ")
+    jdbcUrl = config.getString("config.jdbcurl")
+    
+    // // read the secret
+    // val smServiceSettings = SecretManagerServiceSettings.newBuilder().build()
+    // val smClient = SecretManagerServiceClient.create(smServiceSettings)
+
+    // val secretResponse = smClient.accessSecretVersion(secretVersion)
+    // val jdbcurl = secretResponse.getPayload().getData().toStringUtf8()
+    // println(jdbcurl)
 
     // Create Spark context
-    val ssc = StreamingContext.getOrCreate(checkpointDirectory,
-      () => createContext(projectID, windowLength, slidingInterval, checkpointDirectory))
+    val ssc = StreamingContext.getOrCreate(checkpointDirectory, () => createContext(projectID, windowLength, slidingInterval, jdbcUrl))
 
     // Start streaming until we receive an explicit termination
     ssc.start()

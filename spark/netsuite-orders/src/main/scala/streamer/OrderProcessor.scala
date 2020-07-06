@@ -27,7 +27,7 @@ object OrderProcessor {
       val sqlContext = SqlContextSingleton.getInstance(rdd.sparkContext)
       import sqlContext.implicits._
       val df = rdd.toDF()
-      df.printSchema()
+      // df.printSchema()
       handler(rdd.collect()) //take top N hashtags and save to external source
     })
   }
