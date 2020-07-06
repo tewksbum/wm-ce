@@ -126,229 +126,268 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 		log.Printf("Event ID not found: %v", input.EventID)
 		return nil
 	}
-	output := []ContactInfo{}
+	listOutput := GetKVPValue(event.Passthrough, "listOutput")
+	if strings.ToLower(listOutput) != "skip" {
 
-	// get the set ids
-	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
-	setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
-	setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
-	log.Printf("Found %v matching sets", len(setKeysTest))
+		// get the set ids
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
+		setQueryTest := datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("eventid =", input.EventID).KeysOnly()
+		setKeysTest, _ := fs.GetAll(ctx, setQueryTest, nil)
+		log.Printf("Found %v matching sets", len(setKeysTest))
 
-	// get the golden records
-	var goldenKeys []*datastore.Key
-	var goldenIDs []string
-	var goldens []PeopleGoldenDS
-	for _, setKey := range setKeysTest {
-		if !Contains(goldenIDs, setKey.Name) {
-			goldenIDs = append(goldenIDs, setKey.Name)
-			dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
-			dsGoldenGetKey.Namespace = dsNameSpace
-			goldenKeys = append(goldenKeys, dsGoldenGetKey)
-			goldens = append(goldens, PeopleGoldenDS{})
-		}
-	}
-	if len(goldenKeys) > 0 {
-		batchSize := 1000
-		l := len(goldenKeys) / batchSize
-
-		if len(goldenKeys)%batchSize > 0 {
-			l++
-		}
-		for r := 0; r < l; r++ {
-			s := r * 1000
-			e := s + 1000
-
-			if e > len(goldenKeys) {
-				e = len(goldenKeys)
+		// get the golden records
+		var goldenKeys []*datastore.Key
+		var goldenIDs []string
+		var goldens []PeopleGoldenDS
+		for _, setKey := range setKeysTest {
+			if !Contains(goldenIDs, setKey.Name) {
+				goldenIDs = append(goldenIDs, setKey.Name)
+				dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.Name, nil)
+				dsGoldenGetKey.Namespace = dsNameSpace
+				goldenKeys = append(goldenKeys, dsGoldenGetKey)
+				goldens = append(goldens, PeopleGoldenDS{})
 			}
-
-			gk := goldenKeys[s:e]
-			gd := goldens[s:e]
-
-			if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
-				log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
-			}
-
 		}
-	}
+		if len(goldenKeys) > 0 {
+			batchSize := 1000
+			l := len(goldenKeys) / batchSize
 
-	log.Printf("Loaded %v matching golden", len(goldens))
+			if len(goldenKeys)%batchSize > 0 {
+				l++
+			}
+			for r := 0; r < l; r++ {
+				s := r * 1000
+				e := s + 1000
 
-	if event.EventType != "Form Submission" {
-		countStudentEmails := 0
-		countParentEmails := 0
+				if e > len(goldenKeys) {
+					e = len(goldenKeys)
+				}
 
-		// assemble the csv
-		header := []string{
-			"School Code", "CRM", "Processor", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
-			"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
-			"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
-		records := [][]string{header}
-		header = append(header, "ADVALID")
-		badrecords := [][]string{header}
-		badAD1 := 0
-		goodAD := 0
-		studentsUS := 0
-		international := 0
-		for _, g := range goldens {
-			if len(g.EMAIL) > 0 {
-				emails := strings.Split(g.EMAIL, "|")
-				if len(emails) > 0 {
-					for _, email := range emails {
-						if validateRole(g.ROLE) == "Student" {
-							countStudentEmails++
-						} else {
-							countParentEmails++
+				gk := goldenKeys[s:e]
+				gd := goldens[s:e]
+
+				if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+					log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+				}
+
+			}
+		}
+		log.Printf("Loaded %v matching golden", len(goldens))
+
+		output := []ContactInfo{}
+		if event.EventType != "Form Submission" {
+			countStudentEmails := 0
+			countParentEmails := 0
+
+			// assemble the csv
+			header := []string{
+				"School Code", "CRM", "Processor", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
+				"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
+				"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
+			records := [][]string{header}
+			header = append(header, "ADVALID")
+			badrecords := [][]string{header}
+			badAD1 := 0
+			goodAD := 0
+			studentsUS := 0
+			international := 0
+			for _, g := range goldens {
+				if len(g.EMAIL) > 0 {
+					emails := strings.Split(g.EMAIL, "|")
+					if len(emails) > 0 {
+						for _, email := range emails {
+							if validateRole(g.ROLE) == "Student" {
+								countStudentEmails++
+							} else {
+								countParentEmails++
+							}
+							contactInfo := ContactInfo{
+								FirstName:   g.FNAME,
+								LastName:    g.LNAME,
+								Address1:    g.AD1,
+								Address2:    g.AD2,
+								City:        g.CITY,
+								State:       g.STATE,
+								Zip:         g.ZIP,
+								Country:     g.COUNTRY,
+								RoleType:    validateRole(g.ROLE),
+								Email:       email,
+								ContactID:   g.ID.Name,
+								SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+								SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+								SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+							}
+							output = append(output, contactInfo)
 						}
-						contactInfo := ContactInfo{
-							FirstName:   g.FNAME,
-							LastName:    g.LNAME,
-							Address1:    g.AD1,
-							Address2:    g.AD2,
-							City:        g.CITY,
-							State:       g.STATE,
-							Zip:         g.ZIP,
-							Country:     g.COUNTRY,
-							RoleType:    validateRole(g.ROLE),
-							Email:       email,
-							ContactID:   g.ID.Name,
-							SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
-							SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
-							SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
-						}
-						output = append(output, contactInfo)
 					}
 				}
-			}
-			//only students
-			if g.ROLE == "Parent" {
-				continue
-			}
-			if g.COUNTRY == "US" {
-				studentsUS++
-			} else {
-				international++
-			}
+				//only students
+				if g.ROLE == "Parent" {
+					continue
+				}
+				if g.COUNTRY == "US" {
+					studentsUS++
+				} else {
+					international++
+				}
 
-			row := []string{
-				GetKVPValue(event.Passthrough, "schoolCode"),
-				"",
-				"",
-				GetKVPValue(event.Passthrough, "schoolName"),
-				GetKVPValue(event.Passthrough, "inputType"),
-				schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
-				GetKVPValue(event.Passthrough, "masterProgramCode"),
-				GetKVPValue(event.Passthrough, "ADCODE"),
-				event.Created.Format("01/02/2006"),
-				GetKVPValue(event.Passthrough, "orderByDate"),
-				roleFormatter(GetKVPValue(event.Passthrough, "role")),
-				GetKVPValue(event.Passthrough, "salutation"),
-				g.FNAME,
-				g.LNAME,
-				g.AD1,
-				g.AD2,
-				g.CITY,
-				g.STATE,
-				g.ZIP,
-				g.COUNTRY,
-				strings.Split(g.EMAIL, "|")[0], // only write one email to CP
-				"",
-				"",
-				"",
-				"",
-				"",
-				"",
-				"",
-			}
-			//only students with address
-			if g.ADVALID == "TRUE" || g.COUNTRY != "US" {
-				goodAD++
-				records = append(records, row)
-			} else {
-				badAD1++
-				row = append(row, "FALSE")
-				badrecords = append(badrecords, row)
-			}
-		}
+				row := []string{
+					GetKVPValue(event.Passthrough, "schoolCode"),
+					"",
+					"",
+					GetKVPValue(event.Passthrough, "schoolName"),
+					GetKVPValue(event.Passthrough, "inputType"),
+					schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
+					GetKVPValue(event.Passthrough, "masterProgramCode"),
+					GetKVPValue(event.Passthrough, "ADCODE"),
+					event.Created.Format("01/02/2006"),
+					GetKVPValue(event.Passthrough, "orderByDate"),
+					roleFormatter(GetKVPValue(event.Passthrough, "role")),
+					GetKVPValue(event.Passthrough, "salutation"),
+					g.FNAME,
+					g.LNAME,
+					g.AD1,
+					g.AD2,
+					g.CITY,
+					g.STATE,
+					g.ZIP,
+					g.COUNTRY,
+					strings.Split(g.EMAIL, "|")[0], // only write one email to CP
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+				}
 
-		if goodAD >= int(float64((studentsUS))*Threshold) {
-			// good to go
-			filename := copyFileToBucket(ctx, event, records, Bucket)
-			log.Printf("Writing %v records into output file", len(records)-1)
-			if len(badrecords) > 1 {
-				// store it bad bucket
-				copyFileToBucket(ctx, event, badrecords, BadBucket)
-				log.Printf("Writing %v records into bad bucket output file", len(badrecords)-1)
-			}
-			eventData := EventData{
-				Signature: Signature{
-					EventID: input.EventID,
-					OwnerID: input.OwnerID,
-				},
-				EventData: make(map[string]interface{}),
-			}
-
-			eventData.EventData["status"] = "File Generated"
-			eventData.EventData["message"] = "CP file generated successfully " + filename
-			eventData.EventData["parent-emails"] = countParentEmails
-			eventData.EventData["student-emails"] = countStudentEmails
-			eventData.EventData["advalid-count"] = goodAD
-			eventData.EventData["bad-addresses"] = badAD1
-			eventData.EventData["row-count"] = len(records) - 1
-
-			statusJSON, _ := json.Marshal(eventData)
-			_ = status.Publish(ctx, &pubsub.Message{
-				Data: statusJSON,
-			})
-
-		} else { // more than 20% of bad record
-			eventData := EventData{
-				Signature: Signature{
-					EventID: input.EventID,
-					OwnerID: input.OwnerID,
-				},
-				EventData: make(map[string]interface{}),
-			}
-			eventData.EventData["status"] = "Error"
-			eventData.EventData["message"] = "AdValid threshold exceeded, source file needs to be reviewed"
-			eventData.EventData["parent-emails"] = countParentEmails
-			eventData.EventData["student-emails"] = countStudentEmails
-			statusJSON, _ := json.Marshal(eventData)
-			_ = status.Publish(ctx, &pubsub.Message{
-				Data: statusJSON,
-			})
-
-			for r, record := range records {
-				if r != 0 {
-					record = append(record, "TRUE")
-					badrecords = append(badrecords, record)
+				//only students with name and lastname
+				if (g.ADVALID == "TRUE" || g.COUNTRY != "US") && (len(g.FNAME) > 0 && len(g.LNAME) > 0) {
+					goodAD++
+					records = append(records, row)
+				} else {
+					badAD1++
+					row = append(row, "FALSE")
+					badrecords = append(badrecords, row)
 				}
 			}
-			copyFileToBucket(ctx, event, badrecords, BadBucket)
-			log.Printf("ERROR ADVALID threshold reached, output in bad bucket")
-		}
 
-		// push into pubsub contacts
-		totalContacts := len(output)
-		pageSize := 250
-		batchCount := totalContacts / pageSize
-		if totalContacts%pageSize > 0 {
-			batchCount++
-		}
-		for i := 0; i < batchCount; i++ {
-			startIndex := i * pageSize
-			endIndex := (i + 1) * pageSize
-			if endIndex > totalContacts {
-				endIndex = totalContacts
+			if goodAD >= int(float64((studentsUS))*Threshold) {
+				// good to go
+				filename := copyFileToBucket(ctx, event, records, Bucket)
+				log.Printf("Writing %v records into output file", len(records)-1)
+				if len(badrecords) > 1 {
+					// store it bad bucket
+					copyFileToBucket(ctx, event, badrecords, BadBucket)
+					log.Printf("Writing %v records into bad bucket output file", len(badrecords)-1)
+				}
+				eventData := EventData{
+					Signature: Signature{
+						EventID: input.EventID,
+						OwnerID: input.OwnerID,
+					},
+					EventData: make(map[string]interface{}),
+				}
+
+				eventData.EventData["status"] = "File Generated"
+				eventData.EventData["message"] = "CP file generated successfully " + filename
+				eventData.EventData["parent-emails"] = countParentEmails
+				eventData.EventData["student-emails"] = countStudentEmails
+				eventData.EventData["advalid-count"] = goodAD
+				eventData.EventData["bad-addresses"] = badAD1
+				eventData.EventData["row-count"] = len(records) - 1
+
+				statusJSON, _ := json.Marshal(eventData)
+				_ = status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+
+			} else { // more than 20% of bad record
+				eventData := EventData{
+					Signature: Signature{
+						EventID: input.EventID,
+						OwnerID: input.OwnerID,
+					},
+					EventData: make(map[string]interface{}),
+				}
+				eventData.EventData["status"] = "Error"
+				eventData.EventData["message"] = "AdValid threshold exceeded, source file needs to be reviewed"
+				eventData.EventData["parent-emails"] = countParentEmails
+				eventData.EventData["student-emails"] = countStudentEmails
+				statusJSON, _ := json.Marshal(eventData)
+				_ = status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+
+				for r, record := range records {
+					if r != 0 {
+						record = append(record, "TRUE")
+						badrecords = append(badrecords, record)
+					}
+				}
+				copyFileToBucket(ctx, event, badrecords, BadBucket)
+				log.Printf("ERROR ADVALID threshold reached, output in bad bucket")
 			}
-			contacts := output[startIndex:endIndex]
-			outputJSON, _ := json.Marshal(contacts)
+
+			// push into pubsub contacts
+			totalContacts := len(output)
+			pageSize := 250
+			batchCount := totalContacts / pageSize
+			if totalContacts%pageSize > 0 {
+				batchCount++
+			}
+			for i := 0; i < batchCount; i++ {
+				startIndex := i * pageSize
+				endIndex := (i + 1) * pageSize
+				if endIndex > totalContacts {
+					endIndex = totalContacts
+				}
+				contacts := output[startIndex:endIndex]
+				outputJSON, _ := json.Marshal(contacts)
+				psresult := topic.Publish(ctx, &pubsub.Message{
+					Data: outputJSON,
+					Attributes: map[string]string{
+						"eventid": input.EventID,
+						"listid":  os.Getenv("LISTRAKCP"),
+						"form":    "cp",
+					},
+				})
+				psid, err := psresult.Get(ctx)
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+					return nil
+				}
+				log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+			}
+
+		} else {
+
+			for _, g := range goldens {
+				contactInfo := ContactInfo{
+					Email:       g.EMAIL,
+					FirstName:   g.FNAME,
+					LastName:    g.LNAME,
+					SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+					SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+					SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+					FbID:        GetKVPValue(event.Passthrough, "fbid"),
+					Instagram:   GetKVPValue(event.Passthrough, "instagram"),
+					Social:      GetKVPValue(event.Passthrough, "social"),
+					Why:         GetKVPValue(event.Passthrough, "why"),
+				}
+				output = append(output, contactInfo)
+			}
+
+			outputJSON, _ := json.Marshal(output)
+			fmt.Println(string(outputJSON))
 			psresult := topic.Publish(ctx, &pubsub.Message{
 				Data: outputJSON,
 				Attributes: map[string]string{
 					"eventid": input.EventID,
-					"listid":  os.Getenv("LISTRAKCP"),
-					"form":    "cp",
+					"listid":  GetKVPValue(event.Passthrough, "listid"),
+					"form":    GetKVPValue(event.Passthrough, "form"),
 				},
 			})
 			psid, err := psresult.Get(ctx)
@@ -359,43 +398,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
-
-	} else {
-
-		for _, g := range goldens {
-			contactInfo := ContactInfo{
-				Email:       g.EMAIL,
-				FirstName:   g.FNAME,
-				LastName:    g.LNAME,
-				SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
-				SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
-				SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
-				FbID:        GetKVPValue(event.Passthrough, "fbid"),
-				Instagram:   GetKVPValue(event.Passthrough, "instagram"),
-				Social:      GetKVPValue(event.Passthrough, "social"),
-				Why:         GetKVPValue(event.Passthrough, "why"),
-			}
-			output = append(output, contactInfo)
-		}
-
-		outputJSON, _ := json.Marshal(output)
-		fmt.Println(string(outputJSON))
-		psresult := topic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-			Attributes: map[string]string{
-				"eventid": input.EventID,
-				"listid":  GetKVPValue(event.Passthrough, "listid"),
-				"form":    GetKVPValue(event.Passthrough, "form"),
-			},
-		})
-		psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
-			return nil
-		}
-		log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 	}
-
 	return nil
 }
