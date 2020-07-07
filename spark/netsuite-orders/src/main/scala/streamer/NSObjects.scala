@@ -18,18 +18,22 @@ case class Dates(
 )
 case class Attributes(
   webOrderNumber: Option[String],
-  webOrderId: Option[Double],
+  webOrderId: Option[Long],
   subsidiary: Option[String],
   channel: Option[String],
+  channelId: Option[Long],
   source: Option[String],
-  school: Option[String]
+  sourceId: Option[Long],
+  school: Option[String],
+  schoolId: Option[Long]
 )
 case class Customer(
   email: Option[String],
-  id: String,
+  id: Long,
   name: String
 )
 case class Billing(
+  addressKey: Option[String], 
   country: Option[String],
   addr1: Option[String],
   addr2: Option[String],
@@ -46,15 +50,18 @@ case class Line(
   cost: String,
   `type`: String,
   unitPrice: Double,
-  shipment: String,
-  itemTitle: String,
-  itemSku: String,
-  itemId: Double,
+  shipment: Option[String],
+  itemTitle: Option[String],
+  itemSku: Option[String],
+  itemId: Long,
   isDropship: Boolean,
   isCancelled: Boolean,
-  tax: Double
+  tax: Double,
+  lineId: Option[String],
+  uniqueKey: Option[String]
 )
 case class Shipments(
+  addressKey: Option[String], 
   lines: List[Line],
   addr1: Option[String],
   addr2: Option[String],
@@ -67,7 +74,7 @@ case class Shipments(
   `type`: Option[String]
 )
 case class NetsuiteOrder(
-  id: Double,
+  id: Long,
   orderNumber: String,
   totals: Totals,
   dates: Dates,
