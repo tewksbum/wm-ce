@@ -34,13 +34,13 @@ object OrderStreamer {
   jdbcProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
 
   // scd cached
-  var dimDestTypes: Dataset[DestTypeDim] = _
-  var dimDates: Dataset[DateDim] = _ 
-  var dimProducts: Dataset[ProductDim] = _
-  var dimLobs: Dataset[LOBDim] = _
-  var dimSchools: Dataset[SchoolDim] = _
-  var dimSources: Dataset[SourceDim] = _  
-  var dimChannels: Dataset[ChannelDim] = _ 
+  var dimDestTypes: DataFrame = _
+  var dimDates: DataFrame = _ 
+  var dimProducts: DataFrame = _
+  var dimLobs: DataFrame = _
+  var dimSchools: DataFrame = _
+  var dimSources: DataFrame = _  
+  var dimChannels: DataFrame = _ 
 
   def createContext(projectID: String, windowLength: Int, slidingInterval: Int, jdbcUrl: String)
     : StreamingContext = {
@@ -102,19 +102,19 @@ object OrderStreamer {
     val sqlContext = new org.apache.spark.sql.SQLContext(ssc.sparkContext)
     import sqlContext.implicits._
 
-    dimDestTypes = sqlContext.read.jdbc(jdbcUrl, "dim_desttypes", jdbcProperties).as[DestTypeDim]
+    dimDestTypes = sqlContext.read.jdbc(jdbcUrl, "dim_desttypes", jdbcProperties)
     dimDestTypes.printSchema() // force it to load
-    dimDates = sqlContext.read.jdbc(jdbcUrl, "(select date_key, date from dim_dates) dates", jdbcProperties).as[DateDim]
+    dimDates = sqlContext.read.jdbc(jdbcUrl, "(select date_key, cast(date as varchar(10)) as date_string from dim_dates) dates", jdbcProperties)
     dimDates.printSchema() // force it to load
-    dimProducts = sqlContext.read.jdbc(jdbcUrl, "(select product_key, sku, lob_key, netsuite_id from dim_products) products", jdbcProperties).as[ProductDim]
+    dimProducts = sqlContext.read.jdbc(jdbcUrl, "(select product_key, sku, lob_key, netsuite_id from dim_products) products", jdbcProperties)
     dimProducts.printSchema() // force it to load
-    dimLobs = sqlContext.read.jdbc(jdbcUrl, "dim_lobs", jdbcProperties).as[LOBDim]
+    dimLobs = sqlContext.read.jdbc(jdbcUrl, "dim_lobs", jdbcProperties)
     dimLobs.printSchema() // force it to load
-    dimSchools = sqlContext.read.jdbc(jdbcUrl, "(select school_key, school_code, school_name, netsuite_id from dim_schools) schools", jdbcProperties).as[SchoolDim]
+    dimSchools = sqlContext.read.jdbc(jdbcUrl, "(select school_key, school_code, school_name, netsuite_id from dim_schools) schools", jdbcProperties)
     dimSchools.printSchema() // force it to load
-    dimSources = sqlContext.read.jdbc(jdbcUrl, "dim_sources", jdbcProperties).as[SourceDim]
+    dimSources = sqlContext.read.jdbc(jdbcUrl, "dim_sources", jdbcProperties)
     dimSources.printSchema() // force it to load
-    dimChannels = sqlContext.read.jdbc(jdbcUrl, "dim_channels", jdbcProperties).as[ChannelDim]
+    dimChannels = sqlContext.read.jdbc(jdbcUrl, "dim_channels", jdbcProperties)
     dimChannels.printSchema() // force it to load
 
     // Start streaming until we receive an explicit termination
