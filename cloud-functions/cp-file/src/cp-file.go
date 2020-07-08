@@ -241,7 +241,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				GetKVPValue(event.Passthrough, "ADCODE"),
 				event.Created.Format("01/02/2006"),
 				GetKVPValue(event.Passthrough, "orderByDate"),
-				listTypeFormatter(GetKVPValue(event.Passthrough, "listType")),
+				roleFormatter(GetKVPValue(event.Passthrough, "role")),
 				GetKVPValue(event.Passthrough, "salutation"),
 				g.FNAME,
 				g.LNAME,
