@@ -221,16 +221,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 				}
-				if GetKVPValue(event.Attributes, "role") == "Student" {
-					//only students
-					if g.ROLE == "Parent" {
-						continue
-					}
-				} else {
-					//only parents
-					if g.ROLE == "Student" {
-						continue
-					}
+				//only students
+				if g.ROLE == "Parent" {
+					continue
 				}
 				if g.COUNTRY == "US" {
 					studentsUS++
