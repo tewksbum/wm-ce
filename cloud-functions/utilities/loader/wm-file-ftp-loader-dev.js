@@ -48,6 +48,7 @@ const getBucketFiles = async () => {
           remotePath = "/FRAMES/Input/";
           break;
         case "carpet":
+        case "car":
           remotePath = "/RHC/Input/";
           break;
         case "linens":
