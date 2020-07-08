@@ -6,19 +6,14 @@ import org.apache.spark.sql.SQLContext._
 
 object DatabaseConverter {
 
-
-
-  val jdbcUrl = "jdbc:mariadb://10.128.0.32:3306/segment?user=spark&password=sMehnXVuJ0LKQcndEtvv"
-
-  def getConnection() : java.sql.Connection = {
+  def getConnection(jdbcUrl: String) : java.sql.Connection = {
     var connection = DriverManager.getConnection(jdbcUrl)
     connection
   }
-  
 
-  def saveRDDToDB(orders: Array[NetsuiteOrder], windowLength: Int): Unit = {
+  def saveRDDToDB(orders: Array[NetsuiteOrder], windowLength: Int, jdbcUrl: String): Unit = {
     if (orders.length > 0) {
-      val con : java.sql.Connection = getConnection ()
+      val con : java.sql.Connection = getConnection(jdbcUrl)
       val psOrderFact = con.prepareStatement("insert into test_order (order_number, amount) values (?,?)")
       for (order <- orders) {
         println("saving order")
@@ -32,10 +27,10 @@ object DatabaseConverter {
     println(s"Window ending after ${windowLength} seconds with ${orders.length} orders\n")
   }
 
-  def saveRawToDB(orders: Array[String], windowLength: Int): Unit = {
+  def saveRawToDB(orders: Array[String], windowLength: Int, jdbcUrl: String): Unit = {
     println(s"processing ${orders.length} orders")
     if (orders.length > 0) {
-      val con : java.sql.Connection = getConnection ()
+      val con : java.sql.Connection = getConnection(jdbcUrl)
       val psOrderFact = con.prepareStatement("insert into test_message (message) values (?)")
       orders.foreach( (order: String) => {
         psOrderFact.clearParameters()

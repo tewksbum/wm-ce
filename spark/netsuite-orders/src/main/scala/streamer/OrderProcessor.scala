@@ -2,6 +2,7 @@ package streamer
 
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql._
 import org.apache.spark.streaming.Seconds
 import org.apache.spark.streaming.dstream.DStream
 import org.json4s._
@@ -11,6 +12,9 @@ import org.json4s.DefaultFormats
 object OrderProcessor {
 
   implicit val formats = DefaultFormats
+
+  val jdbcProperties = new java.util.Properties()
+  jdbcProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
 
   // [START extract]
   private[streamer] def extractNetsuiteOrder(input: RDD[String]): RDD[NetsuiteOrder] = input.map( x => parse(x).extract[NetsuiteOrder])
@@ -22,12 +26,20 @@ object OrderProcessor {
     val orders: DStream[NetsuiteOrder] = input
       .window(Seconds(windowLength), Seconds(slidingInterval)) //create a window
       .transform(extractNetsuiteOrder(_)) //apply transformation
-
+    
+    
     orders.foreachRDD(rdd => {
       val sqlContext = SqlContextSingleton.getInstance(rdd.sparkContext)
       import sqlContext.implicits._
-      val df = rdd.toDF()
-      df.printSchema()
+      val df = rdd.toDF() // data frame
+      val ds:Dataset[NetsuiteOrder] = df.as[NetsuiteOrder] // dataset
+      // map these to a few tables and write to jdbc
+      // val dfOrderFact = df.map
+      // df.write.mode("error").jdbc(OrderStreamer.jdbcUrl, "intake_data_dump", jdbcProperties)
+
+      // 
+
+      // df.printSchema()
       handler(rdd.collect()) //take top N hashtags and save to external source
     })
   }
