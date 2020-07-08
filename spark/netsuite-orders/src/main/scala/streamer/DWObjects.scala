@@ -5,14 +5,15 @@ case class OrdersFact (
     channel_key: Long,
     source_key: Long,
     school_key: Long,
-    customer_key: Long,
-    billto_key: Long,
+    customer_key: String,
+    billto_key: String,
     netsuite_id: Long,
     netsuite_number: String,
     ocm_id: Long,
     ocm_number: String,
     merchandise_cost: Double,
-    merchandist_total: Double,
+    merchandise_total: Double,
+    merchandise_tax: Double,
     shipping: Double,
     shipping_tax: Double,
     discount: Double,
@@ -26,10 +27,10 @@ case class OrderLineFact (
     channel_key: Long,
     source_key: Long,
     school_key: Long,
-    customer_key: Long,
+    customer_key: String,
     product_key: Long,
-    billto_key: Long,
-    shipto_key: Long,
+    billto_key: String,
+    shipto_key: String,
     netsuite_order_id: Long,
     netsuite_order_number: String,
     ocm_order_id: Long,
@@ -60,7 +61,7 @@ case class DailySalesFact (
 
 case class DateDim (    // no need to update, read only, also we dont need all the columns
     date_key: Long,
-    date: String
+    date_string: String
 )
 
 case class ProductDim ( // this dim probably get updated by some type of feed
@@ -95,7 +96,7 @@ case class ChannelDim ( // no need to update, read only
 )
 
 case class BillToDim(
-    billto_key: Long,
+    billto_key: String,
     netsuite_key: String,
     name: String,
     addr1: String,
@@ -108,7 +109,7 @@ case class BillToDim(
 )
 
 case class ShipToDim(
-    shipto_key: Long,
+    shipto_key: String,
     netsuite_key: String,
     name: String,
     addr1: String,
@@ -122,7 +123,7 @@ case class ShipToDim(
 )
 
 case class CustomerDim(
-    customer_key: Long,
+    customer_key: String,
     customer_name: String,
     customer_email: String,
     netsuite_id: Long
