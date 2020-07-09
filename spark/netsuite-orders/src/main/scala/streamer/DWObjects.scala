@@ -39,15 +39,16 @@ case class OrderLineFact (
     netsuite_line_id: String,
     netsuite_line_key: String,
     lob_key: Long,
-    is_dropship: Boolean,
+    desttype_key: Long,
+    is_dropship: Int,
     total_price: Double,
     total_tax: Double,
     total_cost: Double,
     quantity: Int,
-    is_discount: Boolean,
-    is_shipping: Boolean,
-    is_service: Boolean,
-    is_cancelled: Boolean,
+    is_discount: Int,
+    is_shipping: Int,
+    is_service: Int,
+    is_cancelled: Int
 )
 
 case class DailySalesFact (
@@ -55,8 +56,10 @@ case class DailySalesFact (
     date_key: Long,
     channel_key: Long,
     lob_key: Long,
-    is_dropship: Boolean,
-    amount: Double
+    is_dropship: Int,
+    price: Double,
+    cost: Double,
+    tax: Double
 )
 
 case class DateDim (    // no need to update, read only, also we dont need all the columns
