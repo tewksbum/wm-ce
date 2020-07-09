@@ -145,7 +145,9 @@ object OrderProcessor {
           $"attributes.webOrderId".alias("ocm_order_id"),
           $"attributes.webOrderNumber".alias("ocm_order_number"),           
           $"shipments"
-        )        
+        )
+        .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         .withColumn("shipments", explode($"shipments"))
         .select(
           "shipments.*",
@@ -207,6 +209,12 @@ object OrderProcessor {
         dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
 
         // map to dsr fact
+        val dfDSR = dfOrderLines
+        .withColumnRenamed("date_key", "date_key_lines")
+        .as("lines")
+        .join(OrderStreamer.dimDates.as("dates"), $"lines.date_key_lines" === $"dates.date_key", "leftouter").drop("date_key_lines")
+
+        .show()
         // val ds:Dataset[NetsuiteOrder] = df.as[NetsuiteOrder] // dataset
         // df.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "intake_data_dump", OrderStreamer.jdbcProperties)
       }
