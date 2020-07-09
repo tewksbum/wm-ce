@@ -85,7 +85,7 @@ func main() {
 	}
 
 	for i, record := range input.Records {
-		if i < 10 {
+		if i < 2 {
 			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=821&deploy=1&id=%v", record.ID)
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
