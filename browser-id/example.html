@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <body>
+  <script>
+    var theUrl = "http://testdomain1.com:3020/v1/browser-id";
+
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+      if (xmlHttp.readyState == 4) {
+        console.log("1");
+        console.log(xmlHttp.responseText);
+      }
+    }
+    xmlHttp.open("GET", theUrl, true); // true for asynchronous
+    xmlHttp.send(null);
+
+
+    var theUrl2 = "http://testdomain2.com:3020/v1/browser-id";
+
+    var xmlHttp2 = new XMLHttpRequest();
+    xmlHttp2.onreadystatechange = function() {
+      if (xmlHttp2.readyState == 4) {
+        console.log("2");
+        console.log(xmlHttp2.responseText);
+      }
+    }
+    xmlHttp2.open("GET", theUrl2, true); // true for asynchronous
+    xmlHttp2.send(null);
+  </script>
+  </body>
+</html>
