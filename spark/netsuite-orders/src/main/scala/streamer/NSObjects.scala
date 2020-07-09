@@ -45,9 +45,9 @@ case class Billing(
 )
 case class Line(
   extPrice: Double,
-  quantity: String,
+  quantity: Option[Int],
   lob: String,
-  cost: String,
+  cost: Option[Double],
   `type`: String,
   unitPrice: Double,
   shipment: Option[String],

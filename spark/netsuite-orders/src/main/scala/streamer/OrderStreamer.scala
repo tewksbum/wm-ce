@@ -14,6 +14,7 @@ import org.apache.spark.sql._
 
 import com.typesafe.config.ConfigFactory
 
+
 // import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 // import com.google.cloud.secretmanager.v1.{SecretManagerServiceClient, SecretManagerServiceSettings}
 
@@ -21,8 +22,8 @@ object OrderStreamer {
 
   var projectID:String = "wemade-core"
   var subscription:String = "wm-order-intake-sparkles"
-  var windowLength:Int = 10 // 10 second
-  var slidingInterval:Int = 10
+  var windowLength:Int = 30 // 10 second
+  var slidingInterval:Int = 30
   var totalRunningTime:Int = 0
   var checkpointDirectory:String = "/tmp"  
   var secretVersion:String = "projects/180297787522/secrets/mariadb/versions/1"
@@ -39,6 +40,7 @@ object OrderStreamer {
   var dimSchools: DataFrame = _
   var dimSources: DataFrame = _  
   var dimChannels: DataFrame = _ 
+  var dimSchedules: DataFrame = _
 
   def createContext(projectID: String, windowLength: Int, slidingInterval: Int, jdbcUrl: String)
     : StreamingContext = {
@@ -99,19 +101,21 @@ object OrderStreamer {
     import sqlContext.implicits._
 
     dimDestTypes = sqlContext.read.jdbc(jdbcUrl, "dim_desttypes", jdbcProperties)
-    dimDestTypes.printSchema() // force it to load
+    dimDestTypes.cache().count() // force it to load
     dimDates = sqlContext.read.jdbc(jdbcUrl, "(select date_key, cast(date as varchar(10)) as date_string from dim_dates) dates", jdbcProperties)
-    dimDates.printSchema() // force it to load
+    dimDates.cache().count() // force it to load
     dimProducts = sqlContext.read.jdbc(jdbcUrl, "(select product_key, sku, lob_key, netsuite_id from dim_products) products", jdbcProperties)
-    dimProducts.printSchema() // force it to load
+    dimProducts.cache().count() // force it to load
     dimLobs = sqlContext.read.jdbc(jdbcUrl, "dim_lobs", jdbcProperties)
-    dimLobs.printSchema() // force it to load
+    dimLobs.cache().count() // force it to load
     dimSchools = sqlContext.read.jdbc(jdbcUrl, "(select school_key, school_code, school_name, netsuite_id from dim_schools) schools", jdbcProperties)
-    dimSchools.printSchema() // force it to load
+    dimSchools.cache().count() // force it to load
     dimSources = sqlContext.read.jdbc(jdbcUrl, "dim_sources", jdbcProperties)
-    dimSources.printSchema() // force it to load
+    dimSources.cache().count() // force it to load
     dimChannels = sqlContext.read.jdbc(jdbcUrl, "dim_channels", jdbcProperties)
-    dimChannels.printSchema() // force it to load
+    dimChannels.cache().count() // force it to load
+    dimSchedules = sqlContext.read.jdbc(jdbcUrl, "dim_schedules", jdbcProperties)
+    dimSchedules.cache().count() // force it to load
 
     // Start streaming until we receive an explicit termination
     ssc.start()
