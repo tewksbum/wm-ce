@@ -3,8 +3,6 @@ package streamer
 import java.sql.{Connection => DbConnection}
 import java.nio.charset.StandardCharsets
 
-import streamer.DatabaseConverter.saveRDDToDB
-import streamer.DatabaseConverter.saveRawToDB
 import streamer.OrderProcessor.processOrders
 import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
@@ -66,9 +64,7 @@ object OrderStreamer {
     //process the stream
     processOrders(messagesStream,
       windowLength,
-      slidingInterval,
-      //decoupled handler that saves each separate result for processed to database
-      saveRDDToDB(_, windowLength.toInt, jdbcUrl)
+      slidingInterval
     )
     
 	  ssc
