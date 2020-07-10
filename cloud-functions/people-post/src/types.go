@@ -221,6 +221,8 @@ type PeopleERR struct {
 	ContainsPhone        int `json:"ContainsPhone"`
 	ContainsTitle        int `json:"ContainsTitle"`
 	ContainsRole         int `json:"ContainsRole"`
+	ContainsFather       int `json:"ContainsFather"`
+	ContainsMother       int `json:"ContainsMother"`
 	ContainsStudentRole  int `json:"ContainsStudentRole"`
 	Junk                 int `json:"Junk"`
 	PermE                int `json:"PermE"`
