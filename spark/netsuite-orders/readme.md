@@ -46,7 +46,7 @@ gcloud dataproc clusters create sparkles \
 	--bucket=wm_dataproc \
 	--master-min-cpu-platform="Intel Skylake" \
 	--single-node \
-	--master-machine-type n1-standard-2 \
+	--master-machine-type n1-standard-4 \
 	--master-boot-disk-size 1000 \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true

@@ -136,3 +136,17 @@ case class DestTypeDim(
     desttype_key: Long,
     desttype_name: String
 )
+
+case class LineUpsertResult (
+    line_id: String,
+    existing: Boolean,
+    cancelled: Boolean,
+    price: Double,
+    tax: Double,
+    cost: Double
+)
+
+case class PeopleUpsertResult (
+    old_key: String,
+    new_key: String
+)

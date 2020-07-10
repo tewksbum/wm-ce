@@ -8,11 +8,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.dstream.DStream
 import org.apache.spark.streaming.dstream.ReceiverInputDStream
-import org.apache.spark.streaming.pubsub.{
-  PubsubUtils,
-  SparkGCPCredentials,
-  SparkPubsubMessage
-}
+import org.apache.spark.streaming.pubsub.{PubsubUtils, SparkGCPCredentials, SparkPubsubMessage}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.sql._
 
@@ -30,11 +26,14 @@ object OrderStreamer {
   var totalRunningTime: Int = 0
   var checkpointDirectory: String = "/tmp"
   var secretVersion: String = "projects/180297787522/secrets/mariadb/versions/1"
-  var jdbcUrl: String =
-    "jdbc:mariadb://10.128.0.32:3306/segment?user=spark&password=sMehnXVuJ0LKQcndEtvv"
+  var jdbcMariadbUrl: String = "jdbc:mariadb://10.128.0.32:3306/segment"
+  var jdbcMysqlUrl: String = "jdbc:mysql://10.128.0.32:3306/segment"
 
-  val jdbcProperties = new java.util.Properties()
-  jdbcProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
+  val jdbcWriteProperties = new java.util.Properties()
+  jdbcWriteProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
+
+  val jdbcReadProperties = new java.util.Properties()
+  // jdbcReadProperties.setProperty("driver", "com.mysql.jdbc.Driver")
 
   // scd cached
   var dimDestTypes: DataFrame = _
@@ -49,8 +48,7 @@ object OrderStreamer {
   def createContext(
       projectID: String,
       windowLength: Int,
-      slidingInterval: Int,
-      jdbcUrl: String
+      slidingInterval: Int
   ): StreamingContext = {
 
     // [START stream_setup]
@@ -71,9 +69,8 @@ object OrderStreamer {
       )
 
     // [END stream_setup]
-    var messagesStream: DStream[String] = pubsubStream.map(message =>
-      new String(message.getData(), StandardCharsets.UTF_8)
-    )
+    var messagesStream: DStream[String] =
+      pubsubStream.map(message => new String(message.getData(), StandardCharsets.UTF_8))
     //process the stream
     processOrders(messagesStream, windowLength, slidingInterval)
 
@@ -91,7 +88,8 @@ object OrderStreamer {
     totalRunningTime = config.getInt("pubsub.runningtime")
     checkpointDirectory = config.getString("spark.checkpoint.dir")
     secretVersion = config.getString("config.secretversion ")
-    jdbcUrl = config.getString("config.jdbcurl")
+    jdbcMariadbUrl = config.getString("config.mariadburl")
+    jdbcMysqlUrl = config.getString("config.mysqlurl")
 
     // // read the secret
     // val smServiceSettings = SecretManagerServiceSettings.newBuilder().build()
@@ -104,43 +102,55 @@ object OrderStreamer {
     // Create Spark context
     val ssc = StreamingContext.getOrCreate(
       checkpointDirectory,
-      () => createContext(projectID, windowLength, slidingInterval, jdbcUrl)
+      () => createContext(projectID, windowLength, slidingInterval)
     )
 
     // load some dataframes
     val sqlContext = new org.apache.spark.sql.SQLContext(ssc.sparkContext)
     import sqlContext.implicits._
-
-    dimDestTypes =
-      sqlContext.read.jdbc(jdbcUrl, "dim_desttypes", jdbcProperties)
-    dimDestTypes.cache().count() // force it to load
+    println("preloading dim_dates")
     dimDates = sqlContext.read.jdbc(
-      jdbcUrl,
-      "(select date_key, cast(date as varchar(10)) as date_string from dim_dates) dates",
-      jdbcProperties
+      jdbcMysqlUrl,
+      "(select cast(date_key as int) date_key, cast(date as varchar(10)) as date_string from dim_dates where date < current_date + interval 7 day ) dates",
+      jdbcReadProperties
     )
     dimDates.cache().count() // force it to load
+
+    println("preloading dim_products")
     dimProducts = sqlContext.read.jdbc(
-      jdbcUrl,
-      "(select product_key, sku, lob_key, netsuite_id from dim_products) products",
-      jdbcProperties
+      jdbcMysqlUrl,
+      "(select cast(product_key as int) product_key, sku, lob_key, netsuite_id from dim_products) products",
+      jdbcReadProperties
     )
     dimProducts.cache().count() // force it to load
-    dimLobs = sqlContext.read.jdbc(jdbcUrl, "dim_lobs", jdbcProperties)
+
+    println("preloading dim_lobs")
+    dimLobs = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_lobs", jdbcReadProperties)
     dimLobs.cache().count() // force it to load
+
+    println("preloading dim_schools")
     dimSchools = sqlContext.read.jdbc(
-      jdbcUrl,
-      "(select school_key, school_code, school_name, netsuite_id from dim_schools) schools",
-      jdbcProperties
+      jdbcMysqlUrl,
+      "(select cast(school_key as int) school_key, school_code, school_name, netsuite_id from dim_schools) schools",
+      jdbcReadProperties
     )
     dimSchools.cache().count() // force it to load
-    dimSources = sqlContext.read.jdbc(jdbcUrl, "dim_sources", jdbcProperties)
+
+    println("preloading dim_sources")
+    dimSources = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_sources", jdbcReadProperties)
     dimSources.cache().count() // force it to load
-    dimChannels = sqlContext.read.jdbc(jdbcUrl, "dim_channels", jdbcProperties)
+
+    println("preloading dim_channels")
+    dimChannels = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_channels", jdbcReadProperties)
     dimChannels.cache().count() // force it to load
-    dimSchedules =
-      sqlContext.read.jdbc(jdbcUrl, "dim_schedules", jdbcProperties)
+
+    println("preloading dim_schedules")
+    dimSchedules = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_schedules", jdbcReadProperties)
     dimSchedules.cache().count() // force it to load
+
+    println("preloading dim_desttypes")
+    dimDestTypes = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_desttypes", jdbcReadProperties)
+    dimDestTypes.cache().count() // force it to load
 
     // Start streaming until we receive an explicit termination
     ssc.start()
