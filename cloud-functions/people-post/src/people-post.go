@@ -241,6 +241,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		var currentOutput *PostRecord
+		var indexOutput int
 		skipValue := false
 
 		if len(matchKeyAssigned) > 0 { // if we haven't assigned a value to the column...
