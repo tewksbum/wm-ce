@@ -141,7 +141,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	//LogDev(fmt.Sprintf("PubSubMessage PostProcessPeople: %s", string(m.Data)))
 
 	var titleValue = ""
-	var MPRCounter int       // keep track of how many MPR we have
+	var mprEmail = ""
+	// var MPRCounter int       // keep track of how many MPR we have
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
@@ -159,8 +160,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
 
-		/**************************************************************/
-		// sanitize values
 		column.Value = strings.TrimSpace(column.Value)
 		column.Value = reNewline.ReplaceAllString(column.Value, " ") //TODO: Jie this removes carriage return... do we want this here?
 		column.Value = strings.Replace(column.Value, "  ", " ", -1)
@@ -168,6 +167,36 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		if len(column.Value) == 0 {                                 //dont need to work with blank values
 			continue
 		}
+
+		/**************************************************************/
+		// declare column
+
+		/************
+		// turned the ML off :(
+		// capture ML prediction to column
+		// predictionValue := input.Prediction.Predictions[index]
+		// predictionKey := strconv.Itoa(int(predictionValue))
+		// mlMatchKey := MLLabels[predictionKey]
+		// column.MatchKey = mlMatchKey
+		*************/
+
+		matchKeyAssigned := columnMatchOverride(column, titleValue)
+
+		/****************
+		// this was code... that would use a model prediction if rules didn't find something
+		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
+		matchKeyAssigned := ""
+		if len(column.MatchKey1) > 0 {
+			matchKeyAssigned = column.MatchKey1
+			LogDev(fmt.Sprintf("matchkey assigned is %v from rules", matchKeyAssigned))
+		} else if len(column.MatchKey) > 0 { // use the model default
+			matchKeyAssigned = column.MatchKey
+			LogDev(fmt.Sprintf("matchkey assigned is %v from prediction", matchKeyAssigned))
+		}
+		*****/
+
+		/**************************************************************/
+		// sanitize values
 		if column.PeopleERR.SchoolYear == 1 {
 			// right now schoolYear is just a pass through value...
 			// we do expect to get this w/ most files
@@ -207,33 +236,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			column.MatchKey3 = "ADBOOK"
 		}
 
-		/**************************************************************/
-		// declare column
-
-		/************
-		// turned the ML off :(
-		// capture ML prediction to column
-		// predictionValue := input.Prediction.Predictions[index]
-		// predictionKey := strconv.Itoa(int(predictionValue))
-		// mlMatchKey := MLLabels[predictionKey]
-		// column.MatchKey = mlMatchKey
-		*************/
-
-		matchKeyAssigned := columnMatchOverride(column, titleValue)
-
-		/****************
-		// this was code... that would use a model prediction if rules didn't find something
-		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
-		matchKeyAssigned := ""
-		if len(column.MatchKey1) > 0 {
-			matchKeyAssigned = column.MatchKey1
-			LogDev(fmt.Sprintf("matchkey assigned is %v from rules", matchKeyAssigned))
-		} else if len(column.MatchKey) > 0 { // use the model default
-			matchKeyAssigned = column.MatchKey
-			LogDev(fmt.Sprintf("matchkey assigned is %v from prediction", matchKeyAssigned))
-		}
-		*****/
-
 		var currentOutput *PostRecord
 		var indexOutput int
 		skipValue := false
@@ -267,6 +269,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 1)
 				} else if column.PeopleERR.ContainsFather {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 2)
+				} else if column.PeopleVER.IS_EMAIL { //handle case where we get two "parent" emails
+					if mprEmail != column.Value {
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
+						mprEmail = column.Value
+					} else {
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 5)
+					}
 				} else {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
 				}
