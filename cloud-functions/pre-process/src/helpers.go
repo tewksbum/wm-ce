@@ -246,6 +246,12 @@ func GetPeopleERR(column string) PeopleERR {
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") || strings.Contains(key, "guardian") || strings.Contains(key, "related") || strings.HasPrefix(key, "p1_") {
 		err.ContainsRole = 1
 	}
+	if strings.Contains(key, "2") || strings.Contains(key, "father") || strings.Contains(key, "dad") {
+		err.ContainsFather = 1
+	}
+	if strings.Contains(key, "1") || strings.Contains(key, "mother") || strings.Contains(key, "mom") {
+		err.ContainsMother = 1
+	}
 	// correct some assignments
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.Country == 1 {
 		err.Address1 = 0
