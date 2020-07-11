@@ -47,7 +47,7 @@ func GetPopulatedMatchKeys(a *PeopleOutput) []string {
 	return result
 }
 
-func columnMatchOverride(column *InputColumn, titleValue string) string {
+func columnMatchOverride(column InputColumn, titleValue string, parsedName NameParsed) string {
 
 	column.MatchKey1 = "" //maybe not needed?
 
@@ -93,11 +93,9 @@ func columnMatchOverride(column *InputColumn, titleValue string) string {
 		LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1"))
 	}
 
-	var parsedName NameParsed
 	// this might be a full name, try to parse it and see if we have first and last names
 	// || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
 	if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
-		parsedName = ParseName(column.Value)
 		if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 && column.PeopleERR.Address == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.ContainsAddress == 0 && column.PeopleERR.City == 0 && column.PeopleERR.ContainsCity == 0 {
 			column.MatchKey1 = "FULLNAME"
 			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0"))
