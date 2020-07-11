@@ -241,7 +241,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 
 		var currentOutput *PostRecord
-		var indexOutput int
 		skipValue := false
 
 		if len(matchKeyAssigned) > 0 { // if we haven't assigned a value to the column...
@@ -283,7 +282,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				} else {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
 				}
-				currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
 			}
 
 			if !skipValue {
