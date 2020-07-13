@@ -61,7 +61,7 @@ gcloud dataproc jobs submit spark \
     --class=streamer.OrderStreamer \
     --jars=gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar \
 	--region=us-central1  \
-	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:2.4.6
+	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:3.0.0
 ```
 
 Spark DataFrame schema for the order object

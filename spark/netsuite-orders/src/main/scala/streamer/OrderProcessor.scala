@@ -100,6 +100,8 @@ object OrderProcessor {
           $"totals.total".alias("total"),
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         .as("orders")
         // look up SCD keys
@@ -161,6 +163,8 @@ object OrderProcessor {
           $"shipments"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null        
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         // expand nested shipments
         .withColumn("shipments", explode($"shipments"))
@@ -236,7 +240,7 @@ object OrderProcessor {
           .withColumnRenamed("price", "prev_price")
           .withColumnRenamed("tax", "prev_tax")
           .withColumnRenamed("cost", "prev_cost")
-        dfOrderLineResults.show
+
         // dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
         
         // map to dsr fact
@@ -254,7 +258,6 @@ object OrderProcessor {
         .drop("quantity", "shipment_number", "netsuite_line_id", "netsuite_line_key", "netsuite_order_id", "netsuite_order_number")
         .drop("ocm_order_id", "ocm_order_number", "school_key", "source_key", "customer_key", "billto_key", "shipto_key")
         .drop("desttype_key", "product_key") 
-        dfDSR.show()
 
         // if not existing and not cancelled, add
         val dsr1 = dfDSR.where(dfDSR("existing") === false)
@@ -267,7 +270,6 @@ object OrderProcessor {
           sum("total_cost").as("cost"),
           sum("total_tax").as("tax")
         )
-        dsr1.show()
         
         // if existing, and not cancelled ever, add the difference
         var dsr2 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
@@ -280,7 +282,6 @@ object OrderProcessor {
           sum("total_cost").as("cost"),
           sum("total_tax").as("tax")
         )
-        dsr2.show()
 
         // if existing and uncancelled
         var dsr3 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
@@ -293,35 +294,24 @@ object OrderProcessor {
           sum("total_cost").as("cost"),
           sum("total_tax").as("tax")
         )
-        dsr3.show()
 
         // if existing and now cancelled, subtract
         var dsr4 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
-        .withColumn("total_price", col("total_price") - col("prev_price"))
-        .withColumn("total_cost", col("total_cost") - col("prev_cost"))
-        .withColumn("total_tax", col("total_tax") - col("prev_tax"))
+        .withColumn("total_price", - col("prev_price"))
+        .withColumn("total_cost", - col("prev_cost"))
+        .withColumn("total_tax", - col("prev_tax"))
         .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
           sum("total_tax").as("tax")
         )
-        .withColumn("price", -col("price"))
-        .withColumn("cost", -col("cost"))
-        .withColumn("tax", -col("tax"))
-        dsr4.show()
 
-        val dsr = dsr1
+        var dsr = dsr1
         .union(dsr2)
         .union(dsr3)
         .union(dsr4)
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("price").as("price"),
-          sum("cost").as("cost"),
-          sum("tax").as("tax")
-        )
-        dsr.show()
+        dsr.show
 
         upsertDSRFact(dsr.as[DailySalesFact].collect())
       }
