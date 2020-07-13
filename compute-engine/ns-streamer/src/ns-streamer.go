@@ -86,7 +86,7 @@ func main() {
 	}
 
 	for i, record := range input.Records {
-		if i < 100 {
+		if i < 1000 {
 			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=821&deploy=1&id=%v", record.ID)
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
@@ -110,7 +110,7 @@ func main() {
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
-			time.Sleep(5 * time.Second)
+			time.Sleep(10 * time.Second)
 		}
 	}
 

@@ -102,6 +102,8 @@ object OrderProcessor {
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
+        .withColumn("ocm_id", coalesce($"ocm_id", lit(0))) // set to 0 if null
+        .withColumn("ocm_number", coalesce($"ocm_number", lit("N/A"))) // set to 0 if null
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         .as("orders")
         // look up SCD keys
@@ -164,7 +166,10 @@ object OrderProcessor {
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
-        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null        
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
+
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         // expand nested shipments
         .withColumn("shipments", explode($"shipments"))
