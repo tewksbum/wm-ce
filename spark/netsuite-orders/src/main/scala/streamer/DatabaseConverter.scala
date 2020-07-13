@@ -8,7 +8,7 @@ import scala.collection.mutable.ListBuffer
 object DatabaseConverter {
 
   def getConnection(): java.sql.Connection = {
-    var connection = DriverManager.getConnection(OrderStreamer.jdbcMariadbUrl)
+    var connection = DriverManager.getConnection(OrderStreamer.jdbcMysqlUrl, OrderStreamer.jdbcUserName, OrderStreamer.jdbcPassword)
     connection
   }
 
@@ -36,6 +36,7 @@ object DatabaseConverter {
         }
       }
       ps.close
+      con.close
     }
     results.toList
   }
@@ -71,6 +72,7 @@ object DatabaseConverter {
         }
       }
       ps.close
+      con.close
     }
     results.toList
   }
@@ -107,6 +109,7 @@ object DatabaseConverter {
         }
       }
       ps.close
+      con.close
     }
     results.toList
   }
@@ -129,6 +132,7 @@ object DatabaseConverter {
         ps.executeUpdate()
       }
       ps.close
+      con.close
     }
   }
 
@@ -162,6 +166,7 @@ object DatabaseConverter {
         ps.executeUpdate()
       }
       ps.close
+      con.close
     }
   }
 
@@ -220,6 +225,7 @@ object DatabaseConverter {
         }
       }
       ps.close
+      con.close
     }
     results.toList
   }
