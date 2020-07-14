@@ -102,7 +102,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		// only perform the duplicate detection if it is coming from post, do not do it otherwise, such as from cleanup
 		if inputIsFromPost {
 			if input.Signature.FiberType == "default" {
-				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+				existingCheck = GetRedisIntValue([]string{input.Signature.EventID, input.Signature.RecordID, "housefiber"})
 				if existingCheck == 1 { // this fiber has already been processed
 					LogDev(fmt.Sprintf("Duplicate fiber detected %v", input.Signature))
 					report := FileReport{
@@ -196,8 +196,8 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			searchSets := []string{}
 			if len(searchFields) > 0 {
 				for _, search := range searchFields {
-					msKey := []string{input.Signature.OwnerID, "search-fibers", search}
-					msSet := []string{input.Signature.OwnerID, "search-sets", search}
+					msKey := []string{input.Signature.OwnerID, "house-search-fibers", search}
+					msSet := []string{input.Signature.OwnerID, "house-search-sets", search}
 					searchKeys = append(searchKeys, strings.Join(msKey, ":"))
 					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
@@ -453,7 +453,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		// if dsFiber.Disposition != "dupe" && dsFiber.Disposition != "purge" {
 		if dsFiber.Disposition != "purge" {
 			for _, search := range dsFiber.Search {
-				msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+				msKey := []string{input.Signature.OwnerID, "house-search-fibers", search}
 				AppendRedisTempKey(msKey, dsFiber.ID.Name)
 			}
 		}
@@ -469,7 +469,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		// }
 		if !matchable {
 			LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
-			IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
+			IncrRedisValue([]string{input.Signature.EventID, "house-fibers-deleted"})
 
 			report := FileReport{
 				ID:        input.Signature.EventID,
@@ -602,9 +602,9 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		// track golden status in redis for future expire lookup
-		SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden"})
+		SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "house-golden"})
 		if goldenDS.ADVALID == "TRUE" {
-			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "advalid"})
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "house-golden", "advalid"})
 			reportCounters1 = append(reportCounters1,
 				ReportCounter{
 					Type:      "House360:Audit",
@@ -706,7 +706,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		// put the set search key in redis
 		if len(SetSearchFields) > 0 {
 			for _, search := range SetSearchFields {
-				msSet := []string{input.Signature.OwnerID, "search-sets", search}
+				msSet := []string{input.Signature.OwnerID, "house-search-sets", search}
 				AppendRedisTempKey(msSet, setDS.ID.Name)
 			}
 		}
@@ -715,7 +715,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 
 		// write each of the search key into each of the fiber in redis
 		for _, search := range SetSearchFields {
-			msKey := []string{input.Signature.OwnerID, "search-fibers", search}
+			msKey := []string{input.Signature.OwnerID, "house-search-fibers", search}
 			for _, f := range setDS.Fibers {
 				AppendRedisTempKey(msKey, f)
 			}
@@ -781,9 +781,9 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				})
 
 				// we'll decrement some counters here
-				if SetRedisKeyIfNotExists([]string{set, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
+				if SetRedisKeyIfNotExists([]string{set, "house-golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
 					// let's see what we are deleting
-					if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+					if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
 						reportCounters1 = append(reportCounters1,
 							ReportCounter{
 								Type:      "Golden",
@@ -792,7 +792,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 								Increment: true,
 							},
 						)
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "Golden",
@@ -803,7 +803,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 							)
 						}
 
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "Golden",
@@ -819,7 +819,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				if fiber.Signature.FiberType == "mpr" {
 					if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
 						// let's see what we are deleting
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "Golden:MPR",
@@ -828,7 +828,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
 										Type:      "Golden:MPR",
@@ -839,7 +839,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 								)
 							}
 
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
 										Type:      "Golden:MPR",
@@ -854,7 +854,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				} else {
 					if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
 						// let's see what we are deleting
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "golden"}) == 1 { // this is a golden from the event that just got deleted
+						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
 							reportCounters1 = append(reportCounters1,
 								ReportCounter{
 									Type:      "Golden:NonMPR",
@@ -863,7 +863,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "advalid"}) == 1 {
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
 										Type:      "Golden:NonMPR",
@@ -874,7 +874,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 								)
 							}
 
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
 										Type:      "Golden:NonMPR",
@@ -904,16 +904,16 @@ func House360(ctx context.Context, m PubSubMessage) error {
 
 		if input.Signature.FiberType == "default" {
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Fiber:Completed", Count: 1, Increment: true})
-			IncrRedisValue([]string{input.Signature.EventID, "fibers-completed"})
-			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber"})
+			IncrRedisValue([]string{input.Signature.EventID, "house-fibers-completed"})
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "house-fiber"})
 
 			// grab the count and see if we are done
 			counters := GetRedisIntValues([][]string{
-				[]string{input.Signature.EventID, "records-total"},
-				[]string{input.Signature.EventID, "records-completed"},
-				[]string{input.Signature.EventID, "records-deleted"},
-				[]string{input.Signature.EventID, "fibers-completed"},
-				[]string{input.Signature.EventID, "fibers-deleted"},
+				[]string{input.Signature.EventID, "house-records-total"},
+				[]string{input.Signature.EventID, "house-records-completed"},
+				[]string{input.Signature.EventID, "house-records-deleted"},
+				[]string{input.Signature.EventID, "house-fibers-completed"},
+				[]string{input.Signature.EventID, "house-fibers-deleted"},
 			})
 			LogDev(fmt.Sprintf("Received response from redis %v", counters))
 			recordCount, recordCompleted, recordDeleted, fiberCompleted, fiberDeleted := 0, 0, 0, 0, 0
@@ -1005,7 +1005,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		} else if input.Signature.FiberType == "mar" {
-			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "fiber-mar"})
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "house-fiber-mar"})
 		}
 
 		{
