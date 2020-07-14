@@ -90,13 +90,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 	LogDev(fmt.Sprintf("input is from post: %v", inputIsFromPost))
 
 	for _, input := range inputs {
-		// assign first initial and zip5
-		if len(input.MatchKeys.FNAME.Value) > 0 {
-			input.MatchKeys.FINITIAL = MatchKeyField{
-				Value:  input.MatchKeys.FNAME.Value[0:1],
-				Source: input.MatchKeys.FNAME.Source,
-			}
-		}
+		// assign zip5
 		if len(input.MatchKeys.ZIP.Value) > 5 {
 			input.MatchKeys.ZIP5 = MatchKeyField{
 				Value:  input.MatchKeys.ZIP.Value[0:5],
