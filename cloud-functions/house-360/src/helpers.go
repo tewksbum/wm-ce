@@ -58,13 +58,13 @@ func GetAdValid(values []string) string {
 	return "FALSE"
 }
 
-func GetMatchKeyFieldFromStruct(v *PeopleOutput, field string) MatchKeyField {
+func GetMatchKeyFieldFromStruct(v *HouseOutput, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
 }
 
-func GetMatchKeyFieldFromDSFiber(v *PeopleFiberDS, field string) MatchKeyField {
+func GetMatchKeyFieldFromDSFiber(v *HouseFiberDS, field string) MatchKeyField {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	return f.Interface().(MatchKeyField)
@@ -79,7 +79,7 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 	return &MatchKey360{}
 }
 
-func GetHouseFiberSearchFields(v *PeopleFiberDS) []string {
+func GetHouseFiberSearchFields(v *HouseFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
 	if len(v.EMAIL.Value) > 0 {
@@ -126,8 +126,8 @@ func ConvertPassthrough(v map[string]string) []Passthrough360 {
 	return result
 }
 
-func GetFiberDS(v *PeopleFiber) PeopleFiberDS {
-	p := PeopleFiberDS{
+func GetFiberDS(v *HouseFiber) HouseFiberDS {
+	p := HouseFiberDS{
 		OwnerID:     v.Signature.OwnerID,
 		Source:      v.Signature.Source,
 		EventType:   v.Signature.EventType,
@@ -163,14 +163,14 @@ func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string
 	return slice
 }
 
-func SetPeople360SetOutputFieldValues(v *HouseSetDS, field string, value []string) {
+func SetHouse360SetOutputFieldValues(v *HouseSetDS, field string, value []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
-	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
+	// LogDev(fmt.Sprintf("SetHouse360SetOutputFieldValues: %v %v", field, value))
 }
 
-func SetPeople360GoldenOutputFieldValue(v *HouseGoldenDS, field string, value string, values []string) {
+func SetHouse360GoldenOutputFieldValue(v *HouseGoldenDS, field string, value string, values []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	// if the field to be set is EMAIL, and the existing golden record value does not already contain the new value, then add it as
@@ -185,8 +185,8 @@ func SetPeople360GoldenOutputFieldValue(v *HouseGoldenDS, field string, value st
 	}
 }
 
-func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
-	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
+func SetHouseFiberMatchKeyField(v *HouseFiberDS, field string, value MatchKeyField) {
+	LogDev(fmt.Sprintf("SetHouseFiberMatchKeyField: %v %v", field, value))
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
@@ -199,32 +199,32 @@ func PopulateSetOutputSignatures(target *HouseSetDS, values []Signature) {
 		if key == "FiberID" {
 			continue
 		}
-		SetPeople360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
+		SetHouse360SetOutputFieldValues(target, key, GetSignatureSliceValues(values, key))
 		if key == "RecordID" {
-			SetPeople360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
+			SetHouse360SetOutputFieldValues(target, key+"Normalized", GetRecordIDNormalizedSliceValues(values, key))
 		}
 	}
 }
 
-func PopulateFiberMatchKeys(target *PeopleFiberDS, source *PeopleOutput) {
-	KeyList := structs.Names(&PeopleOutput{})
+func PopulateFiberMatchKeys(target *HouseFiberDS, source *HouseOutput) {
+	KeyList := structs.Names(&HouseOutput{})
 	for _, key := range KeyList {
-		SetPeopleFiberMatchKeyField(target, key, GetMatchKeyFieldFromStruct(source, key))
+		SetHouseFiberMatchKeyField(target, key, GetMatchKeyFieldFromStruct(source, key))
 	}
 }
 
 func PopulateSetOutputMatchKeys(target *HouseSetDS, values []MatchKey360) {
-	KeyList := structs.Names(&PeopleOutput{})
+	KeyList := structs.Names(&HouseOutput{})
 	for _, key := range KeyList {
-		SetPeople360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
-		SetPeople360SetOutputFieldValues(target, key+"Normalized", GetSetValuesFromMatchKeysNormalized(values, key))
+		SetHouse360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
+		SetHouse360SetOutputFieldValues(target, key+"Normalized", GetSetValuesFromMatchKeysNormalized(values, key))
 	}
 }
 
 func PopulateGoldenOutputMatchKeys(target *HouseGoldenDS, values []MatchKey360) {
-	KeyList := structs.Names(&PeopleOutput{})
+	KeyList := structs.Names(&HouseOutput{})
 	for _, key := range KeyList {
-		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
+		SetHouse360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
 	}
 }
 

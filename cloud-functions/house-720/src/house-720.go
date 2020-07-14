@@ -1,4 +1,4 @@
-package people720
+package house720
 
 import (
 	"context"
@@ -52,7 +52,7 @@ func init() {
 	ready.PublishSettings.DelayThreshold = 120 * time.Second
 }
 
-func People720(ctx context.Context, m PubSubMessage) error {
+func House720(ctx context.Context, m PubSubMessage) error {
 
 	var input FileComplete
 	if err := json.Unmarshal(m.Data, &input); err != nil {
