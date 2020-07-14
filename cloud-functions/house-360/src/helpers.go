@@ -14,6 +14,8 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+// line for jie
+
 func publishReport(report *FileReport, cfName string) {
 	reportJSON, _ := json.Marshal(report)
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
