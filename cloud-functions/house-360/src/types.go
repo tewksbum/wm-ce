@@ -89,23 +89,21 @@ type EventData struct {
 	EventData   map[string]interface{} `json:"eventData"`
 }
 
-type PeopleInput struct {
+type HouseInput struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   PeopleOutput      `json:"matchkeys"`
-	// MatchKeys   map[PeopleOutput]PeopleOutput      `json:"matchkeys`
+	MatchKeys   HouseOutput       `json:"matchkeys"`
 }
 
-type PeopleFiber struct {
-	Signature Signature `json:"signature"`
-	// Passthrough map[string]string `json:"passthrough"`
+type HouseFiber struct {
+	Signature   Signature        `json:"signature"`
 	Passthrough []Passthrough360 `json:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys"`
+	MatchKeys   HouseOutput      `json:"matchkeys"`
 	ID          string           `json:"fiberId"`
 	CreatedAt   time.Time        `json:"createdAt"`
 }
 
-type PeopleFiberDS struct {
+type HouseFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`
 	OwnerID      string           `datastore:"ownerid"`
@@ -117,12 +115,6 @@ type PeopleFiberDS struct {
 	Disposition  string           `datastore:"disposition"`
 	Search       []string         `datastore:"search"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
-	SALUTATION   MatchKeyField    `datastore:"salutation"`
-	NICKNAME     MatchKeyField    `datastore:"nickname"`
-	FNAME        MatchKeyField    `datastore:"fname"`
-	FINITIAL     MatchKeyField    `datastore:"finitial"`
-	LNAME        MatchKeyField    `datastore:"lname"`
-	MNAME        MatchKeyField    `datastore:"mname"`
 	AD1          MatchKeyField    `datastore:"ad1"`
 	AD1NO        MatchKeyField    `datastore:"ad1no"`
 	AD2          MatchKeyField    `datastore:"ad2"`
@@ -141,16 +133,10 @@ type PeopleFiberDS struct {
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
 	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
-	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
 	CLIENTID     MatchKeyField    `datastore:"clientid"`
-	GENDER       MatchKeyField    `datastore:"gender"`
-	AGE          MatchKeyField    `datastore:"age"`
-	DOB          MatchKeyField    `datastore:"dob"`
 	ORGANIZATION MatchKeyField    `datastore:"organization"`
 	TITLE        MatchKeyField    `datastore:"title"`
-	ROLE         MatchKeyField    `datastore:"role"`
-	STATUS       MatchKeyField    `datastore:"status"`
 	PermE        MatchKeyField    `datastore:"perme"`
 	PermM        MatchKeyField    `datastore:"permm"`
 	PermS        MatchKeyField    `datastore:"perms"`
@@ -162,13 +148,7 @@ type MatchKeyField struct {
 	Type   string `json:"type"`
 }
 
-type PeopleOutput struct {
-	SALUTATION   MatchKeyField `json:"salutation"`
-	NICKNAME     MatchKeyField `json:"nickname"`
-	FNAME        MatchKeyField `json:"fname"`
-	FINITIAL     MatchKeyField `json:"finitial"`
-	LNAME        MatchKeyField `json:"lname"`
-	MNAME        MatchKeyField `json:"mname"`
+type HouseOutput struct {
 	AD1          MatchKeyField `json:"ad1"`
 	AD1NO        MatchKeyField `json:"ad1no"`
 	AD2          MatchKeyField `json:"ad2"`
@@ -187,16 +167,10 @@ type PeopleOutput struct {
 	ZIPTYPE      MatchKeyField `json:"ziptype"`
 	RECORDTYPE   MatchKeyField `json:"recordtype"`
 	EMAIL        MatchKeyField `json:"email"`
-	PHONE        MatchKeyField `json:"phone"`
 	TRUSTEDID    MatchKeyField `json:"trustedId"`
 	CLIENTID     MatchKeyField `json:"clientId"`
-	GENDER       MatchKeyField `json:"gender"`
-	AGE          MatchKeyField `json:"age"`
-	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
-	ROLE         MatchKeyField `json:"role"`
-	STATUS       MatchKeyField `json:"status"`
 	PermE        MatchKeyField `json:"perme"`
 	PermM        MatchKeyField `json:"permm"`
 	PermS        MatchKeyField `json:"perms"`
@@ -221,7 +195,7 @@ type Passthrough360 struct {
 	Value string `json:"value"`
 }
 
-type People360Output struct {
+type House360Output struct {
 	ID           string           `json:"id"`
 	Signature    Signature360     `json:"signature"`
 	Signatures   []Signature      `json:"signatures"`
@@ -290,8 +264,6 @@ type HouseSetDS struct {
 	ORGANIZATIONNormalized []string       `datastore:"organizationnormalized"`
 	TITLE                  []string       `datastore:"title"`
 	TITLENormalized        []string       `datastore:"titlenormalized"`
-	STATUS                 []string       `datastore:"status"`
-	STATUSNormalized       []string       `datastore:"statusnormalized"`
 	PermE                  []string       `datastore:"perme"`
 	PermENormalized        []string       `datastore:"permenormalized"`
 	PermM                  []string       `datastore:"permm"`

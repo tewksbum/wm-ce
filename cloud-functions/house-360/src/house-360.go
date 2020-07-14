@@ -75,7 +75,7 @@ func init() {
 }
 
 func House360(ctx context.Context, m PubSubMessage) error {
-	var inputs []PeopleInput
+	var inputs []HouseInput
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
@@ -130,7 +130,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 
 		// store the fiber
 		OutputPassthrough := ConvertPassthrough(input.Passthrough)
-		var fiber PeopleFiber
+		var fiber HouseFiber
 		fiber.CreatedAt = time.Now()
 		fiber.ID = input.Signature.FiberID
 		fiber.MatchKeys = input.MatchKeys
@@ -166,12 +166,12 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		HasNewValues := false
-		var output People360Output
+		var output House360Output
 		var FiberSignatures []Signature
 		var FiberSearchFields []string
 		output.ID = uuid.New().String()
 		output.Signatures = []Signature{}
-		MatchKeyList := structs.Names(&PeopleOutput{})
+		MatchKeyList := structs.Names(&HouseOutput{})
 		FiberMatchKeys := make(map[string][]string)
 		// collect all fiber match key values
 		for _, name := range MatchKeyList {
@@ -240,12 +240,12 @@ func House360(ctx context.Context, m PubSubMessage) error {
 
 			// get all the Fibers
 			var FiberKeys []*datastore.Key
-			var Fibers []PeopleFiberDS
+			var Fibers []HouseFiberDS
 			for _, fiber := range matchedFibers {
 				dsFiberGetKey := datastore.NameKey(DSKindFiber, fiber, nil)
 				dsFiberGetKey.Namespace = dsNameSpace
 				FiberKeys = append(FiberKeys, dsFiberGetKey)
-				Fibers = append(Fibers, PeopleFiberDS{})
+				Fibers = append(Fibers, HouseFiberDS{})
 			}
 			// loop 10 times if we can't load the fiber
 			if len(FiberKeys) > 0 {
@@ -750,7 +750,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			setCardinality = "multisets"
 		}
 		reportCounters1 = append(reportCounters1, ReportCounter{
-			Type:      "People360",
+			Type:      "House360",
 			Name:      setCardinality,
 			Count:     1,
 			Increment: true,
