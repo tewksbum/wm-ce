@@ -594,13 +594,13 @@ func House360(ctx context.Context, m PubSubMessage) error {
 		PopulateSetOutputSignatures(&setDS, output.Signatures)
 		PopulateSetOutputMatchKeys(&setDS, output.MatchKeys)
 
-		var goldenDS houseGoldenDS
+		var goldenDS HouseGoldenDS
 		goldenKey := datastore.NameKey(DSKindGolden, output.ID, nil)
 		goldenKey.Namespace = dsNameSpace
 		goldenDS.ID = goldenKey
 		goldenDS.CreatedAt = output.CreatedAt
 		PopulateGoldenOutputMatchKeys(&goldenDS, output.MatchKeys)
-		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
+		goldenDS.Search = GetHouseGoldenSearchFields(&goldenDS)
 		goldenJSON, _ := json.Marshal(goldenDS)
 		log.Printf("writing golden %v", string(goldenJSON))
 		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {

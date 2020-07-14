@@ -14,8 +14,6 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// line for jie
-
 func publishReport(report *FileReport, cfName string) {
 	reportJSON, _ := json.Marshal(report)
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
@@ -81,7 +79,7 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 	return &MatchKey360{}
 }
 
-func GetHouseFiberSearchFields(v *HouseFiberDS) []string {
+func GetHouseFiberSearchFields(v *PeopleFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
 	if len(v.EMAIL.Value) > 0 {
@@ -165,14 +163,14 @@ func GetRecordIDNormalizedSliceValues(source []Signature, field string) []string
 	return slice
 }
 
-func SetPeople360SetOutputFieldValues(v *PeopleSetDS, field string, value []string) {
+func SetPeople360SetOutputFieldValues(v *HouseSetDS, field string, value []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	f.Set(reflect.ValueOf(value))
 	// LogDev(fmt.Sprintf("SetPeople360SetOutputFieldValues: %v %v", field, value))
 }
 
-func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value string, values []string) {
+func SetPeople360GoldenOutputFieldValue(v *HouseGoldenDS, field string, value string, values []string) {
 	r := reflect.ValueOf(v)
 	f := reflect.Indirect(r).FieldByName(field)
 	// if the field to be set is EMAIL, and the existing golden record value does not already contain the new value, then add it as
@@ -195,7 +193,7 @@ func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyF
 
 }
 
-func PopulateSetOutputSignatures(target *PeopleSetDS, values []Signature) {
+func PopulateSetOutputSignatures(target *HouseSetDS, values []Signature) {
 	KeyList := structs.Names(&Signature{})
 	for _, key := range KeyList {
 		if key == "FiberID" {
@@ -215,7 +213,7 @@ func PopulateFiberMatchKeys(target *PeopleFiberDS, source *PeopleOutput) {
 	}
 }
 
-func PopulateSetOutputMatchKeys(target *PeopleSetDS, values []MatchKey360) {
+func PopulateSetOutputMatchKeys(target *HouseSetDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
 		SetPeople360SetOutputFieldValues(target, key, GetSetValuesFromMatchKeys(values, key))
@@ -223,7 +221,7 @@ func PopulateSetOutputMatchKeys(target *PeopleSetDS, values []MatchKey360) {
 	}
 }
 
-func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360) {
+func PopulateGoldenOutputMatchKeys(target *HouseGoldenDS, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
 		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
