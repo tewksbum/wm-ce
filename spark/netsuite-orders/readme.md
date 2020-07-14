@@ -46,7 +46,7 @@ gcloud dataproc clusters create sparkles \
 	--bucket=wm_dataproc \
 	--master-min-cpu-platform="Intel Skylake" \
 	--single-node \
-	--master-machine-type n1-standard-2 \
+	--master-machine-type n1-standard-4 \
 	--master-boot-disk-size 1000 \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
@@ -61,7 +61,7 @@ gcloud dataproc jobs submit spark \
     --class=streamer.OrderStreamer \
     --jars=gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar \
 	--region=us-central1  \
-	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:2.4.6
+	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:3.0.0
 ```
 
 Spark DataFrame schema for the order object

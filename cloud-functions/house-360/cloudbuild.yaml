@@ -1,4 +1,3 @@
-timeout: 10m
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
@@ -8,16 +7,19 @@ steps:
     "--runtime","go111", 
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "30",
+    "--timeout", "120",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "100"
+    "--max-instances", "50",
+    "--vpc-connector", "${_VPC_CONNECTOR}",
+    "--retry"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: household-360
+    _FUNCTION_NAME: house-360
     _TRIGGER_TOPIC: people-postpipe
-    _ENTRY_POINT: HouseHold360
+    _ENTRY_POINT: House360
+    _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'

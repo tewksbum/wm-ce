@@ -23,7 +23,7 @@ object OrderProcessor {
 
   // [START extract]
   def extractNetsuiteOrder(input: RDD[String]): RDD[NetsuiteOrder] = {
-    input.collect().foreach(println)
+    // input.collect().foreach(println)
     return input.map( x => parse(x).extract[NetsuiteOrder])
   }
 
@@ -40,28 +40,25 @@ object OrderProcessor {
         println(s"processing ${rdd.count} orders\n")
         val df = rdd.toDF() // data frame
 
-        // note spark sql write.jdbc will double quote the column names, this is not acceptable to mariadb ootb
-        // to update it, start by running this sql
-        // `select @@SQL_MODE`
-        // then append the value ',ANSI_QUOTES' to the value and run a set
-        // `SET GLOBAL sql_mode ='STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION,ANSI_QUOTES'`
-        // the 3 dims are written with write.jdbc
-
         // map to the dims and facts that need to be populated
         val dfCustomer = df.select(
-          lit(randomUUID().toString).alias("customer_key"), //generate a customer key
           $"customer.email".alias("customer_email"),
           $"customer.id".alias("netsuite_id"),
           $"customer.name".alias("customer_name")
         )
-        dfCustomer.createOrReplaceTempView("customers") // persist these in temp storage
-        // TODO: look up existing customer
-        // val existingCustomer = sqlContext.read.jdbc(jdbcUrl, "(select customer_key, netsuite_id from dim_customers where ) existing", jdbcProperties)
-        // TODO: filter on new customer
-        dfCustomer.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_customers", OrderStreamer.jdbcProperties)
+        .distinct()
+        .withColumn("customer_key", lit(randomUUID().toString))
+        // dfCustomer.createOrReplaceTempView("customers") // persist these in temp storage
+        val dfCustomerResults = upsertCustomerDim(dfCustomer.as[CustomerDim].collect()).toDF.distinct()
+        
+        val dfCustomerNew = dfCustomer
+        .as("customer")
+        .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter").drop("customer_key", "old_key")
+        .withColumnRenamed("new_key", "customer_key")
+        // dfCustomer.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_customers", OrderStreamer.jdbcProperties)
 
         val dfBillTo = df.select(
-          lit(randomUUID().toString).alias("billto_key"),
+          
           $"billing.addressKey".alias("netsuite_key"),
           $"billing.name",
           $"billing.addr1",
@@ -72,8 +69,14 @@ object OrderProcessor {
           $"billing.country",
           $"billing.phone"
         )
-        dfBillTo.createOrReplaceTempView("billtos")
-        dfBillTo.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_billtos", OrderStreamer.jdbcProperties)
+        .distinct()
+        .withColumn("billto_key", lit(randomUUID().toString))
+        val dfBillToResults = upsertBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+        val dfBillToNew = dfBillTo
+        .as("billto")
+        .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter").drop("billto_key", "old_key")
+        .withColumnRenamed("new_key", "billto_key")
+        // dfBillTo.createOrReplaceTempView("billtos")
 
         val dfOrders = df.select(
           $"dates.placedOn".alias("date_value"), 
@@ -97,6 +100,10 @@ object OrderProcessor {
           $"totals.total".alias("total"),
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
+        .withColumn("ocm_id", coalesce($"ocm_id", lit(0))) // set to 0 if null
+        .withColumn("ocm_number", coalesce($"ocm_number", lit("N/A"))) // set to 0 if null
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         .as("orders")
         // look up SCD keys
@@ -105,16 +112,17 @@ object OrderProcessor {
         .join(OrderStreamer.dimSources.as("sources"), $"orders.source_value" === $"sources.netsuite_id", "leftouter").drop("source_name", "netsuite_id", "source_value")
         .join(OrderStreamer.dimChannels.as("channels"), $"orders.channel_value" === $"channels.netsuite_id", "leftouter").drop("channel_name", "netsuite_id", "channel_value")
         // look up customer and billto keys
-        .join(dfCustomer.as("customers"), $"orders.customer_value" === $"customers.netsuite_id", "inner").drop("customer_email", "netsuite_id", "customer_name", "customer_value")
-        .join(dfBillTo.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner").drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
+        .join(dfCustomerNew.as("customers"), $"orders.customer_value" === $"customers.netsuite_id", "inner").drop("customer_email", "netsuite_id", "customer_name", "customer_value")
+        .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner").drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
-        dfOrders.show()
+        // dfOrders.show()
         upsertOrdersFact(dfOrders.as[OrdersFact].collect())
         // dfOrders.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orders", OrderStreamer.jdbcProperties)
 
         // map to orderlines fact
-        val dfShipTos = df
+        val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
+        .distinct()
         .select(
           lit(randomUUID().toString).alias("shipto_key"), // generate shipto key
           $"shipments.addressKey".alias("netsuite_key"),
@@ -127,11 +135,17 @@ object OrderProcessor {
           $"shipments.phone".alias("phone"),
           $"shipments.type".alias("type"),
         )
+        .withColumn("country", lit("USA"))
         .as("shipments")
         // lookup desttype key
         .join(OrderStreamer.dimDestTypes.as("desttype"), $"shipments.type" === $"desttype.desttype_name", "leftouter").drop("type", "desttype_name")
-        dfShipTos.show()
-        dfShipTos.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_shiptos", OrderStreamer.jdbcProperties)
+
+        val dfShipToResults = upsertShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+        val dfShipToNew = dfShipTo
+        .as("shipto")
+        .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter").drop("shipto_key", "old_key")
+        .withColumnRenamed("new_key", "shipto_key")        
+        // dfShipTo.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_shiptos", OrderStreamer.jdbcProperties)
 
         val dfOrderLines = df
         .select(
@@ -151,6 +165,11 @@ object OrderProcessor {
           $"shipments"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
+
         .withColumn("date_value", date_format($"date_value","yyyy-MM-dd"))  // reformat the date value from date to a iso date string
         // expand nested shipments
         .withColumn("shipments", explode($"shipments"))
@@ -192,6 +211,7 @@ object OrderProcessor {
           "ocm_order_id",
           "ocm_order_number"
         )
+        .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
         .as("lines")
         // lookup keys
@@ -199,9 +219,9 @@ object OrderProcessor {
         .join(OrderStreamer.dimDates.as("dates"), $"lines.date_value" === $"dates.date_string", "leftouter").drop("date_string", "date_value")
         .join(OrderStreamer.dimSources.as("sources"), $"lines.source_value" === $"sources.netsuite_id", "leftouter").drop("source_name", "netsuite_id", "source_value")
         .join(OrderStreamer.dimChannels.as("channels"), $"lines.channel_value" === $"channels.netsuite_id", "leftouter").drop("channel_name", "netsuite_id", "channel_value")
-        .join(dfCustomer.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner").drop("customer_email", "netsuite_id", "customer_name", "customer_value")
-        .join(dfBillTo.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "inner").drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
-        .join(dfShipTos.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "inner").drop("shipto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "type", "phone")
+        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner").drop("customer_email", "netsuite_id", "customer_name", "customer_value")
+        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "inner").drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
+        .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "inner").drop("shipto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "type", "phone")
         .join(OrderStreamer.dimProducts.as("products"), $"lines.itemId" === $"products.netsuite_id", "leftouter").drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter").drop("lob_name", "lob")
         // rename columns to match
@@ -218,10 +238,16 @@ object OrderProcessor {
         // replace null values
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
-        dfOrderLines.show()
-        upsertOrderLinesFact(dfOrderLines.as[OrderLineFact].collect())
-        // dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
+        // dfOrderLines.show()
+        val dfOrderLineResults = upsertOrderLinesFact(dfOrderLines.as[OrderLineFact].collect())
+          .toDF
+          .withColumnRenamed("cancelled", "prev_cancelled")
+          .withColumnRenamed("price", "prev_price")
+          .withColumnRenamed("tax", "prev_tax")
+          .withColumnRenamed("cost", "prev_cost")
 
+        // dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
+        
         // map to dsr fact
         val dfDSR = dfOrderLines
         .withColumnRenamed("date_key", "date_key_lines")
@@ -231,23 +257,68 @@ object OrderProcessor {
         .withColumn("year", substring($"date_string", 0, 4)).drop("date_string")
         // look up schedule
         .join(OrderStreamer.dimSchedules.as("schedules"), $"year" === $"schedules.schedule_name", "leftouter").drop("schedule_name", "year")
+        // find out if this is new/existing and previously cancelled or not
+        .join(dfOrderLineResults.as("updates"), $"lines.netsuite_line_id" === $"updates.line_id", "leftouter").drop("line_id")
         // drop keys not needed for dsr
         .drop("quantity", "shipment_number", "netsuite_line_id", "netsuite_line_key", "netsuite_order_id", "netsuite_order_number")
         .drop("ocm_order_id", "ocm_order_number", "school_key", "source_key", "customer_key", "billto_key", "shipto_key")
-        .drop("desttype_key", "product_key")
-        // aggregate only if not cancelled
+        .drop("desttype_key", "product_key") 
+
+        // if not existing and not cancelled, add
+        val dsr1 = dfDSR.where(dfDSR("existing") === false)
         .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
         .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
         .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
-        // group by keys and aggregate
         .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
           sum("total_tax").as("tax")
         )
-        dfDSR.show()
-        upsertDSRFact(dfDSR.as[DailySalesFact].collect())
+        
+        // if existing, and not cancelled ever, add the difference
+        var dsr2 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
+        .withColumn("total_price", col("total_price") - col("prev_price"))
+        .withColumn("total_cost", col("total_cost") - col("prev_cost"))
+        .withColumn("total_tax", col("total_tax") - col("prev_tax"))
+        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+        .agg(
+          sum("total_price").as("price"),
+          sum("total_cost").as("cost"),
+          sum("total_tax").as("tax")
+        )
+
+        // if existing and uncancelled
+        var dsr3 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
+        .withColumn("total_price", col("total_price"))
+        .withColumn("total_cost", col("total_cost"))
+        .withColumn("total_tax", col("total_tax"))
+        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+        .agg(
+          sum("total_price").as("price"),
+          sum("total_cost").as("cost"),
+          sum("total_tax").as("tax")
+        )
+
+        // if existing and now cancelled, subtract
+        var dsr4 = dfDSR.where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
+        .withColumn("total_price", - col("prev_price"))
+        .withColumn("total_cost", - col("prev_cost"))
+        .withColumn("total_tax", - col("prev_tax"))
+        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+        .agg(
+          sum("total_price").as("price"),
+          sum("total_cost").as("cost"),
+          sum("total_tax").as("tax")
+        )
+
+        var dsr = dsr1
+        .union(dsr2)
+        .union(dsr3)
+        .union(dsr4)
+        dsr.show
+
+        upsertDSRFact(dsr.as[DailySalesFact].collect())
       }
     })
   }

@@ -160,7 +160,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name", "student full name", "student":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name", "student full name", "student", "student fullname":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
@@ -245,6 +245,12 @@ func GetPeopleERR(column string) PeopleERR {
 	}
 	if strings.Contains(key, "parent") || strings.Contains(key, "emergency") || strings.Contains(key, "contact") || strings.Contains(key, "father") || strings.Contains(key, "mother") || strings.Contains(key, "purchaser") || strings.Contains(key, "gaurdian") || strings.Contains(key, "guardian") || strings.Contains(key, "related") || strings.HasPrefix(key, "p1_") {
 		err.ContainsRole = 1
+	}
+	if strings.Contains(key, "2") || strings.Contains(key, "father") || strings.Contains(key, "dad") {
+		err.ContainsFather = 1
+	}
+	if strings.Contains(key, "1") || strings.Contains(key, "mother") || strings.Contains(key, "mom") {
+		err.ContainsMother = 1
 	}
 	// correct some assignments
 	if err.City == 1 || err.State == 1 || err.ZipCode == 1 || err.Email == 1 || err.Country == 1 {

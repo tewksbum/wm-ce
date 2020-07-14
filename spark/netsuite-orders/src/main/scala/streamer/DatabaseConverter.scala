@@ -3,17 +3,120 @@ package streamer
 import java.sql.{Connection, DriverManager}
 import org.apache.spark.sql._
 import org.apache.spark.sql.SQLContext._
+import scala.collection.mutable.ListBuffer
 
 object DatabaseConverter {
 
-  def getConnection(jdbcUrl: String): java.sql.Connection = {
-    var connection = DriverManager.getConnection(jdbcUrl)
+  def getConnection(): java.sql.Connection = {
+    var connection = DriverManager.getConnection(OrderStreamer.jdbcMysqlUrl, OrderStreamer.jdbcUserName, OrderStreamer.jdbcPassword)
     connection
+  }
+
+  def upsertCustomerDim(
+      records: Array[streamer.CustomerDim]
+  ): List[PeopleUpsertResult] = {
+    var results = new ListBuffer[PeopleUpsertResult]()
+    if (records.length > 0) {
+      val con: java.sql.Connection = getConnection
+      val ps = con.prepareCall("{call sp_upsert_customer (?,?,?,?)}")
+      println("upsert customer")
+      for (record <- records) {
+        ps.clearParameters()
+        ps.setString(1, record.customer_key)
+        ps.setString(2, record.customer_name)
+        ps.setString(3, record.customer_email)
+        ps.setLong(4, record.netsuite_id)
+        val rs = ps.executeQuery()
+        if (rs.next()) {
+          val result = new PeopleUpsertResult(
+            rs.getString(1),
+            rs.getString(2)
+          )
+          results += result
+        }
+      }
+      ps.close
+      con.close
+    }
+    results.toList
+  }
+
+  def upsertBilltoDim(
+      records: Array[streamer.BillToDim]
+  ): List[PeopleUpsertResult] = {
+    var results = new ListBuffer[PeopleUpsertResult]()
+    if (records.length > 0) {
+      val con: java.sql.Connection = getConnection
+      val ps =
+        con.prepareCall("{call sp_upsert_billtos (?,?,?,?,?, ?,?,?,?,?)}")
+      println("upsert billto")
+      for (record <- records) {
+        ps.clearParameters()
+        ps.setString(1, record.billto_key)
+        ps.setString(2, record.netsuite_key)
+        ps.setString(3, record.name)
+        ps.setString(4, record.addr1)
+        ps.setString(5, record.addr2)
+        ps.setString(6, record.city)
+        ps.setString(7, record.state)
+        ps.setString(8, record.zip)
+        ps.setString(9, record.country)
+        ps.setString(10, record.phone)
+        val rs = ps.executeQuery()
+        if (rs.next()) {
+          val result = new PeopleUpsertResult(
+            rs.getString(1),
+            rs.getString(2)
+          )
+          results += result
+        }
+      }
+      ps.close
+      con.close
+    }
+    results.toList
+  }
+
+  def upsertShiptoDim(
+      records: Array[streamer.ShipToDim]
+  ): List[PeopleUpsertResult] = {
+    var results = new ListBuffer[PeopleUpsertResult]()
+    if (records.length > 0) {
+      val con: java.sql.Connection = getConnection
+      val ps =
+        con.prepareCall("{call sp_upsert_shiptos (?,?,?,?,?, ?,?,?,?,?, ?)}")
+      println("upsert shipto")
+      for (record <- records) {
+        ps.clearParameters()
+        ps.setString(1, record.shipto_key)
+        ps.setString(2, record.netsuite_key)
+        ps.setString(3, record.name)
+        ps.setString(4, record.addr1)
+        ps.setString(5, record.addr2)
+        ps.setString(6, record.city)
+        ps.setString(7, record.state)
+        ps.setString(8, record.zip)
+        ps.setString(9, record.country)
+        ps.setString(10, record.phone)
+        ps.setLong(11, record.desttype_key)
+        val rs = ps.executeQuery()
+        if (rs.next()) {
+          val result = new PeopleUpsertResult(
+            rs.getString(1),
+            rs.getString(2)
+          )
+          results += result
+        }
+      }
+      ps.close
+      con.close
+    }
+    results.toList
   }
 
   def upsertDSRFact(records: Array[streamer.DailySalesFact]): Unit = {
     if (records.length > 0) {
-      val con: java.sql.Connection = getConnection(OrderStreamer.jdbcUrl)
+      val con: java.sql.Connection = getConnection
       val ps = con.prepareCall("{call sp_upsert_dsr (?,?,?,?,?,?,?,?)}")
       println("upsert dsr")
       for (record <- records) {
@@ -29,12 +132,13 @@ object DatabaseConverter {
         ps.executeUpdate()
       }
       ps.close
+      con.close
     }
   }
 
   def upsertOrdersFact(records: Array[streamer.OrdersFact]): Unit = {
     if (records.length > 0) {
-      val con: java.sql.Connection = getConnection(OrderStreamer.jdbcUrl)
+      val con: java.sql.Connection = getConnection
       val ps = con.prepareCall(
         "{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?)}"
       )
@@ -62,12 +166,16 @@ object DatabaseConverter {
         ps.executeUpdate()
       }
       ps.close
+      con.close
     }
   }
 
-  def upsertOrderLinesFact(records: Array[streamer.OrderLineFact]): Unit = {
+  def upsertOrderLinesFact(
+      records: Array[streamer.OrderLineFact]
+  ): List[LineUpsertResult] = {
+    var results = new ListBuffer[LineUpsertResult]()
     if (records.length > 0) {
-      val con: java.sql.Connection = getConnection(OrderStreamer.jdbcUrl)
+      val con: java.sql.Connection = getConnection
       val ps = con.prepareCall(
         "{call sp_upsert_orderlines (?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?)}"
       )
@@ -100,10 +208,26 @@ object DatabaseConverter {
         ps.setInt(25, record.is_service)
         ps.setInt(26, record.is_cancelled)
 
-        ps.executeUpdate()
+        val rs = ps.executeQuery()
+        // this query returns
+        // select 1 as existing, is_cancelled as cancelled, total_price as price, total_tax as tax, total_cost as cost
+
+        if (rs.next()) {
+          val result = new LineUpsertResult(
+            rs.getString(1),
+            rs.getBoolean(2),
+            rs.getBoolean(3),
+            rs.getDouble(4),
+            rs.getDouble(5),
+            rs.getDouble(6)
+          )
+          results += result
+        }
       }
       ps.close
+      con.close
     }
+    results.toList
   }
 
 }
