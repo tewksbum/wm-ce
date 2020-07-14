@@ -11,6 +11,7 @@ import org.apache.spark.streaming.dstream.ReceiverInputDStream
 import org.apache.spark.streaming.pubsub.{PubsubUtils, SparkGCPCredentials, SparkPubsubMessage}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.sql._
+import DataTransformer.transformOrders;
 
 import com.typesafe.config.ConfigFactory
 
@@ -36,7 +37,7 @@ object OrderStreamer {
   jdbcWriteProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
 
   val jdbcReadProperties = new java.util.Properties()
-  jdbcReadProperties.setProperty("driver", "com.mysql.jdbc.Driver")
+  jdbcReadProperties.setProperty("driver", "com.mysql.cj.jdbc.Driver")
 
   // scd cached
   var dimDestTypes: DataFrame = _
@@ -75,7 +76,7 @@ object OrderStreamer {
     var messagesStream: DStream[String] =
       pubsubStream.map(message => new String(message.getData(), StandardCharsets.UTF_8))
     //process the stream
-    processOrders(messagesStream, windowLength, slidingInterval)
+    processOrders(messagesStream, windowLength, slidingInterval, transformOrders(_, ssc.sparkContext))
 
     ssc
   }

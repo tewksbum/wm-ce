@@ -42,7 +42,7 @@ gcloud dataproc clusters create sparkles \
     --region=us-central1 \
     --zone=us-central1-c \
     --scopes=pubsub \
-    --image-version="preview" \
+    --image-version="1.5" \
 	--bucket=wm_dataproc \
 	--master-min-cpu-platform="Intel Skylake" \
 	--single-node \
@@ -51,6 +51,23 @@ gcloud dataproc clusters create sparkles \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
 ```    
+
+Create dataproc cluster, spark 3.0, enable job logging to stackdriver
+```
+gcloud dataproc clusters create sparkles \
+    --region=us-central1 \
+    --zone=us-central1-c \
+    --scopes=pubsub \
+    --image-version="preview-debian10" \
+	--bucket=wm_dataproc \
+	--master-min-cpu-platform="Intel Skylake" \
+    --master-boot-disk-type pd-ssd \
+	--single-node \
+	--master-machine-type n1-standard-4 \
+	--master-boot-disk-size 600 \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
+```
 
 Copy Jar file and Submit a Job to the dataproc cluster
 ```

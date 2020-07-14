@@ -95,6 +95,13 @@
       <version>8.0.20</version>
     </dependency>
 
+    <!-- for connection pooling -->
+    <dependency>
+      <groupId>org.scalikejdbc</groupId>
+      <artifactId>scalikejdbc_2.12</artifactId>
+      <version>3.4.2</version>
+    </dependency>
+    
     <!--
     <dependency>
       <groupId>com.google.cloud</groupId>
