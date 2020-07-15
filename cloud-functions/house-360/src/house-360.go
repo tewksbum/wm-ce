@@ -740,7 +740,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			SetDetail{
 				ID:         output.ID,
 				CreatedOn:  time.Now(),
-				FiberCount: len(setDS.Fibers),s
+				FiberCount: len(setDS.Fibers),
 			},
 		}
 		fiberList = append(fiberList,
