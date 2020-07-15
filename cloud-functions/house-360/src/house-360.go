@@ -225,7 +225,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 							if len(searchVal) > 0 {
 								if len(searchVal) == 1 {
 									setCardinality = "oneset"
-								} else len(searchVal) > 1 {
+								} else if len(searchVal) > 1 {
 									setCardinality = "multisets"
 								}
 								if !Contains(expiredSetCollection, searchVal) {
