@@ -510,37 +510,37 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		if fiber.Signature.FiberType == "mpr" {
-			reportCounters1 = append(reportCounters1,
-				ReportCounter{
-					Type:      "House:Golden:MPR",
-					Name:      "Unique",
-					Count:     1,
-					Increment: true,
-				},
-				// ReportCounter{
-				// 	Type:      "House360:Audit",
-				// 	Name:      "Golden:Created:MPR",
-				// 	Count:     1,
-				// 	Increment: true,
-				// },
-			)
-		} else {
-			reportCounters1 = append(reportCounters1,
-				ReportCounter{
-					Type:      "House:Golden:NonMPR",
-					Name:      "Unique",
-					Count:     1,
-					Increment: true,
-				},
-				// ReportCounter{
-				// 	Type:      "House360:Audit",
-				// 	Name:      "Golden:Created:NonMPR",
-				// 	Count:     1,
-				// 	Increment: true,
-				// },
-			)
-		}
+		// if fiber.Signature.FiberType == "mpr" {
+		// 	reportCounters1 = append(reportCounters1,
+		// 		ReportCounter{
+		// 			Type:      "House:Golden:MPR",
+		// 			Name:      "Unique",
+		// 			Count:     1,
+		// 			Increment: true,
+		// 		},
+		// 		// ReportCounter{
+		// 		// 	Type:      "House360:Audit",
+		// 		// 	Name:      "Golden:Created:MPR",
+		// 		// 	Count:     1,
+		// 		// 	Increment: true,
+		// 		// },
+		// 	)
+		// } else {
+		// 	// reportCounters1 = append(reportCounters1,
+		// 	// 	ReportCounter{
+		// 	// 		Type:      "House:Golden:NonMPR",
+		// 	// 		Name:      "Unique",
+		// 	// 		Count:     1,
+		// 	// 		Increment: true,
+		// 	// 	},
+		// 	// 	// ReportCounter{
+		// 	// 	// 	Type:      "House360:Audit",
+		// 	// 	// 	Name:      "Golden:Created:NonMPR",
+		// 	// 	// 	Count:     1,
+		// 	// 	// 	Increment: true,
+		// 	// 	// },
+		// 	// )
+		// }
 
 		// reportCounters1 = append(reportCounters1,
 		// 	ReportCounter{
@@ -634,25 +634,25 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					Increment: true,
 				},
 			)
-			if fiber.Signature.FiberType == "mpr" {
-				reportCounters1 = append(reportCounters1,
-					ReportCounter{
-						Type:      "House:Golden:MPR",
-						Name:      "IsAdValid",
-						Count:     1,
-						Increment: true,
-					},
-				)
-			} else {
-				reportCounters1 = append(reportCounters1,
-					ReportCounter{
-						Type:      "House:Golden:NonMPR",
-						Name:      "IsAdValid",
-						Count:     1,
-						Increment: true,
-					},
-				)
-			}
+			// if fiber.Signature.FiberType == "mpr" {
+			// 	reportCounters1 = append(reportCounters1,
+			// 		ReportCounter{
+			// 			Type:      "House:Golden:MPR",
+			// 			Name:      "IsAdValid",
+			// 			Count:     1,
+			// 			Increment: true,
+			// 		},
+			// 	)
+			// } else {
+			// 	reportCounters1 = append(reportCounters1,
+			// 		ReportCounter{
+			// 			Type:      "House:Golden:NonMPR",
+			// 			Name:      "IsAdValid",
+			// 			Count:     1,
+			// 			Increment: true,
+			// 		},
+			// 	)
+			// }
 		}
 		if len(goldenDS.EMAIL) > 0 {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "house-golden", "email"})
@@ -671,25 +671,25 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				},
 			)
 
-			if fiber.Signature.FiberType == "mpr" {
-				reportCounters1 = append(reportCounters1,
-					ReportCounter{
-						Type:      "House:Golden:MPR",
-						Name:      "HasEmail",
-						Count:     1,
-						Increment: true,
-					},
-				)
-			} else {
-				reportCounters1 = append(reportCounters1,
-					ReportCounter{
-						Type:      "House:Golden:NonMPR",
-						Name:      "HasEmail",
-						Count:     1,
-						Increment: true,
-					},
-				)
-			}
+			// if fiber.Signature.FiberType == "mpr" {
+			// 	reportCounters1 = append(reportCounters1,
+			// 		ReportCounter{
+			// 			Type:      "House:Golden:MPR",
+			// 			Name:      "HasEmail",
+			// 			Count:     1,
+			// 			Increment: true,
+			// 		},
+			// 	)
+			// } else {
+			// 	reportCounters1 = append(reportCounters1,
+			// 		ReportCounter{
+			// 			Type:      "House:Golden:NonMPR",
+			// 			Name:      "HasEmail",
+			// 			Count:     1,
+			// 			Increment: true,
+			// 		},
+			// 	)
+			// }
 		}
 
 		var SetSearchFields []string
@@ -740,7 +740,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			SetDetail{
 				ID:         output.ID,
 				CreatedOn:  time.Now(),
-				FiberCount: len(setDS.Fibers),
+				FiberCount: len(setDS.Fibers),s
 			},
 		}
 		fiberList = append(fiberList,
@@ -818,77 +818,77 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 
-				if fiber.Signature.FiberType == "mpr" {
-					if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
-						// let's see what we are deleting
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
-							reportCounters1 = append(reportCounters1,
-								ReportCounter{
-									Type:      "House:Golden:MPR",
-									Name:      "Unique",
-									Count:     -1,
-									Increment: true,
-								},
-							)
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
-								reportCounters1 = append(reportCounters1,
-									ReportCounter{
-										Type:      "House:Golden:MPR",
-										Name:      "IsAdValid",
-										Count:     -1,
-										Increment: true,
-									},
-								)
-							}
+				// if fiber.Signature.FiberType == "mpr" {
+				// 	if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+				// 		// let's see what we are deleting
+				// 		if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
+				// 			reportCounters1 = append(reportCounters1,
+				// 				ReportCounter{
+				// 					Type:      "House:Golden:MPR",
+				// 					Name:      "Unique",
+				// 					Count:     -1,
+				// 					Increment: true,
+				// 				},
+				// 			)
+				// 			if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
+				// 				reportCounters1 = append(reportCounters1,
+				// 					ReportCounter{
+				// 						Type:      "House:Golden:MPR",
+				// 						Name:      "IsAdValid",
+				// 						Count:     -1,
+				// 						Increment: true,
+				// 					},
+				// 				)
+				// 			}
 
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
-								reportCounters1 = append(reportCounters1,
-									ReportCounter{
-										Type:      "Golden:MPR",
-										Name:      "HasEmail",
-										Count:     -1,
-										Increment: true,
-									},
-								)
-							}
-						}
-					}
-				} else {
-					if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
-						// let's see what we are deleting
-						if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
-							reportCounters1 = append(reportCounters1,
-								ReportCounter{
-									Type:      "Golden:NonMPR",
-									Name:      "Unique",
-									Count:     -1,
-									Increment: true,
-								},
-							)
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
-								reportCounters1 = append(reportCounters1,
-									ReportCounter{
-										Type:      "House:Golden:NonMPR",
-										Name:      "IsAdValid",
-										Count:     -1,
-										Increment: true,
-									},
-								)
-							}
+				// 			if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
+				// 				reportCounters1 = append(reportCounters1,
+				// 					ReportCounter{
+				// 						Type:      "Golden:MPR",
+				// 						Name:      "HasEmail",
+				// 						Count:     -1,
+				// 						Increment: true,
+				// 					},
+				// 				)
+				// 			}
+				// 		}
+				// 	}
+				// } else {
+				// 	// if SetRedisKeyIfNotExists([]string{set, "golden:nonmpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
+				// 	// 	// let's see what we are deleting
+				// 	// 	if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden"}) == 1 { // this is a golden from the event that just got deleted
+				// 	// 		// reportCounters1 = append(reportCounters1,
+				// 	// 		// 	ReportCounter{
+				// 	// 		// 		Type:      "Golden:NonMPR",
+				// 	// 		// 		Name:      "Unique",
+				// 	// 		// 		Count:     -1,
+				// 	// 		// 		Increment: true,
+				// 	// 		// 	},
+				// 	// 		// )
+				// 	// 		// if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "advalid"}) == 1 {
+				// 	// 		// 	reportCounters1 = append(reportCounters1,
+				// 	// 		// 		ReportCounter{
+				// 	// 		// 			Type:      "House:Golden:NonMPR",
+				// 	// 		// 			Name:      "IsAdValid",
+				// 	// 		// 			Count:     -1,
+				// 	// 		// 			Increment: true,
+				// 	// 		// 		},
+				// 	// 		// 	)
+				// 	// 		// }
 
-							if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
-								reportCounters1 = append(reportCounters1,
-									ReportCounter{
-										Type:      "House:Golden:NonMPR",
-										Name:      "HasEmail",
-										Count:     -1,
-										Increment: true,
-									},
-								)
-							}
-						}
-					}
-				}
+				// 	// 		// if GetRedisIntValue([]string{input.Signature.EventID, set, "house-golden", "email"}) == 1 {
+				// 	// 		// 	reportCounters1 = append(reportCounters1,
+				// 	// 		// 		ReportCounter{
+				// 	// 		// 			Type:      "House:Golden:NonMPR",
+				// 	// 		// 			Name:      "HasEmail",
+				// 	// 		// 			Count:     -1,
+				// 	// 		// 			Increment: true,
+				// 	// 		// 		},
+				// 	// 		// 	)
+				// 	// 		// }
+				// 	// 	}
+				// 	// }
+				// }
 			}
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
@@ -899,13 +899,13 @@ func House360(ctx context.Context, m PubSubMessage) error {
 				log.Printf("Error: deleting expired golden records: %v", err)
 			}
 
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+			// reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
+			// reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
 
 		}
 
 		if input.Signature.FiberType == "default" {
-			reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Fiber:Completed", Count: 1, Increment: true})
+			// reportCounters1 = append(reportCounters1, ReportCounter{Type: "House360:Audit", Name: "Fiber:Completed", Count: 1, Increment: true})
 			IncrRedisValue([]string{input.Signature.EventID, "house-fibers-completed"})
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, input.Signature.RecordID, "house-fiber"})
 
