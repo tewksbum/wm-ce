@@ -57,6 +57,8 @@ case class Line(
     isDropship: Boolean,
     isCancelled: Boolean,
     tax: Double,
+    shipping: Double,
+    discount: Double,
     lineId: Option[String],
     uniqueKey: Option[String]
 )

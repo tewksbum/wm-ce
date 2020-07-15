@@ -9,7 +9,6 @@ import org.apache.spark.streaming.dstream.DStream
 import org.json4s.DefaultFormats
 import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.SaveMode
-import java.util.UUID.randomUUID
 import java.text.SimpleDateFormat
 import org.apache.spark.sql.functions._
 import DatabaseWriter._
@@ -23,7 +22,7 @@ object DataTransformer {
     import sqlContext.implicits._
 
     if (df.count > 0) {
-      println(s"processing ${df.count} orders\n")
+      println(s"processing ${df.count} orders")
 
       // map to the dims and facts that need to be populated
       val dfCustomer = df
@@ -33,10 +32,13 @@ object DataTransformer {
           $"customer.name".alias("customer_name")
         )
         .distinct()
-        .withColumn("customer_key", lit(randomUUID().toString))
+        .withColumn("customer_key", expr("uuid()"))
+
       // dfCustomer.createOrReplaceTempView("customers") // persist these in temp storage
+      println(s"writing customers")
       val dfCustomerResults = upsertCustomerDim(dfCustomer.as[CustomerDim].collect()).toDF.distinct()
 
+      println(s"merging customers")
       val dfCustomerNew = dfCustomer
         .as("customer")
         .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter")
@@ -44,6 +46,7 @@ object DataTransformer {
         .withColumnRenamed("new_key", "customer_key")
       // dfCustomer.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_customers", OrderStreamer.jdbcProperties)
 
+      println(s"framing billtos")
       val dfBillTo = df
         .select(
           $"billing.addressKey".alias("netsuite_key"),
@@ -57,14 +60,16 @@ object DataTransformer {
           $"billing.phone"
         )
         .distinct()
-        .withColumn("billto_key", lit(randomUUID().toString))
+        .withColumn("billto_key", expr("uuid()"))
+      println(s"writing billtos")
       val dfBillToResults = upsertBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+      println(s"merging billtos")
       val dfBillToNew = dfBillTo
         .as("billto")
         .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
         .drop("billto_key", "old_key")
         .withColumnRenamed("new_key", "billto_key")
-
+      println(s"creating orders")
       val dfOrders = df
         .select(
           $"dates.placedOn".alias("date_value"),
@@ -116,14 +121,15 @@ object DataTransformer {
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
+      println(s"writing orders")
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
-
+      println(s"creating shiptos")
       // map to orderlines fact
       val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
         .distinct()
         .select(
-          lit(randomUUID().toString).alias("shipto_key"), // generate shipto key
+          expr("uuid()").alias("shipto_key"), // generate shipto key
           $"shipments.addressKey".alias("netsuite_key"),
           $"shipments.name".alias("name"),
           $"shipments.addr1".alias("addr1"),
@@ -135,18 +141,22 @@ object DataTransformer {
           $"shipments.type".alias("type")
         )
         .withColumn("country", lit("USA"))
+        .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
         .as("shipments")
         // lookup desttype key
         .join(OrderStreamer.dimDestTypes.as("desttype"), $"shipments.type" === $"desttype.desttype_name", "leftouter")
         .drop("type", "desttype_name")
-
+        .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+      println(s"writing shiptos")
       val dfShipToResults = upsertShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+      println(s"merging shiptos")
       val dfShipToNew = dfShipTo
         .as("shipto")
         .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
         .drop("shipto_key", "old_key")
         .withColumnRenamed("new_key", "shipto_key")
 
+      println(s"creating lines")
       val dfOrderLines = df
         .select(
           lit(0).alias("is_discount"), // fixed value for lines
@@ -238,6 +248,8 @@ object DataTransformer {
         // rename columns to match
         .withColumnRenamed("extPrice", "total_price")
         .withColumnRenamed("cost", "total_cost")
+        .withColumnRenamed("discount", "total_discount")
+        .withColumnRenamed("shipping", "total_shipping")
         .withColumnRenamed("shipment", "shipment_number")
         .withColumnRenamed("isDropship", "is_dropship")
         .withColumn("is_dropship", when(col("is_dropship") === true, 1).otherwise(0))
@@ -250,15 +262,19 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
       // dfOrderLines.show()
+      println(s"writing lines")
       val dfOrderLineResults = upsertOrderLinesFact(dfOrderLines.as[OrderLineFact].collect()).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
         .withColumnRenamed("price", "prev_price")
         .withColumnRenamed("tax", "prev_tax")
         .withColumnRenamed("cost", "prev_cost")
+        .withColumnRenamed("discount", "prev_discount")
+        .withColumnRenamed("shipping", "prev_shipping")
 
       // dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
 
       // map to dsr fact
+      println(s"creating dsr")
       val dfDSR = dfOrderLines
         .withColumnRenamed("date_key", "date_key_lines")
         .as("lines")
@@ -294,6 +310,7 @@ object DataTransformer {
         .drop("desttype_key", "product_key")
 
       // if not existing and not cancelled, add
+      println(s"filtering dsr")
       val dsr1 = dfDSR
         .where(dfDSR("existing") === false)
         .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
@@ -303,7 +320,9 @@ object DataTransformer {
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
-          sum("total_tax").as("tax")
+          sum("total_tax").as("tax"),
+          sum("total_discount").as("discount"),
+          sum("total_shipping").as("shipping")
         )
 
       // if existing, and not cancelled ever, add the difference
@@ -316,7 +335,9 @@ object DataTransformer {
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
-          sum("total_tax").as("tax")
+          sum("total_tax").as("tax"),
+          sum("total_discount").as("discount"),
+          sum("total_shipping").as("shipping")
         )
 
       // if existing and uncancelled
@@ -329,7 +350,9 @@ object DataTransformer {
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
-          sum("total_tax").as("tax")
+          sum("total_tax").as("tax"),
+          sum("total_discount").as("discount"),
+          sum("total_shipping").as("shipping")
         )
 
       // if existing and now cancelled, subtract
@@ -342,15 +365,17 @@ object DataTransformer {
         .agg(
           sum("total_price").as("price"),
           sum("total_cost").as("cost"),
-          sum("total_tax").as("tax")
+          sum("total_tax").as("tax"),
+          sum("total_discount").as("discount"),
+          sum("total_shipping").as("shipping")
         )
-
+      println(s"combining dsr")
       var dsr = dsr1
         .union(dsr2)
         .union(dsr3)
         .union(dsr4)
-      dsr.show
-
+      // dsr.show
+      println(s"writing dsr")
       upsertDSRFact(dsr.as[DailySalesFact].collect())
     }
   }

@@ -17,6 +17,8 @@ object DatabaseWriter {
 
   // scalalikejdbc connection pool
   Class.forName("com.mysql.cj.jdbc.Driver")
+  // Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+  // Class.forName("net.sourceforge.jtds.jdbc.Driver");
   ConnectionPool.singleton(OrderStreamer.jdbcMysqlUrl, OrderStreamer.jdbcUserName, OrderStreamer.jdbcPassword)
 
   def upsertCustomerDim(
@@ -58,7 +60,6 @@ object DatabaseWriter {
       using(ConnectionPool.borrow()) { con =>
         {
           val ps = con.prepareCall("{call sp_upsert_billtos (?,?,?,?,?, ?,?,?,?,?)}")
-          println("upsert billto")
           for (record <- records) {
             ps.clearParameters()
             ps.setString(1, record.billto_key)
@@ -95,7 +96,6 @@ object DatabaseWriter {
       using(ConnectionPool.borrow()) { con =>
         {
           val ps = con.prepareCall("{call sp_upsert_shiptos (?,?,?,?,?, ?,?,?,?,?, ?)}")
-          println("upsert shipto")
           for (record <- records) {
             ps.clearParameters()
             ps.setString(1, record.shipto_key)
@@ -129,8 +129,7 @@ object DatabaseWriter {
     if (records.length > 0) {
       using(ConnectionPool.borrow()) { con =>
         {
-          val ps = con.prepareCall("{call sp_upsert_dsr (?,?,?,?,?,?,?,?)}")
-          println("upsert dsr")
+          val ps = con.prepareCall("{call sp_upsert_dsr (?,?,?,?,?,?,?,?,?,?)}")
           for (record <- records) {
             ps.clearParameters()
             ps.setLong(1, record.schedule_key)
@@ -141,8 +140,11 @@ object DatabaseWriter {
             ps.setDouble(6, record.price)
             ps.setDouble(7, record.cost)
             ps.setDouble(8, record.tax)
-            ps.executeUpdate()
+            ps.setDouble(9, record.discount)
+            ps.setDouble(10, record.shipping)
+            ps.addBatch()
           }
+          ps.executeBatch
           ps.close
         }
       }
@@ -154,7 +156,6 @@ object DatabaseWriter {
       using(ConnectionPool.borrow()) { con =>
         {
           val ps = con.prepareCall("{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?)}")
-          println("upsert orders")
           for (record <- records) {
             ps.setLong(1, record.date_key)
             ps.setLong(2, record.channel_key)
@@ -175,8 +176,9 @@ object DatabaseWriter {
             ps.setDouble(17, record.service)
             ps.setDouble(18, record.service_tax)
             ps.setDouble(19, record.total)
-            ps.executeUpdate()
+            ps.addBatch()
           }
+          ps.executeBatch()
           ps.close
         }
       }
@@ -191,8 +193,7 @@ object DatabaseWriter {
       using(ConnectionPool.borrow()) { con =>
         {
           val ps =
-            con.prepareCall("{call sp_upsert_orderlines (?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?)}")
-          println("upsert lines")
+            con.prepareCall("{call sp_upsert_orderlines (?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?, ?,?)}")
           for (record <- records) {
             ps.setLong(1, record.date_key)
             ps.setLong(2, record.channel_key)
@@ -220,6 +221,8 @@ object DatabaseWriter {
             ps.setInt(24, record.is_shipping)
             ps.setInt(25, record.is_service)
             ps.setInt(26, record.is_cancelled)
+            ps.setDouble(27, record.total_discount)
+            ps.setDouble(28, record.total_shipping)            
 
             val rs = ps.executeQuery()
             // this query returns
@@ -232,7 +235,9 @@ object DatabaseWriter {
                 rs.getBoolean(3),
                 rs.getDouble(4),
                 rs.getDouble(5),
-                rs.getDouble(6)
+                rs.getDouble(6),
+                rs.getDouble(7),
+                rs.getDouble(8)
               )
               results += result
             }

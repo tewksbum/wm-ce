@@ -44,6 +44,8 @@ case class OrderLineFact(
     total_price: Double,
     total_tax: Double,
     total_cost: Double,
+    total_discount: Double,
+    total_shipping: Double,
     quantity: Int,
     is_discount: Int,
     is_shipping: Int,
@@ -59,7 +61,9 @@ case class DailySalesFact(
     is_dropship: Int,
     price: Double,
     cost: Double,
-    tax: Double
+    tax: Double,
+    discount: Double,
+    shipping: Double
 )
 
 case class DateDim( // no need to update, read only, also we dont need all the columns
@@ -143,7 +147,9 @@ case class LineUpsertResult (
     cancelled: Boolean,
     price: Double,
     tax: Double,
-    cost: Double
+    cost: Double,
+    discount: Double,
+    shipping: Double
 )
 
 case class PeopleUpsertResult (

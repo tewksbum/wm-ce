@@ -21,7 +21,9 @@ object OrderProcessor {
   // [START extract]
   def extractNetsuiteOrder(input: RDD[String]): RDD[NetsuiteOrder] = {
     // input.collect().foreach(println)
-    return input.map( x => parse(x).extract[NetsuiteOrder])
+    return input.map( 
+      x => parse(x).extract[List[NetsuiteOrder]] // get list of orders
+    ).flatMap(list => list) // now i should have RDD[NetsuiteOrder]
   }
 
   def processOrders(input: DStream[String], windowLength: Int, slidingInterval: Int, transformer: DataFrame => Unit): Unit = {
