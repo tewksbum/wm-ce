@@ -49,7 +49,7 @@ case class Line(
     lob: Option[String],
     cost: Option[Double],
     `type`: String,
-    unitPrice: Double,
+    unitPrice: Option[Double],
     shipment: Option[String],
     itemTitle: Option[String],
     itemSku: Option[String],

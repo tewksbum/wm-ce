@@ -62,7 +62,7 @@ func init() {
 }
 
 func main() {
-	log.Printf("starting")
+	log.Printf("getting list")
 	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming"
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -86,16 +86,15 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	N := 5
+	N := 2
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
-	for i := 0; i < len(input.Records) && i < 1000; i += 10 {
+	for i := 0; i < len(input.Records); i += 20 {
 		ids := []string{}
-		for _, r := range input.Records[i:i+10] {
+		for _, r := range input.Records[i:i+20] {
 			ids = append(ids, r.ID)
 		}
 		wg.Add(1)
-		log.Printf("%v", ids)
 		go func(ids []string) {
 			defer wg.Done()
 			sem <- struct{}{}
@@ -104,6 +103,7 @@ func main() {
 				// (frees up buffer slot).
 				<-sem
 			}()
+			log.Printf("pulling orders %v", ids)
 			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1&orders=%v", strings.Join(ids, ","))
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
@@ -111,16 +111,24 @@ func main() {
 			req.Header.Set("Authorization", nsAuth)
 	
 			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+			
+			json := ""
+			for {
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+				}
+				defer resp.Body.Close()
+		
+				body, err := ioutil.ReadAll(resp.Body)
+				json = string(body)
+				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") {
+					break
+				}
 			}
-			defer resp.Body.Close()
-	
-			body, err := ioutil.ReadAll(resp.Body)
 			// drop this to pubsub
 			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: body,
+				Data: []byte(json),
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
@@ -128,13 +136,7 @@ func main() {
 			}
 		}(ids)		
 	}
-
-
 	wg.Wait()
 
-
-	
 	return
-
-
 }
