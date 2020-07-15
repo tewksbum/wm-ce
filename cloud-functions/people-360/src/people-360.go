@@ -263,11 +263,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			// JIE: I do NOT think this is necessarily the right place to do this?  If I understand this is right...
+			// this would be... for each value... of a search key... so like... if have 2x email addresses... each one?
+			setCardinality := "noset"
 			if len(searchSets) > 0 {
 				searchValues := GetRedisGuidValuesList(searchSets)
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
+							if len(searchVal) == 1 {
+								setCardinality = "oneset"
+							} else if len(searchVal) > 1 {
+								setCardinality = "multisets"
+							}
 							if len(searchVal) > 0 {
 								if !Contains(expiredSetCollection, searchVal) {
 									expiredSetCollection = append(expiredSetCollection, searchVal)
@@ -277,6 +285,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			reportCounters1 = append(reportCounters1, ReportCounter{
+				Type:      "People360",
+				Name:      setCardinality,
+				Count:     1,
+				Increment: true,
+			})
 			LogDev(fmt.Sprintf("Matched Fibers: %+v", matchedFibers))
 
 			// get all the Fibers
@@ -919,12 +933,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			setCardinality := "noset"
-			if len(SetKeys) == 1 {
-				setCardinality = "oneset"
-			} else if len(SetKeys) > 1 {
-				setCardinality = "multisets"
-			}
+			// setCardinality := "noset"
+			// if len(SetKeys) == 1 {
+			// 	setCardinality = "oneset"
+			// } else if len(SetKeys) > 1 {
+			// 	setCardinality = "multisets"
+			// }
+			// reportCounters1 = append(reportCounters1, ReportCounter{
+			// 	Type:      "People360",
+			// 	Name:      setCardinality,
+			// 	Count:     1,
+			// 	Increment: true,
+			// })
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
 			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
@@ -936,13 +956,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
-
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      setCardinality,
-				Count:     1,
-				Increment: true,
-			})
 
 		}
 
