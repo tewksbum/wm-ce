@@ -113,13 +113,10 @@ func GetHouseFiberSearchFields(v *HouseFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
 	if len(v.EMAIL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL.Value), strings.ToUpper(v.ROLE.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
 	}
-	if len(v.PHONE.Value) > 0 && len(v.FINITIAL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.ToUpper(v.PHONE.Value), strings.ToUpper(v.FINITIAL.Value), strings.ToUpper(v.ROLE.Value)))
-	}
-	if len(v.CITY.Value) > 0 && len(v.STATE.Value) > 0 && len(v.LNAME.Value) > 0 && len(v.FNAME.Value) > 0 && len(v.AD1.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.ToUpper(v.FNAME.Value), strings.ToUpper(v.LNAME.Value), strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value), strings.ToUpper(v.ROLE.Value)))
+	if len(v.CITY.Value) > 0 && len(v.STATE.Value) > 0 && len(v.AD1.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
 	}
 	return searchFields
 }
@@ -128,13 +125,10 @@ func GetHouseGoldenSearchFields(v *HouseGoldenDS) []string {
 	log.Printf("golden record: %+v", v)
 	var searchFields []string
 	if len(v.EMAIL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL), strings.ToUpper(v.ROLE)))
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL)))
 	}
-	if len(v.PHONE) > 0 && len(v.FINITIAL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.ToUpper(v.PHONE), strings.ToUpper(v.FINITIAL), strings.ToUpper(v.ROLE)))
-	}
-	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.LNAME) > 0 && len(v.FNAME) > 0 && len(v.AD1) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.ToUpper(v.FNAME), strings.ToUpper(v.LNAME), strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE), strings.ToUpper(v.ROLE)))
+	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.AD1) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
 	}
 	return searchFields
 }
