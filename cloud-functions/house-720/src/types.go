@@ -72,35 +72,34 @@ type EventData struct {
 	EventData   map[string]interface{} `json:"eventData"`
 }
 
-type PeopleInput struct {
+type HouseInput struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   PeopleOutput      `json:"matchkeys"`
-	// MatchKeys   map[PeopleOutput]PeopleOutput      `json:"matchkeys`
+	MatchKeys   HouseOutput       `json:"matchkeys"`
 }
 
-type PeopleFiber struct {
+type HouseFiber struct {
 	Signature Signature `json:"signature"`
 	// Passthrough map[string]string `json:"passthrough"`
 	Passthrough []Passthrough360 `json:"passthrough"`
-	MatchKeys   PeopleOutput     `json:"matchkeys"`
+	MatchKeys   HouseOutput      `json:"matchkeys"`
 	ID          string           `json:"fiberId"`
 	CreatedAt   time.Time        `json:"createdAt"`
 }
 
-type People360Input struct {
+type House360Input struct {
 	Signature   Signature         `json:"signature"`
 	Passthrough map[string]string `json:"passthrough"`
-	MatchKeys   PeopleOutput      `json:"matchkeys"`
+	MatchKeys   HouseOutput       `json:"matchkeys"`
 }
 
-type PeopleFiberDSProjected struct {
+type HouseFiberDSProjected struct {
 	ID          *datastore.Key `datastore:"__key__"`
 	Search      []string       `datastore:"search"`
 	Disposition string         `datastore:"disposition"`
 	FiberType   string         `datastore:"fibertype"`
 }
-type PeopleFiberDS struct {
+type HouseFiberDS struct {
 	ID           *datastore.Key   `datastore:"__key__"`
 	CreatedAt    time.Time        `datastore:"createdat"`
 	OwnerID      string           `datastore:"ownerid"`
@@ -112,12 +111,6 @@ type PeopleFiberDS struct {
 	Disposition  string           `datastore:"disposition"`
 	Search       []string         `datastore:"search"`
 	Passthrough  []Passthrough360 `datastore:"passthrough"`
-	SALUTATION   MatchKeyField    `datastore:"salutation"`
-	NICKNAME     MatchKeyField    `datastore:"nickname"`
-	FNAME        MatchKeyField    `datastore:"fname"`
-	FINITIAL     MatchKeyField    `datastore:"finitial"`
-	LNAME        MatchKeyField    `datastore:"lname"`
-	MNAME        MatchKeyField    `datastore:"mname"`
 	AD1          MatchKeyField    `datastore:"ad1"`
 	AD1NO        MatchKeyField    `datastore:"ad1no"`
 	AD2          MatchKeyField    `datastore:"ad2"`
@@ -136,12 +129,8 @@ type PeopleFiberDS struct {
 	ADCORRECT    MatchKeyField    `datastore:"adcorrect"`
 	ADVALID      MatchKeyField    `datastore:"advalid"`
 	EMAIL        MatchKeyField    `datastore:"email"`
-	PHONE        MatchKeyField    `datastore:"phone"`
 	TRUSTEDID    MatchKeyField    `datastore:"trustedid"`
 	CLIENTID     MatchKeyField    `datastore:"clientid"`
-	GENDER       MatchKeyField    `datastore:"gender"`
-	AGE          MatchKeyField    `datastore:"age"`
-	DOB          MatchKeyField    `datastore:"dob"`
 	ORGANIZATION MatchKeyField    `datastore:"organization"`
 	TITLE        MatchKeyField    `datastore:"title"`
 	ROLE         MatchKeyField    `datastore:"role"`
@@ -157,13 +146,7 @@ type MatchKeyField struct {
 	Type   string `json:"type"`
 }
 
-type PeopleOutput struct {
-	SALUTATION   MatchKeyField `json:"salutation"`
-	NICKNAME     MatchKeyField `json:"nickname"`
-	FNAME        MatchKeyField `json:"fname"`
-	FINITIAL     MatchKeyField `json:"finitial"`
-	LNAME        MatchKeyField `json:"lname"`
-	MNAME        MatchKeyField `json:"mname"`
+type HouseOutput struct {
 	AD1          MatchKeyField `json:"ad1"`
 	AD1NO        MatchKeyField `json:"ad1no"`
 	AD2          MatchKeyField `json:"ad2"`
@@ -182,12 +165,8 @@ type PeopleOutput struct {
 	ZIPTYPE      MatchKeyField `json:"ziptype"`
 	RECORDTYPE   MatchKeyField `json:"recordtype"`
 	EMAIL        MatchKeyField `json:"email"`
-	PHONE        MatchKeyField `json:"phone"`
 	TRUSTEDID    MatchKeyField `json:"trustedId"`
 	CLIENTID     MatchKeyField `json:"clientId"`
-	GENDER       MatchKeyField `json:"gender"`
-	AGE          MatchKeyField `json:"age"`
-	DOB          MatchKeyField `json:"dob"`
 	ORGANIZATION MatchKeyField `json:"organization"`
 	TITLE        MatchKeyField `json:"title"`
 	ROLE         MatchKeyField `json:"role"`
@@ -216,7 +195,7 @@ type Passthrough360 struct {
 	Value string `json:"value"`
 }
 
-type People360Output struct {
+type House360Output struct {
 	ID           string           `json:"id"`
 	Signature    Signature360     `json:"signature"`
 	Signatures   []Signature      `json:"signatures"`
@@ -227,12 +206,12 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
 }
 
-type PeopleSetDSProjected struct {
+type HouseSetDSProjected struct {
 	ID     *datastore.Key `datastore:"__key__"`
 	Search []string       `datastore:"search"`
 }
 
-type PeopleSetDS struct {
+type HouseSetDS struct {
 	ID                     *datastore.Key `datastore:"__key__"`
 	OwnerID                []string       `datastore:"ownerid"`
 	Source                 []string       `datastore:"source"`
@@ -244,18 +223,6 @@ type PeopleSetDS struct {
 	CreatedAt              time.Time      `datastore:"createdat"`
 	Fibers                 []string       `datastore:"fibers"`
 	Search                 []string       `datastore:"search"`
-	SALUTATION             []string       `datastore:"salutation"`
-	SALUTATIONNormalized   []string       `datastore:"salutationnormalized"`
-	NICKNAME               []string       `datastore:"nickname"`
-	NICKNAMENormalized     []string       `datastore:"nicknamenormalized"`
-	FNAME                  []string       `datastore:"fname"`
-	FNAMENormalized        []string       `datastore:"fnamenormalized"`
-	FINITIAL               []string       `datastore:"finitial"`
-	FINITIALNormalized     []string       `datastore:"finitialnormalized"`
-	LNAME                  []string       `datastore:"lname"`
-	LNAMENormalized        []string       `datastore:"lnamenormalized"`
-	MNAME                  []string       `datastore:"mname"`
-	MNAMENormalized        []string       `datastore:"mnamenormalized"`
 	AD1                    []string       `datastore:"ad1"`
 	AD1Normalized          []string       `datastore:"ad1normalized"`
 	AD1NO                  []string       `datastore:"ad1no"`
@@ -294,18 +261,10 @@ type PeopleSetDS struct {
 	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
 	EMAIL                  []string       `datastore:"email"`
 	EMAILNormalized        []string       `datastore:"emailnormalized"`
-	PHONE                  []string       `datastore:"phone"`
-	PHONENormalized        []string       `datastore:"phonenormalized"`
 	TRUSTEDID              []string       `datastore:"trustedid"`
 	TRUSTEDIDNormalized    []string       `datastore:"trustedidnormalized"`
 	CLIENTID               []string       `datastore:"clientid"`
 	CLIENTIDNormalized     []string       `datastore:"clientidnormalized"`
-	GENDER                 []string       `datastore:"gender"`
-	GENDERNormalized       []string       `datastore:"gendernormalized"`
-	AGE                    []string       `datastore:"age"`
-	AGENormalized          []string       `datastore:"agenormalized"`
-	DOB                    []string       `datastore:"dob"`
-	DOBNormalized          []string       `datastore:"dobnormalized"`
 	ORGANIZATION           []string       `datastore:"organization"`
 	ORGANIZATIONNormalized []string       `datastore:"organizationnormalized"`
 	TITLE                  []string       `datastore:"title"`
@@ -322,16 +281,10 @@ type PeopleSetDS struct {
 	PermSNormalized        []string       `datastore:"permsnormalized"`
 }
 
-type PeopleGoldenDS struct {
+type HouseGoldenDS struct {
 	ID           *datastore.Key `datastore:"__key__"`
 	CreatedAt    time.Time      `datastore:"createdat"`
 	Search       []string       `datastore:"search"`
-	SALUTATION   string         `datastore:"salutation"`
-	NICKNAME     string         `datastore:"nickname"`
-	FNAME        string         `datastore:"fname"`
-	FINITIAL     string         `datastore:"finitial"`
-	LNAME        string         `datastore:"lname"`
-	MNAME        string         `datastore:"mname"`
 	AD1          string         `datastore:"ad1"`
 	AD1NO        string         `datastore:"ad1no"`
 	AD2          string         `datastore:"ad2"`
@@ -350,12 +303,8 @@ type PeopleGoldenDS struct {
 	ADCORRECT    string         `datastore:"adcorrect"`
 	ADVALID      string         `datastore:"advalid"`
 	EMAIL        string         `datastore:"email"`
-	PHONE        string         `datastore:"phone"`
 	TRUSTEDID    string         `datastore:"trustedid"`
 	CLIENTID     string         `datastore:"clientid"`
-	GENDER       string         `datastore:"gender"`
-	AGE          string         `datastore:"age"`
-	DOB          string         `datastore:"dob"`
 	ORGANIZATION string         `datastore:"organization"`
 	TITLE        string         `datastore:"title"`
 	ROLE         string         `datastore:"role"`

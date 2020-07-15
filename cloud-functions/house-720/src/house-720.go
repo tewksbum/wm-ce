@@ -77,7 +77,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	ownerNS := strings.ToLower(fmt.Sprintf("%v-%v", Env, input.OwnerID))
 
 	// we'll fetch the fibers associated with the event, and then run search key against sets, if we get more than 1 hit, we'll send this fiber back to 360
-	var eventFibers []PeopleFiberDS // this is for raw fibers
+	var eventFibers []HouseFiberDS // this is for raw fibers
 	fiberQuery := datastore.NewQuery(DSKindFiber).Namespace(ownerNS).Filter("eventid =", input.EventID)
 	if _, err := fs.GetAll(ctx, fiberQuery, &eventFibers); err != nil {
 		log.Fatalf("Error querying fibers: %v", err)
@@ -90,7 +90,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
-				Type:      "People720",
+				Type:      "House720",
 				Name:      "fibers:before",
 				Count:     len(eventFibers),
 				Increment: false,
@@ -98,9 +98,9 @@ func House720(ctx context.Context, m PubSubMessage) error {
 		},
 	}, cfName)
 
-	var eventFiberSearchKeys []PeopleFiberDSProjected
+	var eventFiberSearchKeys []HouseFiberDSProjected
 	for _, f := range eventFibers {
-		eventFiberSearchKeys = append(eventFiberSearchKeys, PeopleFiberDSProjected{
+		eventFiberSearchKeys = append(eventFiberSearchKeys, HouseFiberDSProjected{
 			ID:          f.ID,
 			Search:      f.Search,
 			Disposition: f.Disposition,
@@ -109,7 +109,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	}
 	eventFibers = nil // clear eventFibers to release memory
 
-	var eventSets []PeopleSetDS // this is for raw sets
+	var eventSets []HouseSetDS // this is for raw sets
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &eventSets); err != nil {
 		log.Fatalf("Error querying sets: %v", err)
 		return nil
@@ -122,13 +122,13 @@ func House720(ctx context.Context, m PubSubMessage) error {
 		ID: input.EventID,
 		Counters: []ReportCounter{
 			ReportCounter{
-				Type:      "People720",
+				Type:      "House720",
 				Name:      "sets:before",
 				Count:     len(eventSets),
 				Increment: false,
 			},
 			ReportCounter{
-				Type:      "People720",
+				Type:      "House720",
 				Name:      "sets:after",
 				Count:     len(eventSets),
 				Increment: true,
@@ -136,9 +136,9 @@ func House720(ctx context.Context, m PubSubMessage) error {
 		},
 	}, cfName)
 
-	var eventSetSearchKeys []PeopleSetDSProjected
+	var eventSetSearchKeys []HouseSetDSProjected
 	for _, f := range eventSets {
-		eventSetSearchKeys = append(eventSetSearchKeys, PeopleSetDSProjected{
+		eventSetSearchKeys = append(eventSetSearchKeys, HouseSetDSProjected{
 			ID:     f.ID,
 			Search: f.Search,
 		})
@@ -176,12 +176,12 @@ func House720(ctx context.Context, m PubSubMessage) error {
 						// load the existing sets
 						var reportCounters []ReportCounter
 						var existingSetKeys []*datastore.Key
-						var existingSets []PeopleSetDS
+						var existingSets []HouseSetDS
 						for _, setID := range setIDs {
 							dsSetGetKey := datastore.NameKey(DSKindSet, setID, nil)
 							dsSetGetKey.Namespace = ownerNS
 							existingSetKeys = append(existingSetKeys, dsSetGetKey)
-							existingSets = append(existingSets, PeopleSetDS{})
+							existingSets = append(existingSets, HouseSetDS{})
 						}
 						if len(existingSetKeys) > 0 {
 							if err := fs.GetMulti(ctx, existingSetKeys, existingSets); err != nil && err != datastore.ErrNoSuchEntity {
@@ -193,7 +193,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 
 						var allFiberIDs []string
 						var allFiberKeys []*datastore.Key
-						var allFibers []PeopleFiberDS
+						var allFibers []HouseFiberDS
 
 						newSetSignatures := []Signature{}
 						for _, es := range existingSets {
@@ -203,7 +203,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 									dsFiberGetKey := datastore.NameKey(DSKindFiber, ef, nil)
 									dsFiberGetKey.Namespace = ownerNS
 									allFiberKeys = append(allFiberKeys, dsFiberGetKey)
-									allFibers = append(allFibers, PeopleFiberDS{})
+									allFibers = append(allFibers, HouseFiberDS{})
 								}
 							}
 						}
@@ -214,7 +214,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 						}
 
 						var MatchKeysFromFiber []MatchKey360
-						MatchKeyList := structs.Names(&PeopleOutput{})
+						MatchKeyList := structs.Names(&HouseOutput{})
 						FiberMatchKeys := make(map[string][]string)
 						// collect all fiber match key values
 						for _, name := range MatchKeyList {
@@ -252,7 +252,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 						}
 
 						newSetID := uuid.New().String()
-						var setDS PeopleSetDS
+						var setDS HouseSetDS
 						setKey := datastore.NameKey(DSKindSet, newSetID, nil)
 						setKey.Namespace = ownerNS
 						setDS.ID = setKey
@@ -261,19 +261,19 @@ func House720(ctx context.Context, m PubSubMessage) error {
 						PopulateSetOutputSignatures(&setDS, newSetSignatures)
 						PopulateSetOutputMatchKeys(&setDS, MatchKeysFromFiber)
 
-						var goldenDS PeopleGoldenDS
+						var goldenDS HouseGoldenDS
 						goldenKey := datastore.NameKey(DSKindGolden, newSetID, nil)
 						goldenKey.Namespace = ownerNS
 						goldenDS.ID = goldenKey
 						goldenDS.CreatedAt = time.Now()
 						PopulateGoldenOutputMatchKeys(&goldenDS, MatchKeysFromFiber)
-						goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
+						goldenDS.Search = GetHouseGoldenSearchFields(&goldenDS)
 						if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 							log.Printf("Error: storing golden record error %v", err)
 						}
 
 						reportCounters = append(reportCounters, ReportCounter{
-							Type:      "People720",
+							Type:      "House720",
 							Name:      "multisets",
 							Count:     1,
 							Increment: true,
@@ -281,7 +281,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 
 						reportCounters = append(reportCounters,
 							ReportCounter{
-								Type:      "People720:Audit",
+								Type:      "House720:Audit",
 								Name:      "Golden:Created",
 								Count:     1,
 								Increment: true,
@@ -316,7 +316,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 
 						reportCounters = append(reportCounters,
 							ReportCounter{
-								Type:      "People720:Audit",
+								Type:      "House720:Audit",
 								Name:      "Set:Created",
 								Count:     1,
 								Increment: true,
@@ -328,7 +328,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 							SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "advalid"})
 							reportCounters = append(reportCounters,
 								ReportCounter{
-									Type:      "People720:Audit",
+									Type:      "House720:Audit",
 									Name:      "Golden:Created:IsAdValid",
 									Count:     1,
 									Increment: true,
@@ -364,7 +364,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 							SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "email"})
 							reportCounters = append(reportCounters,
 								ReportCounter{
-									Type:      "People720:Audit",
+									Type:      "House720:Audit",
 									Name:      "Golden:Created:HasEmail",
 									Count:     1,
 									Increment: true,
@@ -437,13 +437,13 @@ func House720(ctx context.Context, m PubSubMessage) error {
 
 						reportCounters = append(reportCounters,
 							ReportCounter{
-								Type:      "People720",
+								Type:      "House720",
 								Name:      "sets:created",
 								Count:     1,
 								Increment: true,
 							},
 							ReportCounter{
-								Type:      "People720",
+								Type:      "House720",
 								Name:      "sets:after",
 								Count:     1,
 								Increment: true,
@@ -594,13 +594,13 @@ func House720(ctx context.Context, m PubSubMessage) error {
 						}
 						reportCounters = append(reportCounters,
 							ReportCounter{
-								Type:      "People720",
+								Type:      "House720",
 								Name:      "sets:expired",
 								Count:     len(setIDs),
 								Increment: true,
 							},
 							ReportCounter{
-								Type:      "People720",
+								Type:      "House720",
 								Name:      "sets:after",
 								Count:     -len(setIDs),
 								Increment: true,
@@ -643,7 +643,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 				ID: input.EventID,
 				Counters: []ReportCounter{
 					ReportCounter{
-						Type:      "People720",
+						Type:      "House720",
 						Name:      "Reprocess",
 						Count:     len(reprocessFibers),
 						Increment: true,
