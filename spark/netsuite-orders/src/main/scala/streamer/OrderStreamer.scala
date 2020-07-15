@@ -11,6 +11,7 @@ import org.apache.spark.streaming.dstream.ReceiverInputDStream
 import org.apache.spark.streaming.pubsub.{PubsubUtils, SparkGCPCredentials, SparkPubsubMessage}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.sql._
+import DataTransformer.transformOrders;
 
 import com.typesafe.config.ConfigFactory
 
@@ -27,7 +28,8 @@ object OrderStreamer {
   var checkpointDirectory: String = "/tmp"
   var secretVersion: String = "projects/180297787522/secrets/mariadb/versions/1"
   // var jdbcMariadbUrl: String = "jdbc:mariadb://10.128.0.32:3306/segment"
-  var jdbcMysqlUrl: String = "jdbc:mysql://10.128.0.32:3306/segment"
+  var jdbcMysqlUrl: String = "jdbc:mysql://10.45.160.5:3306/segment"
+  var jdbcMssqlUrl: String = "jdbc:jtds:sqlserver://10.128.0.32:1433/segment";
 
   val jdbcUserName: String = "spark"
   val jdbcPassword: String = "sMehnXVuJ0LKQcndEtvv"
@@ -36,7 +38,7 @@ object OrderStreamer {
   jdbcWriteProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
 
   val jdbcReadProperties = new java.util.Properties()
-  jdbcReadProperties.setProperty("driver", "com.mysql.jdbc.Driver")
+  jdbcReadProperties.setProperty("driver", "com.mysql.cj.jdbc.Driver")
 
   // scd cached
   var dimDestTypes: DataFrame = _
@@ -75,7 +77,7 @@ object OrderStreamer {
     var messagesStream: DStream[String] =
       pubsubStream.map(message => new String(message.getData(), StandardCharsets.UTF_8))
     //process the stream
-    processOrders(messagesStream, windowLength, slidingInterval)
+    processOrders(messagesStream, windowLength, slidingInterval, transformOrders(_, ssc.sparkContext))
 
     ssc
   }
@@ -114,7 +116,7 @@ object OrderStreamer {
     println("preloading dim_dates")
     dimDates = sqlContext.read.jdbc(
       jdbcMysqlUrl,
-      "(select cast(date_key as int) date_key, cast(date as varchar(10)) as date_string from dim_dates where date < current_date + interval 7 day ) dates",
+      "(select date_key, str_to_date(date, '%Y-%m-%d') as date_string from dim_dates where date < current_date + interval 7 day) dates",
       jdbcReadProperties
     )
     dimDates.cache().count() // force it to load
@@ -122,7 +124,7 @@ object OrderStreamer {
     println("preloading dim_products")
     dimProducts = sqlContext.read.jdbc(
       jdbcMysqlUrl,
-      "(select cast(product_key as int) product_key, sku, lob_key, netsuite_id from dim_products) products",
+      "(select product_key, sku, lob_key, netsuite_id from dim_products) products",
       jdbcReadProperties
     )
     dimProducts.cache().count() // force it to load
@@ -134,7 +136,7 @@ object OrderStreamer {
     println("preloading dim_schools")
     dimSchools = sqlContext.read.jdbc(
       jdbcMysqlUrl,
-      "(select cast(school_key as int) school_key, school_code, school_name, netsuite_id from dim_schools) schools",
+      "(select school_key, school_code, school_name, netsuite_id from dim_schools) schools",
       jdbcReadProperties
     )
     dimSchools.cache().count() // force it to load

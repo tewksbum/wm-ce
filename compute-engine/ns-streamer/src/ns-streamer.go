@@ -1,13 +1,14 @@
 package main
 
 import (
-	"time"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
 
 	"cloud.google.com/go/pubsub"
 
@@ -85,24 +86,39 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	for i, record := range input.Records {
-		if i < 1000 {
-			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=821&deploy=1&id=%v", record.ID)
+	N := 5
+	wg := new(sync.WaitGroup)
+	sem := make(chan struct{}, N)
+	for i := 0; i < len(input.Records) && i < 1000; i += 10 {
+		ids := []string{}
+		for _, r := range input.Records[i:i+10] {
+			ids = append(ids, r.ID)
+		}
+		wg.Add(1)
+		log.Printf("%v", ids)
+		go func(ids []string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() {
+				// Reading from the channel decrements the semaphore
+				// (frees up buffer slot).
+				<-sem
+			}()
+			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1&orders=%v", strings.Join(ids, ","))
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
-
+	
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			if err != nil {
 				log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 			}
 			defer resp.Body.Close()
-
+	
 			body, err := ioutil.ReadAll(resp.Body)
 			// drop this to pubsub
-			log.Printf("%v", record.ID)
 			psresult := topic.Publish(ctx, &pubsub.Message{
 				Data: body,
 			})
@@ -110,8 +126,15 @@ func main() {
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
-			time.Sleep(10 * time.Second)
-		}
+		}(ids)		
 	}
+
+
+	wg.Wait()
+
+
+	
+	return
+
 
 }

@@ -42,7 +42,7 @@ gcloud dataproc clusters create sparkles \
     --region=us-central1 \
     --zone=us-central1-c \
     --scopes=pubsub \
-    --image-version="preview" \
+    --image-version="1.5" \
 	--bucket=wm_dataproc \
 	--master-min-cpu-platform="Intel Skylake" \
 	--single-node \
@@ -51,6 +51,35 @@ gcloud dataproc clusters create sparkles \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
 ```    
+
+Create dataproc cluster, spark 3.0, enable job logging to stackdriver
+```
+gcloud dataproc clusters create sparkles \
+    --region=us-central1 \
+    --zone=us-central1-c \
+    --scopes=pubsub \
+    --image-version="preview-debian10" \
+	--bucket=wm_dataproc \
+	--master-min-cpu-platform="Intel Skylake" \
+    --master-boot-disk-type pd-ssd \
+	--single-node \
+	--master-machine-type n1-standard-4 \
+	--master-boot-disk-size 600 \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
+```
+
+Create dataproc cluster with spark 3.0, job logging on stackdriver, 1 master and 2 worker nodes
+```
+gcloud dataproc clusters create sparkles --region us-central1 --subnet default \
+    --zone us-central1-c --master-machine-type n1-standard-4 --master-boot-disk-type pd-ssd \
+    --master-boot-disk-size 500 --master-min-cpu-platform="Intel Skylake" \
+    --num-workers 2 --worker-machine-type n1-standard-4 --worker-boot-disk-size 500 \
+    --worker-min-cpu-platform="Intel Skylake" --worker-boot-disk-type pd-ssd \
+    --image-version "preview-debian10" --project wemade-core --scopes=pubsub --bucket=wm_dataproc \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB
+```
 
 Copy Jar file and Submit a Job to the dataproc cluster
 ```
