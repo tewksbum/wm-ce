@@ -116,7 +116,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					// 		},
 					// 	},
 					// }
-					publishReport(&report, cfName)
+					// publishReport(&report, cfName)
 					return nil
 				}
 			}
