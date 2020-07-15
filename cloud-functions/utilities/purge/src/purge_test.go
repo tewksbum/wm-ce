@@ -1092,8 +1092,9 @@ func TestProcessRequestC(t *testing.T) {
 
 func TestPurgeList(t *testing.T) {
 	list := `
-	aam-bcm
+	aam-pa
 	`
+	// aam-bcm
 	// 	cco-rha
 	// cct-bn
 	// cen-afe
