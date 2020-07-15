@@ -248,6 +248,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
 			}
+
 			if len(searchKeys) > 0 {
 				searchValues := GetRedisGuidValuesList(searchKeys)
 				if len(searchValues) > 0 {
@@ -262,32 +263,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
-			setCardinality := "noset"
 			if len(searchSets) > 0 {
 				searchValues := GetRedisGuidValuesList(searchSets)
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
-							if len(searchVal) == 1 {
-								setCardinality = "oneset"
-							} else {
-								if len(searchVal) > 0 {
-									setCardinality = "multisets"
-									if !Contains(expiredSetCollection, searchVal) {
-										expiredSetCollection = append(expiredSetCollection, searchVal)
-									}
+							if len(searchVal) > 0 {
+								if !Contains(expiredSetCollection, searchVal) {
+									expiredSetCollection = append(expiredSetCollection, searchVal)
 								}
 							}
 						}
 					}
 				}
 			}
-			reportCounters1 = append(reportCounters1, ReportCounter{
-				Type:      "People360",
-				Name:      setCardinality,
-				Count:     1,
-				Increment: true,
-			})
 			LogDev(fmt.Sprintf("Matched Fibers: %+v", matchedFibers))
 
 			// get all the Fibers
@@ -930,6 +919,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
+			setCardinality := "noset"
+			if len(SetKeys) == 1 {
+				setCardinality = "oneset"
+			} else if len(SetKeys) > 1 {
+				setCardinality = "multisets"
+			}
+
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
 			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
 				log.Printf("Error: deleting expired sets: %v", err)
@@ -940,6 +936,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Set:Expired", Count: len(expiredSetCollection), Increment: true})
 			reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Golden:Expired", Count: len(expiredSetCollection), Increment: true})
+
+			reportCounters1 = append(reportCounters1, ReportCounter{
+				Type:      "People360",
+				Name:      setCardinality,
+				Count:     1,
+				Increment: true,
+			})
 
 		}
 
