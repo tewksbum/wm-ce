@@ -1,14 +1,18 @@
-package main
+package dsritem
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"database/sql"
+	"os"
 	"log"
 	"net/http"
-	"strings"
 	"sync"
+	"strconv"
+
+	// cloud sql
+	_ "github.com/go-sql-driver/mysql"
 
 	"cloud.google.com/go/pubsub"
 
@@ -19,9 +23,8 @@ import (
 var smClient *secretmanager.Client
 var nsSecret secretsNS
 var nsAuth string
-var ps *pubsub.Client
-var topic *pubsub.Topic
 var ctx context.Context
+var db *sql.DB
 
 type secretsNS struct {
 	NSAuth string `json:"nsauth"`
@@ -32,7 +35,14 @@ type result struct {
 }
 
 type record struct {
-	ID string `json:"id"`
+	Sku string `json:"sku"`
+	Title string `json:"title"`
+	Type string `json:"type"`
+	LOB string `json:"lob_name"`
+	Cost string `json:"avg_cost"` 
+	NSID string `json:"netsuite_id"`
+	AvgCost float64
+	NetsuiteID int64
 }
 
 func init() {
@@ -43,7 +53,7 @@ func init() {
 	}
 
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: "projects/180297787522/secrets/netsuite/versions/1",
+		Name: os.Getenv("NETSUITE_SECRET"),
 	}
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {
@@ -56,14 +66,25 @@ func init() {
 	}
 
 	nsAuth = nsSecret.NSAuth
+	secretReq = &secretmanagerpb.AccessSecretVersionRequest{
+		Name: os.Getenv("DW_SECRET"),
+	}
+	secretresult, err = smClient.AccessSecretVersion(ctx, secretReq)
+	if err != nil {
+		log.Fatalf("failed to get secret: %v", err)
+	}
 
-	ps, _ = pubsub.NewClient(ctx, "wemade-core")
-	topic = ps.Topic("wm-order-intake")
+	secretsData2 := secretresult.Payload.Data
+	dsn := string(secretsData2)
+
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		log.Printf("error opening db %v", err)
+	}
 }
 
-func main() {
-	log.Printf("getting list")
-	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming"
+func Run(ctx context.Context, m *pubsub.Message) {
+	listURL := os.Getenv("PRODUCT_LIST_URL")
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -85,17 +106,14 @@ func main() {
 	if err != nil {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
+	log.Println(string(body)[0:1000])
 
-	N := 2
+	N := 20
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
-	for i := 0; i < len(input.Records); i += 20 {
-		ids := []string{}
-		for _, r := range input.Records[i:i+20] {
-			ids = append(ids, r.ID)
-		}
+	for _, rec := range input.Records {
 		wg.Add(1)
-		go func(ids []string) {
+		go func(rec record) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() {
@@ -103,38 +121,13 @@ func main() {
 				// (frees up buffer slot).
 				<-sem
 			}()
-			log.Printf("pulling orders %v", ids)
-			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1&orders=%v", strings.Join(ids, ","))
-			req, _ := http.NewRequest("GET", orderURL, nil)
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Accept", "application/json")
-			req.Header.Set("Authorization", nsAuth)
-	
-			client := &http.Client{}
-			
-			json := ""
-			for {
-				resp, err := client.Do(req)
-				if err != nil {
-					log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
-				}
-				defer resp.Body.Close()
-		
-				body, err := ioutil.ReadAll(resp.Body)
-				json = string(body)
-				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") {
-					break
-				}
-			}
-			// drop this to pubsub
-			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: []byte(json),
-			})
-			_, err = psresult.Get(ctx)
+			rec.AvgCost, _ = strconv.ParseFloat(rec.Cost, 64)
+			rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
+			_, err := db.Exec("CALL sp_upsert_product(?,?,?,?,?,?)", rec.Sku, rec.Title, rec.Type, rec.LOB, rec.AvgCost, rec.NetsuiteID)
 			if err != nil {
-				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
+				log.Printf("Error %v", err)
 			}
-		}(ids)		
+		}(rec)		
 	}
 	wg.Wait()
 

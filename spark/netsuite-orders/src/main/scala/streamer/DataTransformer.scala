@@ -11,6 +11,8 @@ import org.apache.spark.sql.functions.lit
 import org.apache.spark.sql.SaveMode
 import java.text.SimpleDateFormat
 import org.apache.spark.sql.functions._
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import DatabaseWriter._
 
 object DataTransformer {
@@ -22,9 +24,8 @@ object DataTransformer {
     import sqlContext.implicits._
 
     if (df.count > 0) {
-      println(s"processing ${df.count} orders")
+      print(s"processing ${df.count} orders ...")
 
-      // map to the dims and facts that need to be populated
       val dfCustomer = df
         .select(
           $"customer.email".alias("customer_email"),
@@ -35,18 +36,14 @@ object DataTransformer {
         .withColumn("customer_key", expr("uuid()"))
 
       // dfCustomer.createOrReplaceTempView("customers") // persist these in temp storage
-      println(s"writing customers")
       val dfCustomerResults = upsertCustomerDim(dfCustomer.as[CustomerDim].collect()).toDF.distinct()
 
-      println(s"merging customers")
       val dfCustomerNew = dfCustomer
         .as("customer")
         .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter")
         .drop("customer_key", "old_key")
         .withColumnRenamed("new_key", "customer_key")
-      // dfCustomer.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "dim_customers", OrderStreamer.jdbcProperties)
 
-      println(s"framing billtos")
       val dfBillTo = df
         .select(
           $"billing.addressKey".alias("netsuite_key"),
@@ -61,15 +58,46 @@ object DataTransformer {
         )
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
-      println(s"writing billtos")
       val dfBillToResults = upsertBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
-      println(s"merging billtos")
       val dfBillToNew = dfBillTo
         .as("billto")
         .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
         .drop("billto_key", "old_key")
         .withColumnRenamed("new_key", "billto_key")
-      println(s"creating orders")
+
+      val dfShipTo = df
+        .withColumn("shipments", explode($"shipments"))
+        .distinct()
+        .select(
+          expr("uuid()").alias("shipto_key"), // generate shipto key
+          $"shipments.addressKey".alias("netsuite_key"),
+          $"shipments.name".alias("name"),
+          $"shipments.addr1".alias("addr1"),
+          $"shipments.addr2".alias("addr2"),
+          $"shipments.city".alias("city"),
+          $"shipments.state".alias("state"),
+          $"shipments.zip".alias("zip"),
+          $"shipments.phone".alias("phone"),
+          $"shipments.type".alias("type")
+        )
+        .withColumn("country", lit("USA"))
+        .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
+        .as("shipments")
+        // lookup desttype key
+        .join(
+          OrderStreamer.dimDestTypes.as("desttype"),
+          $"shipments.type" === $"desttype.desttype_name",
+          "leftouter"
+        )
+        .drop("type", "desttype_name")
+        .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+      val dfShipToResults = upsertShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+      val dfShipToNew = dfShipTo
+        .as("shipto")
+        .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
+        .drop("shipto_key", "old_key")
+        .withColumnRenamed("new_key", "shipto_key")
+
       val dfOrders = df
         .select(
           $"dates.placedOn".alias("date_value"),
@@ -103,11 +131,19 @@ object DataTransformer {
         ) // reformat the date value from date to a iso date string
         .as("orders")
         // look up SCD keys
-        .join(OrderStreamer.dimSchools.as("schools"), $"orders.school_value" === $"schools.netsuite_id", "leftouter")
+        .join(
+          OrderStreamer.dimSchools.as("schools"),
+          $"orders.school_value" === $"schools.netsuite_id",
+          "leftouter"
+        )
         .drop("school_name", "school_code", "netsuite_id", "school_value")
         .join(OrderStreamer.dimDates.as("dates"), $"orders.date_value" === $"dates.date_string", "leftouter")
         .drop("date_string", "date_value")
-        .join(OrderStreamer.dimSources.as("sources"), $"orders.source_value" === $"sources.netsuite_id", "leftouter")
+        .join(
+          OrderStreamer.dimSources.as("sources"),
+          $"orders.source_value" === $"sources.netsuite_id",
+          "leftouter"
+        )
         .drop("source_name", "netsuite_id", "source_value")
         .join(
           OrderStreamer.dimChannels.as("channels"),
@@ -121,42 +157,9 @@ object DataTransformer {
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
-      println(s"writing orders")
-      upsertOrdersFact(dfOrders.as[OrdersFact].collect())
-      println(s"creating shiptos")
-      // map to orderlines fact
-      val dfShipTo = df
-        .withColumn("shipments", explode($"shipments"))
-        .distinct()
-        .select(
-          expr("uuid()").alias("shipto_key"), // generate shipto key
-          $"shipments.addressKey".alias("netsuite_key"),
-          $"shipments.name".alias("name"),
-          $"shipments.addr1".alias("addr1"),
-          $"shipments.addr2".alias("addr2"),
-          $"shipments.city".alias("city"),
-          $"shipments.state".alias("state"),
-          $"shipments.zip".alias("zip"),
-          $"shipments.phone".alias("phone"),
-          $"shipments.type".alias("type")
-        )
-        .withColumn("country", lit("USA"))
-        .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
-        .as("shipments")
-        // lookup desttype key
-        .join(OrderStreamer.dimDestTypes.as("desttype"), $"shipments.type" === $"desttype.desttype_name", "leftouter")
-        .drop("type", "desttype_name")
-        .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
-      println(s"writing shiptos")
-      val dfShipToResults = upsertShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
-      println(s"merging shiptos")
-      val dfShipToNew = dfShipTo
-        .as("shipto")
-        .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
-        .drop("shipto_key", "old_key")
-        .withColumnRenamed("new_key", "shipto_key")
 
-      println(s"creating lines")
+      upsertOrdersFact(dfOrders.as[OrdersFact].collect())
+
       val dfOrderLines = df
         .select(
           lit(0).alias("is_discount"), // fixed value for lines
@@ -233,7 +236,11 @@ object DataTransformer {
         .drop("date_string", "date_value")
         .join(OrderStreamer.dimSources.as("sources"), $"lines.source_value" === $"sources.netsuite_id", "leftouter")
         .drop("source_name", "netsuite_id", "source_value")
-        .join(OrderStreamer.dimChannels.as("channels"), $"lines.channel_value" === $"channels.netsuite_id", "leftouter")
+        .join(
+          OrderStreamer.dimChannels.as("channels"),
+          $"lines.channel_value" === $"channels.netsuite_id",
+          "leftouter"
+        )
         .drop("channel_name", "netsuite_id", "channel_value")
         .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner")
         .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
@@ -261,8 +268,8 @@ object DataTransformer {
         // replace null values
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
-      // dfOrderLines.show()
-      println(s"writing lines")
+        .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
+
       val dfOrderLineResults = upsertOrderLinesFact(dfOrderLines.as[OrderLineFact].collect()).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
         .withColumnRenamed("price", "prev_price")
@@ -271,10 +278,6 @@ object DataTransformer {
         .withColumnRenamed("discount", "prev_discount")
         .withColumnRenamed("shipping", "prev_shipping")
 
-      // dfOrderLines.write.mode(SaveMode.Append).jdbc(OrderStreamer.jdbcUrl, "fact_orderlines", OrderStreamer.jdbcProperties)
-
-      // map to dsr fact
-      println(s"creating dsr")
       val dfDSR = dfOrderLines
         .withColumnRenamed("date_key", "date_key_lines")
         .as("lines")
@@ -310,7 +313,6 @@ object DataTransformer {
         .drop("desttype_key", "product_key")
 
       // if not existing and not cancelled, add
-      println(s"filtering dsr")
       val dsr1 = dfDSR
         .where(dfDSR("existing") === false)
         .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
@@ -369,14 +371,14 @@ object DataTransformer {
           sum("total_discount").as("discount"),
           sum("total_shipping").as("shipping")
         )
-      println(s"combining dsr")
       var dsr = dsr1
         .union(dsr2)
         .union(dsr3)
         .union(dsr4)
-      // dsr.show
-      println(s"writing dsr")
+
       upsertDSRFact(dsr.as[DailySalesFact].collect())
+
+      println("done")
     }
   }
 }

@@ -29,7 +29,6 @@ object DatabaseWriter {
       using(ConnectionPool.borrow()) { con =>
         {
           val ps = con.prepareCall("{call sp_upsert_customer (?,?,?,?)}")
-          println("upsert customer")
           for (record <- records) {
             ps.clearParameters()
             ps.setString(1, record.customer_key)

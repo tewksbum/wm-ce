@@ -31,6 +31,8 @@ object OrderProcessor {
       .window(Seconds(windowLength), Seconds(slidingInterval)) //create a window
       .transform(extractNetsuiteOrder(_)) //apply transformation
 
+    // orders.repartition(5) // this does not do anything
+
     orders.foreachRDD(rdd => {
       val sqlContext = SqlContextSingleton.getInstance(rdd.sparkContext)
       import sqlContext.implicits._      
