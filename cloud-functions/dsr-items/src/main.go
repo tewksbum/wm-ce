@@ -83,7 +83,7 @@ func init() {
 	}
 }
 
-func Run(ctx context.Context, m *pubsub.Message) {
+func Run(ctx context.Context, m *pubsub.Message) error {
 	listURL := os.Getenv("PRODUCT_LIST_URL")
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
@@ -131,5 +131,5 @@ func Run(ctx context.Context, m *pubsub.Message) {
 	}
 	wg.Wait()
 
-	return
+	return nil
 }
