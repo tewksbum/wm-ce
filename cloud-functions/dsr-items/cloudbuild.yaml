@@ -1,0 +1,23 @@
+timeout: 600s
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    "deploy", "ocm-ns-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime","go111", 
+    "--trigger-topic", "${_TRIGGER_TOPIC}", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "540",
+    "--env-vars-file", ".env.yaml",
+    "--max-instances", "1"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: dsr-items
+    _TRIGGER_TOPIC: dsr-items-refresh
+    _ENTRY_POINT: Run
+options:
+    substitution_option: 'ALLOW_LOOSE'
