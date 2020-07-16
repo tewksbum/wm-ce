@@ -225,11 +225,11 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
 							if len(searchVal) > 0 {
-								if len(searchVal) == 1 {
-									setCardinality = "oneset"
-								} else if len(searchVal) > 1 {
-									setCardinality = "multisets"
-								}
+								// if len(searchVal) == 1 {
+								// 	setCardinality = "oneset"
+								// } else if len(searchVal) > 1 {
+								// 	setCardinality = "multisets"
+								// }
 								if !Contains(expiredSetCollection, searchVal) {
 									expiredSetCollection = append(expiredSetCollection, searchVal)
 								}
@@ -238,6 +238,17 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			switch len(expiredSetCollection) {
+			case 1:
+				setCardinality = "oneset"
+				break
+			case 0: 
+				setCardinality = "noset"
+				break
+			default:
+				setCardinality = "multisets"
+			}
+
 			reportCounters1 = append(reportCounters1, ReportCounter{
 				Type:      "House360",
 				Name:      setCardinality,
@@ -915,9 +926,9 @@ func House360(ctx context.Context, m PubSubMessage) error {
 
 			// grab the count and see if we are done
 			counters := GetRedisIntValues([][]string{
-				[]string{input.Signature.EventID, "house-records-total"},
-				[]string{input.Signature.EventID, "house-records-completed"},
-				[]string{input.Signature.EventID, "house-records-deleted"},
+				[]string{input.Signature.EventID, "records-total"},
+				[]string{input.Signature.EventID, "records-completed"},
+				[]string{input.Signature.EventID, "records-deleted"},
 				[]string{input.Signature.EventID, "house-fibers-completed"},
 				[]string{input.Signature.EventID, "house-fibers-deleted"},
 			})
