@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/ybbus/httpretry"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
@@ -69,7 +70,7 @@ func main() {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", nsAuth)
 
-	client := &http.Client{}
+	client := httpretry.NewDefaultClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
@@ -112,13 +113,11 @@ func main() {
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
 	
-			client := &http.Client{}
-			
 			json := ""
 			for {
 				resp, err := client.Do(req)
 				if err != nil {
-					log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+					log.Printf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 				}
 				defer resp.Body.Close()
 		
