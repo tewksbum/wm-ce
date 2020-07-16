@@ -533,7 +533,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
 		// }
 		if len(v.Output.EMAIL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value)))) // for people
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)) )) // for house
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
 		}
 		// else {
@@ -555,6 +556,13 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
 		}
+		// for house
+		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.AD1.Value) > 0 && len(v.Output.AD2.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+		} else if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.AD1.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+		}			
+	
 		// else {
 		// 	if len(v.Output.CITY.Value) == 0 {
 		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
