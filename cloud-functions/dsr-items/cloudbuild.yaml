@@ -6,7 +6,7 @@ steps:
     "deploy", "ocm-ns-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
-    "--trigger-topic", "${_TRIGGER_TOPIC}", 
+    "--trigger-topic", "ocm-ns-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
     "--env-vars-file", ".env.yaml",
