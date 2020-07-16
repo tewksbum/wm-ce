@@ -102,29 +102,31 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	if err != nil {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
-	log.Println(string(body)[0:1000])
-
-	N := 20
-	wg := new(sync.WaitGroup)
-	sem := make(chan struct{}, N)
-	for _, rec := range input.Records {
-		wg.Add(1)
-		go func(rec record) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() {
-				// Reading from the channel decrements the semaphore
-				// (frees up buffer slot).
-				<-sem
-			}()
-			rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
-			_, err := db.Exec("CALL sp_upsert_school(?,?,?)", rec.SchoolCode, rec.SchoolName, rec.NetsuiteID)
-			if err != nil {
-				log.Printf("Error %v", err)
-			}
-		}(rec)		
+	if len(string(body)) > 10 {
+		N := 20
+		wg := new(sync.WaitGroup)
+		sem := make(chan struct{}, N)
+		log.Printf("Running update for %v schools", len(input.Records))
+		for _, rec := range input.Records {
+			wg.Add(1)
+			go func(rec record) {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() {
+					// Reading from the channel decrements the semaphore
+					// (frees up buffer slot).
+					<-sem
+				}()
+				rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
+				_, err := db.Exec("CALL sp_upsert_school(?,?,?)", rec.SchoolCode, rec.SchoolName, rec.NetsuiteID)
+				if err != nil {
+					log.Printf("Error %v", err)
+				}
+			}(rec)		
+		}
+		wg.Wait()
+	} else {
+		log.Printf("Nothing to update")
 	}
-	wg.Wait()
-
 	return nil
 }
