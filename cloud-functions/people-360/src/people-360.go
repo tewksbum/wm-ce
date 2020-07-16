@@ -271,11 +271,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
-							if len(searchVal) == 1 {
-								setCardinality = "oneset"
-							} else if len(searchVal) > 1 {
-								setCardinality = "multisets"
-							}
+							// if len(searchVal) == 1 {
+							// 	setCardinality = "oneset"
+							// } else if len(searchVal) > 1 {
+							// 	setCardinality = "multisets"
+							// }
 							if len(searchVal) > 0 {
 								if !Contains(expiredSetCollection, searchVal) {
 									expiredSetCollection = append(expiredSetCollection, searchVal)
