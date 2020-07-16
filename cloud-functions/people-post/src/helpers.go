@@ -983,7 +983,8 @@ func CalcClassStatus(cy string, status string) string {
 }
 
 func ParseName(v string) NameParsed {
-	result := reFullName.FindStringSubmatch(v)
+	result := strings.Replace(v, "&", ",", -1)
+	result = reFullName.FindStringSubmatch(result)
 	if len(result) >= 3 {
 		// ignore 0
 		fname := result[1]

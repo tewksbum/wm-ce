@@ -273,17 +273,35 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 1)
 				} else if column.PeopleERR.ContainsFather == 1 {
 					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 2)
-				} else if column.PeopleVER.IS_EMAIL { //handle case where we get two "parent" emails
-					if mprEmail != column.Value {
-						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
-						mprEmail = column.Value
-					} else {
-						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 5)
-					}
 				} else {
-					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+					if column.PeopleVER.IS_EMAIL {
+						// could use an iterator in here instead of 3 && 4
+						if mprEmail != column.Value {
+							currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+							mprEmail = column.Value
+						} else {
+							currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
+						}
+					} else {
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+					}
 				}
 			}
+
+			// if column.PeopleERR.ContainsMother == 1 {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 1)
+			// } else if column.PeopleERR.ContainsFather == 1 {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 2)
+			// } else if column.PeopleVER.IS_EMAIL { //handle case where we get two "parent" emails
+			// 	if mprEmail != column.Value {
+			// 		currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
+			// 		mprEmail = column.Value
+			// 	} else {
+			// 		currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 5)
+			// 	}
+			// } else {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+			// }
 
 			if !skipValue {
 				// let's assign the value
