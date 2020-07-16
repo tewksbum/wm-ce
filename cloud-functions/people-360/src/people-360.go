@@ -269,15 +269,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
-							if len(searchVal) == 1 {
-								setCardinality = "oneset"
-								// effectively an update... an inbound fiber matched to one set only
-							} else if len(searchVal) > 1 {
-								setCardinality = "multisets"
-								// a fiber matches to MORE than one set... this could occur w pre-existing sets from past runs...
-								// or if there is an internal record duplicate on the same event... actually from a 360 perspective...
-								// there'd have to be like 3+ record dupes... else it would just be an update.
-							}
 							if len(searchVal) > 0 {
 								if !Contains(expiredSetCollection, searchVal) {
 									expiredSetCollection = append(expiredSetCollection, searchVal)
@@ -287,6 +278,17 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			switch len(expiredSetCollection) {
+			case 1:
+				setCardinality = "oneset"
+				break
+			case 0: 
+				setCardinality = "noset"
+				break
+			default:
+				setCardinality = "multisets"
+			}
+
 			reportCounters1 = append(reportCounters1, ReportCounter{
 				Type:      "People360",
 				Name:      setCardinality,
