@@ -25,7 +25,7 @@ object DataTransformer {
 
     if (df.count > 0) {
       print(s"processing ${df.count} orders ...")
-
+      print(" customers .")
       val dfCustomer = df
         .select(
           $"customer.email".alias("customer_email"),
@@ -36,14 +36,14 @@ object DataTransformer {
         .withColumn("customer_key", expr("uuid()"))
 
       // dfCustomer.createOrReplaceTempView("customers") // persist these in temp storage
-      val dfCustomerResults = upsertCustomerDim(dfCustomer.as[CustomerDim].collect()).toDF.distinct()
+      val dfCustomerResults = batchCustomerDim(dfCustomer.as[CustomerDim].collect()).toDF.distinct()
 
       val dfCustomerNew = dfCustomer
         .as("customer")
         .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter")
         .drop("customer_key", "old_key")
         .withColumnRenamed("new_key", "customer_key")
-
+      print(" billto .")
       val dfBillTo = df
         .select(
           $"billing.addressKey".alias("netsuite_key"),
@@ -58,13 +58,13 @@ object DataTransformer {
         )
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
-      val dfBillToResults = upsertBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+      val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
       val dfBillToNew = dfBillTo
         .as("billto")
         .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
         .drop("billto_key", "old_key")
         .withColumnRenamed("new_key", "billto_key")
-
+      print(" shipto .")
       val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
         .distinct()
@@ -91,13 +91,13 @@ object DataTransformer {
         )
         .drop("type", "desttype_name")
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
-      val dfShipToResults = upsertShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+      val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
       val dfShipToNew = dfShipTo
         .as("shipto")
         .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
         .drop("shipto_key", "old_key")
         .withColumnRenamed("new_key", "shipto_key")
-
+      print(" order .")
       val dfOrders = df
         .select(
           $"dates.placedOn".alias("date_value"),
@@ -159,7 +159,7 @@ object DataTransformer {
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
-
+      print(" lines .")
       val dfOrderLines = df
         .select(
           lit(0).alias("is_discount"), // fixed value for lines
@@ -269,15 +269,19 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
+        .withColumn(
+          "product_key",
+          coalesce($"product_key", lit(72804))
+        ) // set to fixed value of 72804 if we don't know what it is
 
-      val dfOrderLineResults = upsertOrderLinesFact(dfOrderLines.as[OrderLineFact].collect()).toDF
+      val dfOrderLineResults = batchOrderLinesFact(dfOrderLines.as[OrderLineFact].collect(), true).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
         .withColumnRenamed("price", "prev_price")
         .withColumnRenamed("tax", "prev_tax")
         .withColumnRenamed("cost", "prev_cost")
         .withColumnRenamed("discount", "prev_discount")
         .withColumnRenamed("shipping", "prev_shipping")
-
+      print(" dsr .")
       val dfDSR = dfOrderLines
         .withColumnRenamed("date_key", "date_key_lines")
         .as("lines")
@@ -377,7 +381,101 @@ object DataTransformer {
         .union(dsr4)
 
       upsertDSRFact(dsr.as[DailySalesFact].collect())
+      print(" fee .")
+      // process the fees
+      val dfOrderFees = df
+        .select(
+          lit(0).alias("is_discount"), // fixed value for lines
+          lit(0).alias("is_shipping"), // fixed value for lines
+          lit(0).alias("is_service"), // fixed value for lines
+          $"dates.placedOn".alias("date_value"),
+          $"attributes.channelId".alias("channel_value"),
+          $"attributes.sourceId".alias("source_value"),
+          $"attributes.schoolId".alias("school_value"),
+          $"customer.id".alias("customer_value"),
+          $"billing.addressKey".alias("billto_value"),
+          $"id".alias("netsuite_order_id"),
+          $"orderNumber".alias("netsuite_order_number"),
+          $"attributes.webOrderId".alias("ocm_order_id"),
+          $"attributes.webOrderNumber".alias("ocm_order_number"),
+          $"fees"
+        )
+        .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
+        .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
+        .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
+        .withColumn(
+          "date_value",
+          date_format($"date_value", "yyyy-MM-dd")
+        ) // reformat the date value from date to a iso date string
+        // expand nested shipments
+        .withColumn("fees", explode($"fees"))
+        .select(
+          "fees.*",
+          "is_discount",
+          "is_shipping",
+          "is_service",
+          "date_value",
+          "channel_value",
+          "source_value",
+          "school_value",
+          "customer_value",
+          "billto_value",
+          "netsuite_order_id",
+          "netsuite_order_number",
+          "ocm_order_id",
+          "ocm_order_number"
+        )
+        .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
+        .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
+        .as("lines")
+        // lookup keys
+        .join(OrderStreamer.dimSchools.as("schools"), $"lines.school_value" === $"schools.netsuite_id", "leftouter")
+        .drop("school_name", "school_code", "netsuite_id", "school_value")
+        .join(OrderStreamer.dimDates.as("dates"), $"lines.date_value" === $"dates.date_string", "leftouter")
+        .drop("date_string", "date_value")
+        .join(OrderStreamer.dimSources.as("sources"), $"lines.source_value" === $"sources.netsuite_id", "leftouter")
+        .drop("source_name", "netsuite_id", "source_value")
+        .join(
+          OrderStreamer.dimChannels.as("channels"),
+          $"lines.channel_value" === $"channels.netsuite_id",
+          "leftouter"
+        )
+        .drop("channel_name", "netsuite_id", "channel_value")
+        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner")
+        .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
+        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "inner")
+        .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
+        .join(OrderStreamer.dimProducts.as("products"), $"lines.itemId" === $"products.netsuite_id", "leftouter")
+        .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
+        .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
+        .drop("lob_name", "lob")
+        // rename columns to match
+        .withColumnRenamed("extPrice", "total_price")
+        .withColumnRenamed("cost", "total_cost")
+        .withColumnRenamed("discount", "total_discount")
+        .withColumnRenamed("shipping", "total_shipping")
+        .withColumnRenamed("shipment", "shipment_number")
+        .withColumnRenamed("isDropship", "is_dropship")
+        .withColumn("is_dropship", when(col("is_dropship") === true, 1).otherwise(0))
+        .withColumnRenamed("isCancelled", "is_cancelled")
+        .withColumn("is_cancelled", when(col("is_cancelled") === true, 1).otherwise(0))
+        .withColumnRenamed("tax", "total_tax")
+        .withColumnRenamed("lineId", "netsuite_line_id")
+        .withColumnRenamed("uniqueKey", "netsuite_line_key")
+        // replace null values
+        .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
+        .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
+        .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
+        .withColumn(
+          "product_key",
+          coalesce($"product_key", lit(72804))
+        ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
+        .withColumn("desttype_key", lit(99))
 
+      batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
       println("done")
     }
   }

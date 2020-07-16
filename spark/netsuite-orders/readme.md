@@ -174,3 +174,14 @@ root
  |    |    |-- email: string (nullable = true)
  |    |    |-- type: string (nullable = true)
 ```
+
+Clean out the database:
+```
+truncate table dim_customers;
+truncate table dim_billtos;
+truncate table dim_shiptos;
+truncate table fact_orders;
+truncate table fact_orderlines;
+truncate table fact_orders_dsr;
+insert into dim_shiptos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '', 99);
+```

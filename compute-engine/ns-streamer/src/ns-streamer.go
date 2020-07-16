@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/ybbus/httpretry"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
@@ -69,7 +70,7 @@ func main() {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", nsAuth)
 
-	client := &http.Client{}
+	client := httpretry.NewDefaultClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
@@ -86,13 +87,15 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	N := 2
+	N := 9
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
-	for i := 0; i < len(input.Records); i += 20 {
+	for i := 0; i < len(input.Records); i += 10 {
 		ids := []string{}
-		for _, r := range input.Records[i:i+20] {
-			ids = append(ids, r.ID)
+		for _, r := range input.Records[i:i+10] {
+			if len(r.ID) > 0 {
+				ids = append(ids, r.ID)
+			}
 		}
 		wg.Add(1)
 		go func(ids []string) {
@@ -110,19 +113,17 @@ func main() {
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
 	
-			client := &http.Client{}
-			
 			json := ""
 			for {
 				resp, err := client.Do(req)
 				if err != nil {
-					log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+					log.Printf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 				}
 				defer resp.Body.Close()
 		
 				body, err := ioutil.ReadAll(resp.Body)
 				json = string(body)
-				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") {
+				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") && len(json) > 0 {
 					break
 				}
 			}
