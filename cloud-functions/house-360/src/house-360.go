@@ -186,11 +186,9 @@ func House360(ctx context.Context, m PubSubMessage) error {
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value))))
 			}
-			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 && len(input.MatchKeys.AD2.Value) > 0 {
+			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD2.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value))))
-			} else if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
-				searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value))))
-			}
+			} 
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 
 			// read the FiberIDs from Redis
