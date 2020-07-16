@@ -263,19 +263,21 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
-			// JIE: I do NOT think this is necessarily the right place to do this?  If I understand this is right...
-			// this would be... for each value... of a search key... so like... if have 2x email addresses... each one?
 			setCardinality := "noset"
 			if len(searchSets) > 0 {
 				searchValues := GetRedisGuidValuesList(searchSets)
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
-							// if len(searchVal) == 1 {
-							// 	setCardinality = "oneset"
-							// } else if len(searchVal) > 1 {
-							// 	setCardinality = "multisets"
-							// }
+							if len(searchVal) == 1 {
+								setCardinality = "oneset"
+								// effectively an update... an inbound fiber matched to one set only
+							} else if len(searchVal) > 1 {
+								setCardinality = "multisets"
+								// a fiber matches to MORE than one set... this could occur w pre-existing sets from past runs...
+								// or if there is an internal record duplicate on the same event... actually from a 360 perspective...
+								// there'd have to be like 3+ record dupes... else it would just be an update.
+							}
 							if len(searchVal) > 0 {
 								if !Contains(expiredSetCollection, searchVal) {
 									expiredSetCollection = append(expiredSetCollection, searchVal)
