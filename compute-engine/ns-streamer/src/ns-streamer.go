@@ -86,13 +86,15 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	N := 2
+	N := 9
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
-	for i := 0; i < len(input.Records); i += 20 {
+	for i := 0; i < len(input.Records); i += 10 {
 		ids := []string{}
-		for _, r := range input.Records[i:i+20] {
-			ids = append(ids, r.ID)
+		for _, r := range input.Records[i:i+10] {
+			if len(r.ID) > 0 {
+				ids = append(ids, r.ID)
+			}
 		}
 		wg.Add(1)
 		go func(ids []string) {
@@ -122,7 +124,7 @@ func main() {
 		
 				body, err := ioutil.ReadAll(resp.Body)
 				json = string(body)
-				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") {
+				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") && len(json) > 0 {
 					break
 				}
 			}
