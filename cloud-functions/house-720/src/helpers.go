@@ -132,10 +132,10 @@ func GetHouseGoldenSearchFields(v *HouseGoldenDS) []string {
 		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
 	}
 	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.AD1) > 0 {
-		if len(v.AD2.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.AD2.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+		if len(v.AD2) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.AD2), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
 		} else {
-			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
 		}
 	}
 	return searchFields
