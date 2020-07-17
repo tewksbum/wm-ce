@@ -46,7 +46,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	// Create the cluster config.
 	req := &dataprocpb.CreateClusterRequest{
 		ProjectId: os.Getenv("GCP_PROJECT"),
-		Region:    os.Getenv("REGION"),
+		//Region:    region,
 		Cluster: &dataprocpb.Cluster{
 				ProjectId:   os.Getenv("GCP_PROJECT"),
 				ClusterName: os.Getenv("CLUSTER_NAME"),
@@ -54,8 +54,8 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 					ConfigBucket: os.Getenv("BUCKET"),
 					GceClusterConfig: &dataprocpb.GceClusterConfig {
 						ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
-						ServiceAccountScopes:  strings.Split(os.Getenv("SCOPE"), ","),
-						ZoneUri: os.Getenv("ZONE"),
+						ServiceAccountScopes:  strings.Split(os.Getenv("SCOPES"), ","),
+						// ZoneUri: os.Getenv("ZONE"),
 						SubnetworkUri: "default",
 					},
 					MasterConfig: &dataprocpb.InstanceGroupConfig{
