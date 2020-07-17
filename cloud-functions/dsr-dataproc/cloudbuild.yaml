@@ -10,7 +10,8 @@ steps:
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
     "--env-vars-file", ".env.yaml",
-    "--max-instances", "1"
+    "--max-instances", "1",
+    "--verbosity", "debug"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
