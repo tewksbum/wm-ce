@@ -502,7 +502,7 @@ func TestProcessRequestXXX(t *testing.T) {
 		"targetType": "datastore",
 		"targetLevel": "kind",
 		"operation": "delete",
-		"targetSelection": "dev-aam-sata",
+		"targetSelection": "dev-aam-bcm",
 		"targetSubSelection": ""
 	}`
 	// "targetSelection": "dev-wmd-apo",
@@ -1092,40 +1092,41 @@ func TestProcessRequestC(t *testing.T) {
 
 func TestPurgeList(t *testing.T) {
 	list := `
-	bfc-hou
-cco-rha
-cct-bn
-cen-afe
-chl-rl
-chs-bn
-cly-hrl
-css-hre
-cup-ic
-eiu-nrhh
-emi-rha
-eok-bk
-fau-hre
-fch-asbt
-fls-bn
-gsw-rha
-hbt-aa
-hnu-hrl
-hsn-fheg
-ion-rl
-jau-rha
-jhu-bn
-ksc-bn
-lhi-bn
-mns-rl
-nji-rha
-ohu-aa
-sbu-ad
-sos-rh
-sve-rha
-syg-irc
-tcu-hrl
-tmp-bn
+	aam-pa
 	`
+	// aam-bcm
+	// 	cco-rha
+	// cct-bn
+	// cen-afe
+	// chl-rl
+	// chs-bn
+	// cly-hrl
+	// css-hre
+	// cup-ic
+	// eiu-nrhh
+	// emi-rha
+	// eok-bk
+	// fau-hre
+	// fch-asbt
+	// fls-bn
+	// gsw-rha
+	// hbt-aa
+	// hnu-hrl
+	// hsn-fheg
+	// ion-rl
+	// jau-rha
+	// jhu-bn
+	// ksc-bn
+	// lhi-bn
+	// mns-rl
+	// nji-rha
+	// ohu-aa
+	// sbu-ad
+	// sos-rh
+	// sve-rha
+	// syg-irc
+	// tcu-hrl
+	// tmp-bn
 	json := `
 	{
 		"clientID": "wemade",

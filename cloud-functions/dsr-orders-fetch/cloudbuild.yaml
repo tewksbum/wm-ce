@@ -1,23 +1,23 @@
-timeout: 10m
+timeout: 600s
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
-    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "deploy", "ocm-ns-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
-    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--trigger-topic", "ocm-ns-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "30",
-    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
-    "--max-instances", "100"
+    "--timeout", "540",
+    "--env-vars-file", ".env.yaml",
+    "--max-instances", "4"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: household-360
-    _TRIGGER_TOPIC: people-postpipe
-    _ENTRY_POINT: HouseHold360
+    _FUNCTION_NAME: dsr-orders-fetch
+    _TRIGGER_TOPIC: dsr-orders-fetch
+    _ENTRY_POINT: Run
 options:
     substitution_option: 'ALLOW_LOOSE'

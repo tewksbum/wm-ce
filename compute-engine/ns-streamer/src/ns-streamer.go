@@ -7,8 +7,11 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/ybbus/httpretry"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
@@ -60,14 +63,14 @@ func init() {
 }
 
 func main() {
-	log.Printf("starting")
+	log.Printf("getting list")
 	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming"
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", nsAuth)
 
-	client := &http.Client{}
+	client := httpretry.NewDefaultClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
@@ -84,33 +87,56 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	for i, record := range input.Records {
-		if i < 10 {
-			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=821&deploy=1&id=%v", record.ID)
+	N := 9
+	wg := new(sync.WaitGroup)
+	sem := make(chan struct{}, N)
+	for i := 0; i < len(input.Records); i += 10 {
+		ids := []string{}
+		for _, r := range input.Records[i:i+10] {
+			if len(r.ID) > 0 {
+				ids = append(ids, r.ID)
+			}
+		}
+		wg.Add(1)
+		go func(ids []string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() {
+				// Reading from the channel decrements the semaphore
+				// (frees up buffer slot).
+				<-sem
+			}()
+			log.Printf("pulling orders %v", ids)
+			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1&orders=%v", strings.Join(ids, ","))
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
-
-			client := &http.Client{}
-			resp, err := client.Do(req)
-			if err != nil {
-				log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+	
+			json := ""
+			for {
+				resp, err := client.Do(req)
+				if err != nil {
+					log.Printf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+				}
+				defer resp.Body.Close()
+		
+				body, err := ioutil.ReadAll(resp.Body)
+				json = string(body)
+				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") && len(json) > 0 {
+					break
+				}
 			}
-			defer resp.Body.Close()
-
-			body, err := ioutil.ReadAll(resp.Body)
 			// drop this to pubsub
-			log.Printf("%v", record.ID)
 			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: body,
+				Data: []byte(json),
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
-
-		}
+		}(ids)		
 	}
-
+	wg.Wait()
+	return
 }

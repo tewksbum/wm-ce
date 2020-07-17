@@ -1,6 +1,6 @@
 package streamer
 
-case class OrdersFact (
+case class OrdersFact(
     date_key: Long,
     channel_key: Long,
     source_key: Long,
@@ -22,7 +22,7 @@ case class OrdersFact (
     total: Double
 )
 
-case class OrderLineFact (
+case class OrderLineFact(
     date_key: Long,
     channel_key: Long,
     source_key: Long,
@@ -39,57 +39,64 @@ case class OrderLineFact (
     netsuite_line_id: String,
     netsuite_line_key: String,
     lob_key: Long,
-    is_dropship: Boolean,
+    desttype_key: Long,
+    is_dropship: Int,
     total_price: Double,
     total_tax: Double,
     total_cost: Double,
+    total_discount: Double,
+    total_shipping: Double,
     quantity: Int,
-    is_discount: Boolean,
-    is_shipping: Boolean,
-    is_service: Boolean,
-    is_cancelled: Boolean,
+    is_discount: Int,
+    is_shipping: Int,
+    is_service: Int,
+    is_cancelled: Int
 )
 
-case class DailySalesFact (
+case class DailySalesFact(
     schedule_key: Long,
     date_key: Long,
     channel_key: Long,
     lob_key: Long,
-    is_dropship: Boolean,
-    amount: Double
+    is_dropship: Int,
+    price: Double,
+    cost: Double,
+    tax: Double,
+    discount: Double,
+    shipping: Double
 )
 
-case class DateDim (    // no need to update, read only, also we dont need all the columns
+case class DateDim( // no need to update, read only, also we dont need all the columns
     date_key: Long,
     date_string: String
 )
 
-case class ProductDim ( // this dim probably get updated by some type of feed
+case class ProductDim( // this dim probably get updated by some type of feed
     product_key: Long,
     sku: String,
     lob_key: Long,
     netsuite_id: Long
 )
 
-case class LOBDim ( // no need to update, read only
+case class LOBDim( // no need to update, read only
     lob_key: Long,
     lob_name: String
 )
 
-case class SchoolDim ( // this dim probably get updated by some type of feed
+case class SchoolDim( // this dim probably get updated by some type of feed
     school_key: Long,
     school_code: String,
     school_name: String,
     netsuite_id: Long
 )
 
-case class SourceDim ( // no need to update, read only
+case class SourceDim( // no need to update, read only
     source_key: Long,
     source_name: String,
     netsuite_id: Long
 )
 
-case class ChannelDim ( // no need to update, read only
+case class ChannelDim( // no need to update, read only
     channel_key: Long,
     channel_name: String,
     netsuite_id: Long
@@ -134,3 +141,18 @@ case class DestTypeDim(
     desttype_name: String
 )
 
+case class LineUpsertResult (
+    line_id: String,
+    existing: Boolean,
+    cancelled: Boolean,
+    price: Double,
+    tax: Double,
+    cost: Double,
+    discount: Double,
+    shipping: Double
+)
+
+case class PeopleUpsertResult (
+    old_key: String,
+    new_key: String
+)

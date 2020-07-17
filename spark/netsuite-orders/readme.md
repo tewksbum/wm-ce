@@ -42,14 +42,44 @@ gcloud dataproc clusters create sparkles \
     --region=us-central1 \
     --zone=us-central1-c \
     --scopes=pubsub \
-    --image-version="preview" \
+    --image-version="1.5" \
 	--bucket=wm_dataproc \
+	--master-min-cpu-platform="Intel Skylake" \
 	--single-node \
-	--master-machine-type n1-standard-2 \
+	--master-machine-type n1-standard-4 \
 	--master-boot-disk-size 1000 \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true
 ```    
+
+Create dataproc cluster with spark 3.0, job logging on stackdriver, 1 master and 2 worker nodes
+```
+gcloud dataproc clusters create sparkles --region us-central1 --subnet default \
+    --zone us-central1-c --master-machine-type n1-standard-4 --master-boot-disk-type pd-ssd \
+    --master-boot-disk-size 500 --master-min-cpu-platform="Intel Skylake" \
+    --num-workers 2 --worker-machine-type n1-standard-4 --worker-boot-disk-size 500 \
+    --worker-min-cpu-platform="Intel Skylake" --worker-boot-disk-type pd-ssd \
+    --image-version "preview-debian10" --project wemade-core --scopes=pubsub --bucket=wm_dataproc \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB
+```
+
+Create dataproc cluster with spark 3.0, job logging on stackdriver, Single Node
+```
+gcloud dataproc clusters create sparkles \
+    --region=us-central1 \
+    --zone=us-central1-c \
+    --scopes=pubsub \
+    --image-version="preview-debian10" \
+	--bucket=wm_dataproc \
+	--master-min-cpu-platform="Intel Skylake" \
+    --master-boot-disk-type pd-ssd \
+	--single-node \
+	--master-machine-type n1-standard-4 \
+	--master-boot-disk-size 600 \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB
+```
 
 Copy Jar file and Submit a Job to the dataproc cluster
 ```
@@ -60,7 +90,7 @@ gcloud dataproc jobs submit spark \
     --class=streamer.OrderStreamer \
     --jars=gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar \
 	--region=us-central1  \
-	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:2.4.6
+	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:3.0.0
 ```
 
 Spark DataFrame schema for the order object
@@ -143,4 +173,15 @@ root
  |    |    |-- phone: string (nullable = true)
  |    |    |-- email: string (nullable = true)
  |    |    |-- type: string (nullable = true)
+```
+
+Clean out the database:
+```
+truncate table dim_customers;
+truncate table dim_billtos;
+truncate table dim_shiptos;
+truncate table fact_orders;
+truncate table fact_orderlines;
+truncate table fact_orders_dsr;
+insert into dim_shiptos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '', 99);
 ```

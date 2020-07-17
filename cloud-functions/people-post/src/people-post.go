@@ -141,7 +141,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	//LogDev(fmt.Sprintf("PubSubMessage PostProcessPeople: %s", string(m.Data)))
 
 	var titleValue = ""
-	var MPRCounter int       // keep track of how many MPR we have
+	var mprEmail = ""
+	var parsedName NameParsed
 	var MARCounter int       // keep track of how many MAR we have
 	var outputs []PostRecord // this contains all outputs with a type
 
@@ -158,7 +159,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	// iterate through every column on the input record to decide what the column is...
 	for _, column := range input.Columns {
-		// start with some sanitization
+
 		column.Value = strings.TrimSpace(column.Value)
 		column.Value = reNewline.ReplaceAllString(column.Value, " ") //TODO: Jie this removes carriage return... do we want this here?
 		column.Value = strings.Replace(column.Value, "  ", " ", -1)
@@ -167,235 +168,43 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			continue
 		}
 
+		if column.PeopleERR.SchoolYear == 1 {
+			// right now schoolYear is just a pass through value...
+			// we do expect to get this w/ most files
+			schoolYearAttr = column.Value
+		}
+		if column.PeopleERR.Status == 1 && column.IsAttribute {
+			statusAttr = column.Value
+		}
+		if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
+			// !reNameTitle makes sure the value is not like a Mr. Mrs.
+			// we don't want to overwrite a file supplied TITLE w/ an attribute...
+			if !column.IsAttribute {
+				titleValue = column.Value
+			} else if column.IsAttribute && titleValue == "" {
+				titleValue = column.Value
+			}
+		}
+		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
+			parsedName = ParseName(column.Value)
+		}
+
+		/**************************************************************/
+		// declare column
+
+		/************
+		// turned the ML off :(
 		// capture ML prediction to column
 		// predictionValue := input.Prediction.Predictions[index]
 		// predictionKey := strconv.Itoa(int(predictionValue))
 		// mlMatchKey := MLLabels[predictionKey]
 		// column.MatchKey = mlMatchKey
+		*************/
 
-		// let's figure out which column this goes to
-		if column.PeopleERR.SchoolYear == 1 {
-			// right now schoolYear is just a pass through value...
-			// we do expect to get this w/ most files
-			schoolYearAttr = column.Value
-		} else if column.PeopleERR.TrustedID == 1 {
-			column.MatchKey1 = "CLIENTID"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.TrustedID == 1"))
-		} else if column.PeopleERR.Organization == 1 {
-			column.MatchKey1 = "ORGANIZATION"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Organization == 1"))
-		} else if column.PeopleERR.Gender == 1 {
-			column.MatchKey1 = "GENDER"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Gender == 1"))
-		} else if column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute { //preffer the attribute.
-			// TODO: a contains here seems VERY dangerous...
-			column.MatchKey1 = "ROLE"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsStudentRole == 1 && column.IsAttribute"))
-		} else if column.PeopleERR.Status == 1 && column.IsAttribute {
-			statusAttr = column.Value
-		} else if (column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1) && !reNameTitle.MatchString(column.Value) {
-			// !reNameTitle makes sure the value is not like a Mr. Mrs.
-			// we don't want to overwrite a file supplied TITLE w/ an attribute...
-			if column.IsAttribute && titleValue == "" {
-				titleValue = column.Value
-				column.MatchKey1 = "TITLE"
-			} else {
-				titleValue = column.Value
-				column.MatchKey1 = "TITLE"
-				if column.IsAttribute {
-					titleYearAttr = column.Value
-				}
-			}
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v and %v", column.MatchKey1, column.MatchKey2, " column.PeopleERR.Title == 1 || column.PeopleERR.ContainsTitle == 1"))
-			column.MatchKey = ""
-			column.PeopleERR.Country = 0 // override this is NOT a country
-			column.PeopleERR.State = 0   // override this is NOT a state value
-		} else if column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value) {
-			// TODO: come back and fix this... maybe drop MAR all together?
-			// column.MatchKey1 = "DORM"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Dorm == 1 && reResidenceHall.MatchString(column.Value)"))
-		} else if column.PeopleERR.Room == 1 {
-			// TODO: come back and fix this... maybe drop MAR all together?
-			// column.MatchKey1 = "ROOM"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Room == 1"))
-		} else if column.PeopleERR.FullAddress == 1 {
-			column.MatchKey1 = "FULLADDRESS"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.FullAddress == 1"))
-		} else if column.PeopleERR.ContainsCity == 1 && (column.PeopleERR.ContainsState == 1 || column.PeopleERR.ContainsZipCode == 1) {
-			column.MatchKey1 = "CITYSTATEZIP"
-			LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsState == 1 && column.PeopleERR.ContainsCity == 1"))
-		}
+		matchKeyAssigned := columnMatchOverride(column, titleValue, parsedName)
 
-		var parsedName NameParsed
-		// this might be a full name, try to parse it and see if we have first and last names
-		// || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && column.PeopleERR.ContainsName == 1)
-		if column.PeopleERR.ContainsRole == 1 || column.PeopleERR.FullName == 1 || (column.PeopleVER.IS_FIRSTNAME && column.PeopleVER.IS_LASTNAME && ((column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.ContainsLastName == 1) || (column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0))) {
-			parsedName = ParseName(column.Value)
-			if len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0 && column.PeopleERR.Address == 0 && column.PeopleERR.Address1 == 0 && column.PeopleERR.ContainsAddress == 0 && column.PeopleERR.City == 0 && column.PeopleERR.ContainsCity == 0 {
-				column.MatchKey1 = "FULLNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "len(parsedName.FNAME) > 0 && len(parsedName.LNAME) > 0"))
-			}
-		}
-
-		if len(column.MatchKey1) == 0 {
-			if column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1 {
-				column.MatchKey1 = "FNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.FirstName == 1"))
-			} else if column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1 {
-				column.MatchKey1 = "LNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_LASTNAME && column.PeopleERR.LastName == 1"))
-			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1 {
-				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Address1 == 1"))
-			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1 {
-				column.MatchKey1 = "AD2"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Address2 == 1"))
-			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1 {
-				column.MatchKey1 = "AD3"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Address3 == 1"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.City == 1 {
-				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.City == 1"))
-			} else if column.PeopleVER.IS_STATE && column.PeopleERR.State == 1 {
-				column.MatchKey1 = "STATE"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.State == 1"))
-			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1 {
-				column.MatchKey1 = "ZIP"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ZipCode == 1"))
-			} else if column.PeopleVER.IS_COUNTRY && (column.PeopleERR.Country == 1 || column.PeopleERR.Address2 == 1 || column.PeopleERR.Address3 == 1 || column.PeopleERR.Address4 == 1 || column.PeopleERR.ContainsCountry == 1) {
-				column.MatchKey1 = "COUNTRY"
-				LogDev(fmt.Sprintf("Country: %v", column.Value))
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY && column.PeopleERR.Country == 1"))
-			} else if column.PeopleVER.IS_EMAIL {
-				column.MatchKey1 = "EMAIL"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_EMAIL"))
-			} else if column.PeopleVER.IS_PHONE && len(column.Value) >= 10 {
-				numberValue := reNumberOnly.ReplaceAllString(column.Value, "")
-				if column.PeopleERR.Phone == 1 && (len(numberValue) == 10 || (len(numberValue) == 11 && strings.HasPrefix(numberValue, "1"))) { // only handle US phone format
-					column.MatchKey1 = "PHONE"
-					LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_PHONE && len(column.Value) >= 10"))
-				}
-			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "FNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1 && column.PeopleVER.IS_FIRSTNAME"))
-			} else if column.PeopleERR.FirstName == 1 {
-				column.MatchKey1 = "FNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.FirstName == 1"))
-			} else if column.PeopleERR.MiddleName == 1 {
-				column.MatchKey1 = "MNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.MiddleName == 1"))
-			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "LNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1 && column.PeopleVER.IS_LASTNAME"))
-			} else if column.PeopleERR.LastName == 1 {
-				column.MatchKey1 = "LNAME"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.LastName == 1"))
-			} else if column.PeopleERR.Address1 == 1 {
-				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Address1 == 1"))
-			} else if column.PeopleERR.Address2 == 1 {
-				column.MatchKey1 = "AD2"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Address2 == 1"))
-			} else if column.PeopleERR.Address3 == 1 {
-				column.MatchKey1 = "AD3"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.Address3 == 1"))
-			} else if column.PeopleERR.City == 1 {
-				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.City == 1"))
-			} else if column.PeopleERR.State == 1 || (column.PeopleERR.ContainsRole == 1 && column.PeopleERR.ContainsState == 1) && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "STATE"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.State == 1"))
-			} else if column.PeopleERR.ZipCode == 1 {
-				column.MatchKey1 = "ZIP"
-				LogDev(fmt.Sprintf("MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ZipCode == 1"))
-				// start of the VER checks...
-			} else if column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 {
-				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 && !column.PeopleVER.IS_COUNTRY {
-				column.MatchKey1 = "AD2"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET2 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.ContainsCountry == 0 {
-				column.MatchKey1 = "AD3"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STREET3 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_STATE && column.PeopleERR.ContainsState == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0 {
-				column.MatchKey1 = "STATE"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_STATE && column.PeopleERR.Junk == 0 && column.PeopleERR.MiddleName == 0"))
-			} else if column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "ZIP"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_ZIPCODE && column.PeopleERR.ContainsZipCode == 1 && column.PeopleERR.Junk == 0"))
-			} else if column.PeopleVER.IS_CITY && column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsRole == 0 && column.PeopleERR.County == 0 && column.PeopleERR.ContainsCountry == 0 {
-				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_CITY && column.PeopleERR.Junk == 0 && column.PeopleERR.ContainsFirstName == 0 && column.PeopleERR.ContainsLastName == 0 && column.PeopleERR.MiddleName == 0 && column.PeopleERR.Gender == 0 && column.PeopleERR.ContainsCountry == 0"))
-			} else if column.PeopleVER.IS_COUNTRY && column.PeopleERR.ContainsCountry == 1 {
-				column.MatchKey1 = "COUNTRY"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleVER.IS_COUNTRY"))
-			} else if column.PeopleERR.ContainsFirstName == 1 && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "FNAME"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsFirstName == 1"))
-			} else if column.PeopleERR.ContainsLastName == 1 && column.PeopleERR.Junk == 0 {
-				column.MatchKey1 = "LNAME"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsLastName == 1"))
-			} else if column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0 {
-				column.MatchKey1 = "CITY"
-				LogDev(fmt.Sprintf("acd - MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsCity == 1 && column.PeopleERR.Junk == 0 && column.PeopleERR.Gender == 0"))
-			} else if column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.Junk == 0 {
-				// we should likely dump this one...
-				column.MatchKey1 = "AD1"
-				LogDev(fmt.Sprintf("acd - BAD MatchKey %v on condition %v", column.MatchKey1, "column.PeopleERR.ContainsAddress == 1 && column.PeopleERR.Junk == 0"))
-			}
-		}
-
-		if reMilityBaseCity(column.Value) {
-			column.MatchKey1 = "CITY"
-			LogDev(fmt.Sprintf("overriding city by military base: %v", column.Value))
-		}
-
-		if reOverseasBaseState.MatchString(column.Value) {
-			column.MatchKey1 = "STATE"
-			LogDev(fmt.Sprintf("overriding state by USPS base designation: %v", column.Value))
-		}
-
-		// fix zip code that has leading 0 stripped out
-		if column.MatchKey1 == "ZIP" && IsInt(column.Value) && len(column.Value) == 8 {
-			column.Value = LeftPad2Len(column.Value, "0", 9)
-		}
-
-		if column.MatchKey1 == "ZIP" && IsInt(column.Value) && len(column.Value) < 5 {
-			column.Value = LeftPad2Len(column.Value, "0", 5)
-		}
-
-		// type email if ends with gmail, yahoo, hotmail
-		if column.MatchKey1 == "EMAIL" && len(column.Value) > 0 {
-			email := strings.ToLower(column.Value)
-			if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") || strings.HasSuffix(email, "msn.com") || strings.HasSuffix(email, "aol.com") || strings.HasSuffix(email, "comcast.net") {
-				column.Type = "Private"
-			}
-		}
-
-		// AD type
-		if column.MatchKey1 == "AD1" || column.MatchKey == "AD1" {
-			if column.Value == "true" || column.Value == "false" || column.Value == "0001-01-01T00:00:00+00:00" || column.Value == "0.000000" {
-				column.MatchKey = ""
-				column.MatchKey1 = ""
-				column.MatchKey2 = ""
-				column.MatchKey3 = ""
-			} else {
-				column.Type = AssignAddressType(&column)
-				column.MatchKey2 = "ADTYPE"
-				column.MatchKey3 = "ADBOOK"
-			}
-		}
-
-		// clear MatchKey if Junk
-		if column.PeopleERR.Junk == 1 {
-			LogDev(fmt.Sprintf("JUNK is dropping your match keys: %v %v %v %v", column.MatchKey, column.MatchKey1, column.MatchKey2, column.MatchKey3))
-			column.MatchKey = ""
-			column.MatchKey1 = ""
-			column.MatchKey2 = ""
-			column.MatchKey3 = ""
-		}
-
+		/****************
+		// this was code... that would use a model prediction if rules didn't find something
 		// now that we have finished assignment, let's assign the columns, attempting to set value on a match key field that already contains a value will result in additional output being created
 		matchKeyAssigned := ""
 		if len(column.MatchKey1) > 0 {
@@ -405,11 +214,39 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			matchKeyAssigned = column.MatchKey
 			LogDev(fmt.Sprintf("matchkey assigned is %v from prediction", matchKeyAssigned))
 		}
+		*****/
+
+		/**************************************************************/
+		// sanitize values
+		if column.MatchKey1 == "ZIP" && IsInt(column.Value) {
+			// fix zip code that has leading 0 stripped out
+			if len(column.Value) == 8 {
+				column.Value = LeftPad2Len(column.Value, "0", 9)
+			} else if len(column.Value) == 4 {
+				column.Value = LeftPad2Len(column.Value, "0", 5)
+			} else if len(column.Value) == 3 { //for PR and the IRS
+				column.Value = LeftPad2Len(column.Value, "00", 5)
+			}
+		}
+		if column.MatchKey1 == "EMAIL" && len(column.Value) > 0 {
+			// type email if ends with gmail, yahoo, hotmail
+			email := strings.ToLower(column.Value)
+			if strings.HasSuffix(email, "gmail.com") || strings.HasSuffix(email, "yahoo.com") || strings.HasSuffix(email, "hotmail.com") || strings.HasSuffix(email, "msn.com") || strings.HasSuffix(email, "aol.com") || strings.HasSuffix(email, "comcast.net") {
+				column.Type = "Private"
+			}
+		}
+		if column.MatchKey1 == "AD1" && (column.Value != "true" && column.Value != "false" && column.Value != "0001-01-01T00:00:00+00:00" && column.Value != "0.000000") {
+			//Ad Type
+			column.Type = AssignAddressType(&column)
+			column.MatchKey2 = "ADTYPE"
+			column.MatchKey3 = "ADBOOK"
+		}
 
 		var currentOutput *PostRecord
 		var indexOutput int
 		skipValue := false
-		if len(matchKeyAssigned) > 0 {
+
+		if len(matchKeyAssigned) > 0 { // if we haven't assigned a value to the column...
 			if column.PeopleERR.ContainsRole == 0 { // not MPR
 				currentOutput, indexOutput = GetOutputByType(&outputs, "default")
 				if matchKeyAssigned == "DORM" || matchKeyAssigned == "ROOM" { // write out dorm address as a new output
@@ -433,27 +270,40 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
 					}
 				}
-			} else { // MPR
-				mprExtracted := ExtractMPRCounter(column.Name)
-				if MPRCounter == 0 {
-					MPRCounter++
-				}
-				// how should this counter be used
-				if mprExtracted > 0 {
-					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", mprExtracted)
+			} else if column.PeopleERR.ContainsRole == 1 { // MPR
+				if column.PeopleERR.ContainsMother == 1 {
+					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 1)
+				} else if column.PeopleERR.ContainsFather == 1 {
+					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 2)
 				} else {
-					currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
-					currentValue := GetMkField(&(currentOutput.Output), matchKeyAssigned)
-					for {
-						if len(currentValue.Value) == 0 {
-							break
+					if column.PeopleVER.IS_EMAIL {
+						// could use an iterator in here instead of 3 && 4
+						if mprEmail != column.Value {
+							currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+							mprEmail = column.Value
+						} else {
+							currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
 						}
-						MPRCounter++
-						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", MPRCounter)
-						currentValue = GetMkField(&(currentOutput.Output), matchKeyAssigned)
+					} else {
+						currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
 					}
 				}
 			}
+
+			// if column.PeopleERR.ContainsMother == 1 {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 1)
+			// } else if column.PeopleERR.ContainsFather == 1 {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 2)
+			// } else if column.PeopleVER.IS_EMAIL { //handle case where we get two "parent" emails
+			// 	if mprEmail != column.Value {
+			// 		currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 4)
+			// 		mprEmail = column.Value
+			// 	} else {
+			// 		currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 5)
+			// 	}
+			// } else {
+			// 	currentOutput, indexOutput = GetOutputByTypeAndSequence(&outputs, "mpr", 3)
+			// }
 
 			if !skipValue {
 				// let's assign the value
@@ -489,7 +339,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				outputs[indexOutput] = *currentOutput
 			}
 		} else {
-
 			log.Printf("Event %v Record %v Column has no match key assigned: %v %v", input.Signature.EventID, input.Signature.RecordID, column.Name, column.Value)
 		}
 		LogDev(fmt.Sprintf("Outputs is %v", outputs))
@@ -682,49 +531,30 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-		// {
-		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:RecordID", Count: 1, Increment: true})
-		// }
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.Signature.RecordID))
+
 		if len(v.Output.EMAIL.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value)))) // for people
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value))))                                                           // for house
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
 		}
-		// else {
-		// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Email", Count: 1, Increment: true})
-		// }
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.PHONE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Phone+FInitial", Count: 1, Increment: true})
 		}
-		// else {
-		// if len(v.Output.PHONE.Value) == 0 {
-		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-Phone", Count: 1, Increment: true})
-		// }
-		// if len(v.Output.FINITIAL.Value) == 0 {
-		// 	reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FInitial", Count: 1, Increment: true})
-		// }
-		// }
+
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.LNAME.Value) > 0 && len(v.Output.FNAME.Value) > 0 && len(v.Output.AD1.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.FNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.LNAME.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value))))
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:City+State+LName+FName+AD1", Count: 1, Increment: true})
 		}
-		// else {
-		// 	if len(v.Output.CITY.Value) == 0 {
-		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-City", Count: 1, Increment: true})
-		// 	}
-		// 	if len(v.Output.STATE.Value) == 0 {
-		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-State", Count: 1, Increment: true})
-		// 	}
-		// 	if len(v.Output.LNAME.Value) == 0 {
-		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-LName", Count: 1, Increment: true})
-		// 	}
-		// 	if len(v.Output.FNAME.Value) == 0 {
-		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-FName", Count: 1, Increment: true})
-		// 	}
-		// 	if len(v.Output.AD1.Value) == 0 {
-		// 		reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:-AD1", Count: 1, Increment: true})
-		// 	}
-		// }
+		// for house
+		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.AD1.Value) > 0 {
+			if len(v.Output.AD2.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+			} else {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+			}
+		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)

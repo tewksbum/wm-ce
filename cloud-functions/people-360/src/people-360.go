@@ -226,26 +226,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
-			// if inputIsFromPost {
-			// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:RECORDID", Count: 1, Increment: true})
-			// }
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				// if inputIsFromPost {
-				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:EMAIL+ROLE", Count: 1, Increment: true})
-				// }
 			}
 			if len(input.MatchKeys.PHONE.Value) > 0 && len(input.MatchKeys.FINITIAL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.PHONE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				// if inputIsFromPost {
-				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:PHONE+FINITIAL+ROLE", Count: 1, Increment: true})
-				// }
 			}
 			if len(input.MatchKeys.CITY.Value) > 0 && len(input.MatchKeys.STATE.Value) > 0 && len(input.MatchKeys.LNAME.Value) > 0 && len(input.MatchKeys.FNAME.Value) > 0 && len(input.MatchKeys.AD1.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.FNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.LNAME.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.AD1.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.CITY.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.STATE.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
-				// if inputIsFromPost {
-				// 	reportCounters1 = append(reportCounters1, ReportCounter{Type: "People360:Audit", Name: "Match:FNAME+LNAME+AD1+CITY+STATE+ROLE", Count: 1, Increment: true})
-				// }
 			}
 			LogDev(fmt.Sprintf("Search Fields: %+v", searchFields))
 
@@ -260,9 +248,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					searchSets = append(searchSets, strings.Join(msSet, ":"))
 				}
 			}
+
 			if len(searchKeys) > 0 {
 				searchValues := GetRedisGuidValuesList(searchKeys)
-
 				if len(searchValues) > 0 {
 					for _, searchValue := range searchValues {
 						for _, searchVal := range searchValue {
@@ -275,6 +263,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			setCardinality := "noset"
 			if len(searchSets) > 0 {
 				searchValues := GetRedisGuidValuesList(searchSets)
 				if len(searchValues) > 0 {
@@ -289,6 +278,23 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+			switch len(expiredSetCollection) {
+			case 1:
+				setCardinality = "oneset"
+				break
+			case 0: 
+				setCardinality = "noset"
+				break
+			default:
+				setCardinality = "multisets"
+			}
+
+			reportCounters1 = append(reportCounters1, ReportCounter{
+				Type:      "People360",
+				Name:      setCardinality,
+				Count:     1,
+				Increment: true,
+			})
 			LogDev(fmt.Sprintf("Matched Fibers: %+v", matchedFibers))
 
 			// get all the Fibers
@@ -522,10 +528,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Fatalf("Error: storing Fiber sig %v, error %v", input.Signature, err)
 		}
 
-		// stop processing if no new values
-		// if !HasNewValues {
-		// 	return nil
-		// }
 		if !matchable {
 			LogDev(fmt.Sprintf("Unmatchable fiber detected %v", input.Signature))
 			IncrRedisValue([]string{input.Signature.EventID, "fibers-deleted"})
@@ -796,19 +798,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			},
 		)
 
-		setCardinality := "noset"
-		if len(expiredSetCollection) == 1 {
-			setCardinality = "oneset"
-		} else if len(expiredSetCollection) > 1 {
-			setCardinality = "multisets"
-		}
-		reportCounters1 = append(reportCounters1, ReportCounter{
-			Type:      "People360",
-			Name:      setCardinality,
-			Count:     1,
-			Increment: true,
-		})
-
 		log.Printf("set search: %+v", setDS.Search)
 		if len(setDS.EventID) == 0 {
 			setJSON, _ := json.Marshal(setDS)
@@ -947,6 +936,19 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 			}
+
+			// setCardinality := "noset"
+			// if len(SetKeys) == 1 {
+			// 	setCardinality = "oneset"
+			// } else if len(SetKeys) > 1 {
+			// 	setCardinality = "multisets"
+			// }
+			// reportCounters1 = append(reportCounters1, ReportCounter{
+			// 	Type:      "People360",
+			// 	Name:      setCardinality,
+			// 	Count:     1,
+			// 	Increment: true,
+			// })
 
 			LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", SetKeys, GoldenKeys))
 			if err := fs.DeleteMulti(ctx, SetKeys); err != nil {
