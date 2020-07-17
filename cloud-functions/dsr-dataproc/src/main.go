@@ -46,7 +46,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	// Create the cluster config.
 	req := &dataprocpb.CreateClusterRequest{
 		ProjectId: os.Getenv("GCP_PROJECT"),
-		//Region:    region,
+		Region:    region,
 		Cluster: &dataprocpb.Cluster{
 				ProjectId:   os.Getenv("GCP_PROJECT"),
 				ClusterName: os.Getenv("CLUSTER_NAME"),
