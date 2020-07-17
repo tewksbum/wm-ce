@@ -46,7 +46,7 @@ func init() {
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topicR = ps.Topic(os.Getenv("PSREPORT"))
-	ready.PublishSettings.DelayThreshold = 120 * time.Second
+	// ready.PublishSettings.DelayThreshold = 120 * time.Second
 }
 
 func House720(ctx context.Context, m PubSubMessage) error {
@@ -138,8 +138,8 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	for _, f := range eventSets {
 		// es := make([]string)
 		for i, fs := range f.Search {
-			if strings.HasPrefix(fs[i], "HOUSE") {
-				es = append(es, fs[i])
+			if strings.HasPrefix(string(fs[i]), "HOUSE") {
+				es = append(es, string(fs[i]))
 			}
 		}
 		log.Printf("addings searchKeys: %v", es)
@@ -152,6 +152,19 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	eventSets = nil // clear eventFibers to release memory
 
 	// var eventSets []HouseSetDS // this is for raw sets
+
+	// type HouseSetDS struct {
+	// 	ID                     *datastore.Key `datastore:"__key__"`
+	// 	OwnerID                []string       `datastore:"ownerid"`
+	// 	Source                 []string       `datastore:"source"`
+	// 	EventID                []string       `datastore:"eventid"`
+	// 	EventType              []string       `datastore:"eventtype"`
+	// 	FiberType              []string       `datastore:"fibertype"`
+	// 	RecordID               []string       `datastore:"recordid"`
+	// 	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
+	// 	CreatedAt              time.Time      `datastore:"createdat"`
+	// 	Fibers                 []string       `datastore:"fibers"`
+	// 	Search                 []string       `datastore:"search"`
 
 	// type HouseSetDSProjected struct {
 	// 	ID     *datastore.Key `datastore:"__key__"`
