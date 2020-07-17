@@ -134,19 +134,36 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	}, cfName)
 
 	var eventSetSearchKeys []HouseSetDSProjected
+	var es []string 
 	for _, f := range eventSets {
-		es := make([]string)
+		// es := make([]string)
 		for i, fs := range f.Search {
 			if strings.HasPrefix(fs[i].Value, "HOUSE")) {
 				es = append(es, fs[i].Value)
 			}
 		}
+		LogDev("addings searchKeys: %v", es)
 		eventSetSearchKeys = append(eventSetSearchKeys, HouseSetDSProjected{
 			ID:     f.ID,
 			Search: es,
 		})
+		es = nil
 	}
 	eventSets = nil // clear eventFibers to release memory
+
+	// var eventSets []HouseSetDS // this is for raw sets
+
+	// type HouseSetDSProjected struct {
+	// 	ID     *datastore.Key `datastore:"__key__"`
+	// 	Search []string       `datastore:"search"`
+	// }
+
+	// for _, f := range eventSets {
+	// 	eventSetSearchKeys = append(eventSetSearchKeys, PeopleSetDSProjected{
+	// 		ID:     f.ID,
+	// 		Search: f.Search,
+	// 	})
+	// }
 
 	// reorganize sets as a map
 	setSearchMap := make(map[string][]string)
