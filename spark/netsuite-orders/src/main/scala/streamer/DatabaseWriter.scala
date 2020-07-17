@@ -152,6 +152,7 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
+
           val tbl = st.executeUpdate(s"create temporary table dim_billtos_${id} like dim_billtos ")
           val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone) values(?,?,?,?,?, ?,?,?,?,?)")
           for (record <- records) {
@@ -378,6 +379,7 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
+
           val tbl = st.executeUpdate(s"create temporary table fact_orderlines_${id} like fact_orderlines ")
           val ps = con.prepareStatement(s"""
             insert into fact_orderlines_${id} 
