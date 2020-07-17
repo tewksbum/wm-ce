@@ -93,9 +93,8 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	// Create the cluster.
 	op, err := clusterClient.CreateCluster(ctx, req)
-	
-	reqJson, _ := json.Marshal(req)
-	log.Printf("request %v", reqJson)
+	reqJSON, _ := json.Marshal(req)
+	log.Printf("request %v", reqJSON)
 	if err != nil {
 		log.Fatalf("CreateCluster: %v", err)
 	}
