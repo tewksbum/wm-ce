@@ -129,7 +129,7 @@ func GetHouseGoldenSearchFields(v *HouseGoldenDS) []string {
 	log.Printf("golden record: %+v", v)
 	var searchFields []string
 	if len(v.EMAIL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.ToUpper(v.EMAIL)))
 	}
 	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.AD1) > 0 {
 		if len(v.AD2) > 0 {
