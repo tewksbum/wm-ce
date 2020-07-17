@@ -58,7 +58,7 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
-          val tbl = st.executeUpdate(s"create table dim_customers_${id} like dim_customers ")
+          val tbl = st.executeUpdate(s"create temporary table dim_customers_${id} like dim_customers ")
           val ps = con.prepareStatement(s"insert into dim_customers_${id} (customer_key,customer_name,customer_email,netsuite_id) values(?,?,?,?)")
           for (record <- records) {
             ps.setString(1, record.customer_key)
@@ -152,7 +152,8 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
-          val tbl = st.executeUpdate(s"create table dim_billtos_${id} like dim_billtos ")
+
+          val tbl = st.executeUpdate(s"create temporary table dim_billtos_${id} like dim_billtos ")
           val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone) values(?,?,?,?,?, ?,?,?,?,?)")
           for (record <- records) {
             ps.setString(1, record.billto_key)
@@ -253,7 +254,7 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
-          val tbl = st.executeUpdate(s"create table dim_shiptos_${id} like dim_shiptos ")
+          val tbl = st.executeUpdate(s"create temporary table dim_shiptos_${id} like dim_shiptos ")
           val ps = con.prepareStatement(s"insert into dim_shiptos_${id} (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key) values(?,?,?,?,?, ?,?,?,?,?, ?)")
           for (record <- records) {
             ps.setString(1, record.shipto_key)
@@ -378,7 +379,8 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
-          val tbl = st.executeUpdate(s"create table fact_orderlines_${id} like fact_orderlines ")
+
+          val tbl = st.executeUpdate(s"create temporary table fact_orderlines_${id} like fact_orderlines ")
           val ps = con.prepareStatement(s"""
             insert into fact_orderlines_${id} 
             (date_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,

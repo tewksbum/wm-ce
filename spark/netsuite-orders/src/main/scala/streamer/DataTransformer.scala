@@ -120,6 +120,7 @@ object DataTransformer {
           $"totals.serviceTaxTotal".alias("service_tax"),
           $"totals.total".alias("total")
         )
+        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
@@ -179,6 +180,7 @@ object DataTransformer {
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
+        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
         .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
         .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
