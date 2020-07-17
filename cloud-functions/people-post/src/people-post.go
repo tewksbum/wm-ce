@@ -218,7 +218,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 		/**************************************************************/
 		// sanitize values
-		if column.MatchKey1 == "ZIP" && IsInt(column.Value) { {
+		if column.MatchKey1 == "ZIP" && IsInt(column.Value) {
 			// fix zip code that has leading 0 stripped out
 			if len(column.Value) == 8 {
 				column.Value = LeftPad2Len(column.Value, "0", 9)
