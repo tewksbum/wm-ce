@@ -529,10 +529,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.Signature.RecordID))
 
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value)))) // for people
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)) )) // for house
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value))))                                                           // for house
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
@@ -546,8 +547,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		// for house
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.AD1.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
-		} 		
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
