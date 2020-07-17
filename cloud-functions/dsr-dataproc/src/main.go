@@ -45,10 +45,6 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	}
 
 	// Create the cluster config.
-	/*
-
-SPARK_PROPERTIES: dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB
-	*/
 	req := &dataprocpb.CreateClusterRequest{
 		ProjectId: projectID,
 		Region:    region,
