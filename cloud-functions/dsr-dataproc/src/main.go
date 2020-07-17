@@ -4,14 +4,18 @@ import (
 	"strings"
 	"github.com/golang/protobuf/ptypes/duration"
 	"encoding/json"
+	"net/http"
 	"context"
 	"log"
 	"os"
+	"fmt"
 	"strconv"
+	"io/ioutil"
 
 	dataproc "cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/api/option"
 	"cloud.google.com/go/pubsub"
+	"github.com/ybbus/httpretry"
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
 )
 
@@ -46,7 +50,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	// Create the cluster config.
 	req := &dataprocpb.CreateClusterRequest{
 		ProjectId: os.Getenv("GCP_PROJECT"),
-		Region:    os.Getenv("REGION"),
+		Region:    region,
 		Cluster: &dataprocpb.Cluster{
 				ProjectId:   os.Getenv("GCP_PROJECT"),
 				ClusterName: os.Getenv("CLUSTER_NAME"),
@@ -54,8 +58,8 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 					ConfigBucket: os.Getenv("BUCKET"),
 					GceClusterConfig: &dataprocpb.GceClusterConfig {
 						ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
-						ServiceAccountScopes:  strings.Split(os.Getenv("SCOPE"), ","),
-						ZoneUri: os.Getenv("ZONE"),
+						ServiceAccountScopes:  strings.Split(os.Getenv("SCOPES"), ","),
+						// ZoneUri: os.Getenv("ZONE"),
 						SubnetworkUri: "default",
 					},
 					MasterConfig: &dataprocpb.InstanceGroupConfig{
@@ -106,6 +110,48 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	// Output a success message.
 	log.Printf("Cluster created successfully: %s", resp.ClusterName)
+
+	// submit the job
+	jobJSON := `
+	{
+		"projectId": "wemade-core",
+		"job": {
+			"placement": {
+			"clusterName": "sparkles"
+			},
+			"statusHistory": [],
+			"reference": {
+			"jobId": "ocm-ns-orders",
+			"projectId": "wemade-core"
+			},
+			"sparkJob": {
+				"mainClass": "streamer.OrderStreamer",
+				"properties": {
+					"spark.jars.packages": "org.apache.spark:spark-sql_2.12:3.0.0"
+				},
+				"jarFileUris": [
+					"gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar"
+				],
+				"args": [
+					"runonce"
+				],
+			}
+		}
+	}
+	`
+	jobURL := fmt.Sprintf("https://%v/v1/projects/wemade-core/regions/us-central1/jobs:submit/", endpoint)
+	jobReq, _ := http.NewRequest("POST", jobURL, strings.NewReader(jobJSON))
+	jobReq.Header.Set("Content-Type", "application/json")
+	jobReq.Header.Set("Accept", "application/json")
+	client := httpretry.NewDefaultClient()
+	jobResp, err := client.Do(jobReq)
+	if err != nil {
+		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+	}
+	defer jobResp.Body.Close()
+	jobBody, err := ioutil.ReadAll(jobResp.Body)
+	log.Println(string(jobBody))
+
 	return nil	
 }
 
