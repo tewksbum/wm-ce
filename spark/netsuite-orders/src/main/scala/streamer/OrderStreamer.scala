@@ -50,6 +50,8 @@ object OrderStreamer {
   var dimChannels: DataFrame = _
   var dimSchedules: DataFrame = _
 
+  var runOnce: Boolean = false
+
   def createContext(
       projectID: String,
       windowLength: Int,
@@ -83,6 +85,12 @@ object OrderStreamer {
   }
 
   def main(args: Array[String]): Unit = {
+    for(arg<-args) 
+    { 
+        if (arg == "runonce") {
+          runOnce = true
+        }
+    } 
 
     val config = ConfigFactory.load();
     projectID = config.getString("project.id")

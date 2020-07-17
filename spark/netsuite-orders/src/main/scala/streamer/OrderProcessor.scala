@@ -38,5 +38,9 @@ object OrderProcessor {
       import sqlContext.implicits._      
       transformer(rdd.toDF)
     })
+
+    if (OrderStreamer.runOnce) {
+      input.context.stop()
+    }
   }
 }
