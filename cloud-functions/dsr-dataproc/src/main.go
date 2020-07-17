@@ -4,18 +4,14 @@ import (
 	"strings"
 	"github.com/golang/protobuf/ptypes/duration"
 	"encoding/json"
-	"net/http"
 	"context"
 	"log"
 	"os"
-	"fmt"
 	"strconv"
-	"io/ioutil"
 
 	dataproc "cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/api/option"
 	"cloud.google.com/go/pubsub"
-	"github.com/ybbus/httpretry"
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
 )
 
@@ -112,45 +108,49 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	log.Printf("Cluster created successfully: %s", resp.ClusterName)
 
 	// submit the job
-	jobJSON := `
-	{
-		"projectId": "wemade-core",
-		"job": {
-			"placement": {
-			"clusterName": "sparkles"
-			},
-			"statusHistory": [],
-			"reference": {
-			"jobId": "ocm-ns-orders",
-			"projectId": "wemade-core"
-			},
-			"sparkJob": {
-				"mainClass": "streamer.OrderStreamer",
-				"properties": {
-					"spark.jars.packages": "org.apache.spark:spark-sql_2.12:3.0.0"
+
+	// Create the job client.
+	jobClient, err := dataproc.NewJobControllerClient(ctx, option.WithEndpoint(endpoint))
+
+	// Create the job config.
+	submitJobReq := &dataprocpb.SubmitJobRequest{
+			ProjectId: os.Getenv("GCP_PROJECT"),
+			Region:    region,
+			Job: &dataprocpb.Job{
+				Reference: &dataprocpb.JobReference{
+					JobId: "ocm-ns-orders",
 				},
-				"jarFileUris": [
-					"gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar"
-				],
-				"args": [
-					"runonce"
-				],
-			}
-		}
+				Placement: &dataprocpb.JobPlacement{
+					ClusterName: os.Getenv("CLUSTER_NAME"),
+				},
+				TypeJob: &dataprocpb.Job_SparkJob{
+					SparkJob: &dataprocpb.SparkJob{
+						JarFileUris: []string {
+							"gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar",
+						},
+						Driver: &dataprocpb.SparkJob_MainClass{
+							MainClass: "streamer.OrderStreamer",
+						},
+						Args: []string {
+							"runonce",
+						},
+						Properties: map[string]string {
+							"spark.jars.packages": "org.apache.spark:spark-sql_2.12:3.0.0",
+						},
+					},
+				},
+			},
 	}
-	`
-	jobURL := fmt.Sprintf("https://%v/v1/projects/wemade-core/regions/us-central1/jobs:submit/", endpoint)
-	jobReq, _ := http.NewRequest("POST", jobURL, strings.NewReader(jobJSON))
-	jobReq.Header.Set("Content-Type", "application/json")
-	jobReq.Header.Set("Accept", "application/json")
-	client := httpretry.NewDefaultClient()
-	jobResp, err := client.Do(jobReq)
+
+	submitJobResp, err := jobClient.SubmitJob(ctx, submitJobReq)
 	if err != nil {
-		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+		log.Printf("error submitting job: %v", err)
+		return nil
 	}
-	defer jobResp.Body.Close()
-	jobBody, err := ioutil.ReadAll(jobResp.Body)
-	log.Println(string(jobBody))
+
+	id := submitJobResp.Reference.JobId
+
+	log.Printf("Submitted job %q", id)
 
 	return nil	
 }
