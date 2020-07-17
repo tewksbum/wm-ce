@@ -134,11 +134,11 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	}, cfName)
 
 	var eventSetSearchKeys []HouseSetDSProjected
-	var es []string 
+	var es []string
 	for _, f := range eventSets {
 		// es := make([]string)
 		for i, fs := range f.Search {
-			if strings.HasPrefix(fs[i].Value, "HOUSE")) {
+			if strings.HasPrefix(fs[i].Value, "HOUSE") {
 				es = append(es, fs[i].Value)
 			}
 		}
