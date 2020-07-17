@@ -33,9 +33,7 @@ func parseCommaDelimitedNameValuePair(input string) map[string]string {
 }
 
 func Run(ctx context.Context, m *pubsub.Message) error {
-	projectID := os.Getenv("GCP_PROJECT")
-	region := os.Getenv("FUNCTION_REGION")
-	clusterName := "sparkles"
+	region := os.Getenv("REGION")
 
 	// Create the cluster client.
 	endpoint := region + "-dataproc.googleapis.com:443"
@@ -46,11 +44,11 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	// Create the cluster config.
 	req := &dataprocpb.CreateClusterRequest{
-		ProjectId: projectID,
-		Region:    region,
+		ProjectId: os.Getenv("GCP_PROJECT"),
+		Region:    os.Getenv("REGION"),
 		Cluster: &dataprocpb.Cluster{
-				ProjectId:   projectID,
-				ClusterName: clusterName,
+				ProjectId:   os.Getenv("GCP_PROJECT"),
+				ClusterName: os.Getenv("CLUSTER_NAME"),
 				Config: &dataprocpb.ClusterConfig{
 					ConfigBucket: os.Getenv("BUCKET"),
 					GceClusterConfig: &dataprocpb.GceClusterConfig {
