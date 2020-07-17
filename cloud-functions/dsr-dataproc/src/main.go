@@ -3,6 +3,7 @@ package dsrcluster
 import (
 	"strings"
 	"github.com/golang/protobuf/ptypes/duration"
+	"encoding/json"
 	"context"
 	"log"
 	"os"
@@ -92,7 +93,8 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	// Create the cluster.
 	op, err := clusterClient.CreateCluster(ctx, req)
-	log.Printf("request %+v", req)
+	reqJSON, _ := json.Marshal(req)
+	log.Printf("request %v", reqJSON)
 	if err != nil {
 		log.Fatalf("CreateCluster: %v", err)
 	}
