@@ -16,7 +16,7 @@ steps:
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: dsr-orders
+    _FUNCTION_NAME: dsr-orders-fetch
     _TRIGGER_TOPIC: dsr-orders-fetch
     _ENTRY_POINT: Run
 options:
