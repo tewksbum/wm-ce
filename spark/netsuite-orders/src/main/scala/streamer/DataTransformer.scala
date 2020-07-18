@@ -4,7 +4,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.streaming.Seconds
+import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.streaming.dstream.DStream
 import org.json4s.DefaultFormats
 import org.apache.spark.sql.functions.lit
@@ -19,7 +19,8 @@ object DataTransformer {
 
   val dateFormatISO = new SimpleDateFormat("yyyy-MM-dd")
 
-  def transformOrders(df: DataFrame, sc: SparkContext): Unit = {
+  def transformOrders(df: DataFrame, ssc: StreamingContext): Unit = {
+    val sc: SparkContext = ssc.sparkContext
     val sqlContext = SqlContextSingleton.getInstance(sc)
     import sqlContext.implicits._
 
@@ -479,6 +480,10 @@ object DataTransformer {
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
       println("done")
+
+      if (OrderStreamer.runOnce) {
+        ssc.stop()
+      }
     }
   }
 }
