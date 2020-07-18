@@ -79,7 +79,7 @@ object OrderStreamer {
     var messagesStream: DStream[String] =
       pubsubStream.map(message => new String(message.getData(), StandardCharsets.UTF_8))
     //process the stream
-    processOrders(messagesStream, windowLength, slidingInterval, transformOrders(_, ssc.sparkContext))
+    processOrders(messagesStream, windowLength, slidingInterval, transformOrders(_, ssc))
 
     ssc
   }
