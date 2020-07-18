@@ -384,6 +384,7 @@ object DatabaseWriter {
         {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
+
           val tbl = st.executeUpdate(s"create table fact_orderlines_${id} like fact_orderlines ")
           val ps = con.prepareStatement(s"""
             insert into fact_orderlines_${id} 

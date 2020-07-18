@@ -137,11 +137,20 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}, cfName)
 
 	var eventSetSearchKeys []PeopleSetDSProjected
+	var es []string
 	for _, f := range eventSets {
+		// es := make([]string)
+		for i, fs := range f.Search {
+			if !strings.HasPrefix(string(fs[i]), "HOUSE") {
+				es = append(es, string(fs[i]))
+			}
+		}
+		log.Printf("addings searchKeys: %v", es)
 		eventSetSearchKeys = append(eventSetSearchKeys, PeopleSetDSProjected{
 			ID:     f.ID,
-			Search: f.Search,
+			Search: es,
 		})
+		es = nil
 	}
 	eventSets = nil // clear eventFibers to release memory
 
