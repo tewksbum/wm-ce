@@ -32,6 +32,12 @@ case class Customer(
     id: Long,
     name: String
 )
+
+case class Sponsor (
+    id: Long,
+    name: String
+)
+
 case class Billing(
     addressKey: Option[String],
     country: Option[String],
@@ -84,5 +90,6 @@ case class NetsuiteOrder(
     customer: Customer,
     billing: Billing,
     fees: List[Line],
-    shipments: List[Shipments]
+    shipments: List[Shipments],
+    sponsors: List[Sponsor]
 )
