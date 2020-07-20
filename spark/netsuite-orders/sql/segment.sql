@@ -895,3 +895,34 @@ DELIMITER ;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+create table dim_sponsors (
+  sponsor_key bigint(20) NOT NULL AUTO_INCREMENT,
+  sponsor_code varchar(20) NOT NULL,
+  sponsor_name varchar(100) DEFAULT NULL,
+  netsuite_id bigint(20) DEFAULT NULL,
+  school_key bigint ,
+  PRIMARY KEY (`sponsor_key`),
+  index ix_dim_sponsors_netsuite_id (netsuite_id),
+  index ix_dim_sponsors_school_key (school_key)
+);
+
+
+DELIMITER ;;
+CREATE PROCEDURE `sp_upsert_sponsor` (c varchar(100), n varchar(100), id bigint, sid bigint)
+begin
+
+	if (select count(*) from dim_schools where netsuite_id = id) > 0 then
+		begin
+			update dim_sponsors 
+			set sponsor_code = c, sponsor_name = n, school_key = (select school_key from dim_schools where netsuite_id = sid)
+			where netsuite_id = id;
+		end;
+	else
+		begin
+			insert into dim_sponsors (sponsor_code, sponsor_name, netsuite_id, school_key)
+            values (c, n, id, (select school_key from dim_schools where netsuite_id = sid));
+        end;
+	end if;
+end;;
+DELIMITER ;

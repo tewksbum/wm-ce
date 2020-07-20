@@ -49,6 +49,7 @@ object OrderStreamer {
   var dimSources: DataFrame = _
   var dimChannels: DataFrame = _
   var dimSchedules: DataFrame = _
+  var dimSponsors: DataFrame = _
 
   var runOnce: Boolean = false
 
@@ -164,6 +165,14 @@ object OrderStreamer {
     println("preloading dim_desttypes")
     dimDestTypes = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_desttypes", jdbcReadProperties)
     dimDestTypes.cache().count() // force it to load
+
+    println("preloading dim_sponsors")
+    dimProducts = sqlContext.read.jdbc(
+      jdbcMysqlUrl,
+      "(select sponsor_key, netsuite_id from dim_sponsors) sponsors",
+      jdbcReadProperties
+    )
+    dimProducts.cache().count() // force it to load
 
     // Start streaming until we receive an explicit termination
     ssc.start()

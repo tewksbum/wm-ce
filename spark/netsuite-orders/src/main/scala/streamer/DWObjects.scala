@@ -156,3 +156,11 @@ case class PeopleUpsertResult (
     old_key: String,
     new_key: String
 )
+
+case class SponsorDim (
+    sponsor_key: Long,
+    sponsor_code: String,
+    sponsor_name: String,
+    netsuite_id: Long,
+    school_key: Option[Long]
+)
