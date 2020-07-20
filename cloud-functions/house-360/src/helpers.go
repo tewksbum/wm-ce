@@ -81,12 +81,16 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 
 func GetHouseFiberSearchFields(v *HouseFiberDS) []string {
 	var searchFields []string
-	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
+	searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", v.RecordID))
 	if len(v.EMAIL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.ToUpper(v.EMAIL.Value)))
 	}
 	if len(v.CITY.Value) > 0 && len(v.STATE.Value) > 0 && len(v.AD1.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+		if len(v.AD2.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.AD2.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+		} else {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1.Value), strings.ToUpper(v.CITY.Value), strings.ToUpper(v.STATE.Value)))
+		}
 	}
 	return searchFields
 }
@@ -95,10 +99,14 @@ func GetHouseGoldenSearchFields(v *HouseGoldenDS) []string {
 	log.Printf("golden record: %+v", v)
 	var searchFields []string
 	if len(v.EMAIL) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.ToUpper(v.EMAIL)))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.ToUpper(v.EMAIL)))
 	}
 	if len(v.CITY) > 0 && len(v.STATE) > 0 && len(v.AD1) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
+		if len(v.AD2) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.AD2), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
+		} else {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.ToUpper(v.AD1), strings.ToUpper(v.CITY), strings.ToUpper(v.STATE)))
+		}
 	}
 	return searchFields
 }

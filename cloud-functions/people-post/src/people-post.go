@@ -222,8 +222,10 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 			// fix zip code that has leading 0 stripped out
 			if len(column.Value) == 8 {
 				column.Value = LeftPad2Len(column.Value, "0", 9)
-			} else {
+			} else if len(column.Value) == 4 {
 				column.Value = LeftPad2Len(column.Value, "0", 5)
+			} else if len(column.Value) == 3 { //for PR and the IRS
+				column.Value = LeftPad2Len(column.Value, "00", 5)
 			}
 		}
 		if column.MatchKey1 == "EMAIL" && len(column.Value) > 0 {
@@ -529,10 +531,11 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		var searchFields []string
 		reportCounters := []ReportCounter{}
 		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.Signature.RecordID))
 
 		if len(v.Output.EMAIL.Value) > 0 {
 			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(v.Output.ROLE.Value)))) // for people
-			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value)) )) // for house
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(v.Output.EMAIL.Value))))                                                           // for house
 			// reportCounters = append(reportCounters, ReportCounter{Type: "PeoplePost", Name: "People:Email", Count: 1, Increment: true})
 		}
 		if len(v.Output.PHONE.Value) > 0 && len(v.Output.FINITIAL.Value) > 0 {
@@ -546,8 +549,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 		}
 		// for house
 		if len(v.Output.CITY.Value) > 0 && len(v.Output.STATE.Value) > 0 && len(v.Output.AD1.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
-		} 		
+			if len(v.Output.AD2.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.AD2.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+			} else {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(v.Output.AD1.Value)), strings.TrimSpace(strings.ToUpper(v.Output.CITY.Value)), strings.TrimSpace(strings.ToUpper(v.Output.STATE.Value))))
+			}
+		}
 
 		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, input.Signature.OwnerID))
 		log.Printf("Searchfields %+v", searchFields)
