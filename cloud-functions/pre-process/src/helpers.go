@@ -105,9 +105,9 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.TrimSpace(strings.ToLower(column))
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first", "first name (given name)", "first name preferred", "legal name", "student_first name", "first nam":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first", "first name (given name)", "first name preferred", "legal name", "student_first name", "first nam", "students first name":
 		err.FirstName = 1
-	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname", "last ame", "last name (surname)", "student_last":
+	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname", "last ame", "last name (surname)", "student_last", "students last name":
 		err.LastName = 1
 	case "mi", "mi ", "mname", "m", "middle name", "middle_name", "student middle name", "mid", "middlename", "middle":
 		err.MiddleName = 1
@@ -141,7 +141,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.FullAddress = 1
 	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:", "winthrop email", "e-mail":
 		err.Email = 1
-	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email", "p1_email":
+	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email", "p1_email", "emergency contact email":
 		// err.Email = 1
 		err.ParentEmail = 1
 	case "gender", "m/f", "sex", "student sex", "student gender", "gender description", "gender description 3":
