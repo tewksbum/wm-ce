@@ -729,7 +729,7 @@ func House360(ctx context.Context, m PubSubMessage) error {
 					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 
-				cleanupKey := []string{input.Signature.EventID, "cleanup-sent"}
+				cleanupKey := []string{input.Signature.EventID, "house-cleanup-sent"}
 				if GetRedisIntValue(cleanupKey) == 1 { // already processed
 					report := FileReport{
 						ID:            input.Signature.EventID,
