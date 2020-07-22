@@ -57,7 +57,7 @@ func House720(ctx context.Context, m PubSubMessage) error {
 	}
 	log.Printf("Checking sets for event %v", string(m.Data))
 
-	cleanupKey := []string{input.EventID, "cleanup"}
+	cleanupKey := []string{input.EventID, "house-cleanup"}
 	if GetRedisIntValue(cleanupKey) == 1 { // already processed
 		return nil
 	}
