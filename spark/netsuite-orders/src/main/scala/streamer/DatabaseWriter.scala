@@ -347,7 +347,7 @@ object DatabaseWriter {
     if (records.length > 0) {
       using(ConnectionPool.borrow()) { con =>
         {
-          val ps = con.prepareCall("{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?)}")
+          val ps = con.prepareCall("{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?, ?)}")
           for (record <- records) {
             ps.setLong(1, record.date_key)
             ps.setLong(2, record.channel_key)
@@ -368,6 +368,12 @@ object DatabaseWriter {
             ps.setDouble(17, record.service)
             ps.setDouble(18, record.service_tax)
             ps.setDouble(19, record.total)
+            if (record.sponsor_key.isEmpty) {
+              ps.setNull(20, java.sql.Types.BIGINT)
+            }
+            else {
+              ps.setLong(20, record.sponsor_key.getOrElse(0 : Long))
+            }
             ps.addBatch()
           }
           ps.executeBatch()
@@ -389,8 +395,8 @@ object DatabaseWriter {
             insert into fact_orderlines_${id} 
             (date_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
             ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
-            values(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?, ?,?)
+            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping, sponsor_key) 
+            values(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?, ?,?, ?)
             """
           )
           for (record <- records) {
@@ -421,7 +427,13 @@ object DatabaseWriter {
             ps.setInt(25, record.is_service)
             ps.setInt(26, record.is_cancelled)
             ps.setDouble(27, record.total_discount)
-            ps.setDouble(28, record.total_shipping)     
+            ps.setDouble(28, record.total_shipping)
+            if (record.sponsor_key.isEmpty) {
+              ps.setNull(29, java.sql.Types.BIGINT)
+            }
+            else {
+              ps.setLong(29, record.sponsor_key.getOrElse(0 : Long))
+            }
             ps.addBatch
           }
           ps.executeBatch
@@ -439,10 +451,10 @@ object DatabaseWriter {
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id)
           """
           val sqlInsert = s"""
-            insert into fact_orderlines (date_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
+            insert into fact_orderlines (date_key,channel_key,source_key,school_key,sponsor_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
             ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
             total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
-            select date_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
+            select date_key,channel_key,source_key,school_key,sponsor_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
             ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
             total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
             from fact_orderlines_${id} a 
@@ -456,6 +468,7 @@ object DatabaseWriter {
             b.channel_key = a.channel_key,
             b.source_key = a.source_key,
             b.school_key = a.school_key,
+            b.sponsor_key = a.sponsor_key,
             b.customer_key = a.customer_key,
             b.product_key = a.product_key,
             b.billto_key = a.billto_key,
