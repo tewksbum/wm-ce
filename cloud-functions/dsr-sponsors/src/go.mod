@@ -1,15 +1,12 @@
-module dsrcluster
+module dsrschool
 
 go 1.11
 
 require (
-	cloud.google.com/go v0.60.0
+	cloud.google.com/go v0.61.0
 	cloud.google.com/go/pubsub v1.5.0
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
-	github.com/golang/protobuf v1.4.2
-	github.com/google/uuid v1.1.1
-	github.com/ybbus/httpretry v1.0.1
-	google.golang.org/api v0.28.0
+	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/genproto v0.0.0-20200715011427-11fb19a81f2c
 )

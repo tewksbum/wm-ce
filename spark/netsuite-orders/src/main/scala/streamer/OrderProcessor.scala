@@ -39,8 +39,5 @@ object OrderProcessor {
       transformer(rdd.toDF)
     })
 
-    if (OrderStreamer.runOnce) {
-      input.context.stop()
-    }
   }
 }

@@ -73,7 +73,7 @@ var reStreet1 = regexp.MustCompile(`(?i)\d{1,4} [\w\s]{1,20}(?:street|st|avenue|
 var reStreet2 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reStreet3 = regexp.MustCompile(`(?i)apartment|apt|unit|box`)
 var reNewline = regexp.MustCompile(`\r?\n`)
-var reStartsWithPrefix = regexp.MustCompile(`^(?i)(mailing address |person |mailing |active |home |student |permanent |current )(.+)$`)
+var reStartsWithPrefix = regexp.MustCompile(`^(?i)(mailing address |patronaddress.permanent address |studentaddress.permanent address |patron.|person |mailing |active |home |student |student. |permanent |perm_ |current )(.+)$`)
 
 // MRT's version doesnt compile, substituting with a package
 // var reBrowser = regexp.MustCompile(`(MSIE|Trident|(?!Gecko.+)Firefox|(?!AppleWebKit.+Chrome.+)Safari(?!.+Edge)|(?!AppleWebKit.+)Chrome(?!.+Edge)|(?!AppleWebKit.+Chrome.+Safari.+)Edge|AppleWebKit(?!.+Chrome|.+Safari)|Gecko(?!.+Firefox))(?: |\/)([\d\.apre]+)`)

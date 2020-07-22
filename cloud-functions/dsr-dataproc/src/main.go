@@ -12,6 +12,7 @@ import (
 	dataproc "cloud.google.com/go/dataproc/apiv1"
 	"google.golang.org/api/option"
 	"cloud.google.com/go/pubsub"
+	"github.com/google/uuid"
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
 )
 
@@ -118,7 +119,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 			Region:    region,
 			Job: &dataprocpb.Job{
 				Reference: &dataprocpb.JobReference{
-					JobId: "ocm-ns-orders",
+					JobId: "ocm-ns-orders-" + uuid.New().String(),
 				},
 				Placement: &dataprocpb.JobPlacement{
 					ClusterName: os.Getenv("CLUSTER_NAME"),
