@@ -1,4 +1,4 @@
-package main
+package orders
 
 import (
 	"context"
@@ -34,6 +34,7 @@ type result struct {
 
 type record struct {
 	ID string `json:"id"`
+	Type string `json:"type"`
 }
 
 func init() {
@@ -87,18 +88,36 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	N := 9
+	N := 5
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
+
+	// input = result {
+	// 	Records: []record{
+	// 		record {
+	// 			ID: "1196398",
+	// 			Type: "Return Authorization",
+	// 		},
+	// 	},
+	// }
 	for i := 0; i < len(input.Records); i += 10 {
-		ids := []string{}
-		for _, r := range input.Records[i:i+10] {
+		orders := []string{}
+		returns := []string{}
+		end := i + 10
+		if end > len(input.Records) {
+			end = len(input.Records)
+		}
+		for _, r := range input.Records[i:end] {
 			if len(r.ID) > 0 {
-				ids = append(ids, r.ID)
+				if r.Type == "Sales Order" {
+					orders = append(orders, r.ID)
+				} else if r.Type == "Return Authorization" {
+					returns = append(returns, r.ID)
+				}
 			}
 		}
 		wg.Add(1)
-		go func(ids []string) {
+		go func(orders []string, returns []string) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() {
@@ -106,14 +125,16 @@ func main() {
 				// (frees up buffer slot).
 				<-sem
 			}()
-			log.Printf("pulling orders %v", ids)
-			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1&orders=%v", strings.Join(ids, ","))
+			log.Printf("pulling orders %v, returns %v", orders, returns)
+			orderParam := "&orders=" +strings.Join(orders, ",")
+			returnParam  := "&returns=" +strings.Join(returns, ",")
+			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1%v%v", orderParam, returnParam)
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
 	
-			json := ""
+			jsonString := ""
 			for {
 				resp, err := client.Do(req)
 				if err != nil {
@@ -122,20 +143,21 @@ func main() {
 				defer resp.Body.Close()
 		
 				body, err := ioutil.ReadAll(resp.Body)
-				json = string(body)
-				if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") && len(json) > 0 {
+				jsonString = string(body)
+				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && len(jsonString) > 0 {
+					// log.Println(jsonString)
 					break
 				}
 			}
 			// drop this to pubsub
 			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: []byte(json),
+				Data: []byte(jsonString),
 			})
 			_, err = psresult.Get(ctx)
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
-		}(ids)		
+		}(orders, returns)		
 	}
 	wg.Wait()
 	return
