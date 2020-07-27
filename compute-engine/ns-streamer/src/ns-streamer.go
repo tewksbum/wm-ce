@@ -144,7 +144,7 @@ func main() {
 		
 				body, err := ioutil.ReadAll(resp.Body)
 				jsonString = string(body)
-				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && len(jsonString) > 0 {
+				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
 					// log.Println(jsonString)
 					break
 				}
