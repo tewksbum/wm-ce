@@ -86,9 +86,9 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	}
 
 	log.Printf("distributing %v orders for fetching", len(input.Records))
-	for i := 0; i < len(input.Records); i += 100 {
+	for i := 0; i < len(input.Records); i += 30 {
 		ids := []string{}
-		e := i + 100
+		e := i + 30
 		if e > len(input.Records) {
 			e = len(input.Records)
 		}
