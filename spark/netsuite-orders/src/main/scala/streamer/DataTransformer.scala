@@ -98,6 +98,7 @@ object DataTransformer {
         .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
         .drop("shipto_key", "old_key")
         .withColumnRenamed("new_key", "shipto_key")
+
       print(" order .")
       val dfOrders = df
         .select(
@@ -108,6 +109,8 @@ object DataTransformer {
           $"customer.id".alias("customer_value"),
           $"billing.addressKey".alias("billto_value"),
           $"id".alias("netsuite_order_id"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),
           $"orderNumber".alias("netsuite_number"),
           $"attributes.webOrderId".alias("ocm_id"),
           $"attributes.webOrderNumber".alias("ocm_number"),
@@ -119,7 +122,12 @@ object DataTransformer {
           $"totals.discountTotal".alias("discount"),
           $"totals.serviceTotal".alias("service"),
           $"totals.serviceTaxTotal".alias("service_tax"),
-          $"totals.total".alias("total")
+          $"totals.total".alias("total"),
+          $"sponsor_1",
+          $"sponsor_2",
+          $"sponsor_3",
+          $"sponsor_4",
+          $"sponsor_5"
         )
         .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
@@ -153,6 +161,15 @@ object DataTransformer {
           "leftouter"
         )
         .drop("channel_name", "netsuite_id", "channel_value")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"orders.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"orders.order_type_value" === $"types.ordertype_name", "leftouter")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_1" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_1").withColumnRenamed("sponsor_key", "sponsor_key_1")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_2" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_2").withColumnRenamed("sponsor_key", "sponsor_key_2")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_3" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_3").withColumnRenamed("sponsor_key", "sponsor_key_3")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_4" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_4").withColumnRenamed("sponsor_key", "sponsor_key_4")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_5" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_5").withColumnRenamed("sponsor_key", "sponsor_key_5")
+        .drop("ordertype_name", "order_type_value", "include_in_dsr")
         // look up customer and billto keys
         .join(dfCustomerNew.as("customers"), $"orders.customer_value" === $"customers.netsuite_id", "inner")
         .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
@@ -177,6 +194,8 @@ object DataTransformer {
           $"orderNumber".alias("netsuite_order_number"),
           $"attributes.webOrderId".alias("ocm_order_id"),
           $"attributes.webOrderNumber".alias("ocm_order_number"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),
           $"shipments"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
@@ -205,7 +224,9 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         // remove shipment fields that we dont need
         .drop("addr1", "addr2", "city", "state", "zip", "name", "phone", "email", "type")
@@ -227,7 +248,9 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
@@ -255,6 +278,10 @@ object DataTransformer {
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
         .drop("lob_name", "lob")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"lines.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"lines.order_type_value" === $"types.ordertype_name", "leftouter")
+        .drop("ordertype_name", "order_type_value")
         // rename columns to match
         .withColumnRenamed("extPrice", "total_price")
         .withColumnRenamed("cost", "total_cost")
@@ -284,8 +311,10 @@ object DataTransformer {
         .withColumnRenamed("cost", "prev_cost")
         .withColumnRenamed("discount", "prev_discount")
         .withColumnRenamed("shipping", "prev_shipping")
+
       print(" dsr .")
       val dfDSR = dfOrderLines
+        .where(dfOrderLines("include_in_dsr") === 1) // bypass the types that should be excluded
         .withColumnRenamed("date_key", "date_key_lines")
         .as("lines")
         // get the year
@@ -401,6 +430,8 @@ object DataTransformer {
           $"orderNumber".alias("netsuite_order_number"),
           $"attributes.webOrderId".alias("ocm_order_id"),
           $"attributes.webOrderNumber".alias("ocm_order_number"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),          
           $"fees"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
@@ -428,7 +459,9 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
@@ -454,6 +487,10 @@ object DataTransformer {
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
         .drop("lob_name", "lob")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"lines.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"lines.order_type_value" === $"types.ordertype_name", "leftouter")
+        .drop("ordertype_name", "order_type_value")
         // rename columns to match
         .withColumnRenamed("extPrice", "total_price")
         .withColumnRenamed("cost", "total_cost")
