@@ -74,7 +74,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Authorization", nsAuth)
 	client := httpretry.NewDefaultClient()
-	json := ""
+	jsonString := ""
 	for {
 		resp, err := client.Do(req)
 		if err != nil {
@@ -83,14 +83,14 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		defer resp.Body.Close()
 
 		body, err := ioutil.ReadAll(resp.Body)
-		json = string(body)
-		if !strings.Contains(json, "SSS_REQUEST_LIMIT_EXCEEDED") && len(json) > 0 {
+		jsonString = string(body)
+		if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
 			break
 		}
 	}
 	// drop this to pubsub
 	psresult := topic.Publish(ctx, &pubsub.Message{
-		Data: []byte(json),
+		Data: []byte(jsonString),
 	})
 	_, err := psresult.Get(ctx)
 	if err != nil {
