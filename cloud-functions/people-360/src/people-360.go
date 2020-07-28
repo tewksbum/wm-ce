@@ -218,7 +218,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
 		reportCounters1 := []ReportCounter{}
-		reportCounters2 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
