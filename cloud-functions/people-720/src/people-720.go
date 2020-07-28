@@ -107,8 +107,11 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			FiberType:   f.FiberType,
 		})
 	}
-	schoolYear := eventFibers[0].Passthrough["schoolYear"]
+	passthrough := ConvertPassthrough360SliceToMap(eventFibers[0].Passthrough)
+	schoolYear := passthrough["schoolYear"]
+	log.Printf("schoolyear: %v", schoolYear)
 	eventFibers = nil // clear eventFibers to release memory
+	passthrough = nil
 
 	var eventSets []PeopleSetDS // this is for raw sets
 	if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(ownerNS).Filter("eventid =", input.EventID), &eventSets); err != nil {
