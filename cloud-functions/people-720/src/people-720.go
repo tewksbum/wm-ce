@@ -107,6 +107,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			FiberType:   f.FiberType,
 		})
 	}
+	var schoolYear := eventFibers[0].Passthrough["schoolYear"]
 	eventFibers = nil // clear eventFibers to release memory
 
 	var eventSets []PeopleSetDS // this is for raw sets
@@ -368,7 +369,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Increment: true,
 										},
 										ReportCounter{
-											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+											Type:      "SchoolYear:" + schoolYear,
 											Name:      "Mailable",
 											Count:     1,
 											Increment: true,
@@ -411,7 +412,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Increment: true,
 										},
 										ReportCounter{
-											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+											Type:      "SchoolYear:" + schoolYear,
 											Name:      "HasEmail",
 											Count:     1,
 											Increment: true,
@@ -590,7 +591,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Increment: true,
 													},
 													ReportCounter{
-														Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+														Type:      "SchoolYear:" + schoolYear,
 														Name:      "Mailable",
 														Count:     -1,
 														Increment: true,
@@ -607,7 +608,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Increment: true,
 													},
 													ReportCounter{
-														Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+														Type:      "SchoolYear:" + schoolYear,
 														Name:      "HasEmail",
 														Count:     -1,
 														Increment: true,
