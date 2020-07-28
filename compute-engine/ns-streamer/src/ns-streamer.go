@@ -65,7 +65,7 @@ func init() {
 
 func main() {
 	log.Printf("getting list")
-	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming"
+	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming_a"
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -100,10 +100,11 @@ func main() {
 	// 		},
 	// 	},
 	// }
-	for i := 0; i < len(input.Records); i += 10 {
+	batchSize := 50
+	for i := 0; i < len(input.Records); i += batchSize {
 		orders := []string{}
 		returns := []string{}
-		end := i + 10
+		end := i + batchSize
 		if end > len(input.Records) {
 			end = len(input.Records)
 		}
