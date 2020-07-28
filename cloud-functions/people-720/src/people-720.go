@@ -180,9 +180,9 @@ func People720(ctx context.Context, m PubSubMessage) error {
 				if !strings.HasPrefix(s, "HOUSE") {
 					if setIDs, ok := setSearchMap[s]; ok { // in the search key map
 						if len(setIDs) > 1 {
-	
+
 							reprocessFibers = append(reprocessFibers, f.ID.Name)
-	
+
 							// load the existing sets
 							var reportCounters []ReportCounter
 							var existingSetKeys []*datastore.Key
@@ -200,11 +200,11 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							}
 							setsJSON, _ := json.Marshal(existingSets)
 							log.Printf("search key %v found multi sets %v: %v", s, setIDs, string(setsJSON))
-	
+
 							var allFiberIDs []string
 							var allFiberKeys []*datastore.Key
 							var allFibers []PeopleFiberDS
-	
+
 							newSetSignatures := []Signature{}
 							for _, es := range existingSets {
 								for _, ef := range es.Fibers {
@@ -222,7 +222,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									log.Printf("ERROR fetching fibers ns %v kind %v, keys %v: %v,", ownerNS, DSKindFiber, allFiberKeys, err)
 								}
 							}
-	
+
 							var MatchKeysFromFiber []MatchKey360
 							MatchKeyList := structs.Names(&PeopleOutput{})
 							FiberMatchKeys := make(map[string][]string)
@@ -230,7 +230,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							for _, name := range MatchKeyList {
 								FiberMatchKeys[name] = []string{}
 							}
-	
+
 							// build signatures and matchkeys for the new set
 							for _, ef := range allFibers {
 								fiberSignature := Signature{
@@ -251,7 +251,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									}
 								}
 							}
-	
+
 							// check to see if there are any new values
 							for _, name := range MatchKeyList {
 								mk360 := MatchKey360{
@@ -260,7 +260,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								}
 								MatchKeysFromFiber = append(MatchKeysFromFiber, mk360)
 							}
-	
+
 							newSetID := uuid.New().String()
 							var setDS PeopleSetDS
 							setKey := datastore.NameKey(DSKindSet, newSetID, nil)
@@ -270,7 +270,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							setDS.CreatedAt = time.Now()
 							PopulateSetOutputSignatures(&setDS, newSetSignatures)
 							PopulateSetOutputMatchKeys(&setDS, MatchKeysFromFiber)
-	
+
 							var goldenDS PeopleGoldenDS
 							goldenKey := datastore.NameKey(DSKindGolden, newSetID, nil)
 							goldenKey.Namespace = ownerNS
@@ -281,14 +281,14 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
 								log.Printf("Error: storing golden record error %v", err)
 							}
-	
+
 							reportCounters = append(reportCounters, ReportCounter{
 								Type:      "People720",
 								Name:      "multisets",
 								Count:     1,
 								Increment: true,
 							})
-	
+
 							reportCounters = append(reportCounters,
 								ReportCounter{
 									Type:      "People720:Audit",
@@ -303,7 +303,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-	
+
 							if goldenDS.ROLE == "Parent" {
 								reportCounters = append(reportCounters,
 									ReportCounter{
@@ -323,7 +323,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 							}
-	
+
 							reportCounters = append(reportCounters,
 								ReportCounter{
 									Type:      "People720:Audit",
@@ -332,7 +332,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-	
+
 							SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden"})
 							if goldenDS.ADVALID == "TRUE" {
 								SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "advalid"})
@@ -367,6 +367,12 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Count:     1,
 											Increment: true,
 										},
+										ReportCounter{
+											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+											Name:      "Mailable",
+											Count:     1,
+											Increment: true,
+										},
 									)
 								}
 							}
@@ -386,7 +392,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 										Increment: true,
 									},
 								)
-	
+
 								if goldenDS.ROLE == "Parent" {
 									reportCounters = append(reportCounters,
 										ReportCounter{
@@ -404,10 +410,16 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Count:     1,
 											Increment: true,
 										},
+										ReportCounter{
+											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+											Name:      "HasEmail",
+											Count:     1,
+											Increment: true,
+										},
 									)
 								}
 							}
-	
+
 							// populate search fields for set from a) existing sets b) new fiber c) golden
 							var newSetSearchFields []string
 							for _, ef := range allFibers {
@@ -424,12 +436,12 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									}
 								}
 							}
-	
+
 							setDS.Search = newSetSearchFields
 							if _, err := fs.Put(ctx, setKey, &setDS); err != nil {
 								log.Printf("Error: storing set error %v", err)
 							}
-	
+
 							// put the set search key in redis -- is this still necessary?  we are already in 720
 							if len(newSetSearchFields) > 0 {
 								for _, search := range newSetSearchFields {
@@ -444,7 +456,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									AppendRedisTempKey(msKey, f)
 								}
 							}
-	
+
 							reportCounters = append(reportCounters,
 								ReportCounter{
 									Type:      "People720",
@@ -459,7 +471,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-	
+
 							setList := []SetDetail{ // the new set
 								SetDetail{
 									ID:         newSetID,
@@ -470,7 +482,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 							// expire the existing sets and goldens
 							var expiringSetKeys []*datastore.Key
 							var expiringGoldenKeys []*datastore.Key
-	
+
 							for _, set := range setIDs {
 								setKey := datastore.NameKey(DSKindSet, set, nil)
 								setKey.Namespace = ownerNS
@@ -478,14 +490,14 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								goldenKey := datastore.NameKey(DSKindGolden, set, nil)
 								goldenKey.Namespace = ownerNS
 								expiringGoldenKeys = append(expiringGoldenKeys, goldenKey)
-	
+
 								setList = append(setList, SetDetail{ // the expired set
 									ID:         set,
 									IsDeleted:  true,
 									DeletedOn:  time.Now(),
 									ReplacedBy: newSetID,
 								})
-	
+
 								// we'll decrement some counters here
 								if SetRedisKeyIfNotExists([]string{set, "golden", "deleted"}) == 1 { // able to set the value, first time we are deleting
 									// let's see what we are deleting
@@ -508,7 +520,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 												},
 											)
 										}
-	
+
 										if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
 											reportCounters = append(reportCounters,
 												ReportCounter{
@@ -521,7 +533,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 										}
 									}
 								}
-	
+
 								if goldenDS.ROLE == "Parent" {
 									if SetRedisKeyIfNotExists([]string{set, "golden:mpr", "deleted"}) == 1 { // able to set the value, first time we are deleting
 										// let's see what we are deleting
@@ -544,7 +556,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 													},
 												)
 											}
-	
+
 											if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
 												reportCounters = append(reportCounters,
 													ReportCounter{
@@ -577,13 +589,25 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Count:     -1,
 														Increment: true,
 													},
+													ReportCounter{
+														Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+														Name:      "Mailable",
+														Count:     -1,
+														Increment: true,
+													},
 												)
 											}
-	
+
 											if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
 												reportCounters = append(reportCounters,
 													ReportCounter{
 														Type:      "Golden:NonMPR",
+														Name:      "HasEmail",
+														Count:     -1,
+														Increment: true,
+													},
+													ReportCounter{
+														Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 														Name:      "HasEmail",
 														Count:     -1,
 														Increment: true,
@@ -594,7 +618,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									}
 								}
 							}
-	
+
 							LogDev(fmt.Sprintf("deleting expired sets %v and expired golden records %v", expiringSetKeys, expiringGoldenKeys))
 							if err := fs.DeleteMulti(ctx, expiringSetKeys); err != nil {
 								log.Printf("Error: deleting expired sets: %v", err)
@@ -616,7 +640,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									Increment: true,
 								},
 							)
-	
+
 							// remove expired set id from searchKeyMap and add new one
 							for _, s := range newSetSearchFields {
 								updatedSetList := []string{newSetID}
@@ -627,14 +651,14 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								}
 								setSearchMap[s] = updatedSetList
 							}
-	
+
 							// publish report
 							publishReport(&FileReport{
 								ID:       input.EventID,
 								Counters: reportCounters,
 								SetList:  setList,
 							}, cfName)
-	
+
 							log.Printf("Merged sets %v into a set %v", setIDs, newSetID)
 							break // go on to next fiber
 						}
@@ -645,7 +669,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 						log.Printf("WARN fiber id %v type %v disposition %v search key %v not in a set", f.ID.Name, f.FiberType, f.Disposition, fs)
 					}
 				}
-				
+
 			}
 		}
 		if len(reprocessFibers) == 0 { // we are done
