@@ -456,15 +456,19 @@ object DatabaseWriter {
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id)
           """
           val sqlInsert = s"""
-            insert into fact_orderlines (date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
-            shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
+            insert into fact_orderlines 
+            (
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            ) 
 
-            select date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
-            shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            select 
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
             from fact_orderlines_${id} a 
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id) 
           """

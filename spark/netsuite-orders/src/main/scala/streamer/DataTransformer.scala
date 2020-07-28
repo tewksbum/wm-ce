@@ -176,6 +176,7 @@ object DataTransformer {
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
+        .distinct()
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
       print(" lines .")
@@ -299,10 +300,8 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
-        .withColumn(
-          "product_key",
-          coalesce($"product_key", lit(72804))
-        ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
+        .distinct()
 
       val dfOrderLineResults = batchOrderLinesFact(dfOrderLines.as[OrderLineFact].collect(), true).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
@@ -524,6 +523,7 @@ object DataTransformer {
         ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
+        .distinct()
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
       println("done")
