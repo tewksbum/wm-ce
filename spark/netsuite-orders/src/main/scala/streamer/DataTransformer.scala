@@ -313,104 +313,114 @@ object DataTransformer {
         .withColumnRenamed("shipping", "prev_shipping")
 
       print(" dsr .")
+
       val dfDSR = dfOrderLines
-        .where(dfOrderLines("include_in_dsr") === 1) // bypass the types that should be excluded
-        .withColumnRenamed("date_key", "date_key_lines")
-        .as("lines")
-        // get the year
-        .join(OrderStreamer.dimDates.as("dates"), $"lines.date_key_lines" === $"dates.date_key", "leftouter")
-        .drop("date_key_lines")
-        .withColumn("year", substring($"date_string", 0, 4))
-        .drop("date_string")
-        // look up schedule
-        .join(OrderStreamer.dimSchedules.as("schedules"), $"year" === $"schedules.schedule_name", "leftouter")
-        .drop("schedule_name", "year")
-        // find out if this is new/existing and previously cancelled or not
-        .join(dfOrderLineResults.as("updates"), $"lines.netsuite_line_id" === $"updates.line_id", "leftouter")
-        .drop("line_id")
-        // drop keys not needed for dsr
-        .drop(
-          "quantity",
-          "shipment_number",
-          "netsuite_line_id",
-          "netsuite_line_key",
-          "netsuite_order_id",
-          "netsuite_order_number"
-        )
-        .drop(
-          "ocm_order_id",
-          "ocm_order_number",
-          "school_key",
-          "source_key",
-          "customer_key",
-          "billto_key",
-          "shipto_key"
-        )
-        .drop("desttype_key", "product_key")
+      .where(dfOrderLines("include_in_dsr") === 1) // bypass the types that should be excluded
+      .withColumnRenamed("date_key", "date_key_lines")
+      .as("lines")
+      // get the year
+      .join(OrderStreamer.dimDates.as("dates"), $"lines.date_key_lines" === $"dates.date_key", "leftouter")
+      .drop("date_key_lines")
+      .withColumn("year", substring($"date_string", 0, 4))
+      .drop("date_string")
+      // look up schedule
+      .join(OrderStreamer.dimSchedules.as("schedules"), $"year" === $"schedules.schedule_name", "leftouter")
+      .drop("schedule_name", "year")
+      // find out if this is new/existing and previously cancelled or not
+      .join(dfOrderLineResults.as("updates"), $"lines.netsuite_line_id" === $"updates.line_id", "leftouter")
+      .drop("line_id")
+      // drop keys not needed for dsr
+      .drop(
+        "quantity",
+        "shipment_number",
+        "netsuite_line_id",
+        "netsuite_line_key",
+        "netsuite_order_id",
+        "netsuite_order_number"
+      )
+      .drop(
+        "ocm_order_id",
+        "ocm_order_number",
+        "school_key",
+        "source_key",
+        "customer_key",
+        "billto_key",
+        "shipto_key"
+      )
+      .drop("desttype_key", "product_key")
 
       // if not existing and not cancelled, add
       val dsr1 = dfDSR
-        .where(dfDSR("existing") === false)
-        .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
-        .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
-        .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === false)
+      .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
+      .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
+      .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
+      .withColumn("total_discount", when(col("is_cancelled") === 1, 0).otherwise(col("total_discount")))
+      .withColumn("total_shipping", when(col("is_cancelled") === 1, 0).otherwise(col("total_shipping")))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing, and not cancelled ever, add the difference
       var dsr2 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
-        .withColumn("total_price", col("total_price") - col("prev_price"))
-        .withColumn("total_cost", col("total_cost") - col("prev_cost"))
-        .withColumn("total_tax", col("total_tax") - col("prev_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
+      .withColumn("total_price", col("total_price") - col("prev_price"))
+      .withColumn("total_cost", col("total_cost") - col("prev_cost"))
+      .withColumn("total_tax", col("total_tax") - col("prev_tax"))
+      .withColumn("total_discount", col("total_discount") - col("prev_discount"))
+      .withColumn("total_shipping", col("total_shipping") - col("prev_shipping"))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing and uncancelled
       var dsr3 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
-        .withColumn("total_price", col("total_price"))
-        .withColumn("total_cost", col("total_cost"))
-        .withColumn("total_tax", col("total_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
+      .withColumn("total_price", col("total_price"))
+      .withColumn("total_cost", col("total_cost"))
+      .withColumn("total_tax", col("total_tax"))
+      .withColumn("total_discount", col("total_discount"))
+      .withColumn("total_shipping", col("total_shipping"))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing and now cancelled, subtract
       var dsr4 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
-        .withColumn("total_price", -col("prev_price"))
-        .withColumn("total_cost", -col("prev_cost"))
-        .withColumn("total_tax", -col("prev_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
+      .withColumn("total_price", -col("prev_price"))
+      .withColumn("total_cost", -col("prev_cost"))
+      .withColumn("total_tax", -col("prev_tax"))
+      .withColumn("total_discount", -col("total_discount"))
+      .withColumn("total_shipping", -col("total_shipping"))      
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
+
       var dsr = dsr1
-        .union(dsr2)
-        .union(dsr3)
-        .union(dsr4)
+      .union(dsr2)
+      .union(dsr3)
+      .union(dsr4)
 
       upsertDSRFact(dsr.as[DailySalesFact].collect())
       print(" fee .")
