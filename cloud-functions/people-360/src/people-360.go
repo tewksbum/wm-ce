@@ -218,6 +218,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
 		reportCounters1 := []ReportCounter{}
+		reportCounters2 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
@@ -282,7 +283,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			case 1:
 				setCardinality = "oneset"
 				break
-			case 0: 
+			case 0:
 				setCardinality = "noset"
 				break
 			default:
@@ -697,6 +698,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Count:     1,
 						Increment: true,
 					},
+					ReportCounter{
+						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+						Name:      "Mailable",
+						Count:     1,
+						Increment: true,
+					},
 				)
 			}
 		}
@@ -730,6 +737,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
 						Type:      "Golden:NonMPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+					ReportCounter{
+						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 						Name:      "HasEmail",
 						Count:     1,
 						Increment: true,
@@ -919,6 +932,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 										Count:     -1,
 										Increment: true,
 									},
+									ReportCounter{
+										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+										Name:      "Mailable",
+										Count:     -1,
+										Increment: true,
+									},
 								)
 							}
 
@@ -926,6 +945,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
 										Type:      "Golden:NonMPR",
+										Name:      "HasEmail",
+										Count:     -1,
+										Increment: true,
+									},
+									ReportCounter{
+										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 										Name:      "HasEmail",
 										Count:     -1,
 										Increment: true,
