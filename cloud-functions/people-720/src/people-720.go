@@ -107,7 +107,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 			FiberType:   f.FiberType,
 		})
 	}
-	var schoolYear := eventFibers[0].Passthrough["schoolYear"]
+	schoolYear := eventFibers[0].Passthrough["schoolYear"]
 	eventFibers = nil // clear eventFibers to release memory
 
 	var eventSets []PeopleSetDS // this is for raw sets
