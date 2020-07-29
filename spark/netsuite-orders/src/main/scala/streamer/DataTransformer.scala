@@ -55,7 +55,8 @@ object DataTransformer {
           $"billing.state",
           $"billing.zip",
           $"billing.country",
-          $"billing.phone"
+          $"billing.phone",
+          $"billing.email"
         )
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
@@ -65,6 +66,7 @@ object DataTransformer {
         .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
         .drop("billto_key", "old_key")
         .withColumnRenamed("new_key", "billto_key")
+        
       print(" shipto .")
 
       val dfShipTo = df
@@ -80,7 +82,8 @@ object DataTransformer {
           $"shipments.state".alias("state"),
           $"shipments.zip".alias("zip"),
           $"shipments.phone".alias("phone"),
-          $"shipments.type".alias("type")
+          $"shipments.type".alias("type"),
+          $"shipments.email".alias("email")
         )
         .withColumn("country", lit("USA"))
         .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
