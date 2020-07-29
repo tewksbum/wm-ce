@@ -66,6 +66,7 @@ object DataTransformer {
         .drop("billto_key", "old_key")
         .withColumnRenamed("new_key", "billto_key")
       print(" shipto .")
+
       val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
         .distinct()
@@ -473,6 +474,8 @@ object DataTransformer {
           "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
+        .withColumn("is_discount", when(col("type") === "Discount", 1).otherwise(0))
+        .withColumn("is_service", when(col("type") === "Service", 1).otherwise(0))
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
         .as("lines")
         // lookup keys
