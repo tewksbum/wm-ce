@@ -85,7 +85,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		jsonString = string(body)
-		if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
+		if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "INVALID_LOGIN_CREDENTIALS") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
 			break
 		}
 		retryCount++
