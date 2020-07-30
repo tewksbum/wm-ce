@@ -83,7 +83,6 @@ func init() {
 		log.Fatalf("error decoding secrets %v", err)
 		return
 	}
-	log.Printf("secret: %v", string(secretsData1))
 
 	esClient, err = elastic.NewClient(
 		elastic.SetURL(esSecret.URL),
@@ -258,10 +257,14 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			}
 
 			if strings.HasPrefix(counter.Type, "SchoolYear:") {
+				log.Printf("found SchoolYear: %v", counter.Type)
 				if !flag {
+
+					log.Printf("create SchoolYear: %v", input.CustomerID)
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Doc(idReportSponsor).DocAsUpsert(true))
 					flag = true
 				}
+				log.Printf("create cg: %v", script)
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Script(elastic.NewScript(script).Param("cg", cg)))
 			}
 
