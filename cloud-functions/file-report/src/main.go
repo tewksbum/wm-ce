@@ -186,6 +186,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	idReport := IDOnly{ID: input.ID}
+	idReportSponsor := IDOnly{ID: input.CustomerID}
 	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
@@ -232,6 +233,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 			CounterGroup{Group: "golden:nonmpr", Items: []KeyCounter{KeyCounter{Key: "unique", Count: 0}, KeyCounter{Key: "isadvalid", Count: 0}, KeyCounter{Key: "hasemail", Count: 0}}},
 			CounterGroup{Group: "people360:audit", Items: []KeyCounter{}},
 		})))
+		var flag bool
 		for _, counter := range input.Counters {
 			script := ""
 
@@ -252,6 +254,15 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				//script = `def groups = ctx._source.counts.findAll(g -> g.group == "` + t + `"); for(group in groups) {def counter = group.items.find(c -> c.key == params.count.key); if (counter == null) {group.items.add(params.count)} else {}}`
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
 			}
+
+			if strings.HasPrefix(counter.Type, "SchoolYear:") {
+				if !flag {
+					bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Doc(idReportSponsor).DocAsUpsert(true))
+					flag = true
+				}
+				bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Script(elastic.NewScript(script).Param("cg", cg)))
+			}
+
 			bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Script(elastic.NewScript(script).Param("cg", cg)))
 		}
 	}
@@ -591,25 +602,27 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// next validate the request id belongs to the customer
-		var eventLookup []event
-		eventQuery := datastore.NewQuery("Event").Namespace(os.Getenv("DATASTORENS")).Filter("EventID =", input.EventID).Limit(1)
-		if _, err := fsClient.GetAll(ctx, eventQuery, &eventLookup); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Fatalf("Error querying customer: %v", err)
-			fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -2\"}")
-			return
-		}
-		if len(eventLookup) == 0 {
-			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "{success: false, message: \"Event not found, -20\"}")
-			return
-		}
-		log.Printf("found %v event matches: %v", len(eventLookup), eventLookup)
-		event := eventLookup[0]
-		if !strings.EqualFold(event.CustomerID, input.CustomerID) {
-			w.WriteHeader(http.StatusUnauthorized)
-			fmt.Fprint(w, "{success: false, message: \"Event does not match to the customer id, -25\"}")
-			return
+		if input.EventID != "skip" {
+			var eventLookup []event
+			eventQuery := datastore.NewQuery("Event").Namespace(os.Getenv("DATASTORENS")).Filter("EventID =", input.EventID).Limit(1)
+			if _, err := fsClient.GetAll(ctx, eventQuery, &eventLookup); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				log.Fatalf("Error querying customer: %v", err)
+				fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -2\"}")
+				return
+			}
+			if len(eventLookup) == 0 {
+				w.WriteHeader(http.StatusNotFound)
+				fmt.Fprint(w, "{success: false, message: \"Event not found, -20\"}")
+				return
+			}
+			log.Printf("found %v event matches: %v", len(eventLookup), eventLookup)
+			event := eventLookup[0]
+			if !strings.EqualFold(event.CustomerID, input.CustomerID) {
+				w.WriteHeader(http.StatusUnauthorized)
+				fmt.Fprint(w, "{success: false, message: \"Event does not match to the customer id, -25\"}")
+				return
+			}
 		}
 	}
 
@@ -619,6 +632,25 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 		getRequest := esClient.Get().
 			Index(index).
 			Id(input.EventID).
+			Pretty(false)
+		getResult, _ := getRequest.Do(ctx)
+		// if err != nil {
+		// 	w.WriteHeader(http.StatusInternalServerError)
+		// 	fmt.Fprint(w, "{success: false, message: \"Internal error occurred, -121\"}")
+		// 	log.Fatalf("Error fetching from elastic: %v", err)
+		// }
+		if !getResult.Found {
+			w.WriteHeader(http.StatusNotFound)
+			fmt.Fprint(w, "{success: false, message: \"Not found\"}")
+			log.Printf("Not found: %v", input.EventID)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprint(w, string(getResult.Source))
+		}
+	} else if detail == "2" || detail == "true" {
+		getRequest := esClient.Get().
+			Index(index).
+			Id(input.CustomerID).
 			Pretty(false)
 		getResult, _ := getRequest.Do(ctx)
 		// if err != nil {
