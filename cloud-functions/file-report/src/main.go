@@ -83,6 +83,7 @@ func init() {
 		log.Fatalf("error decoding secrets %v", err)
 		return
 	}
+	log.Printf("secret: %v", string(secretsData1))
 
 	esClient, err = elastic.NewClient(
 		elastic.SetURL(esSecret.URL),
@@ -187,6 +188,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	idReport := IDOnly{ID: input.ID}
 	idReportSponsor := IDOnly{ID: input.CustomerID}
+	log.Printf("idReportSponsor: %v", idReportSponsor)
 	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
@@ -661,7 +663,7 @@ func GetReport(w http.ResponseWriter, r *http.Request) {
 		if !getResult.Found {
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, "{success: false, message: \"Not found\"}")
-			log.Printf("Not found: %v", input.EventID)
+			log.Printf("Not found: %v", input.CustomerID)
 		} else {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprint(w, string(getResult.Source))
