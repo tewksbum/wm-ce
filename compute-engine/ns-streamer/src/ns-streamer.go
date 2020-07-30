@@ -88,7 +88,7 @@ func main() {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
 
-	N := 5
+	N := 12
 	wg := new(sync.WaitGroup)
 	sem := make(chan struct{}, N)
 
@@ -100,12 +100,13 @@ func main() {
 	// 		},
 	// 	},
 	// }
-	batchSize := 50
+	batchSize := 5
 	for i := 0; i < len(input.Records); i += batchSize {
 		orders := []string{}
 		returns := []string{}
 		end := i + batchSize
 		if end > len(input.Records) {
+			log.Printf("updating end value")
 			end = len(input.Records)
 		}
 		for _, r := range input.Records[i:end] {
@@ -145,7 +146,7 @@ func main() {
 		
 				body, err := ioutil.ReadAll(resp.Body)
 				jsonString = string(body)
-				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
+				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "INVALID_LOGIN_CREDENTIALS") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
 					// log.Println(jsonString)
 					break
 				}
