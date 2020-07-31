@@ -1157,12 +1157,12 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		}
 
 		{
-			report := FileReport{
+			report2 := FileReport{
 				ID:         input.Signature.EventID,
 				CustomerID: input.Signature.OwnerID,
 				Counters:   reportCounters2,
 			}
-			publishReport(&report, cfName)
+			publishReport(&report2, cfName)
 		}
 		// push into pubsub
 		output.ExpiredSets = expiredSetCollection
