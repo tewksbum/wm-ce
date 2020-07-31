@@ -15,6 +15,7 @@ import (
 )
 
 func publishReport(report *FileReport, cfName string) {
+	log.Printf("Report Data: %v", report)
 	reportJSON, _ := json.Marshal(report)
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
 		Data: reportJSON,

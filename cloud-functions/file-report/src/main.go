@@ -254,7 +254,7 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
 			}
 
-			if strings.HasPrefix(counter.Type, "SchoolYear:") {
+			if strings.HasPrefix(strings.ToLower(counter.Type), "schoolyear:") {
 				if !flag {
 					idReportSponsor := IDOnly{ID: input.CustomerID}
 					log.Printf("idReportSponsor: %v", idReportSponsor)
