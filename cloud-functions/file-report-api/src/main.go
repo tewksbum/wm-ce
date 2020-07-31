@@ -55,7 +55,6 @@ func init() {
 		log.Fatalf("error decoding secrets %v", err)
 		return
 	}
-	log.Printf("secret: %v", string(secretsData1))
 
 	esClient, err = elastic.NewClient(
 		elastic.SetURL(esSecret.URL),
