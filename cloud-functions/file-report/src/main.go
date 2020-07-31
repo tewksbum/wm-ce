@@ -186,8 +186,6 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 
 	log.Printf("received from -%v- message %v", m.Attributes, string(m.Data))
 	idReport := IDOnly{ID: input.ID}
-	idReportSponsor := IDOnly{ID: input.CustomerID}
-	log.Printf("idReportSponsor: %v", idReportSponsor)
 	bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.ID).Doc(idReport).DocAsUpsert(true))
 
 	if !input.RequestedAt.IsZero() && len(input.Owner) > 0 && len(input.InputFileName) > 0 {
@@ -256,15 +254,13 @@ func ProcessUpdate(ctx context.Context, m *pubsub.Message) bool {
 				script = `def group = ctx._source.counts.find(g -> g.group == params.cg.group); if (group == null) {ctx._source.counts.add(params.cg)} else {def counter = group.items.find(c -> c.key == params.cg.items[0].key); if (counter == null) {group.items.add(params.cg.items[0])}}`
 			}
 
-			if strings.HasPrefix(counter.Type, "SchoolYear:") {
-				log.Printf("found SchoolYear: %v", counter.Type)
+			if strings.HasPrefix(counter.Type, "schoolyear:") {
 				if !flag {
-
-					log.Printf("create SchoolYear: %v", input.CustomerID)
+					idReportSponsor := IDOnly{ID: input.CustomerID}
+					log.Printf("idReportSponsor: %v", idReportSponsor)
 					bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Doc(idReportSponsor).DocAsUpsert(true))
 					flag = true
 				}
-				log.Printf("create cg: %v", script)
 				bulk.Add(elastic.NewBulkUpdateRequest().Index(index).Id(input.CustomerID).Script(elastic.NewScript(script).Param("cg", cg)))
 			}
 

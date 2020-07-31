@@ -39,6 +39,9 @@ var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
+var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
+var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
+var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 
 var ctx context.Context
 var ps *pubsub.Client
@@ -218,6 +221,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
 		reportCounters1 := []ReportCounter{}
+		reportCounters2 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
@@ -696,10 +700,35 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Name:      "IsAdValid",
 						Count:     1,
 						Increment: true,
-					},
+					})
+
+				reportCounters2 = append(reportCounters2,
 					ReportCounter{
 						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-						Name:      "Mailable",
+						Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+						Count:     1,
+						Increment: true,
+					},
+				)
+				if goldenDS.COUNTRY != "US" {
+					SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "international"})
+					reportCounters2 = append(reportCounters2,
+						ReportCounter{
+							Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+							Name:      "International:"+ validateStatus(goldenDS.STATUS),
+							Count:     1,
+							Increment: true,
+						},
+					)
+				}
+			}
+		} else {
+			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "noadvalid"})
+			if fiber.Signature.FiberType != "mpr" {
+				reportCounters2 = append(reportCounters2,
+					ReportCounter{
+						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+						Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
 						Count:     1,
 						Increment: true,
 					},
@@ -739,10 +768,11 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Name:      "HasEmail",
 						Count:     1,
 						Increment: true,
-					},
+					})
+				reportCounters2 = append(reportCounters2,
 					ReportCounter{
 						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-						Name:      "HasEmail",
+						Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 						Count:     1,
 						Increment: true,
 					},
@@ -930,16 +960,37 @@ func People360(ctx context.Context, m PubSubMessage) error {
 										Name:      "IsAdValid",
 										Count:     -1,
 										Increment: true,
-									},
+									}
+								)
+								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "Mailable",
+										Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
 										Count:     -1,
 										Increment: true,
-									},
+									}
+								)
+								if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "international"}) == 1 {
+									reportCounters2 = append(reportCounters2,
+										ReportCounter{
+											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+											Name:      "International:" + validateStatus(goldenDS.STATUS),
+											Count:     -1,
+											Increment: true,
+										}
+									)
+								}
+							}
+							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "noadvalid"}) == 1 {
+								reportCounters2 = append(reportCounters2,
+									ReportCounter{
+										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+										Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+										Count:     -1,
+										Increment: true,
+									}
 								)
 							}
-
 							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
@@ -947,13 +998,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 										Name:      "HasEmail",
 										Count:     -1,
 										Increment: true,
-									},
+									}
+								)
+								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "HasEmail",
+										Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 										Count:     -1,
 										Increment: true,
-									},
+									}
 								)
 							}
 						}
@@ -1103,6 +1156,14 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			publishReport(&report, cfName)
 		}
 
+		{
+			report := FileReport{
+				ID:        input.Signature.EventID,
+				CustomerID: input.Signature.OwnerID,
+				Counters:  reportCounters2
+			}
+			publishReport(&report, cfName)
+		}
 		// push into pubsub
 		output.ExpiredSets = expiredSetCollection
 		outputJSON, _ := json.Marshal(output)

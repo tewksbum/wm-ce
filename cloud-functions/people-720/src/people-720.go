@@ -109,7 +109,6 @@ func People720(ctx context.Context, m PubSubMessage) error {
 	}
 	passthrough := ConvertPassthrough360SliceToMap(eventFibers[0].Passthrough)
 	schoolYear := passthrough["schoolYear"]
-	log.Printf("schoolyear: %v", schoolYear)
 	eventFibers = nil // clear eventFibers to release memory
 	passthrough = nil
 
@@ -189,6 +188,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 
 							// load the existing sets
 							var reportCounters []ReportCounter
+							var reportCounters2 []ReportCounter
 							var existingSetKeys []*datastore.Key
 							var existingSets []PeopleSetDS
 							for _, setID := range setIDs {
@@ -370,10 +370,35 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "IsAdValid",
 											Count:     1,
 											Increment: true,
-										},
+										}
+									)
+									reportCounters2 = append(reportCounters2,
 										ReportCounter{
 											Type:      "SchoolYear:" + schoolYear,
-											Name:      "Mailable",
+											Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+											Count:     1,
+											Increment: true,
+										}
+									)
+									if goldenDS.COUNTRY != "US" {
+										SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "international"})
+										reportCounters2 = append(reportCounters2,
+											ReportCounter{
+												Type:      "SchoolYear:" + schoolYear,
+												Name:      "International:"+ validateStatus(goldenDS.STATUS),
+												Count:     1,
+												Increment: true,
+											},
+										)
+									}
+								}
+							} else {
+								SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "noadvalid"})
+								if goldenDS.ROLE != "Parent" {
+									reportCounters2 = append(reportCounters2,
+										ReportCounter{
+											Type:      "SchoolYear:" + schoolYear,
+											Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
 											Count:     1,
 											Increment: true,
 										},
@@ -413,13 +438,15 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "HasEmail",
 											Count:     1,
 											Increment: true,
-										},
+										}
+									)
+									reportCounters2 = append(reportCounters2,
 										ReportCounter{
 											Type:      "SchoolYear:" + schoolYear,
-											Name:      "HasEmail",
+											Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 											Count:     1,
 											Increment: true,
-										},
+										}
 									)
 								}
 							}
@@ -592,13 +619,36 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "IsAdValid",
 														Count:     -1,
 														Increment: true,
-													},
+													}
+												)
+												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
-														Name:      "Mailable",
+														Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
-													},
+													}
+												)
+												if GetRedisIntValue([]string{input.EventID, set, "golden", "international"}) == 1 {
+													reportCounters2 = append(reportCounters2,
+														ReportCounter{
+															Type:      "SchoolYear:" + schoolYear,
+															Name:      "International:" + validateStatus(goldenDS.STATUS),
+															Count:     -1,
+															Increment: true,
+														}
+													)
+												}
+											}
+											
+											if GetRedisIntValue([]string{input.EventID, set, "golden", "noadvalid"}) == 1 {
+												reportCounters2 = append(reportCounters2,
+													ReportCounter{
+														Type:      "SchoolYear:" + schoolYear,
+														Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+														Count:     -1,
+														Increment: true,
+													}
 												)
 											}
 
@@ -609,13 +659,15 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "HasEmail",
 														Count:     -1,
 														Increment: true,
-													},
+													}
+												)
+												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
-														Name:      "HasEmail",
+														Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
-													},
+													}
 												)
 											}
 										}
@@ -661,6 +713,13 @@ func People720(ctx context.Context, m PubSubMessage) error {
 								ID:       input.EventID,
 								Counters: reportCounters,
 								SetList:  setList,
+							}, cfName)
+
+							// publish report for sponsor
+							publishReport(&FileReport{
+								ID:         input.EventID,
+								CustomerID: input.OwnerID,
+								Counters:   reportCounters2,
 							}, cfName)
 
 							log.Printf("Merged sets %v into a set %v", setIDs, newSetID)

@@ -504,3 +504,11 @@ func GetRedisValues(keys []string) []string {
 	}
 	return values
 }
+
+func validateStatus(status string) string {
+	log.Printf("status: %v", status)
+	if status == "" {
+		return "Unknown"
+	}
+	return status
+}
