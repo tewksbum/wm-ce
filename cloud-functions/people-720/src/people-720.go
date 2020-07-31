@@ -370,7 +370,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "IsAdValid",
 											Count:     1,
 											Increment: true,
-										}
+										},
 									)
 									reportCounters2 = append(reportCounters2,
 										ReportCounter{
@@ -378,14 +378,14 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
 											Count:     1,
 											Increment: true,
-										}
+										},
 									)
 									if goldenDS.COUNTRY != "US" {
 										SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "international"})
 										reportCounters2 = append(reportCounters2,
 											ReportCounter{
 												Type:      "SchoolYear:" + schoolYear,
-												Name:      "International:"+ validateStatus(goldenDS.STATUS),
+												Name:      "International:" + validateStatus(goldenDS.STATUS),
 												Count:     1,
 												Increment: true,
 											},
@@ -438,7 +438,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "HasEmail",
 											Count:     1,
 											Increment: true,
-										}
+										},
 									)
 									reportCounters2 = append(reportCounters2,
 										ReportCounter{
@@ -446,7 +446,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 											Count:     1,
 											Increment: true,
-										}
+										},
 									)
 								}
 							}
@@ -619,7 +619,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "IsAdValid",
 														Count:     -1,
 														Increment: true,
-													}
+													},
 												)
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
@@ -627,7 +627,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
-													}
+													},
 												)
 												if GetRedisIntValue([]string{input.EventID, set, "golden", "international"}) == 1 {
 													reportCounters2 = append(reportCounters2,
@@ -636,11 +636,11 @@ func People720(ctx context.Context, m PubSubMessage) error {
 															Name:      "International:" + validateStatus(goldenDS.STATUS),
 															Count:     -1,
 															Increment: true,
-														}
+														},
 													)
 												}
 											}
-											
+
 											if GetRedisIntValue([]string{input.EventID, set, "golden", "noadvalid"}) == 1 {
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
@@ -648,7 +648,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
-													}
+													},
 												)
 											}
 
@@ -659,7 +659,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "HasEmail",
 														Count:     -1,
 														Increment: true,
-													}
+													},
 												)
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
@@ -667,7 +667,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
-													}
+													},
 												)
 											}
 										}
