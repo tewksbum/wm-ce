@@ -80,7 +80,7 @@ func init() {
 func People360(ctx context.Context, m PubSubMessage) error {
 	var inputs []PeopleInput
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
