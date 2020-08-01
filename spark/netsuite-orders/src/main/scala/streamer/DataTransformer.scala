@@ -44,6 +44,7 @@ object DataTransformer {
         .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter")
         .drop("customer_key", "old_key")
         .withColumnRenamed("new_key", "customer_key")
+
       print(" billto .")
       val dfBillTo = df
         .select(
@@ -55,17 +56,25 @@ object DataTransformer {
           $"billing.state",
           $"billing.zip",
           $"billing.country",
-          $"billing.phone"
+          $"billing.phone",
+          $"billing.email"
         )
+        .withColumn("email", when(col("netsuite_key") === "", "").otherwise(col("email"))) // blank out email if no key
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
+        .withColumn("billto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("billto_key"))) // fix the billto key if no netsuite key
+        
+        .distinct()
       val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
       val dfBillToNew = dfBillTo
-        .as("billto")
-        .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
-        .drop("billto_key", "old_key")
-        .withColumnRenamed("new_key", "billto_key")
+      .as("billto")
+      .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
+      .drop("billto_key", "old_key")
+      .withColumnRenamed("new_key", "billto_key")
+      .withColumn("billto_key", coalesce($"billto_key", lit("00000000-0000-0000-0000-000000000000"))) // set to Unassigned if null
+
       print(" shipto .")
+
       val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
         .distinct()
@@ -79,7 +88,8 @@ object DataTransformer {
           $"shipments.state".alias("state"),
           $"shipments.zip".alias("zip"),
           $"shipments.phone".alias("phone"),
-          $"shipments.type".alias("type")
+          $"shipments.type".alias("type"),
+          $"shipments.email".alias("email")
         )
         .withColumn("country", lit("USA"))
         .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
@@ -92,6 +102,8 @@ object DataTransformer {
         )
         .drop("type", "desttype_name")
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+        .withColumn("shipto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("shipto_key"))) // fix the billto key if no netsuite key
+        .distinct()
       val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
       val dfShipToNew = dfShipTo
         .as("shipto")
@@ -176,8 +188,10 @@ object DataTransformer {
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
+        .distinct()
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
+
       print(" lines .")
       val dfOrderLines = df
         .select(
@@ -268,11 +282,11 @@ object DataTransformer {
           "leftouter"
         )
         .drop("channel_name", "netsuite_id", "channel_value")
-        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner")
+        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "leftouter")
         .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
-        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "inner")
+        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "leftouter")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
-        .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "inner")
+        .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "leftouter")
         .drop("shipto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "type", "phone")
         .join(OrderStreamer.dimProducts.as("products"), $"lines.itemId" === $"products.netsuite_id", "leftouter")
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
@@ -299,10 +313,11 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
-        .withColumn(
-          "product_key",
-          coalesce($"product_key", lit(72804))
-        ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+        .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
+        .distinct()
+      // dfOrderLines.show
 
       val dfOrderLineResults = batchOrderLinesFact(dfOrderLines.as[OrderLineFact].collect(), true).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
@@ -311,9 +326,9 @@ object DataTransformer {
         .withColumnRenamed("cost", "prev_cost")
         .withColumnRenamed("discount", "prev_discount")
         .withColumnRenamed("shipping", "prev_shipping")
+      // dfOrderLineResults.show
 
       print(" dsr .")
-
       val dfDSR = dfOrderLines
       .where(dfOrderLines("include_in_dsr") === 1) // bypass the types that should be excluded
       .withColumnRenamed("date_key", "date_key_lines")
@@ -474,6 +489,8 @@ object DataTransformer {
           "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
+        .withColumn("is_discount", when(col("type") === "Discount", 1).otherwise(0))
+        .withColumn("is_service", when(col("type").isin("Service", "OthCharge"), 1).otherwise(0))
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
         .as("lines")
         // lookup keys
@@ -524,6 +541,7 @@ object DataTransformer {
         ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
+        .distinct()
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
       println("done")

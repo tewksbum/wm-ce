@@ -155,7 +155,7 @@ object DatabaseWriter {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
           val tbl = st.executeUpdate(s"create table dim_billtos_${id} like dim_billtos ")
-          val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone) values(?,?,?,?,?, ?,?,?,?,?)")
+          val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email) values(?,?,?,?,?, ?,?,?,?,?, ?)")
           for (record <- records) {
             ps.setString(1, record.billto_key)
             ps.setString(2, record.netsuite_key)
@@ -167,6 +167,7 @@ object DatabaseWriter {
             ps.setString(8, record.zip)
             ps.setString(9, record.country)
             ps.setString(10, record.phone)
+            ps.setString(11, record.email)
             ps.addBatch
           }
           ps.executeBatch
@@ -182,8 +183,8 @@ object DatabaseWriter {
             where not exists (select 1 from dim_billtos b where b.netsuite_key = a.netsuite_key)
           """
           val sqlInsert = s"""
-            insert into dim_billtos (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone)
-            select billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone
+            insert into dim_billtos (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email)
+            select billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email
             from dim_billtos_${id} a 
             where not exists (select 1 from dim_billtos b where b.netsuite_key = a.netsuite_key) 
           """
@@ -191,7 +192,7 @@ object DatabaseWriter {
             update dim_billtos b
             inner join dim_billtos_${id}  a
             on (a.netsuite_key = b.netsuite_key)
-            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone
+            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.email = a.email
           """
           val sqlDrop = s"drop table dim_billtos_${id}"
 
@@ -258,7 +259,7 @@ object DatabaseWriter {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
           val tbl = st.executeUpdate(s"create table dim_shiptos_${id} like dim_shiptos ")
-          val ps = con.prepareStatement(s"insert into dim_shiptos_${id} (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key) values(?,?,?,?,?, ?,?,?,?,?, ?)")
+          val ps = con.prepareStatement(s"insert into dim_shiptos_${id} (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email) values(?,?,?,?,?, ?,?,?,?,?, ?, ?)")
           for (record <- records) {
             ps.setString(1, record.shipto_key)
             ps.setString(2, record.netsuite_key)
@@ -271,6 +272,7 @@ object DatabaseWriter {
             ps.setString(9, record.country)
             ps.setString(10, record.phone)
             ps.setLong(11, record.desttype_key)
+            ps.setString(12, record.email)
             ps.addBatch
           }
           ps.executeBatch
@@ -286,8 +288,8 @@ object DatabaseWriter {
             where not exists (select 1 from dim_shiptos b where b.netsuite_key = a.netsuite_key)
           """
           val sqlInsert = s"""
-            insert into dim_shiptos (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key)
-            select shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key
+            insert into dim_shiptos (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email)
+            select shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email
             from dim_shiptos_${id} a 
             where not exists (select 1 from dim_shiptos b where b.netsuite_key = a.netsuite_key) 
           """
@@ -295,7 +297,7 @@ object DatabaseWriter {
             update dim_shiptos b
             inner join dim_shiptos_${id}  a
             on (a.netsuite_key = b.netsuite_key)
-            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.desttype_key = a.desttype_key
+            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.desttype_key = a.desttype_key, b.email = a.email
           """
           val sqlDrop = s"drop table dim_shiptos_${id}"
 
@@ -456,15 +458,19 @@ object DatabaseWriter {
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id)
           """
           val sqlInsert = s"""
-            insert into fact_orderlines (date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
-            shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
+            insert into fact_orderlines 
+            (
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            ) 
 
-            select date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
-            shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            select 
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
             from fact_orderlines_${id} a 
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id) 
           """

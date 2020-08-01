@@ -183,6 +183,6 @@ truncate table dim_shiptos;
 truncate table fact_orders;
 truncate table fact_orderlines;
 delete from fact_orders_dsr where schedule_key between 2 and 12;
-insert into dim_shiptos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '', 99);
-insert into dim_billtos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '');
+insert into dim_shiptos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '', 99, '');
+insert into dim_billtos values ('00000000-0000-0000-0000-000000000000', '', '', '', '', '', '', '', '', '', '');
 ```

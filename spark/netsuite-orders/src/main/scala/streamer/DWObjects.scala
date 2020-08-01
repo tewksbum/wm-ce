@@ -121,7 +121,8 @@ case class BillToDim(
     state: String,
     zip: String,
     country: String,
-    phone: String
+    phone: String,
+    email: String
 )
 
 case class ShipToDim(
@@ -135,7 +136,8 @@ case class ShipToDim(
     zip: String,
     country: String,
     phone: String,
-    desttype_key: Long
+    desttype_key: Long,
+    email: String
 )
 
 case class CustomerDim(

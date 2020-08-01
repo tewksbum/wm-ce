@@ -47,7 +47,8 @@ case class Billing(
     state: Option[String],
     zip: Option[String],
     name: Option[String],
-    phone: Option[String]
+    phone: Option[String],
+    email: Option[String]
 )
 case class Line(
     extPrice: Double,
