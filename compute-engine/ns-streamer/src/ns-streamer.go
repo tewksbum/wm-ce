@@ -33,7 +33,7 @@ type result struct {
 }
 
 type record struct {
-	ID string `json:"id"`
+	ID   string `json:"id"`
 	Type string `json:"type"`
 }
 
@@ -45,7 +45,7 @@ func init() {
 	}
 
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: "projects/180297787522/secrets/netsuite/versions/1",
+		Name: "projects/180297787522/secrets/netsuite/versions/2",
 	}
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {
@@ -128,14 +128,14 @@ func main() {
 				<-sem
 			}()
 			log.Printf("pulling orders %v, returns %v", orders, returns)
-			orderParam := "&orders=" +strings.Join(orders, ",")
-			returnParam  := "&returns=" +strings.Join(returns, ",")
+			orderParam := "&orders=" + strings.Join(orders, ",")
+			returnParam := "&returns=" + strings.Join(returns, ",")
 			orderURL := fmt.Sprintf("https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=825&deploy=1%v%v", orderParam, returnParam)
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
 			req.Header.Set("Authorization", nsAuth)
-	
+
 			jsonString := ""
 			for {
 				resp, err := client.Do(req)
@@ -143,7 +143,7 @@ func main() {
 					log.Printf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 				}
 				defer resp.Body.Close()
-		
+
 				body, err := ioutil.ReadAll(resp.Body)
 				jsonString = string(body)
 				if !strings.Contains(jsonString, "SSS_REQUEST_LIMIT_EXCEEDED") && !strings.Contains(jsonString, "INVALID_LOGIN_CREDENTIALS") && !strings.Contains(jsonString, "possible service interruptions") && len(jsonString) > 0 {
@@ -159,7 +159,7 @@ func main() {
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
-		}(orders, returns)		
+		}(orders, returns)
 	}
 	wg.Wait()
 	return
