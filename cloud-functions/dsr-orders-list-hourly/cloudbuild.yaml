@@ -17,7 +17,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: dsr-orders-list-hourly
-    _TRIGGER_TOPIC: dsr-orders-efresh-hourly
+    _TRIGGER_TOPIC: dsr-orders-refresh-hourly
     _ENTRY_POINT: Run
 options:
     substitution_option: 'ALLOW_LOOSE'
