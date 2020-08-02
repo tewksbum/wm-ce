@@ -86,9 +86,10 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	}
 
 	log.Printf("distributing %v orders for fetching", len(input.Records))
-	for i := 0; i < len(input.Records); i += 30 {
+	batchSize := 5
+	for i := 0; i < len(input.Records); i += batchSize {
 		ids := []string{}
-		e := i + 30
+		e := i + batchSize
 		if e > len(input.Records) {
 			e = len(input.Records)
 		}
@@ -105,7 +106,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		_, err = psresult.Get(ctx)
 		if err != nil {
 			log.Printf("Error could not pub order exceptions to pubsub: %v", err)
-		}	
+		}
 	}
 
 	return nil
