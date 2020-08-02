@@ -547,6 +547,7 @@ object DataTransformer {
       println("done")
 
       if (OrderStreamer.runOnce) {
+        refreshDSR
         ssc.stop()
       }
     }
