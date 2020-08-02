@@ -599,4 +599,13 @@ object DatabaseWriter {
     results.toList
   }
 
+  def refreshDSR( ) = {
+    using(ConnectionPool.borrow()) { con =>
+      {
+        val ps = con.prepareCall("{call sp_refresh_dsr_view}")
+        ps.executeQuery
+        ps.close
+      }
+    }
+  }
 }
