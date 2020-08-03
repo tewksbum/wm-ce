@@ -38,6 +38,7 @@ func SetCookie(w http.ResponseWriter, r *http.Request) (browserID *string) {
 		Name:     CookieName,
 		Value:    "WM-" + r.Host + "-" + uuid.Must(uuid.NewRandom()).String() + "." + time.Now().Format("2006-01-02.15:04"),
 		SameSite: http.SameSiteNoneMode,
+		Secure:   true,
 	}
 	http.SetCookie(w, cookie)
 	return &cookie.Value
