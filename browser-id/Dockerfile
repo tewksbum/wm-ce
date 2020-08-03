@@ -1,4 +1,4 @@
-FROM golang:1.12.1-stretch
+FROM golang:1.14.1-stretch
 
 COPY ./ /go/src/gitlab.com/wemade/ms/tmphackbrowseridserver
 
