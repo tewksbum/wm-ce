@@ -221,6 +221,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
 		reportCounters1 := []ReportCounter{}
+		reportCounters2 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
@@ -700,6 +701,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Count:     1,
 						Increment: true,
 					},
+				)
+				reportCounters2 = append(reportCounters2,
 					ReportCounter{
 						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 						Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
@@ -709,7 +712,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				)
 				if goldenDS.COUNTRY != "US" {
 					SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "international"})
-					reportCounters1 = append(reportCounters1,
+					reportCounters2 = append(reportCounters2,
 						ReportCounter{
 							Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 							Name:      "International:" + validateStatus(goldenDS.STATUS),
@@ -722,7 +725,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			SetRedisKeyWithExpiration([]string{input.Signature.EventID, output.ID, "golden", "noadvalid"})
 			if fiber.Signature.FiberType != "mpr" {
-				reportCounters1 = append(reportCounters1,
+				reportCounters2 = append(reportCounters2,
 					ReportCounter{
 						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 						Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
@@ -766,6 +769,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Count:     1,
 						Increment: true,
 					},
+				)
+				reportCounters2 = append(reportCounters2,
 					ReportCounter{
 						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 						Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
@@ -957,6 +962,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 										Count:     -1,
 										Increment: true,
 									},
+								)
+								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 										Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
@@ -965,7 +972,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 								if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "international"}) == 1 {
-									reportCounters1 = append(reportCounters1,
+									reportCounters2 = append(reportCounters2,
 										ReportCounter{
 											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 											Name:      "International:" + validateStatus(goldenDS.STATUS),
@@ -976,7 +983,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 								}
 							}
 							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "noadvalid"}) == 1 {
-								reportCounters1 = append(reportCounters1,
+								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 										Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
@@ -993,6 +1000,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 										Count:     -1,
 										Increment: true,
 									},
+								)
+								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
 										Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
@@ -1140,11 +1149,20 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		{
 			report := FileReport{
-				ID:         input.Signature.EventID,
-				CustomerID: input.Signature.OwnerID,
-				Counters:   reportCounters1,
-				SetList:    setList,
-				FiberList:  fiberList,
+				ID:        input.Signature.EventID,
+				Counters:  reportCounters1,
+				SetList:   setList,
+				FiberList: fiberList,
+			}
+			publishReport(&report, cfName)
+		}
+
+		{
+			report := FileReport{
+				ID:        strings.ToLower(input.Signature.OwnerID),
+				Counters:  reportCounters2,
+				SetList:   setList,
+				FiberList: fiberList,
 			}
 			publishReport(&report, cfName)
 		}
