@@ -579,7 +579,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					AppendRedisTempKey(setRedisKey, s.ID.Name)
 				}
 
-				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKINDGOLDEN).Namespace(dsNameSpace).Filter("search =", searchValue), &goldens); err != nil {
+				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindGolden).Namespace(dsNameSpace).Filter("search =", searchValue), &goldens); err != nil {
 					log.Fatalf("Error querying goldens: %v", err)
 				}
 				log.Printf("Fiber type %v Search %v found %v goldens", v.Type, search, len(goldens))
