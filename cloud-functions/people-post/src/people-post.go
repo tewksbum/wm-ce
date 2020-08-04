@@ -564,6 +564,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				setRedisKey := []string{input.Signature.OwnerID, "search-sets", search}     // existing sets
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
+				goldens := []PeopleGoldenDS{}
+				goldenKeys := []string{input.Signature.OwnerID, "search-goldens", search} 
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
 					log.Fatalf("Error querying sets: %v", err)
 				}
@@ -575,6 +577,14 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 					AppendRedisTempKey(setRedisKey, s.ID.Name)
+				}
+
+				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKINDGOLDEN).Namespace(dsNameSpace).Filter("search =", searchValue), &goldens); err != nil {
+					log.Fatalf("Error querying goldens: %v", err)
+				}
+				log.Printf("Fiber type %v Search %v found %v goldens", v.Type, search, len(goldens))
+				for _, g := range goldens {
+					AppendRedisTempKey(goldenKeys, g)
 				}
 			}
 		}
