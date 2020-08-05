@@ -616,7 +616,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 				for _, g := range goldens {
-					if g.Role != "Parent" {
+					if g.ROLE != "Parent" {
 						if g.ADVALID == "TRUE" {
 							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "advalid"})
 						} else {
