@@ -622,7 +622,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 						} else {
 							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "nonadvalid"})
 						}
-						if goldenDS.COUNTRY != "US" {
+						if g.COUNTRY != "US" {
 							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "international"})
 						}
 						if len(g.EMAIL) > 0 {
