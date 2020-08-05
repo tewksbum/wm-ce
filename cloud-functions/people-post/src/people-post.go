@@ -564,8 +564,6 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				setRedisKey := []string{input.Signature.OwnerID, "search-sets", search}     // existing sets
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
-				goldens := []PeopleGoldenDS{}
-				goldenKeys := []string{input.Signature.OwnerID, "search-goldens", search}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
 					log.Fatalf("Error querying sets: %v", err)
 				}
@@ -573,23 +571,66 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				for _, s := range querySets {
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
-							AppendRedisTempKey(fiberRedisKey, f)
-							// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
+							// AppendRedisTempKey(fiberRedisKey, f)
+							log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
 						}
 					}
-					AppendRedisTempKey(setRedisKey, s.ID.Name)
-					// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+					// AppendRedisTempKey(setRedisKey, s.ID.Name)
+					log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
 				}
-				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindGolden).Namespace(dsNameSpace).Filter("search =", searchValue), &goldens); err != nil {
-					log.Fatalf("Error querying goldens: %v", err)
+				// get the golden records
+				var goldenKeys []*datastore.Key
+				var goldenIDs []string
+				var goldens []PeopleGoldenDS
+				for _, setKey := range querySets {
+					if !Contains(goldenIDs, setKey.ID.Name) {
+						goldenIDs = append(goldenIDs, setKey.ID.Name)
+						dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.ID.Name, nil)
+						dsGoldenGetKey.Namespace = dsNameSpace
+						goldenKeys = append(goldenKeys, dsGoldenGetKey)
+						goldens = append(goldens, PeopleGoldenDS{})
+					}
 				}
-				log.Printf("Fiber type %v Search %v found %v goldens", v.Type, search, len(goldens))
+				if len(goldenKeys) > 0 {
+					batchSize := 1000
+					l := len(goldenKeys) / batchSize
+
+					if len(goldenKeys)%batchSize > 0 {
+						l++
+					}
+					for r := 0; r < l; r++ {
+						s := r * 1000
+						e := s + 1000
+
+						if e > len(goldenKeys) {
+							e = len(goldenKeys)
+						}
+
+						gk := goldenKeys[s:e]
+						gd := goldens[s:e]
+
+						if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+							log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+						}
+
+					}
+				}
 				for _, g := range goldens {
-					AppendRedisTempKey(goldenKeys, g.ID.Name)
-					// log.Printf("goldenKeys %v g.ID.Name %v ", goldenKeys, g.ID.Name)
+					if g.Role != "Parent" {
+						if g.ADVALID == "TRUE" {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "advalid"})
+						} else {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "nonadvalid"})
+						}
+						if goldenDS.COUNTRY != "US" {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "international"})
+						}
+						if len(g.EMAIL) > 0 {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "email"})
+						}
+					}
 				}
 			}
-
 		}
 
 		pubQueue = append(pubQueue, PubQueue{

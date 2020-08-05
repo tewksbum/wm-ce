@@ -372,6 +372,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Increment: true,
 										},
 									)
+									SetRedisKeyWithExpiration([]string{input.OwnerID, newSetID, "golden", "advalid"})
 									reportCounters2 = append(reportCounters2,
 										ReportCounter{
 											Type:      "SchoolYear:" + schoolYear,
@@ -381,7 +382,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 										},
 									)
 									if goldenDS.COUNTRY != "US" {
-										SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "international"})
+										SetRedisKeyWithExpiration([]string{input.OwnerID, newSetID, "golden", "international"})
 										reportCounters2 = append(reportCounters2,
 											ReportCounter{
 												Type:      "SchoolYear:" + schoolYear,
@@ -393,7 +394,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 									}
 								}
 							} else {
-								SetRedisKeyWithExpiration([]string{input.EventID, newSetID, "golden", "noadvalid"})
+								SetRedisKeyWithExpiration([]string{input.OwnerID, newSetID, "golden", "nonadvalid"})
 								if goldenDS.ROLE != "Parent" {
 									reportCounters2 = append(reportCounters2,
 										ReportCounter{
@@ -440,6 +441,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											Increment: true,
 										},
 									)
+									SetRedisKeyWithExpiration([]string{input.OwnerID, newSetID, "golden", "email"})
 									reportCounters2 = append(reportCounters2,
 										ReportCounter{
 											Type:      "SchoolYear:" + schoolYear,
@@ -621,6 +623,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Increment: true,
 													},
 												)
+											}
+											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "advalid"}) == 1 {
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
@@ -629,7 +633,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Increment: true,
 													},
 												)
-												if GetRedisIntValue([]string{input.EventID, set, "golden", "international"}) == 1 {
+												if GetRedisIntValue([]string{input.OwnerID, set, "golden", "international"}) == 1 {
 													reportCounters2 = append(reportCounters2,
 														ReportCounter{
 															Type:      "SchoolYear:" + schoolYear,
@@ -641,7 +645,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 												}
 											}
 
-											if GetRedisIntValue([]string{input.EventID, set, "golden", "noadvalid"}) == 1 {
+											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "nonadvalid"}) == 1 {
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
@@ -661,6 +665,8 @@ func People720(ctx context.Context, m PubSubMessage) error {
 														Increment: true,
 													},
 												)
+											}
+											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "email"}) == 1 {
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
