@@ -966,36 +966,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 							}
-							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "advalid"}) == 1 {
-								reportCounters2 = append(reportCounters2,
-									ReportCounter{
-										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
-										Count:     -1,
-										Increment: true,
-									},
-								)
-								if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "international"}) == 1 {
-									reportCounters2 = append(reportCounters2,
-										ReportCounter{
-											Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-											Name:      "International:" + validateStatus(goldenDS.STATUS),
-											Count:     -1,
-											Increment: true,
-										},
-									)
-								}
-							}
-							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "nonadvalid"}) == 1 {
-								reportCounters2 = append(reportCounters2,
-									ReportCounter{
-										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
-										Count:     -1,
-										Increment: true,
-									},
-								)
-							}
 							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
@@ -1006,16 +976,49 @@ func People360(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 							}
-							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "email"}) == 1 {
+						}
+					}
+
+					if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + input.Passthrough["schoolYear"], "deleted"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "advalid"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+									Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "international"}) == 1 {
 								reportCounters2 = append(reportCounters2,
 									ReportCounter{
 										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+										Name:      "International:" + validateStatus(goldenDS.STATUS),
 										Count:     -1,
 										Increment: true,
 									},
 								)
 							}
+						}
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "nonadvalid"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+									Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "email"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
+									Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+									Count:     -1,
+									Increment: true,
+								},
+							)
 						}
 					}
 				}
