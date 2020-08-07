@@ -508,7 +508,7 @@ func GetRedisValues(keys []string) []string {
 
 func validateTitle(title string) string {
 	log.Printf("title: %v", title)
-	if title == "" {
+	if title == "" || title == "0" {
 		return "Unknown"
 	}
 	return title
