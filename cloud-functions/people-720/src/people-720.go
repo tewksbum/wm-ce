@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -633,7 +634,7 @@ func People720(ctx context.Context, m PubSubMessage) error {
 											}
 										}
 									}
-									gTitle := validateTitle(GetRedisIntValue([]string{input.OwnerID, set, "golden", "title"}))
+									gTitle := validateTitle(strconv.Itoa(GetRedisIntValue([]string{input.OwnerID, set, "golden", "title"})))
 									if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + gTitle, "deleted"}) == 1 {
 										if GetRedisIntValue([]string{input.OwnerID, set, "golden", "advalid"}) == 1 {
 											reportCounters2 = append(reportCounters2,

@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -979,7 +980,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 
-					gTitle := validateTitle(GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "title"}))
+					gTitle := validateTitle(strconv.Itoa(GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "title"})))
 					if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + gTitle, "deleted"}) == 1 {
 						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "advalid"}) == 1 {
 							reportCounters2 = append(reportCounters2,
