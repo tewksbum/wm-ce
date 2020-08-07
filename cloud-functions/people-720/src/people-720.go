@@ -624,38 +624,6 @@ func People720(ctx context.Context, m PubSubMessage) error {
 													},
 												)
 											}
-											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "advalid"}) == 1 {
-												reportCounters2 = append(reportCounters2,
-													ReportCounter{
-														Type:      "SchoolYear:" + schoolYear,
-														Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
-														Count:     -1,
-														Increment: true,
-													},
-												)
-												if GetRedisIntValue([]string{input.OwnerID, set, "golden", "international"}) == 1 {
-													reportCounters2 = append(reportCounters2,
-														ReportCounter{
-															Type:      "SchoolYear:" + schoolYear,
-															Name:      "International:" + validateStatus(goldenDS.STATUS),
-															Count:     -1,
-															Increment: true,
-														},
-													)
-												}
-											}
-
-											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "nonadvalid"}) == 1 {
-												reportCounters2 = append(reportCounters2,
-													ReportCounter{
-														Type:      "SchoolYear:" + schoolYear,
-														Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
-														Count:     -1,
-														Increment: true,
-													},
-												)
-											}
-
 											if GetRedisIntValue([]string{input.EventID, set, "golden", "email"}) == 1 {
 												reportCounters = append(reportCounters,
 													ReportCounter{
@@ -666,16 +634,50 @@ func People720(ctx context.Context, m PubSubMessage) error {
 													},
 												)
 											}
-											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "email"}) == 1 {
+										}
+									}
+									if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + schoolYear, "deleted"}) == 1 {
+										if GetRedisIntValue([]string{input.OwnerID, set, "golden", "advalid"}) == 1 {
+											reportCounters2 = append(reportCounters2,
+												ReportCounter{
+													Type:      "SchoolYear:" + schoolYear,
+													Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+													Count:     -1,
+													Increment: true,
+												},
+											)
+											if GetRedisIntValue([]string{input.OwnerID, set, "golden", "international"}) == 1 {
 												reportCounters2 = append(reportCounters2,
 													ReportCounter{
 														Type:      "SchoolYear:" + schoolYear,
-														Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+														Name:      "International:" + validateStatus(goldenDS.STATUS),
 														Count:     -1,
 														Increment: true,
 													},
 												)
 											}
+										}
+
+										if GetRedisIntValue([]string{input.OwnerID, set, "golden", "nonadvalid"}) == 1 {
+											reportCounters2 = append(reportCounters2,
+												ReportCounter{
+													Type:      "SchoolYear:" + schoolYear,
+													Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+													Count:     -1,
+													Increment: true,
+												},
+											)
+										}
+
+										if GetRedisIntValue([]string{input.OwnerID, set, "golden", "email"}) == 1 {
+											reportCounters2 = append(reportCounters2,
+												ReportCounter{
+													Type:      "SchoolYear:" + schoolYear,
+													Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+													Count:     -1,
+													Increment: true,
+												},
+											)
 										}
 									}
 								}
