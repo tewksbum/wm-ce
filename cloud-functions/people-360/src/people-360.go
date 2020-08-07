@@ -705,8 +705,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "advalid"})
 				reportCounters2 = append(reportCounters2,
 					ReportCounter{
-						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-						Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+						Name:      "Mailable",
 						Count:     1,
 						Increment: true,
 					},
@@ -715,8 +715,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "international"})
 					reportCounters2 = append(reportCounters2,
 						ReportCounter{
-							Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-							Name:      "International:" + validateStatus(goldenDS.STATUS),
+							Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+							Name:      "International",
 							Count:     1,
 							Increment: true,
 						},
@@ -728,8 +728,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			if fiber.Signature.FiberType != "mpr" {
 				reportCounters2 = append(reportCounters2,
 					ReportCounter{
-						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-						Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+						Name:      "NoMailable",
 						Count:     1,
 						Increment: true,
 					},
@@ -774,8 +774,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "email"})
 				reportCounters2 = append(reportCounters2,
 					ReportCounter{
-						Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-						Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+						Name:      "HasEmail",
 						Count:     1,
 						Increment: true,
 					},
@@ -979,12 +979,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						}
 					}
 
-					if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + input.Passthrough["schoolYear"], "deleted"}) == 1 {
+					gTitle := validateTitle(GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "title"}))
+					if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + gTitle, "deleted"}) == 1 {
 						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "advalid"}) == 1 {
 							reportCounters2 = append(reportCounters2,
 								ReportCounter{
-									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-									Name:      "Mailable:" + validateStatus(goldenDS.STATUS),
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "Mailable",
 									Count:     -1,
 									Increment: true,
 								},
@@ -992,8 +993,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "international"}) == 1 {
 								reportCounters2 = append(reportCounters2,
 									ReportCounter{
-										Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-										Name:      "International:" + validateStatus(goldenDS.STATUS),
+										Type:      "SchoolYear:" + gTitle,
+										Name:      "International",
 										Count:     -1,
 										Increment: true,
 									},
@@ -1003,8 +1004,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "nonadvalid"}) == 1 {
 							reportCounters2 = append(reportCounters2,
 								ReportCounter{
-									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-									Name:      "NoMailable:" + validateStatus(goldenDS.STATUS),
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "NoMailable",
 									Count:     -1,
 									Increment: true,
 								},
@@ -1013,8 +1014,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "email"}) == 1 {
 							reportCounters2 = append(reportCounters2,
 								ReportCounter{
-									Type:      "SchoolYear:" + input.Passthrough["schoolYear"],
-									Name:      "HasEmail:" + validateStatus(goldenDS.STATUS),
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "HasEmail",
 									Count:     -1,
 									Increment: true,
 								},

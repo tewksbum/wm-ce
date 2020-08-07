@@ -571,12 +571,12 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				for _, s := range querySets {
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
-							// AppendRedisTempKey(fiberRedisKey, f)
-							log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
+							AppendRedisTempKey(fiberRedisKey, f)
+							// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
 						}
 					}
-					// AppendRedisTempKey(setRedisKey, s.ID.Name)
-					log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+					AppendRedisTempKey(setRedisKey, s.ID.Name)
+					// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
 				}
 				// get the golden records
 				var goldenKeys []*datastore.Key
@@ -617,6 +617,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				}
 				for _, g := range goldens {
 					if g.ROLE != "Parent" {
+						SetRedisTempKeyWithValue([]string{input.Signature.OwnerID, g.ID.Name, "golden", "title"}, g.TITLE)
 						if g.ADVALID == "TRUE" {
 							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "advalid"})
 						} else {

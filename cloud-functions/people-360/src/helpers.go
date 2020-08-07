@@ -507,10 +507,10 @@ func GetRedisGuidValuesList(keys []string) [][]string {
 	return [][]string{}
 }
 
-func validateStatus(status string) string {
-	log.Printf("status: %v", status)
-	if status == "" {
+func validateTitle(title string) string {
+	log.Printf("title: %v", title)
+	if title == "" {
 		return "Unknown"
 	}
-	return status
+	return title
 }
