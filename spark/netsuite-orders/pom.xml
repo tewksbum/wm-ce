@@ -27,7 +27,7 @@
 
   <groupId>spark</groupId>
   <artifactId>netsuite-orders</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>1.2-SNAPSHOT</version>
 
   <dependencies>
 
@@ -133,7 +133,27 @@
       <scope>provided</scope>
     </dependency>
     -->
-    
+    <!-- begin dependencies for pubusb lite -->
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-pubsublite</artifactId>
+      <version>0.1.7</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.cloud</groupId>
+      <artifactId>google-cloud-pubsub</artifactId>
+      <version>1.108.0</version>
+    </dependency>
+
+    <!-- A logging dependency used by the underlying library  -->
+    <dependency>
+      <groupId>com.google.flogger</groupId>
+      <artifactId>flogger-system-backend</artifactId>
+      <version>0.5.1</version>
+      <scope>runtime</scope>
+    </dependency>
+    <!-- end dependencies for pubusb lite -->
+
   </dependencies>
 
   <build>
@@ -215,7 +235,8 @@
                     <exclude>META-INF/*.RSA</exclude>
                   </excludes>
                 </filter>
-              </filters>              
+              </filters>    
+              <!--
               <relocations>
                 <relocation>
                   <pattern>com</pattern>
@@ -226,6 +247,7 @@
                   </includes>
                 </relocation>
               </relocations>
+              -->          
             </configuration>
           </execution>
         </executions>
