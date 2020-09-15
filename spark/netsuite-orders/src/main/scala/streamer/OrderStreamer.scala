@@ -26,6 +26,7 @@ object OrderStreamer {
   var slidingInterval: Int = 30
   var totalRunningTime: Int = 0
   var checkpointDirectory: String = "/tmp"
+  var pubTopicAddress: String = "wm-event"
   var secretVersion: String = "projects/180297787522/secrets/mariadb/versions/1"
   // var jdbcMariadbUrl: String = "jdbc:mariadb://10.128.0.32:3306/segment"
   var jdbcMysqlUrl: String = "jdbc:mysql://10.45.160.5:3306/segment"
@@ -33,6 +34,7 @@ object OrderStreamer {
 
   val jdbcUserName: String = "spark"
   val jdbcPassword: String = "sMehnXVuJ0LKQcndEtvv"
+
 
   val jdbcWriteProperties = new java.util.Properties()
   jdbcWriteProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
@@ -97,7 +99,6 @@ object OrderStreamer {
 
     val config = ConfigFactory.load();
     projectID = config.getString("project.id")
-    projectID = config.getString("project.id")
     subscription = config.getString("pubsub.subscription")
     windowLength = config.getInt("pubsub.windowlength")
     slidingInterval = config.getInt("pubsub.slidinginterval")
@@ -106,6 +107,7 @@ object OrderStreamer {
     secretVersion = config.getString("config.secretversion ")
     // jdbcMariadbUrl = config.getString("config.mariadburl")
     jdbcMysqlUrl = config.getString("config.mysqlurl")
+    pubTopicAddress = config.getString("pubsub.addressTopic")
 
     // // read the secret
     // val smServiceSettings = SecretManagerServiceSettings.newBuilder().build()

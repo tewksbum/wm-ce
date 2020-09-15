@@ -27,6 +27,16 @@ gcloud beta pubsub subscriptions add-iam-policy-binding \
     wm-order-intake-sparkles \
     --role roles/pubsub.subscriber \
      --member="serviceAccount:dataproc-service-account@wemade-core.iam.gserviceaccount.com"
+
+gcloud beta pubsub subscriptions add-iam-policy-binding \
+    wm-order-intake-test-sparkles \
+    --role roles/pubsub.subscriber \
+     --member="serviceAccount:dataproc-service-account@wemade-core.iam.gserviceaccount.com"     
+
+gcloud beta pubsub topics add-iam-policy-binding \
+    wm-event-test \
+    --role roles/pubsub.publisher \
+     --member="serviceAccount:dataproc-service-account@wemade-core.iam.gserviceaccount.com"       
 ```
 
 Allow service account to read a secret
@@ -79,6 +89,20 @@ gcloud dataproc clusters create sparkles \
 	--master-boot-disk-size 600 \
     --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
 	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB
+
+gcloud dataproc clusters create sparkles-test \
+    --region=us-central1 \
+    --zone=us-central1-c \
+    --scopes=pubsub \
+    --image-version="preview-debian10" \
+	--bucket=wm_dataproc \
+	--master-min-cpu-platform="Intel Skylake" \
+    --master-boot-disk-type pd-ssd \
+	--single-node \
+	--master-machine-type n1-standard-4 \
+	--master-boot-disk-size 600 \
+    --service-account="dataproc-service-account@wemade-core.iam.gserviceaccount.com" \
+	--properties dataproc:dataproc.logging.stackdriver.job.driver.enable=true,spark:spark.executor.memoryOverhead=2GB,spark:spark.executor.memory=6GB    
 ```
 
 Copy Jar file and Submit a Job to the dataproc cluster
@@ -89,6 +113,15 @@ gcloud dataproc jobs submit spark \
     --cluster=sparkles \
     --class=streamer.OrderStreamer \
     --jars=gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar \
+	--region=us-central1  \
+	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:3.0.0
+
+gsutil cp target/netsuite-orders-1.2-SNAPSHOT.jar gs://wm_dataproc/
+
+gcloud dataproc jobs submit spark \
+    --cluster=sparkles-test \
+    --class=streamer.OrderStreamer \
+    --jars=gs://wm_dataproc/netsuite-orders-1.2-SNAPSHOT.jar \
 	--region=us-central1  \
 	--properties spark.jars.packages=org.apache.spark:spark-sql_2.12:3.0.0
 ```
