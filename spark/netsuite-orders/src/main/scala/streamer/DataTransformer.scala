@@ -13,7 +13,9 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.functions._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import DatabaseWriter._
+import PubsubWriter._
 
 object DataTransformer {
 
@@ -66,6 +68,9 @@ object DataTransformer {
         
         .distinct()
       val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+      // pub
+      pubBillTo(dfBillTo.as[BillToDim].collect())
+
       val dfBillToNew = dfBillTo
       .as("billto")
       .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
@@ -73,6 +78,7 @@ object DataTransformer {
       .withColumnRenamed("new_key", "billto_key")
       .withColumn("billto_key", coalesce($"billto_key", lit("00000000-0000-0000-0000-000000000000"))) // set to Unassigned if null
 
+      
       print(" shipto .")
 
       val dfShipTo = df
@@ -105,6 +111,10 @@ object DataTransformer {
         .withColumn("shipto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("shipto_key"))) // fix the billto key if no netsuite key
         .distinct()
       val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+
+      // pub
+      pubShipTo(dfShipTo.as[ShipToDim].collect())
+
       val dfShipToNew = dfShipTo
         .as("shipto")
         .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
@@ -141,7 +151,7 @@ object DataTransformer {
           $"sponsor_4",
           $"sponsor_5"
         )
-        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
+        //.withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
@@ -214,7 +224,7 @@ object DataTransformer {
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
-        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
+        //.withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
         .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
         .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
