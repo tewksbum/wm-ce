@@ -1,4 +1,4 @@
-module dsrsponsor
+module dsrprogram
 
 go 1.11
 
