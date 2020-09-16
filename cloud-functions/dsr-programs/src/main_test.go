@@ -1,4 +1,4 @@
-package dsrsponsor
+package dsrprogram
 
 import (
 	"context"

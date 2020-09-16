@@ -1,4 +1,4 @@
-package dsrsponsor
+package dsrprogram
 
 import (
 	"context"
@@ -35,12 +35,16 @@ type result struct {
 }
 
 type record struct {
-	SponsorCode string `json:"sponsor_code"`
-	SponsorName string `json:"sponsor_name"`
-	NSID        string `json:"netsuite_id"`
-	SID         string `json:"school_id"`
-	NetsuiteID  int64
-	SchoolID    int64
+	ProgramName       string `json:"program_name"`
+	ProgramYear       string `json:"program_year"`
+	MasterProgramName string `json:"master_program_name"`
+	MasterProgramTag  string `json:"master_program_tag"`
+	NetsuiteIDString  string `json:"netsuite_id"`
+	NetsuiteID        int64
+	SchoolIDString    string `json:"school_id"`
+	SchoolID          int64
+	SponsorIDString   string `json:"sponsor_id"`
+	SponsorID         int64
 }
 
 func init() {
@@ -82,7 +86,7 @@ func init() {
 }
 
 func Run(ctx context.Context, m *pubsub.Message) error {
-	listURL := os.Getenv("SPONSOR_LIST_URL")
+	listURL := os.Getenv("PROGRAM_LIST_URL")
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -108,7 +112,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		N := 20
 		wg := new(sync.WaitGroup)
 		sem := make(chan struct{}, N)
-		log.Printf("Running update for %v sponsors", len(input.Records))
+		log.Printf("Running update for %v programs", len(input.Records))
 		for _, rec := range input.Records {
 			wg.Add(1)
 			go func(rec record) {
@@ -119,9 +123,10 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 					// (frees up buffer slot).
 					<-sem
 				}()
-				rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
-				rec.SchoolID, _ = strconv.ParseInt(rec.SID, 10, 64)
-				_, err := db.Exec("CALL sp_upsert_sponsor(?,?,?,?)", rec.SponsorCode, rec.SponsorName, rec.NetsuiteID, rec.SchoolID)
+				rec.NetsuiteID, _ = strconv.ParseInt(rec.NetsuiteIDString, 10, 64)
+				rec.SchoolID, _ = strconv.ParseInt(rec.SchoolIDString, 10, 64)
+				rec.SponsorID, _ = strconv.ParseInt(rec.SponsorIDString, 10, 64)
+				_, err := db.Exec("CALL sp_upsert_program(?,?,?,?,?,?,?)", rec.ProgramName, rec.ProgramYear, rec.MasterProgramName, rec.MasterProgramTag, rec.NetsuiteID, rec.SchoolID, rec.SponsorID)
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
