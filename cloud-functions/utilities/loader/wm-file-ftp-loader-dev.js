@@ -38,6 +38,9 @@ const getBucketFiles = async () => {
 
       switch (program.toLowerCase()) {
         case "fep":
+        case "ffep":
+        case "sfep":
+        case "wfep":
           remotePath = "/FEP/Input/";
           break;
         case "cwp":
@@ -45,6 +48,7 @@ const getBucketFiles = async () => {
           remotePath = "/CWP/Input/";
           break;
         case "frames":
+        case "dd":
           remotePath = "/FRAMES/Input/";
           break;
         case "carpet":
@@ -84,7 +88,7 @@ const getBucketFiles = async () => {
               " count:" +
               splitFilename[4],
           };
-          //await publishMessage(data);
+          await publishMessage(data);
         }
       } else {
         data = {
