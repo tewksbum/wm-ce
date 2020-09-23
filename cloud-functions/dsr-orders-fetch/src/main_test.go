@@ -9,5 +9,6 @@ import (
 
 func TestRun(t *testing.T) {
 	var message pubsub.Message
+	message.Data = []byte(`["4119709"]`)
 	Run(context.Background(), &message)
 }

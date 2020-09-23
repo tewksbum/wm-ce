@@ -1,13 +1,13 @@
-package dsrschool
+package dsrsponsor
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
-	"database/sql"
-	"os"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 
@@ -37,10 +37,10 @@ type result struct {
 type record struct {
 	SponsorCode string `json:"sponsor_code"`
 	SponsorName string `json:"sponsor_name"`
-	NSID string `json:"netsuite_id"`
-	SID string `json:"school_id"`
-	NetsuiteID int64
-	SchoolID int64
+	NSID        string `json:"netsuite_id"`
+	SID         string `json:"school_id"`
+	NetsuiteID  int64
+	SchoolID    int64
 }
 
 func init() {
@@ -125,7 +125,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
-			}(rec)		
+			}(rec)
 		}
 		wg.Wait()
 	} else {

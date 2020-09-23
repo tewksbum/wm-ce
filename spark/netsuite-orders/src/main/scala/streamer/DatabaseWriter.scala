@@ -155,7 +155,7 @@ object DatabaseWriter {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
           val tbl = st.executeUpdate(s"create table dim_billtos_${id} like dim_billtos ")
-          val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone) values(?,?,?,?,?, ?,?,?,?,?)")
+          val ps = con.prepareStatement(s"insert into dim_billtos_${id} (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email) values(?,?,?,?,?, ?,?,?,?,?, ?)")
           for (record <- records) {
             ps.setString(1, record.billto_key)
             ps.setString(2, record.netsuite_key)
@@ -167,6 +167,7 @@ object DatabaseWriter {
             ps.setString(8, record.zip)
             ps.setString(9, record.country)
             ps.setString(10, record.phone)
+            ps.setString(11, record.email)
             ps.addBatch
           }
           ps.executeBatch
@@ -182,8 +183,8 @@ object DatabaseWriter {
             where not exists (select 1 from dim_billtos b where b.netsuite_key = a.netsuite_key)
           """
           val sqlInsert = s"""
-            insert into dim_billtos (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone)
-            select billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone
+            insert into dim_billtos (billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email)
+            select billto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, email
             from dim_billtos_${id} a 
             where not exists (select 1 from dim_billtos b where b.netsuite_key = a.netsuite_key) 
           """
@@ -191,7 +192,7 @@ object DatabaseWriter {
             update dim_billtos b
             inner join dim_billtos_${id}  a
             on (a.netsuite_key = b.netsuite_key)
-            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone
+            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.email = a.email
           """
           val sqlDrop = s"drop table dim_billtos_${id}"
 
@@ -258,7 +259,7 @@ object DatabaseWriter {
           val id = java.util.UUID.randomUUID.toString.replace('-', '_') 
           val st = con.createStatement
           val tbl = st.executeUpdate(s"create table dim_shiptos_${id} like dim_shiptos ")
-          val ps = con.prepareStatement(s"insert into dim_shiptos_${id} (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key) values(?,?,?,?,?, ?,?,?,?,?, ?)")
+          val ps = con.prepareStatement(s"insert into dim_shiptos_${id} (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email) values(?,?,?,?,?, ?,?,?,?,?, ?, ?)")
           for (record <- records) {
             ps.setString(1, record.shipto_key)
             ps.setString(2, record.netsuite_key)
@@ -271,6 +272,7 @@ object DatabaseWriter {
             ps.setString(9, record.country)
             ps.setString(10, record.phone)
             ps.setLong(11, record.desttype_key)
+            ps.setString(12, record.email)
             ps.addBatch
           }
           ps.executeBatch
@@ -286,8 +288,8 @@ object DatabaseWriter {
             where not exists (select 1 from dim_shiptos b where b.netsuite_key = a.netsuite_key)
           """
           val sqlInsert = s"""
-            insert into dim_shiptos (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key)
-            select shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key
+            insert into dim_shiptos (shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email)
+            select shipto_key, netsuite_key, name, addr1, addr2, city, state, zip, country, phone, desttype_key, email
             from dim_shiptos_${id} a 
             where not exists (select 1 from dim_shiptos b where b.netsuite_key = a.netsuite_key) 
           """
@@ -295,7 +297,7 @@ object DatabaseWriter {
             update dim_shiptos b
             inner join dim_shiptos_${id}  a
             on (a.netsuite_key = b.netsuite_key)
-            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.desttype_key = a.desttype_key
+            set b.name = a.name, b.addr1 = a.addr1, b.addr2 = a.addr2, b.city = a.city, b.state = a.state, b.zip = a.zip, b.country = a.country, b.phone = a.phone, b.desttype_key = a.desttype_key, b.email = a.email
           """
           val sqlDrop = s"drop table dim_shiptos_${id}"
 
@@ -347,33 +349,38 @@ object DatabaseWriter {
     if (records.length > 0) {
       using(ConnectionPool.borrow()) { con =>
         {
-          val ps = con.prepareCall("{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?, ?)}")
+          val ps = con.prepareCall("{call sp_upsert_orders (?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,  ?,?,?,?,?,? )}")
           for (record <- records) {
             ps.setLong(1, record.date_key)
-            ps.setLong(2, record.channel_key)
-            ps.setLong(3, record.source_key)
-            ps.setLong(4, record.school_key)
-            ps.setString(5, record.customer_key)
-            ps.setString(6, record.billto_key)
-            ps.setLong(7, record.netsuite_id)
-            ps.setString(8, record.netsuite_number)
-            ps.setLong(9, record.ocm_id)
-            ps.setString(10, record.ocm_number)
-            ps.setDouble(11, record.merchandise_cost)
-            ps.setDouble(12, record.merchandise_total)
-            ps.setDouble(13, record.merchandise_tax)
-            ps.setDouble(14, record.shipping)
-            ps.setDouble(15, record.shipping_tax)
-            ps.setDouble(16, record.discount)
-            ps.setDouble(17, record.service)
-            ps.setDouble(18, record.service_tax)
-            ps.setDouble(19, record.total)
-            if (record.sponsor_key.isEmpty) {
-              ps.setNull(20, java.sql.Types.BIGINT)
-            }
-            else {
-              ps.setLong(20, record.sponsor_key.getOrElse(0 : Long))
-            }
+            ps.setLong(2, record.orderstatus_key)
+            ps.setLong(3, record.ordertype_key)
+            ps.setLong(4, record.channel_key)
+            ps.setLong(5, record.source_key)
+            ps.setLong(6, record.school_key)
+
+            if (record.sponsor_key_1.isEmpty) { ps.setNull(7, java.sql.Types.BIGINT) } else { ps.setLong(7, record.sponsor_key_1.getOrElse(0 : Long)) }
+            if (record.sponsor_key_2.isEmpty) { ps.setNull(8, java.sql.Types.BIGINT) } else { ps.setLong(8, record.sponsor_key_2.getOrElse(0 : Long)) }
+            if (record.sponsor_key_3.isEmpty) { ps.setNull(9, java.sql.Types.BIGINT) } else { ps.setLong(9, record.sponsor_key_3.getOrElse(0 : Long)) }
+            if (record.sponsor_key_4.isEmpty) { ps.setNull(10, java.sql.Types.BIGINT) } else { ps.setLong(10, record.sponsor_key_4.getOrElse(0 : Long)) }
+            if (record.sponsor_key_5.isEmpty) { ps.setNull(11, java.sql.Types.BIGINT) } else { ps.setLong(11, record.sponsor_key_5.getOrElse(0 : Long)) }
+            ps.setString(12, record.customer_key)
+            ps.setString(13, record.billto_key)
+
+            ps.setLong(14, record.netsuite_id)
+            ps.setString(15, record.netsuite_number)
+            ps.setLong(16, record.ocm_id)
+            ps.setString(17, record.ocm_number)
+            ps.setDouble(18, record.merchandise_cost)
+            ps.setDouble(19, record.merchandise_total)
+            ps.setDouble(20, record.merchandise_tax)
+
+            ps.setDouble(21, record.shipping)
+            ps.setDouble(22, record.shipping_tax)
+            ps.setDouble(23, record.discount)
+            ps.setDouble(24, record.service)
+            ps.setDouble(25, record.service_tax)
+            ps.setDouble(26, record.total)
+
             ps.addBatch()
           }
           ps.executeBatch()
@@ -393,49 +400,49 @@ object DatabaseWriter {
           val tbl = st.executeUpdate(s"create table fact_orderlines_${id} like fact_orderlines ")
           val ps = con.prepareStatement(s"""
             insert into fact_orderlines_${id} 
-            (date_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
+            (date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
             ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping, sponsor_key) 
-            values(?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?, ?,?, ?)
+            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
+            values(?,?,?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?)
             """
           )
           for (record <- records) {
             ps.setLong(1, record.date_key)
-            ps.setLong(2, record.channel_key)
-            ps.setLong(3, record.source_key)
-            ps.setLong(4, record.school_key)
-            ps.setString(5, record.customer_key)
-            ps.setLong(6, record.product_key)
-            ps.setString(7, record.billto_key)
-            ps.setString(8, record.shipto_key)
-            ps.setLong(9, record.netsuite_order_id)
-            ps.setString(10, record.netsuite_order_number)
-            ps.setLong(11, record.ocm_order_id)
-            ps.setString(12, record.ocm_order_number)
-            ps.setString(13, record.shipment_number)
-            ps.setString(14, record.netsuite_line_id)
-            ps.setString(15, record.netsuite_line_key)
-            ps.setLong(16, record.lob_key)
-            ps.setLong(17, record.desttype_key)
-            ps.setInt(18, record.is_dropship)
-            ps.setDouble(19, record.total_price)
-            ps.setDouble(20, record.total_tax)
-            ps.setDouble(21, record.total_cost)
-            ps.setInt(22, record.quantity)
-            ps.setInt(23, record.is_discount)
-            ps.setInt(24, record.is_shipping)
-            ps.setInt(25, record.is_service)
-            ps.setInt(26, record.is_cancelled)
-            ps.setDouble(27, record.total_discount)
-            ps.setDouble(28, record.total_shipping)
-            if (record.sponsor_key.isEmpty) {
-              ps.setNull(29, java.sql.Types.BIGINT)
-            }
-            else {
-              ps.setLong(29, record.sponsor_key.getOrElse(0 : Long))
-            }
+            ps.setLong(2, record.orderstatus_key)
+            ps.setLong(3, record.ordertype_key)
+            ps.setLong(4, record.channel_key)
+            ps.setLong(5, record.source_key)
+            ps.setLong(6, record.school_key)
+            ps.setString(7, record.customer_key)
+            ps.setLong(8, record.product_key)
+            ps.setString(9, record.billto_key)
+            ps.setString(10, record.shipto_key)
+            ps.setLong(11, record.netsuite_order_id)
+            ps.setString(12, record.netsuite_order_number)
+
+            ps.setLong(13, record.ocm_order_id)
+            ps.setString(14, record.ocm_order_number)
+            ps.setString(15, record.shipment_number)
+            ps.setString(16, record.netsuite_line_id)
+            ps.setString(17, record.netsuite_line_key)
+            ps.setLong(18, record.lob_key)
+            ps.setLong(19, record.desttype_key)
+            ps.setInt(20, record.is_dropship)
+            ps.setDouble(21, record.total_price)
+
+            ps.setDouble(22, record.total_tax)
+            ps.setDouble(23, record.total_cost)
+            ps.setInt(24, record.quantity)
+            ps.setInt(25, record.is_discount)
+            ps.setInt(26, record.is_shipping)
+            ps.setInt(27, record.is_service)
+            ps.setInt(28, record.is_cancelled)
+            ps.setDouble(29, record.total_discount)
+            ps.setDouble(30, record.total_shipping)
+            // println(ps.toString);
             ps.addBatch
           }
+          
           ps.executeBatch
           ps.close
           // run a select to get the result, followed by insert and update
@@ -451,12 +458,19 @@ object DatabaseWriter {
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id)
           """
           val sqlInsert = s"""
-            insert into fact_orderlines (date_key,channel_key,source_key,school_key,sponsor_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
-            select date_key,channel_key,source_key,school_key,sponsor_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
-            ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            insert into fact_orderlines 
+            (
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+            ) 
+
+            select 
+              date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
+              shipto_key,netsuite_order_id,netsuite_order_number,
+              ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
             from fact_orderlines_${id} a 
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id) 
           """
@@ -465,10 +479,11 @@ object DatabaseWriter {
             inner join fact_orderlines_${id} a
             on (a.netsuite_line_id = b.netsuite_line_id)
             set b.date_key = a.date_key,
+            b.orderstatus_key = a.orderstatus_key,
+            b.ordertype_key = a.ordertype_key,
             b.channel_key = a.channel_key,
             b.source_key = a.source_key,
             b.school_key = a.school_key,
-            b.sponsor_key = a.sponsor_key,
             b.customer_key = a.customer_key,
             b.product_key = a.product_key,
             b.billto_key = a.billto_key,
@@ -584,4 +599,13 @@ object DatabaseWriter {
     results.toList
   }
 
+  def refreshDSR( ) = {
+    using(ConnectionPool.borrow()) { con =>
+      {
+        val ps = con.prepareCall("{call sp_refresh_dsr_view}")
+        ps.executeQuery
+        ps.close
+      }
+    }
+  }
 }

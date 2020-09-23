@@ -26,6 +26,7 @@ object OrderStreamer {
   var slidingInterval: Int = 30
   var totalRunningTime: Int = 0
   var checkpointDirectory: String = "/tmp"
+  var pubTopicAddress: String = "wm-event"
   var secretVersion: String = "projects/180297787522/secrets/mariadb/versions/1"
   // var jdbcMariadbUrl: String = "jdbc:mariadb://10.128.0.32:3306/segment"
   var jdbcMysqlUrl: String = "jdbc:mysql://10.45.160.5:3306/segment"
@@ -33,6 +34,7 @@ object OrderStreamer {
 
   val jdbcUserName: String = "spark"
   val jdbcPassword: String = "sMehnXVuJ0LKQcndEtvv"
+
 
   val jdbcWriteProperties = new java.util.Properties()
   jdbcWriteProperties.setProperty("driver", "org.mariadb.jdbc.Driver")
@@ -50,6 +52,8 @@ object OrderStreamer {
   var dimChannels: DataFrame = _
   var dimSchedules: DataFrame = _
   var dimSponsors: DataFrame = _
+  var dimOrderStatuses: DataFrame = _
+  var dimOrderTypes: DataFrame = _
 
   var runOnce: Boolean = false
 
@@ -95,7 +99,6 @@ object OrderStreamer {
 
     val config = ConfigFactory.load();
     projectID = config.getString("project.id")
-    projectID = config.getString("project.id")
     subscription = config.getString("pubsub.subscription")
     windowLength = config.getInt("pubsub.windowlength")
     slidingInterval = config.getInt("pubsub.slidinginterval")
@@ -104,6 +107,7 @@ object OrderStreamer {
     secretVersion = config.getString("config.secretversion ")
     // jdbcMariadbUrl = config.getString("config.mariadburl")
     jdbcMysqlUrl = config.getString("config.mysqlurl")
+    pubTopicAddress = config.getString("pubsub.addressTopic")
 
     // // read the secret
     // val smServiceSettings = SecretManagerServiceSettings.newBuilder().build()
@@ -167,12 +171,20 @@ object OrderStreamer {
     dimDestTypes.cache().count() // force it to load
 
     println("preloading dim_sponsors")
-    dimProducts = sqlContext.read.jdbc(
+    dimSponsors = sqlContext.read.jdbc(
       jdbcMysqlUrl,
       "(select sponsor_key, netsuite_id from dim_sponsors) sponsors",
       jdbcReadProperties
     )
-    dimProducts.cache().count() // force it to load
+    dimSponsors.cache().count() // force it to load
+
+    println("preloading dim_orderstatuses")
+    dimOrderStatuses = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_orderstatuses", jdbcReadProperties)
+    dimOrderStatuses.cache().count() // force it to load
+
+    println("preloading dim_ordertypes")
+    dimOrderTypes = sqlContext.read.jdbc(jdbcMysqlUrl, "dim_ordertypes", jdbcReadProperties)
+    dimOrderTypes.cache().count() // force it to load    
 
     // Start streaming until we receive an explicit termination
     ssc.start()

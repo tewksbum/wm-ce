@@ -1,4 +1,4 @@
-module dsrschool
+module dsrsponsor
 
 go 1.11
 

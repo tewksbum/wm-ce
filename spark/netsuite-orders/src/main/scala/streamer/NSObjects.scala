@@ -47,7 +47,8 @@ case class Billing(
     state: Option[String],
     zip: Option[String],
     name: Option[String],
-    phone: Option[String]
+    phone: Option[String],
+    email: Option[String]
 )
 case class Line(
     extPrice: Double,
@@ -91,5 +92,11 @@ case class NetsuiteOrder(
     billing: Billing,
     fees: List[Line],
     shipments: List[Shipments],
-    sponsors: List[Sponsor]
+    sponsor_1: Option[Long],
+    sponsor_2: Option[Long],
+    sponsor_3: Option[Long],
+    sponsor_4: Option[Long],
+    sponsor_5: Option[Long],
+    `type`: String,
+    status: String,
 )

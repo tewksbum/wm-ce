@@ -230,7 +230,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				} else {
 					international++
 				}
-        
+
 				row := []string{
 					GetKVPValue(event.Passthrough, "schoolCode"),
 					"",
@@ -242,7 +242,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					GetKVPValue(event.Passthrough, "ADCODE"),
 					event.Created.Format("01/02/2006"),
 					GetKVPValue(event.Passthrough, "orderByDate"),
-					roleFormatter(GetKVPValue(event.Passthrough, "role")),
+					roleFormatter(GetKVPValue(event.Attributes, "role")),
 					GetKVPValue(event.Passthrough, "salutation"),
 					g.FNAME,
 					g.LNAME,

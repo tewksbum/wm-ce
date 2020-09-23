@@ -572,9 +572,64 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					if len(s.Fibers) > 0 {
 						for _, f := range s.Fibers {
 							AppendRedisTempKey(fiberRedisKey, f)
+							// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
 						}
 					}
 					AppendRedisTempKey(setRedisKey, s.ID.Name)
+					// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+				}
+				// get the golden records
+				var goldenKeys []*datastore.Key
+				var goldenIDs []string
+				var goldens []PeopleGoldenDS
+				for _, setKey := range querySets {
+					if !Contains(goldenIDs, setKey.ID.Name) {
+						goldenIDs = append(goldenIDs, setKey.ID.Name)
+						dsGoldenGetKey := datastore.NameKey(DSKindGolden, setKey.ID.Name, nil)
+						dsGoldenGetKey.Namespace = dsNameSpace
+						goldenKeys = append(goldenKeys, dsGoldenGetKey)
+						goldens = append(goldens, PeopleGoldenDS{})
+					}
+				}
+				if len(goldenKeys) > 0 {
+					batchSize := 1000
+					l := len(goldenKeys) / batchSize
+
+					if len(goldenKeys)%batchSize > 0 {
+						l++
+					}
+					for r := 0; r < l; r++ {
+						s := r * 1000
+						e := s + 1000
+
+						if e > len(goldenKeys) {
+							e = len(goldenKeys)
+						}
+
+						gk := goldenKeys[s:e]
+						gd := goldens[s:e]
+
+						if err := fs.GetMulti(ctx, gk, gd); err != nil && err != datastore.ErrNoSuchEntity {
+							log.Printf("Error fetching golden records ns %v kind %v, key count %v: %v,", dsNameSpace, DSKindGolden, len(goldenKeys), err)
+						}
+
+					}
+				}
+				for _, g := range goldens {
+					if g.ROLE != "Parent" {
+						SetRedisTempKeyWithValue([]string{input.Signature.OwnerID, g.ID.Name, "golden", "title"}, g.TITLE)
+						if g.ADVALID == "TRUE" {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "advalid"})
+						} else {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "nonadvalid"})
+						}
+						if g.COUNTRY != "US" {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "international"})
+						}
+						if len(g.EMAIL) > 0 {
+							SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, g.ID.Name, "golden", "email"})
+						}
+					}
 				}
 			}
 		}

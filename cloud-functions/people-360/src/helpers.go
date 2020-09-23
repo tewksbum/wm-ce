@@ -16,6 +16,7 @@ import (
 
 func publishReport(report *FileReport, cfName string) {
 	reportJSON, _ := json.Marshal(report)
+	log.Printf("Report Data: %v", string(reportJSON))
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
 		Data: reportJSON,
 		Attributes: map[string]string{
@@ -504,4 +505,12 @@ func GetRedisGuidValuesList(keys []string) [][]string {
 		return output
 	}
 	return [][]string{}
+}
+
+func validateTitle(title string) string {
+	log.Printf("title: %v", title)
+	if title == "" || title == "0" {
+		return "Unknown"
+	}
+	return title
 }

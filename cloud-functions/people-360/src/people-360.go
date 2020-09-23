@@ -8,6 +8,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,6 +40,9 @@ var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
 var redisTransientExpiration = 3600 * 24
 var redisTemporaryExpiration = 3600
+var reGraduationYear = regexp.MustCompile(`^20\d{2}$`)
+var reGraduationYear2 = regexp.MustCompile(`^\d{2}$`)
+var reClassYearFY1 = regexp.MustCompile(`^FY\d{4}$`)
 
 var ctx context.Context
 var ps *pubsub.Client
@@ -77,7 +81,7 @@ func init() {
 func People360(ctx context.Context, m PubSubMessage) error {
 	var inputs []PeopleInput
 	if err := json.Unmarshal(m.Data, &inputs); err != nil {
-		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+		log.Printf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 	LogDev(fmt.Sprintf("input is:\n%v", string(m.Data)))
 	inputIsFromPost := false
@@ -218,6 +222,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		matchedDefaultFiber := 0
 		var expiredSetCollection []string
 		reportCounters1 := []ReportCounter{}
+		reportCounters2 := []ReportCounter{}
 		if matchable {
 			// locate existing set
 			if len(input.Signature.RecordID) == 0 {
@@ -282,7 +287,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			case 1:
 				setCardinality = "oneset"
 				break
-			case 0: 
+			case 0:
 				setCardinality = "noset"
 				break
 			default:
@@ -698,6 +703,38 @@ func People360(ctx context.Context, m PubSubMessage) error {
 						Increment: true,
 					},
 				)
+				SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "advalid"})
+				reportCounters2 = append(reportCounters2,
+					ReportCounter{
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+						Name:      "Mailable",
+						Count:     1,
+						Increment: true,
+					},
+				)
+				if goldenDS.COUNTRY != "US" {
+					SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "international"})
+					reportCounters2 = append(reportCounters2,
+						ReportCounter{
+							Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+							Name:      "International",
+							Count:     1,
+							Increment: true,
+						},
+					)
+				}
+			}
+		} else {
+			SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "nonadvalid"})
+			if fiber.Signature.FiberType != "mpr" {
+				reportCounters2 = append(reportCounters2,
+					ReportCounter{
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
+						Name:      "NoMailable",
+						Count:     1,
+						Increment: true,
+					},
+				)
 			}
 		}
 		if len(goldenDS.EMAIL) > 0 {
@@ -730,6 +767,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				reportCounters1 = append(reportCounters1,
 					ReportCounter{
 						Type:      "Golden:NonMPR",
+						Name:      "HasEmail",
+						Count:     1,
+						Increment: true,
+					},
+				)
+				SetRedisKeyWithExpiration([]string{input.Signature.OwnerID, output.ID, "golden", "email"})
+				reportCounters2 = append(reportCounters2,
+					ReportCounter{
+						Type:      "SchoolYear:" + validateTitle(goldenDS.TITLE),
 						Name:      "HasEmail",
 						Count:     1,
 						Increment: true,
@@ -921,7 +967,6 @@ func People360(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 							}
-
 							if GetRedisIntValue([]string{input.Signature.EventID, set, "golden", "email"}) == 1 {
 								reportCounters1 = append(reportCounters1,
 									ReportCounter{
@@ -932,6 +977,50 @@ func People360(ctx context.Context, m PubSubMessage) error {
 									},
 								)
 							}
+						}
+					}
+
+					gTitle := validateTitle(strconv.Itoa(GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "title"})))
+					if SetRedisKeyIfNotExists([]string{set, "schoolyear:" + gTitle, "deleted"}) == 1 {
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "advalid"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "Mailable",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+							if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "international"}) == 1 {
+								reportCounters2 = append(reportCounters2,
+									ReportCounter{
+										Type:      "SchoolYear:" + gTitle,
+										Name:      "International",
+										Count:     -1,
+										Increment: true,
+									},
+								)
+							}
+						}
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "nonadvalid"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "NoMailable",
+									Count:     -1,
+									Increment: true,
+								},
+							)
+						}
+						if GetRedisIntValue([]string{input.Signature.OwnerID, set, "golden", "email"}) == 1 {
+							reportCounters2 = append(reportCounters2,
+								ReportCounter{
+									Type:      "SchoolYear:" + gTitle,
+									Name:      "HasEmail",
+									Count:     -1,
+									Increment: true,
+								},
+							)
 						}
 					}
 				}
@@ -1073,6 +1162,16 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			report := FileReport{
 				ID:        input.Signature.EventID,
 				Counters:  reportCounters1,
+				SetList:   setList,
+				FiberList: fiberList,
+			}
+			publishReport(&report, cfName)
+		}
+
+		{
+			report := FileReport{
+				ID:        strings.ToLower(input.Signature.OwnerID),
+				Counters:  reportCounters2,
 				SetList:   setList,
 				FiberList: fiberList,
 			}

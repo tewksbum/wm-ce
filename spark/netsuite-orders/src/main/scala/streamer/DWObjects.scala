@@ -2,10 +2,16 @@ package streamer
 
 case class OrdersFact(
     date_key: Long,
+    orderstatus_key: Long,
+    ordertype_key: Long,
     channel_key: Long,
     source_key: Long,
     school_key: Long,
-    sponsor_key: Option[Long],
+    sponsor_key_1: Option[Long],
+    sponsor_key_2: Option[Long],
+    sponsor_key_3: Option[Long],
+    sponsor_key_4: Option[Long],
+    sponsor_key_5: Option[Long],
     customer_key: String,
     billto_key: String,
     netsuite_id: Long,
@@ -25,10 +31,11 @@ case class OrdersFact(
 
 case class OrderLineFact(
     date_key: Long,
+    orderstatus_key: Long,
+    ordertype_key: Long,    
     channel_key: Long,
     source_key: Long,
     school_key: Long,
-    sponsor_key: Option[Long],
     customer_key: String,
     product_key: Long,
     billto_key: String,
@@ -114,7 +121,8 @@ case class BillToDim(
     state: String,
     zip: String,
     country: String,
-    phone: String
+    phone: String,
+    email: String
 )
 
 case class ShipToDim(
@@ -128,7 +136,8 @@ case class ShipToDim(
     zip: String,
     country: String,
     phone: String,
-    desttype_key: Long
+    desttype_key: Long,
+    email: String
 )
 
 case class CustomerDim(
@@ -165,4 +174,16 @@ case class SponsorDim (
     sponsor_name: String,
     netsuite_id: Long,
     school_key: Option[Long]
+)
+
+case class OrderTypeDim (
+    ordertype_key: Long,
+    ordertype_name: String,
+    include_in_dsr: Boolean
+)
+
+case class OrderStatusDim (
+    orderstatus_key: Long,
+    orderstatus_name: String,
+    include_in_dsr: Boolean
 )

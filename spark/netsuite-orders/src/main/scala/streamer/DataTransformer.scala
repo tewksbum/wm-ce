@@ -13,7 +13,9 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.functions._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import DatabaseWriter._
+import PubsubWriter._
 
 object DataTransformer {
 
@@ -44,6 +46,7 @@ object DataTransformer {
         .join(dfCustomerResults.as("keys"), $"customer.customer_key" === $"keys.old_key", "leftouter")
         .drop("customer_key", "old_key")
         .withColumnRenamed("new_key", "customer_key")
+
       print(" billto .")
       val dfBillTo = df
         .select(
@@ -55,17 +58,29 @@ object DataTransformer {
           $"billing.state",
           $"billing.zip",
           $"billing.country",
-          $"billing.phone"
+          $"billing.phone",
+          $"billing.email"
         )
+        .withColumn("email", when(col("netsuite_key") === "", "").otherwise(col("email"))) // blank out email if no key
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
+        .withColumn("billto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("billto_key"))) // fix the billto key if no netsuite key
+        
+        .distinct()
       val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+      // pub
+      pubBillTo(dfBillTo.as[BillToDim].collect())
+
       val dfBillToNew = dfBillTo
-        .as("billto")
-        .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
-        .drop("billto_key", "old_key")
-        .withColumnRenamed("new_key", "billto_key")
+      .as("billto")
+      .join(dfBillToResults.as("keys"), $"billto.billto_key" === $"keys.old_key", "leftouter")
+      .drop("billto_key", "old_key")
+      .withColumnRenamed("new_key", "billto_key")
+      .withColumn("billto_key", coalesce($"billto_key", lit("00000000-0000-0000-0000-000000000000"))) // set to Unassigned if null
+
+      
       print(" shipto .")
+
       val dfShipTo = df
         .withColumn("shipments", explode($"shipments"))
         .distinct()
@@ -79,7 +94,8 @@ object DataTransformer {
           $"shipments.state".alias("state"),
           $"shipments.zip".alias("zip"),
           $"shipments.phone".alias("phone"),
-          $"shipments.type".alias("type")
+          $"shipments.type".alias("type"),
+          $"shipments.email".alias("email")
         )
         .withColumn("country", lit("USA"))
         .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
@@ -92,12 +108,19 @@ object DataTransformer {
         )
         .drop("type", "desttype_name")
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+        .withColumn("shipto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("shipto_key"))) // fix the billto key if no netsuite key
+        .distinct()
       val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
+
+      // pub
+      pubShipTo(dfShipTo.as[ShipToDim].collect())
+
       val dfShipToNew = dfShipTo
         .as("shipto")
         .join(dfShipToResults.as("keys"), $"shipto.shipto_key" === $"keys.old_key", "leftouter")
         .drop("shipto_key", "old_key")
         .withColumnRenamed("new_key", "shipto_key")
+
       print(" order .")
       val dfOrders = df
         .select(
@@ -108,6 +131,8 @@ object DataTransformer {
           $"customer.id".alias("customer_value"),
           $"billing.addressKey".alias("billto_value"),
           $"id".alias("netsuite_order_id"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),
           $"orderNumber".alias("netsuite_number"),
           $"attributes.webOrderId".alias("ocm_id"),
           $"attributes.webOrderNumber".alias("ocm_number"),
@@ -119,9 +144,14 @@ object DataTransformer {
           $"totals.discountTotal".alias("discount"),
           $"totals.serviceTotal".alias("service"),
           $"totals.serviceTaxTotal".alias("service_tax"),
-          $"totals.total".alias("total")
+          $"totals.total".alias("total"),
+          $"sponsor_1",
+          $"sponsor_2",
+          $"sponsor_3",
+          $"sponsor_4",
+          $"sponsor_5"
         )
-        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
+        //.withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
@@ -153,14 +183,25 @@ object DataTransformer {
           "leftouter"
         )
         .drop("channel_name", "netsuite_id", "channel_value")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"orders.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"orders.order_type_value" === $"types.ordertype_name", "leftouter")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_1" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_1").withColumnRenamed("sponsor_key", "sponsor_key_1")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_2" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_2").withColumnRenamed("sponsor_key", "sponsor_key_2")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_3" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_3").withColumnRenamed("sponsor_key", "sponsor_key_3")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_4" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_4").withColumnRenamed("sponsor_key", "sponsor_key_4")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"orders.sponsor_5" === $"sponsors.netsuite_id", "leftouter").drop("netsuite_id", "sponsor_5").withColumnRenamed("sponsor_key", "sponsor_key_5")
+        .drop("ordertype_name", "order_type_value", "include_in_dsr")
         // look up customer and billto keys
         .join(dfCustomerNew.as("customers"), $"orders.customer_value" === $"customers.netsuite_id", "inner")
         .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
+        .distinct()
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
+
       print(" lines .")
       val dfOrderLines = df
         .select(
@@ -177,11 +218,13 @@ object DataTransformer {
           $"orderNumber".alias("netsuite_order_number"),
           $"attributes.webOrderId".alias("ocm_order_id"),
           $"attributes.webOrderNumber".alias("ocm_order_number"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),
           $"shipments"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
         .withColumn("source_value", coalesce($"source_value", lit(0))) // set to 0 if null
-        .withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
+        //.withColumn("channel_value", when(col("channel_value") === "111", "113").otherwise(col("channel_value"))) // change follett channel to wholesale
         .withColumn("channel_value", coalesce($"channel_value", lit(0))) // set to 0 if null
         .withColumn("ocm_order_id", coalesce($"ocm_order_id", lit(0))) // set to 0 if null
         .withColumn("ocm_order_number", coalesce($"ocm_order_number", lit("N/A"))) // set to 0 if null
@@ -205,7 +248,9 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         // remove shipment fields that we dont need
         .drop("addr1", "addr2", "city", "state", "zip", "name", "phone", "email", "type")
@@ -227,7 +272,9 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
@@ -245,16 +292,20 @@ object DataTransformer {
           "leftouter"
         )
         .drop("channel_name", "netsuite_id", "channel_value")
-        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "inner")
+        .join(dfCustomerNew.as("customers"), $"lines.customer_value" === $"customers.netsuite_id", "leftouter")
         .drop("customer_email", "netsuite_id", "customer_name", "customer_value")
-        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "inner")
+        .join(dfBillToNew.as("billtos"), $"lines.billto_value" === $"billtos.netsuite_key", "leftouter")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
-        .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "inner")
+        .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "leftouter")
         .drop("shipto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "type", "phone")
         .join(OrderStreamer.dimProducts.as("products"), $"lines.itemId" === $"products.netsuite_id", "leftouter")
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
         .drop("lob_name", "lob")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"lines.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"lines.order_type_value" === $"types.ordertype_name", "leftouter")
+        .drop("ordertype_name", "order_type_value")
         // rename columns to match
         .withColumnRenamed("extPrice", "total_price")
         .withColumnRenamed("cost", "total_cost")
@@ -272,10 +323,11 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
-        .withColumn(
-          "product_key",
-          coalesce($"product_key", lit(72804))
-        ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+        .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
+        .distinct()
+      // dfOrderLines.show
 
       val dfOrderLineResults = batchOrderLinesFact(dfOrderLines.as[OrderLineFact].collect(), true).toDF
         .withColumnRenamed("cancelled", "prev_cancelled")
@@ -284,104 +336,116 @@ object DataTransformer {
         .withColumnRenamed("cost", "prev_cost")
         .withColumnRenamed("discount", "prev_discount")
         .withColumnRenamed("shipping", "prev_shipping")
+      // dfOrderLineResults.show
+
       print(" dsr .")
       val dfDSR = dfOrderLines
-        .withColumnRenamed("date_key", "date_key_lines")
-        .as("lines")
-        // get the year
-        .join(OrderStreamer.dimDates.as("dates"), $"lines.date_key_lines" === $"dates.date_key", "leftouter")
-        .drop("date_key_lines")
-        .withColumn("year", substring($"date_string", 0, 4))
-        .drop("date_string")
-        // look up schedule
-        .join(OrderStreamer.dimSchedules.as("schedules"), $"year" === $"schedules.schedule_name", "leftouter")
-        .drop("schedule_name", "year")
-        // find out if this is new/existing and previously cancelled or not
-        .join(dfOrderLineResults.as("updates"), $"lines.netsuite_line_id" === $"updates.line_id", "leftouter")
-        .drop("line_id")
-        // drop keys not needed for dsr
-        .drop(
-          "quantity",
-          "shipment_number",
-          "netsuite_line_id",
-          "netsuite_line_key",
-          "netsuite_order_id",
-          "netsuite_order_number"
-        )
-        .drop(
-          "ocm_order_id",
-          "ocm_order_number",
-          "school_key",
-          "source_key",
-          "customer_key",
-          "billto_key",
-          "shipto_key"
-        )
-        .drop("desttype_key", "product_key")
+      .where(dfOrderLines("include_in_dsr") === 1) // bypass the types that should be excluded
+      .withColumnRenamed("date_key", "date_key_lines")
+      .as("lines")
+      // get the year
+      .join(OrderStreamer.dimDates.as("dates"), $"lines.date_key_lines" === $"dates.date_key", "leftouter")
+      .drop("date_key_lines")
+      .withColumn("year", substring($"date_string", 0, 4))
+      .drop("date_string")
+      // look up schedule
+      .join(OrderStreamer.dimSchedules.as("schedules"), $"year" === $"schedules.schedule_name", "leftouter")
+      .drop("schedule_name", "year")
+      // find out if this is new/existing and previously cancelled or not
+      .join(dfOrderLineResults.as("updates"), $"lines.netsuite_line_id" === $"updates.line_id", "leftouter")
+      .drop("line_id")
+      // drop keys not needed for dsr
+      .drop(
+        "quantity",
+        "shipment_number",
+        "netsuite_line_id",
+        "netsuite_line_key",
+        "netsuite_order_id",
+        "netsuite_order_number"
+      )
+      .drop(
+        "ocm_order_id",
+        "ocm_order_number",
+        "school_key",
+        "source_key",
+        "customer_key",
+        "billto_key",
+        "shipto_key"
+      )
+      .drop("desttype_key", "product_key")
 
       // if not existing and not cancelled, add
       val dsr1 = dfDSR
-        .where(dfDSR("existing") === false)
-        .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
-        .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
-        .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === false)
+      .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
+      .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
+      .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
+      .withColumn("total_discount", when(col("is_cancelled") === 1, 0).otherwise(col("total_discount")))
+      .withColumn("total_shipping", when(col("is_cancelled") === 1, 0).otherwise(col("total_shipping")))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing, and not cancelled ever, add the difference
       var dsr2 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
-        .withColumn("total_price", col("total_price") - col("prev_price"))
-        .withColumn("total_cost", col("total_cost") - col("prev_cost"))
-        .withColumn("total_tax", col("total_tax") - col("prev_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
+      .withColumn("total_price", col("total_price") - col("prev_price"))
+      .withColumn("total_cost", col("total_cost") - col("prev_cost"))
+      .withColumn("total_tax", col("total_tax") - col("prev_tax"))
+      .withColumn("total_discount", col("total_discount") - col("prev_discount"))
+      .withColumn("total_shipping", col("total_shipping") - col("prev_shipping"))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing and uncancelled
       var dsr3 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
-        .withColumn("total_price", col("total_price"))
-        .withColumn("total_cost", col("total_cost"))
-        .withColumn("total_tax", col("total_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
+      .withColumn("total_price", col("total_price"))
+      .withColumn("total_cost", col("total_cost"))
+      .withColumn("total_tax", col("total_tax"))
+      .withColumn("total_discount", col("total_discount"))
+      .withColumn("total_shipping", col("total_shipping"))
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
 
       // if existing and now cancelled, subtract
       var dsr4 = dfDSR
-        .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
-        .withColumn("total_price", -col("prev_price"))
-        .withColumn("total_cost", -col("prev_cost"))
-        .withColumn("total_tax", -col("prev_tax"))
-        .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-        .agg(
-          sum("total_price").as("price"),
-          sum("total_cost").as("cost"),
-          sum("total_tax").as("tax"),
-          sum("total_discount").as("discount"),
-          sum("total_shipping").as("shipping")
-        )
+      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
+      .withColumn("total_price", -col("prev_price"))
+      .withColumn("total_cost", -col("prev_cost"))
+      .withColumn("total_tax", -col("prev_tax"))
+      .withColumn("total_discount", -col("total_discount"))
+      .withColumn("total_shipping", -col("total_shipping"))      
+      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      .agg(
+        sum("total_price").as("price"),
+        sum("total_cost").as("cost"),
+        sum("total_tax").as("tax"),
+        sum("total_discount").as("discount"),
+        sum("total_shipping").as("shipping")
+      )
+
       var dsr = dsr1
-        .union(dsr2)
-        .union(dsr3)
-        .union(dsr4)
+      .union(dsr2)
+      .union(dsr3)
+      .union(dsr4)
 
       upsertDSRFact(dsr.as[DailySalesFact].collect())
       print(" fee .")
@@ -401,6 +465,8 @@ object DataTransformer {
           $"orderNumber".alias("netsuite_order_number"),
           $"attributes.webOrderId".alias("ocm_order_id"),
           $"attributes.webOrderNumber".alias("ocm_order_number"),
+          $"type".alias("order_type_value"),
+          $"status".alias("order_status_value"),          
           $"fees"
         )
         .withColumn("school_value", coalesce($"school_value", lit(0))) // set to 0 if null
@@ -428,9 +494,13 @@ object DataTransformer {
           "netsuite_order_id",
           "netsuite_order_number",
           "ocm_order_id",
-          "ocm_order_number"
+          "ocm_order_number",
+          "order_status_value",
+          "order_type_value"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
+        .withColumn("is_discount", when(col("type") === "Discount", 1).otherwise(0))
+        .withColumn("is_service", when(col("type").isin("Service", "OthCharge"), 1).otherwise(0))
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
         .as("lines")
         // lookup keys
@@ -454,6 +524,10 @@ object DataTransformer {
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
         .drop("lob_name", "lob")
+        .join(OrderStreamer.dimOrderStatuses.as("statuses"), $"lines.order_status_value" === $"statuses.orderstatus_name", "leftouter")
+        .drop("orderstatus_name", "order_status_value", "include_in_dsr")
+        .join(OrderStreamer.dimOrderTypes.as("types"), $"lines.order_type_value" === $"types.ordertype_name", "leftouter")
+        .drop("ordertype_name", "order_type_value")
         // rename columns to match
         .withColumnRenamed("extPrice", "total_price")
         .withColumnRenamed("cost", "total_cost")
@@ -477,11 +551,13 @@ object DataTransformer {
         ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
+        .distinct()
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
       println("done")
 
       if (OrderStreamer.runOnce) {
+        refreshDSR
         ssc.stop()
       }
     }

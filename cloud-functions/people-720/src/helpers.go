@@ -19,6 +19,7 @@ var redisTemporaryExpiration = 3600
 
 func publishReport(report *FileReport, cfName string) {
 	reportJSON, _ := json.Marshal(report)
+	log.Printf("Report Data: %v", string(reportJSON))
 	reportPub := topicR.Publish(ctx, &pubsub.Message{
 		Data: reportJSON,
 		Attributes: map[string]string{
@@ -503,4 +504,12 @@ func GetRedisValues(keys []string) []string {
 		// log.Printf("Error getting redis keys %+v, error %v", keys, err)
 	}
 	return values
+}
+
+func validateTitle(title string) string {
+	log.Printf("title: %v", title)
+	if title == "" || title == "0" {
+		return "Unknown"
+	}
+	return title
 }

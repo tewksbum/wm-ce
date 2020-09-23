@@ -12,6 +12,7 @@ type PubSubMessage struct {
 
 type FileReport struct {
 	ID              string          `json:"id,omitempty"`
+	CustomerID      string          `json:"customerId,omitempty"`
 	ProcessingBegin time.Time       `json:"processingBegin,omitempty"`
 	StatusLabel     string          `json:"statusLabel,omitempty"`
 	StatusBy        string          `json:"statusBy,omitempty"`

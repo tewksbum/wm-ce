@@ -1,4 +1,4 @@
-package dsrschool
+package dsrsponsor
 
 import (
 	"context"
