@@ -34,7 +34,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: file-processor
-    _FUNCTION_NAME_2: file-processor-worker
+    _FUNCTION_NAME_2: file-worker
     _TRIGGER_TOPIC: eventfile
     _TRIGGER_TOPIC_2: file-worker
     _ENTRY_POINT: ProcessFile
