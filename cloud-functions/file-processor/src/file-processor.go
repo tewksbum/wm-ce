@@ -854,6 +854,8 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					_, err = psresult.Get(ctx)
 					if err != nil {
 						log.Fatalf("%v Could not pub work load to pubsub: %v", input.Signature.EventID, err)
+					} else {
+						log.Printf("%v Pubbed a workload containing %v records", input.Signature.EventID, len(workerRecords.Records))
 					}
 				}
 
@@ -866,7 +868,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 				})
 				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+					log.Printf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
 			} else {
 				// output the records
