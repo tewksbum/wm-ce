@@ -845,6 +845,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 					workerRecords.Attributes = input.Attributes
 					workerRecords.Passthrough = input.Passthrough
 					workerRecords.StartingIndex = i
+					workerRecords.Headers = headers
 					workerRecords.Records = records[starting:ending]
 					workerJSON, _ := json.Marshal(workerRecords)
 					psresult := worker.Publish(ctx, &pubsub.Message{
