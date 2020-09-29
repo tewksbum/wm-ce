@@ -1,6 +1,6 @@
 timeout: 600s
 steps:
-  - id: go_deploy
+  - id: go_deploy_1
     name: 'gcr.io/cloud-builders/gcloud'
     args: ['functions', 
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}",
@@ -15,11 +15,30 @@ steps:
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
+  - id: go_deploy_2
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME_2}",
+    "--entry-point", "${_ENTRY_POINT_2}", 
+    "--runtime","go111", 
+    "--memory", "256MB",
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC_2}-$BRANCH_NAME", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "540",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--vpc-connector", "${_VPC_CONNECTOR}",
+    "--max-instances", "10"
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'    
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: file-processor
+    _FUNCTION_NAME_2: file-worker
     _TRIGGER_TOPIC: eventfile
+    _TRIGGER_TOPIC_2: file-worker
     _ENTRY_POINT: ProcessFile
+    _ENTRY_POINT_2: ProcessRecords
     _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'
