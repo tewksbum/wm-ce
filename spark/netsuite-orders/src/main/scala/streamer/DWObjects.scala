@@ -36,6 +36,8 @@ case class OrderLineFact(
     channel_key: Long,
     source_key: Long,
     school_key: Long,
+    sponsor_key: Long,    
+    program_key: Long,
     customer_key: String,
     product_key: Long,
     billto_key: String,
