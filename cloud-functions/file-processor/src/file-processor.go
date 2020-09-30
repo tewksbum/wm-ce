@@ -836,7 +836,7 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 			if len(records) > batchSize {
 				for i := 0; i < len(records); i = i + batchSize {
 					starting := i
-					ending := i + batchSize - 1
+					ending := i + batchSize
 					if ending > len(records) {
 						ending = len(records)
 					}
