@@ -45,7 +45,7 @@ func init() {
 	}
 
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: "projects/180297787522/secrets/netsuite/versions/3",
+		Name: "projects/180297787522/secrets/netsuite/versions/4",
 	}
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {

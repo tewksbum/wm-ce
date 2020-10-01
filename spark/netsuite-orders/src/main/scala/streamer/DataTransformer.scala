@@ -253,8 +253,10 @@ object DataTransformer {
           "order_type_value"
         )
         // remove shipment fields that we dont need
-        .drop("addr1", "addr2", "city", "state", "zip", "name", "phone", "email", "type")
+        .drop("addr1", "addr2", "city", "state", "zip", "name", "phone", "email", "type", "programName", "sponsorName")
         .withColumnRenamed("addressKey", "shipto_value")
+        .withColumnRenamed("programId", "program_id")
+        .withColumnRenamed("sponsorId", "sponsor_id")
         // expand lines
         .withColumn("lines", explode($"lines"))
         .select(
@@ -286,6 +288,10 @@ object DataTransformer {
         .drop("date_string", "date_value")
         .join(OrderStreamer.dimSources.as("sources"), $"lines.source_value" === $"sources.netsuite_id", "leftouter")
         .drop("source_name", "netsuite_id", "source_value")
+        .join(OrderStreamer.dimPrograms.as("programs"), $"lines.program_id" === $"programs.netsuite_id", "leftouter")
+        .drop("netsuite_id", "program_id")
+        .join(OrderStreamer.dimSponsors.as("sponsors"), $"lines.sponsor_id" === $"sponsors.netsuite_id", "leftouter")
+        .drop("netsuite_id", "sponsors")        
         .join(
           OrderStreamer.dimChannels.as("channels"),
           $"lines.channel_value" === $"channels.netsuite_id",

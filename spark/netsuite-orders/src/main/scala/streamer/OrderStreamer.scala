@@ -52,6 +52,7 @@ object OrderStreamer {
   var dimChannels: DataFrame = _
   var dimSchedules: DataFrame = _
   var dimSponsors: DataFrame = _
+  var dimPrograms: DataFrame = _
   var dimOrderStatuses: DataFrame = _
   var dimOrderTypes: DataFrame = _
 
@@ -174,6 +175,14 @@ object OrderStreamer {
     dimSponsors = sqlContext.read.jdbc(
       jdbcMysqlUrl,
       "(select sponsor_key, netsuite_id from dim_sponsors) sponsors",
+      jdbcReadProperties
+    )
+    dimSponsors.cache().count() // force it to load
+
+    println("preloading dim_programs")
+    dimPrograms = sqlContext.read.jdbc(
+      jdbcMysqlUrl,
+      "(select program_key, netsuite_id from dim_programs) programs",
       jdbcReadProperties
     )
     dimSponsors.cache().count() // force it to load

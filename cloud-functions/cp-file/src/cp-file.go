@@ -233,7 +233,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 				row := []string{
 					GetKVPValue(event.Passthrough, "schoolCode"),
-					"",
+					GetKVPValue(event.Attributes, "classStanding"), //This is only for frames.
 					"",
 					GetKVPValue(event.Passthrough, "schoolName"),
 					GetKVPValue(event.Passthrough, "inputType"),

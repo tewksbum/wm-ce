@@ -48,6 +48,15 @@ type Signature struct {
 	RowNumber int    `json:"rowNum"`
 }
 
+type Records struct {
+	Signature     Signature         `json:"signature"`
+	Passthrough   map[string]string `json:"passthrough"`
+	Headers       []string          `json:"headers"`
+	Records       [][]string        `json:"records"` //key is the row index, value is a string array representing the row
+	StartingIndex int               `json:"index"`
+	Attributes    map[string]string `json:"attributes"`
+}
+
 type Input struct {
 	Signature   Signature              `json:"signature"`
 	Passthrough map[string]string      `json:"passthrough"`
@@ -179,6 +188,7 @@ var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var status *pubsub.Topic
+var worker *pubsub.Topic
 var sb *storage.Client
 var msp *redis.Pool
 var topicR *pubsub.Topic
@@ -192,6 +202,7 @@ func init() {
 	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	// topic.PublishSettings.DelayThreshold = 200 * time.Millisecond
 	status = ps.Topic(os.Getenv("PSSTATUS"))
+	worker = ps.Topic(os.Getenv("PSWORKER"))
 	// status.PublishSettings.DelayThreshold = 5 * time.Minute
 	msp = &redis.Pool{
 		MaxIdle:     3,
@@ -821,107 +832,147 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 
 			SetRedisValueWithExpiration([]string{input.Signature.EventID, "records-total"}, len(records))
 
-			// output the records
-			for r, d := range records {
-				output.Signature.RecordID = uuid.New().String()
-				output.Signature.RowNumber = r + 1
-
-				if output.Signature.RowNumber == 1 {
-					report := FileReport{
-						ID:              input.Signature.EventID,
-						ProcessingBegin: time.Now(),
-						StatusLabel:     "processing records",
-						StatusBy:        cfName,
-						StatusTime:      time.Now(),
+			batchSize := 5000
+			if len(records) > batchSize {
+				for i := 0; i < len(records); i = i + batchSize {
+					starting := i
+					ending := i + batchSize
+					if ending > len(records) {
+						ending = len(records)
 					}
-					publishReport(&report, cfName)
+					workerRecords := Records{}
+					workerRecords.Signature = input.Signature
+					workerRecords.Attributes = input.Attributes
+					workerRecords.Passthrough = input.Passthrough
+					workerRecords.StartingIndex = i
+					workerRecords.Headers = headers
+					workerRecords.Records = records[starting:ending]
+					workerJSON, _ := json.Marshal(workerRecords)
+					psresult := worker.Publish(ctx, &pubsub.Message{
+						Data: workerJSON,
+					})
+					_, err = psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub work load to pubsub: %v", input.Signature.EventID, err)
+					} else {
+						log.Printf("%v Pubbed a workload containing %v records", input.Signature.EventID, len(workerRecords.Records))
+					}
 				}
 
-				fields := make(map[string]string)
-				for j, y := range d {
-					if len(headers) > j {
-						fields[headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
-					}
-				}
-
-				// // do not append attributes until after record processor, otherwise interferes with NER lookup
-				// for key, value := range input.Attributes {
-				// 	fields["Attr."+key] = value
-				// }
-				output.Fields = fields
-
-				for k, v := range output.Fields {
-					name := k
-					value := strings.TrimSpace(v)
-					stat := ColumnStat{Name: name}
-					if val, ok := columnStats[name]; ok {
-						stat = val
-					}
-					if len(value) > 0 {
-						stat.Sparsity++
-						if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
-							stat.Min = value
-						}
-						if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
-							stat.Max = value
-						}
-					}
-
-					columnStats[name] = stat
-				}
-
-				// let's pub it
-				outputJSON, _ := json.Marshal(output)
-				psresult := topic.Publish(ctx, &pubsub.Message{
-					Data: outputJSON,
+				input.EventData["status"] = "Pending Streamed"
+				input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
+				input.EventData["recordcount"] = recordCount
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
 				})
-				_, err := psresult.Get(ctx)
+				_, err = psresult.Get(ctx)
 				if err != nil {
-					log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
-				} else {
-					// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
-					recordCount++
-					report := FileReport{
-						ID: input.Signature.EventID,
-						RecordList: []RecordDetail{
-							RecordDetail{
-								ID:        output.Signature.RecordID,
-								RowNumber: output.Signature.RowNumber,
-								CreatedOn: time.Now(),
-							},
-						},
-					}
-					publishReport(&report, cfName)
+					log.Printf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
 				}
-			}
+			} else {
+				// output the records
+				for r, d := range records {
+					output.Signature.RecordID = uuid.New().String()
+					output.Signature.RowNumber = r + 1
 
-			report2 := FileReport{
-				ID:              input.Signature.EventID,
-				InputStatistics: columnStats,
-				StatusBy:        cfName,
-				StatusTime:      time.Now(),
-				StatusLabel:     "finished streaming",
-				Counters: []ReportCounter{
-					ReportCounter{
-						Type:      "fileprocessor",
-						Name:      "Outputted",
-						Count:     recordCount,
-						Increment: false,
+					if output.Signature.RowNumber == 1 {
+						report := FileReport{
+							ID:              input.Signature.EventID,
+							ProcessingBegin: time.Now(),
+							StatusLabel:     "processing records",
+							StatusBy:        cfName,
+							StatusTime:      time.Now(),
+						}
+						publishReport(&report, cfName)
+					}
+
+					fields := make(map[string]string)
+					for j, y := range d {
+						if len(headers) > j {
+							fields[headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
+						}
+					}
+
+					// // do not append attributes until after record processor, otherwise interferes with NER lookup
+					// for key, value := range input.Attributes {
+					// 	fields["Attr."+key] = value
+					// }
+					output.Fields = fields
+
+					for k, v := range output.Fields {
+						name := k
+						value := strings.TrimSpace(v)
+						stat := ColumnStat{Name: name}
+						if val, ok := columnStats[name]; ok {
+							stat = val
+						}
+						if len(value) > 0 {
+							stat.Sparsity++
+							if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+								stat.Min = value
+							}
+							if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+								stat.Max = value
+							}
+						}
+
+						columnStats[name] = stat
+					}
+
+					// let's pub it
+					outputJSON, _ := json.Marshal(output)
+					psresult := topic.Publish(ctx, &pubsub.Message{
+						Data: outputJSON,
+					})
+					_, err := psresult.Get(ctx)
+					if err != nil {
+						log.Fatalf("%v Could not pub record to pubsub: %v", input.Signature.EventID, err)
+					} else {
+						// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+						recordCount++
+						report := FileReport{
+							ID: input.Signature.EventID,
+							RecordList: []RecordDetail{
+								RecordDetail{
+									ID:        output.Signature.RecordID,
+									RowNumber: output.Signature.RowNumber,
+									CreatedOn: time.Now(),
+								},
+							},
+						}
+						publishReport(&report, cfName)
+					}
+				}
+
+				report2 := FileReport{
+					ID:              input.Signature.EventID,
+					InputStatistics: columnStats,
+					StatusBy:        cfName,
+					StatusTime:      time.Now(),
+					StatusLabel:     "finished streaming",
+					Counters: []ReportCounter{
+						ReportCounter{
+							Type:      "fileprocessor",
+							Name:      "Outputted",
+							Count:     recordCount,
+							Increment: false,
+						},
 					},
-				},
-			}
-			publishReport(&report2, cfName)
+				}
+				publishReport(&report2, cfName)
 
-			input.EventData["status"] = "Streamed"
-			input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
-			input.EventData["recordcount"] = recordCount
-			statusJSON, _ := json.Marshal(input)
-			psresult := status.Publish(ctx, &pubsub.Message{
-				Data: statusJSON,
-			})
-			_, err = psresult.Get(ctx)
-			if err != nil {
-				log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				input.EventData["status"] = "Streamed"
+				input.EventData["message"] = fmt.Sprintf("Record count %v", len(records))
+				input.EventData["recordcount"] = recordCount
+				statusJSON, _ := json.Marshal(input)
+				psresult := status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Fatalf("%v Could not pub status to pubsub: %v", input.Signature.EventID, err)
+				}
 			}
 
 		} else {
@@ -955,6 +1006,109 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 		}
 
 	}
+	return nil
+}
+
+func ProcessRecords(ctx context.Context, m PubSubMessage) error {
+	var records Records
+	if err := json.Unmarshal(m.Data, &records); err != nil {
+		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
+	}
+	log.Printf("Input %v", string(m.Data))
+
+	var output Output
+	output.Signature = records.Signature
+	output.Attributes = records.Attributes
+	output.Passthrough = records.Passthrough
+
+	columnStats := make(map[string]ColumnStat)
+	recordCount := 0
+	// output the records
+	for index, row := range records.Records {
+		output.Signature.RecordID = uuid.New().String()
+		output.Signature.RowNumber = records.StartingIndex + index + 1
+
+		if output.Signature.RowNumber == 1 {
+			report := FileReport{
+				ID:              records.Signature.EventID,
+				ProcessingBegin: time.Now(),
+				StatusLabel:     "processing records",
+				StatusBy:        cfName,
+				StatusTime:      time.Now(),
+			}
+			publishReport(&report, cfName)
+		}
+
+		fields := make(map[string]string)
+
+		for j, y := range row {
+			if len(records.Headers) > j {
+				fields[records.Headers[j]] = reNewline2.ReplaceAllString(reNewline.ReplaceAllString(y, " "), "")
+			}
+		}
+
+		output.Fields = fields
+		for k, v := range output.Fields {
+			name := k
+			value := strings.TrimSpace(v)
+			stat := ColumnStat{Name: name}
+			if val, ok := columnStats[name]; ok {
+				stat = val
+			}
+			if len(value) > 0 {
+				stat.Sparsity++
+				if len(stat.Min) == 0 || strings.Compare(stat.Min, value) > 0 {
+					stat.Min = value
+				}
+				if len(stat.Max) == 0 || strings.Compare(stat.Max, value) < 0 {
+					stat.Max = value
+				}
+			}
+			columnStats[name] = stat
+		}
+
+		// let's pub it
+		outputJSON, _ := json.Marshal(output)
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+		})
+		_, err := psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub record to pubsub: %v", records.Signature.EventID, err)
+		} else {
+			// log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+			recordCount++
+			report := FileReport{
+				ID: records.Signature.EventID,
+				RecordList: []RecordDetail{
+					RecordDetail{
+						ID:        output.Signature.RecordID,
+						RowNumber: output.Signature.RowNumber,
+						CreatedOn: time.Now(),
+					},
+				},
+			}
+			publishReport(&report, cfName)
+		}
+	}
+
+	report2 := FileReport{
+		ID:              records.Signature.EventID,
+		InputStatistics: columnStats,
+		StatusBy:        cfName,
+		StatusTime:      time.Now(),
+		StatusLabel:     "finished streaming a block",
+		Counters: []ReportCounter{
+			ReportCounter{
+				Type:      "fileprocessor",
+				Name:      "Outputted",
+				Count:     recordCount,
+				Increment: true, // since there are multiple instances,set this to true
+			},
+		},
+	}
+	publishReport(&report2, cfName)
+
 	return nil
 }
 

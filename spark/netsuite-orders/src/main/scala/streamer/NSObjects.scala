@@ -80,7 +80,11 @@ case class Shipments(
     name: Option[String],
     phone: Option[String],
     email: Option[String],
-    `type`: Option[String]
+    `type`: Option[String],
+    programId: Option[Int],
+    programName: Option[String],
+    sponsorId: Option[Int],
+    sponsorName: Option[String]
 )
 case class NetsuiteOrder(
     id: Long,
