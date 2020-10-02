@@ -23,6 +23,7 @@ var DSKindSet = os.Getenv("DSKINDSET")
 var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 var PubSubTopic = os.Getenv("PSOUTPUT")
+var Bucket = os.Getenv("DUMPBUCKET")
 
 // global vars
 var ps *pubsub.Client
@@ -130,68 +131,99 @@ func ListrakProcessRequest(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("Loaded %v matching golden", len(goldens))
 
-		// assemble contact list
-		output := []ContactInfo{}
-		for _, g := range goldens {
-			if len(g.EMAIL) > 0 {
-				emails := strings.Split(g.EMAIL, "|")
-				if len(emails) > 0 {
-					for _, email := range emails {
-						contactInfo := ContactInfo{
-							FirstName:   g.FNAME,
-							LastName:    g.LNAME,
-							Address1:    g.AD1,
-							Address2:    g.AD2,
-							City:        g.CITY,
-							State:       g.STATE,
-							Zip:         g.ZIP,
-							Country:     g.COUNTRY,
-							RoleType:    validateRole(g.ROLE),
-							Email:       email,
-							ContactID:   g.ID.Name,
-							SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
-							SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
-							SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+		if input.Type == "2" {
+			header := []string{"First Name", "Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Role Type", "Email", "Contact ID", "School Code", "School Color", "School Name"}
+			records := [][]string{header}
+			for _, g := range goldens {
+				row := []string{
+					g.FNAME,
+					g.LNAME,
+					g.AD1,
+					g.AD2,
+					g.CITY,
+					g.STATE,
+					g.ZIP,
+					g.COUNTRY,
+					strings.Split(g.EMAIL, "|")[0], // only write one email to CP
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+				}
+				records = append(records, row)
+			}
+
+			copyFileToBucket(ctx, event, records, Bucket)
+			log.Printf("Writing %v records into output file", len(records)-1)
+
+		} else {
+
+			// assemble contact list
+			output := []ContactInfo{}
+			for _, g := range goldens {
+				if len(g.EMAIL) > 0 {
+					emails := strings.Split(g.EMAIL, "|")
+					if len(emails) > 0 {
+						for _, email := range emails {
+							contactInfo := ContactInfo{
+								FirstName:   g.FNAME,
+								LastName:    g.LNAME,
+								Address1:    g.AD1,
+								Address2:    g.AD2,
+								City:        g.CITY,
+								State:       g.STATE,
+								Zip:         g.ZIP,
+								Country:     g.COUNTRY,
+								RoleType:    validateRole(g.ROLE),
+								Email:       email,
+								ContactID:   g.ID.Name,
+								SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
+								SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
+								SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+							}
+							output = append(output, contactInfo)
 						}
-						output = append(output, contactInfo)
 					}
 				}
 			}
-		}
-		log.Printf("Writing %v records into listrak-post file", len(output))
+			log.Printf("Writing %v records into listrak-post file", len(output))
 
-		// push into pubsub contacts
-		totalContacts := len(output)
-		pageSize := 250
-		batchCount := totalContacts / pageSize
-		if totalContacts%pageSize > 0 {
-			batchCount++
-		}
-		for i := 0; i < batchCount; i++ {
-			startIndex := i * pageSize
-			endIndex := (i + 1) * pageSize
-			if endIndex > totalContacts {
-				endIndex = totalContacts
+			// push into pubsub contacts
+			totalContacts := len(output)
+			pageSize := 250
+			batchCount := totalContacts / pageSize
+			if totalContacts%pageSize > 0 {
+				batchCount++
 			}
-			contacts := output[startIndex:endIndex]
-			outputJSON, _ := json.Marshal(contacts)
-			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: outputJSON,
-				Attributes: map[string]string{
-					"eventid": input.EventID,
-					"listid":  os.Getenv("LISTRAKCP"),
-					"form":    "cp",
-				},
-			})
-			psid, err := psresult.Get(ctx)
-			_, err = psresult.Get(ctx)
-			if err != nil {
-				log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
-				return
+			for i := 0; i < batchCount; i++ {
+				startIndex := i * pageSize
+				endIndex := (i + 1) * pageSize
+				if endIndex > totalContacts {
+					endIndex = totalContacts
+				}
+				contacts := output[startIndex:endIndex]
+				outputJSON, _ := json.Marshal(contacts)
+				psresult := topic.Publish(ctx, &pubsub.Message{
+					Data: outputJSON,
+					Attributes: map[string]string{
+						"eventid": input.EventID,
+						"listid":  os.Getenv("LISTRAKCP"),
+						"form":    "cp",
+					},
+				})
+				psid, err := psresult.Get(ctx)
+				_, err = psresult.Get(ctx)
+				if err != nil {
+					log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+					w.WriteHeader(http.StatusInternalServerError)
+					fmt.Fprint(w, "{\"success\": false, \"message\": \"Internal error occurred, -3\"}")
+					return
+				}
+				log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 			}
-			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
 	}
 	//Output
