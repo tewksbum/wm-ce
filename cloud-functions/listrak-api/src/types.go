@@ -110,7 +110,6 @@ type PeopleGoldenDS struct {
 type FileReady struct {
 	EventID string `json:"eventId"`
 	OwnerID string `json:"ownerId"`
-	Type    string `json:"type"`
 }
 
 type ContactInfo struct {
