@@ -132,29 +132,28 @@ func ListrakProcessRequest(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Loaded %v matching golden", len(goldens))
 
 		if input.Type == "2" {
-			header := []string{"First Name", "Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Role Type", "Email", "Contact ID", "School Code", "School Color", "School Name"}
+			header := []string{"First Name", "Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Role Type", "Email"}
 			records := [][]string{header}
 			for _, g := range goldens {
 				if len(g.EMAIL) > 0 {
-					row := []string{
-						g.FNAME,
-						g.LNAME,
-						g.AD1,
-						g.AD2,
-						g.CITY,
-						g.STATE,
-						g.ZIP,
-						g.COUNTRY,
-						strings.Split(g.EMAIL, "|")[0], // only write one email to CP
-						"",
-						"",
-						"",
-						"",
-						"",
-						"",
-						"",
+					emails := strings.Split(g.EMAIL, "|")
+					if len(emails) > 0 {
+						for _, email := range emails {
+							row := []string{
+								g.FNAME,
+								g.LNAME,
+								g.AD1,
+								g.AD2,
+								g.CITY,
+								g.STATE,
+								g.ZIP,
+								g.COUNTRY,
+								validateRole(g.ROLE),
+								email,
+							}
+							records = append(records, row)
+						}
 					}
-					records = append(records, row)
 				}
 			}
 			if len(records) > 1 {
