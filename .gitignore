@@ -16,3 +16,4 @@ output.csv
 
 dependency-reduced-pom.xml
 .metals/
+/.vscode/launch.json

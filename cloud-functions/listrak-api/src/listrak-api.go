@@ -135,32 +135,35 @@ func ListrakProcessRequest(w http.ResponseWriter, r *http.Request) {
 			header := []string{"First Name", "Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Role Type", "Email", "Contact ID", "School Code", "School Color", "School Name"}
 			records := [][]string{header}
 			for _, g := range goldens {
-				row := []string{
-					g.FNAME,
-					g.LNAME,
-					g.AD1,
-					g.AD2,
-					g.CITY,
-					g.STATE,
-					g.ZIP,
-					g.COUNTRY,
-					strings.Split(g.EMAIL, "|")[0], // only write one email to CP
-					"",
-					"",
-					"",
-					"",
-					"",
-					"",
-					"",
+				if len(g.EMAIL) > 0 {
+					row := []string{
+						g.FNAME,
+						g.LNAME,
+						g.AD1,
+						g.AD2,
+						g.CITY,
+						g.STATE,
+						g.ZIP,
+						g.COUNTRY,
+						strings.Split(g.EMAIL, "|")[0], // only write one email to CP
+						"",
+						"",
+						"",
+						"",
+						"",
+						"",
+						"",
+					}
+					records = append(records, row)
 				}
-				records = append(records, row)
 			}
-
-			copyFileToBucket(ctx, event, records, Bucket)
-			log.Printf("Writing %v records into output file", len(records)-1)
-
+			if len(records) > 1 {
+				copyFileToBucket(ctx, event, records, Bucket)
+				log.Printf("Writing %v records into output file", len(records)-1)
+			} else {
+				log.Printf("The event id %v doesn't have emails", input.EventID)
+			}
 		} else {
-
 			// assemble contact list
 			output := []ContactInfo{}
 			for _, g := range goldens {
