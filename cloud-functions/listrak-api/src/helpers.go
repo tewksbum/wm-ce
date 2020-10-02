@@ -1,8 +1,13 @@
 package listrakapi
 
 import (
+	"bytes"
+	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"log"
+	"strconv"
 	"strings"
 )
 
@@ -47,9 +52,33 @@ func LogDev(s string) {
 }
 
 func validateRole(role string) string {
-	LogDev(fmt.Sprintf("role: %v", role))
 	if role == "" {
 		return "Student"
 	}
 	return role
+}
+
+func copyFileToBucket(ctx context.Context, event Event, records [][]string, bucket string) (filename string) {
+	//Bucket
+	sb := cs.Bucket(bucket)
+	// store it in bucket
+	var buf bytes.Buffer
+	csv := csv.NewWriter(&buf)
+	csv.WriteAll(records)
+	csv.Flush()
+
+	csvBytes := buf.Bytes()
+
+	file := sb.Object(GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + event.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+
+	writer := file.NewWriter(ctx)
+	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {
+		log.Printf("File cannot be copied to bucket %v", err)
+		return ""
+	}
+	if err := writer.Close(); err != nil {
+		log.Printf("Failed to close bucket write stream %v", err)
+		return ""
+	}
+	return file.ObjectName()
 }
