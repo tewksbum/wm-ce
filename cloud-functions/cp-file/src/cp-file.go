@@ -26,8 +26,15 @@ var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var Bucket = os.Getenv("BUCKET")
+var FEPBucket = os.Getenv("FEPBUCKET")
 var BadBucket = os.Getenv("BADBUCKET")
 var Threshold = getEnvFloat("THRESHOLD")
+var PortalLink = os.Getenv("PORTALLINK")
+var FEPOptions = strings.Split(os.Getenv("FEPOPTIONS"), ",")
+var CAROptions = strings.Split(os.Getenv("CAROPTIONS"), ",")
+var CWPOptions = strings.Split(os.Getenv("CWPOPTIONS"), ",")
+var RHLOptions = strings.Split(os.Getenv("RHLOPTIONS"), ",")
+var DDOptions = strings.Split(os.Getenv("DDOPTIONS"), ",")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -216,6 +223,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 								SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
 								SchoolColor: GetKVPValue(event.Passthrough, "schoolColor"),
 								SchoolName:  GetKVPValue(event.Passthrough, "schoolName"),
+								PortalLink:  PortalLink + GetKVPValue(event.Passthrough, "sponsorCode"),
 							}
 							output = append(output, contactInfo)
 						}
@@ -263,17 +271,44 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				}
 
 				//only students with name and lastname
-				if (g.ADVALID == "TRUE" || g.COUNTRY != "US") && (len(g.FNAME) > 0 && len(g.LNAME) > 0) {
-					goodAD++
-					records = append(records, row)
+				if !Contains(FEPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+					if (g.ADVALID == "TRUE" || g.COUNTRY != "US") && (len(g.FNAME) > 0 && len(g.LNAME) > 0) {
+						goodAD++
+						records = append(records, row)
+					} else {
+						badAD1++
+						row = append(row, "FALSE")
+						badrecords = append(badrecords, row)
+					}
 				} else {
-					badAD1++
-					row = append(row, "FALSE")
-					badrecords = append(badrecords, row)
+					records = append(records, row)
 				}
 			}
 
-			if goodAD >= int(float64((studentsUS))*Threshold) {
+			if Contains(FEPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				filename := copyFileToBucket(ctx, event, records, FEPBucket)
+				log.Printf("Writing %v records into output file %v", len(records)-1, filename)
+
+				eventData := EventData{
+					Signature: Signature{
+						EventID: input.EventID,
+						OwnerID: input.OwnerID,
+					},
+					EventData: make(map[string]interface{}),
+				}
+
+				eventData.EventData["status"] = "File Generated"
+				eventData.EventData["message"] = "File generated successfully " + filename
+				eventData.EventData["parent-emails"] = countParentEmails
+				eventData.EventData["student-emails"] = countStudentEmails
+				eventData.EventData["row-count"] = len(records) - 1
+
+				statusJSON, _ := json.Marshal(eventData)
+				_ = status.Publish(ctx, &pubsub.Message{
+					Data: statusJSON,
+				})
+
+			} else if goodAD >= int(float64((studentsUS))*Threshold) {
 				// good to go
 				filename := copyFileToBucket(ctx, event, records, Bucket)
 				log.Printf("Writing %v records into output file", len(records)-1)
@@ -331,6 +366,25 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			}
 
 			// push into pubsub contacts
+			listrakid := ""
+			program := ""
+			if Contains(FEPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				listrakid = os.Getenv("FEPLISTRAK")
+				program = "FEP"
+			} else if Contains(CAROptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				listrakid = os.Getenv("CARLISTRAK")
+				program = "CAR"
+			} else if Contains(CWPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				listrakid = os.Getenv("CWPLISTRAK")
+				program = "CWP"
+			} else if Contains(RHLOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				listrakid = os.Getenv("RHLLISTRAK")
+				program = "RHL"
+			} else if Contains(DDOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				listrakid = os.Getenv("DDLISTRAK")
+				program = "DD"
+			}
+
 			totalContacts := len(output)
 			pageSize := 250
 			batchCount := totalContacts / pageSize
@@ -349,8 +403,9 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					Data: outputJSON,
 					Attributes: map[string]string{
 						"eventid": input.EventID,
-						"listid":  os.Getenv("LISTRAKCP"),
+						"listid":  listrakid,
 						"form":    "cp",
+						"program": program,
 					},
 				})
 				psid, err := psresult.Get(ctx)
