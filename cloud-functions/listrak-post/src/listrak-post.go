@@ -14,6 +14,7 @@ import (
 
 	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
+	"github.com/fatih/structs"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1"
@@ -48,6 +49,60 @@ var listrakSegment = map[string]int{
 	"schoolcode":  getenvInt("LISTRAKSEGMENT_SCHOOLCODE"),
 	"schoolcolor": getenvInt("LISTRAKSEGMENT_SCHOOLCOLOR"),
 	"schoolname":  getenvInt("LISTRAKSEGMENT_SCHOOLNAME"),
+}
+
+var devSegments = map[string]int{
+	"FirstName":   17358,
+	"LastName":    17359,
+	"PortalLink":  17360,
+	"SchoolCode":  17362,
+	"SchoolName":  17364,
+	"SchoolColor": 17363,
+}
+
+var fepSegments = map[string]int{
+	"FirstName":   6241,
+	"LastName":    6242,
+	"PortalLink":  6256,
+	"SchoolCode":  6275,
+	"SchoolName":  6276,
+	"SchoolColor": 6277,
+}
+
+var carSegments = map[string]int{
+	"FirstName":   17329,
+	"LastName":    17330,
+	"PortalLink":  17331,
+	"SchoolCode":  17333,
+	"SchoolName":  17335,
+	"SchoolColor": 17334,
+}
+
+var cwpSegments = map[string]int{
+	"FirstName":   17343,
+	"LastName":    17344,
+	"PortalLink":  17345,
+	"SchoolCode":  17347,
+	"SchoolName":  17349,
+	"SchoolColor": 17348,
+}
+
+var rhlSegments = map[string]int{
+	"FirstName":   17336,
+	"LastName":    17337,
+	"PortalLink":  17338,
+	"SchoolCode":  17340,
+	"SchoolName":  17342,
+	"SchoolColor": 17341,
+}
+
+var ddSegments = map[string]int{
+	"FirstName":   17350,
+	"LastName":    17351,
+	"PortalLink":  17352,
+	"SchoolCode":  17354,
+	"SchoolName":  17356,
+	"SchoolColor": 17355,
 }
 
 // Ambassador segmentation ids
@@ -110,6 +165,7 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 	eventID := m.Attributes["eventid"]
 	form := m.Attributes["form"]
 	listid := m.Attributes["listid"]
+	program := m.Attributes["program"]
 
 	var input []ContactInfo
 	if err := json.Unmarshal(m.Data, &input); err != nil {
@@ -150,64 +206,66 @@ func ListrakPost(ctx context.Context, m PubSubMessage) error {
 		var output Output
 		for _, c := range input {
 			if form == "cp" {
+				fields := structs.Names(&ContactInfo{})
+				accessor := structs.New(c)
+				var segments []SegmentationField
+
+				for _, n := range fields {
+					if n != "Address1" && n != "Address2" && n != "City" && n != "State " && n != "Zip" && n != "Country " && n != "RoleType" && n != "Email" && n != "ContactID" && n != "FbID" && n != "Instagram" && n != "Social" && n != "Why" { // skip fields that should not be sent as segments
+						field := accessor.Field(n)
+						value := field.Value().(string)
+
+						if dev {
+							if devSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    devSegments[n],
+									Value: value,
+								})
+							}
+						} else if program == "FEP" {
+							if fepSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    fepSegments[n],
+									Value: value,
+								})
+							}
+						} else if program == "CWP" {
+							if cwpSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    cwpSegments[n],
+									Value: value,
+								})
+							}
+						} else if program == "CAR" {
+							if carSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    carSegments[n],
+									Value: value,
+								})
+							}
+						} else if program == "RHL" {
+							if rhlSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    rhlSegments[n],
+									Value: value,
+								})
+							}
+						} else if program == "DD" {
+							if ddSegments[n] != 0 {
+								segments = append(segments, SegmentationField{
+									ID:    ddSegments[n],
+									Value: value,
+								})
+							}
+						}
+					}
+				}
+
 				output = Output{
 					EmailAddress:      c.Email,
 					SubscriptionState: "Subscribed",
 					ExternalContactID: "",
-					Segments: []SegmentationField{
-						{
-							ID:    listrakSegment["firstname"],
-							Value: c.FirstName,
-						},
-						{
-							ID:    listrakSegment["lastname"],
-							Value: c.LastName,
-						},
-						{
-							ID:    listrakSegment["address1"],
-							Value: c.Address1,
-						},
-						{
-							ID:    listrakSegment["address2"],
-							Value: c.Address2,
-						},
-						{
-							ID:    listrakSegment["city"],
-							Value: c.City,
-						},
-						{
-							ID:    listrakSegment["state"],
-							Value: c.State,
-						},
-						{
-							ID:    listrakSegment["zip"],
-							Value: c.Zip,
-						},
-						{
-							ID:    listrakSegment["country"],
-							Value: c.Country,
-						},
-						{
-							ID:    listrakSegment["contactid"],
-							Value: c.ContactID,
-						},
-						{
-							ID:    listrakSegment["roletype"],
-							Value: c.RoleType,
-						},
-						{
-							ID:    listrakSegment["schoolcode"],
-							Value: c.SchoolCode,
-						},
-						{
-							ID:    listrakSegment["schoolcolor"],
-							Value: c.SchoolColor,
-						},
-						{
-							ID:    listrakSegment["schoolname"],
-							Value: c.SchoolName,
-						},
-					},
+					Segments:          segments,
 				}
 			} else {
 				output = Output{
