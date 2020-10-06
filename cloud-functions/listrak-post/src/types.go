@@ -5,11 +5,6 @@ type PubSubMessage struct {
 	Attributes map[string]string `json:"attributes"`
 }
 
-// type Input struct {
-// 	EventID string `json:"eventId"`
-// 	Count   string `json:"count"`
-// }
-
 type ContactInfo struct {
 	FirstName   string `json:"firstName"`
 	LastName    string `json:"lastName"`
@@ -29,6 +24,7 @@ type ContactInfo struct {
 	Instagram   string `json:"instagram"`
 	Social      string `json:"social"`
 	Why         string `json:"why"`
+	PortalLink  string `json:"portalLink"`
 }
 
 type AuthResponse struct {

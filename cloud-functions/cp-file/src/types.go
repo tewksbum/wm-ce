@@ -132,6 +132,7 @@ type ContactInfo struct {
 	Instagram   string `json:"instagram"`
 	Social      string `json:"social"`
 	Why         string `json:"why"`
+	PortalLink  string `json:"portalLink"`
 }
 
 type EventData struct {
