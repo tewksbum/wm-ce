@@ -119,7 +119,7 @@ gcloud dataproc jobs submit spark \
 gsutil cp target/netsuite-orders-1.2-SNAPSHOT.jar gs://wm_dataproc/
 
 gcloud dataproc jobs submit spark \
-    --cluster=sparkles-test \
+    --cluster=sparkles \
     --class=streamer.OrderStreamer \
     --jars=gs://wm_dataproc/netsuite-orders-1.2-SNAPSHOT.jar \
 	--region=us-central1  \
