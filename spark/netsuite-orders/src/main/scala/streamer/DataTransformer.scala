@@ -69,7 +69,7 @@ object DataTransformer {
         .distinct()
       val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
       // pub
-      pubBillTo(dfBillTo.as[BillToDim].collect())
+      //pubBillTo(dfBillTo.as[BillToDim].collect())
 
       val dfBillToNew = dfBillTo
       .as("billto")
@@ -113,7 +113,7 @@ object DataTransformer {
       val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
 
       // pub
-      pubShipTo(dfShipTo.as[ShipToDim].collect())
+      //pubShipTo(dfShipTo.as[ShipToDim].collect())
 
       val dfShipToNew = dfShipTo
         .as("shipto")
@@ -276,7 +276,9 @@ object DataTransformer {
           "ocm_order_id",
           "ocm_order_number",
           "order_status_value",
-          "order_type_value"
+          "order_type_value",
+          "program_id",
+          "sponsor_id"
         )
         .withColumn("lob", coalesce($"lob", lit("Unassigned"))) // set to unassigned if null
         .drop("type", "unitPrice", "itemTitle", "itemSku") // drop these from lines
@@ -291,7 +293,7 @@ object DataTransformer {
         .join(OrderStreamer.dimPrograms.as("programs"), $"lines.program_id" === $"programs.netsuite_id", "leftouter")
         .drop("netsuite_id", "program_id")
         .join(OrderStreamer.dimSponsors.as("sponsors"), $"lines.sponsor_id" === $"sponsors.netsuite_id", "leftouter")
-        .drop("netsuite_id", "sponsors")        
+        .drop("netsuite_id", "sponsor_id")
         .join(
           OrderStreamer.dimChannels.as("channels"),
           $"lines.channel_value" === $"channels.netsuite_id",
@@ -332,6 +334,8 @@ object DataTransformer {
         .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
         .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
+        .withColumn("program_key", coalesce($"program_key", lit(10092)) ) // set to fixed value of 10092 = Unknown if we don't know what it is
+        .withColumn("sponsor_key", coalesce($"sponsor_key", lit(5189)) ) // set to fixed value of 5189 = Unknown if we don't know what it is
         .distinct()
       // dfOrderLines.show
 
