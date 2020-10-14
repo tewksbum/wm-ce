@@ -561,6 +561,8 @@ object DataTransformer {
         ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
+        .withColumn("program_key", lit(10092) ) // set to fixed value of 10092 = Unknown if we don't know what it is
+        .withColumn("sponsor_key", lit(5189) ) // set to fixed value of 5189 = Unknown if we don't know what it is
         .distinct()
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
