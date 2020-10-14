@@ -2,14 +2,14 @@ package dsritem
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
-	"database/sql"
-	"os"
 	"log"
 	"net/http"
-	"sync"
+	"os"
 	"strconv"
+	"sync"
 
 	// cloud sql
 	_ "github.com/go-sql-driver/mysql"
@@ -35,13 +35,13 @@ type result struct {
 }
 
 type record struct {
-	Sku string `json:"sku"`
-	Title string `json:"title"`
-	Type string `json:"type"`
-	LOB string `json:"lob_name"`
-	Cost string `json:"avg_cost"` 
-	NSID string `json:"netsuite_id"`
-	AvgCost float64
+	Sku        string `json:"sku"`
+	Title      string `json:"title"`
+	Type       string `json:"type"`
+	LOB        string `json:"lob_name"`
+	Cost       string `json:"avg_cost"`
+	NSID       string `json:"netsuite_id"`
+	AvgCost    float64
 	NetsuiteID int64
 }
 
@@ -85,6 +85,10 @@ func init() {
 
 func Run(ctx context.Context, m *pubsub.Message) error {
 	listURL := os.Getenv("PRODUCT_LIST_URL")
+	message := string(m.Data)
+	if message == "kit" {
+		listURL = os.Getenv("KIT_LIST_URL")
+	}
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
@@ -127,7 +131,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
-			}(rec)		
+			}(rec)
 		}
 		wg.Wait()
 	} else {
