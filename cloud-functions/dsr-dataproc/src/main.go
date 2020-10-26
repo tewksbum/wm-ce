@@ -1,18 +1,19 @@
 package dsrcluster
 
 import (
-	"strings"
-	"github.com/golang/protobuf/ptypes/duration"
-	"encoding/json"
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"strconv"
+	"strings"
+
+	"github.com/golang/protobuf/ptypes/duration"
 
 	dataproc "cloud.google.com/go/dataproc/apiv1"
-	"google.golang.org/api/option"
 	"cloud.google.com/go/pubsub"
 	"github.com/google/uuid"
+	"google.golang.org/api/option"
 	dataprocpb "google.golang.org/genproto/googleapis/cloud/dataproc/v1"
 )
 
@@ -25,7 +26,7 @@ func parseInt(input string, def int) int {
 }
 
 func parseCommaDelimitedNameValuePair(input string) map[string]string {
-	list := strings.Split(input, ",") 
+	list := strings.Split(input, ",")
 	result := make(map[string]string)
 	for _, item := range list {
 		nvp := strings.Split(item, "=")
@@ -49,46 +50,46 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		ProjectId: os.Getenv("GCP_PROJECT"),
 		Region:    region,
 		Cluster: &dataprocpb.Cluster{
-				ProjectId:   os.Getenv("GCP_PROJECT"),
-				ClusterName: os.Getenv("CLUSTER_NAME"),
-				Config: &dataprocpb.ClusterConfig{
-					ConfigBucket: os.Getenv("BUCKET"),
-					GceClusterConfig: &dataprocpb.GceClusterConfig {
-						ServiceAccount: os.Getenv("SERVICE_ACCOUNT"),
-						ServiceAccountScopes:  strings.Split(os.Getenv("SCOPES"), ","),
-						// ZoneUri: os.Getenv("ZONE"),
-						SubnetworkUri: "default",
-					},
-					MasterConfig: &dataprocpb.InstanceGroupConfig{
-							NumInstances:   int32(parseInt(os.Getenv("MASTER_COUNT"), 2)),
-							MachineTypeUri: os.Getenv("MASTER_MACHINE_TYPE"),
-							MinCpuPlatform: os.Getenv("MASTER_CPU_PLATFORM"),
-							DiskConfig: &dataprocpb.DiskConfig{
-								BootDiskType: os.Getenv("MASTER_BOOT_DISK_TYPE"),
-								BootDiskSizeGb: int32(parseInt(os.Getenv("MASTER_BOOT_DISK_SIZE"), 100)),
-								NumLocalSsds: int32(parseInt(os.Getenv("MASTER_LOCAL_SSD_COUNT"), 2)),
-							},
-					},
-					WorkerConfig: &dataprocpb.InstanceGroupConfig{
-							NumInstances:   int32(parseInt(os.Getenv("WORKER_COUNT"), 2)),
-							MachineTypeUri: os.Getenv("WORKER_MACHINE_TYPE"),
-							MinCpuPlatform: os.Getenv("WORKER_CPU_PLATFORM"),
-							DiskConfig: &dataprocpb.DiskConfig{
-								BootDiskType: os.Getenv("WORKER_BOOT_DISK_TYPE"),
-								BootDiskSizeGb: int32(parseInt(os.Getenv("WORKER_BOOT_DISK_SIZE"), 100)),
-								NumLocalSsds: int32(parseInt(os.Getenv("WORKER_LOCAL_SSD_COUNT"), 2)),
-							},								
-					},
-					LifecycleConfig: &dataprocpb.LifecycleConfig{	// delete after 20 min of inactivity
-						IdleDeleteTtl: &duration.Duration {
-							Seconds: int64(parseInt(os.Getenv("IDLE_DELETE_MINUTE"), 20) * 60),
-						},
-					},
-					SoftwareConfig: &dataprocpb.SoftwareConfig {
-						ImageVersion: os.Getenv("IMAGE_VERSION"),
-						Properties: parseCommaDelimitedNameValuePair(os.Getenv("SPARK_PROPERTIES")),
+			ProjectId:   os.Getenv("GCP_PROJECT"),
+			ClusterName: os.Getenv("CLUSTER_NAME"),
+			Config: &dataprocpb.ClusterConfig{
+				ConfigBucket: os.Getenv("BUCKET"),
+				GceClusterConfig: &dataprocpb.GceClusterConfig{
+					ServiceAccount:       os.Getenv("SERVICE_ACCOUNT"),
+					ServiceAccountScopes: strings.Split(os.Getenv("SCOPES"), ","),
+					// ZoneUri: os.Getenv("ZONE"),
+					SubnetworkUri: "default",
+				},
+				MasterConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances:   int32(parseInt(os.Getenv("MASTER_COUNT"), 2)),
+					MachineTypeUri: os.Getenv("MASTER_MACHINE_TYPE"),
+					MinCpuPlatform: os.Getenv("MASTER_CPU_PLATFORM"),
+					DiskConfig: &dataprocpb.DiskConfig{
+						BootDiskType:   os.Getenv("MASTER_BOOT_DISK_TYPE"),
+						BootDiskSizeGb: int32(parseInt(os.Getenv("MASTER_BOOT_DISK_SIZE"), 100)),
+						NumLocalSsds:   int32(parseInt(os.Getenv("MASTER_LOCAL_SSD_COUNT"), 2)),
 					},
 				},
+				WorkerConfig: &dataprocpb.InstanceGroupConfig{
+					NumInstances:   int32(parseInt(os.Getenv("WORKER_COUNT"), 2)),
+					MachineTypeUri: os.Getenv("WORKER_MACHINE_TYPE"),
+					MinCpuPlatform: os.Getenv("WORKER_CPU_PLATFORM"),
+					DiskConfig: &dataprocpb.DiskConfig{
+						BootDiskType:   os.Getenv("WORKER_BOOT_DISK_TYPE"),
+						BootDiskSizeGb: int32(parseInt(os.Getenv("WORKER_BOOT_DISK_SIZE"), 100)),
+						NumLocalSsds:   int32(parseInt(os.Getenv("WORKER_LOCAL_SSD_COUNT"), 2)),
+					},
+				},
+				LifecycleConfig: &dataprocpb.LifecycleConfig{ // delete after 20 min of inactivity
+					IdleDeleteTtl: &duration.Duration{
+						Seconds: int64(parseInt(os.Getenv("IDLE_DELETE_MINUTE"), 20) * 60),
+					},
+				},
+				SoftwareConfig: &dataprocpb.SoftwareConfig{
+					ImageVersion: os.Getenv("IMAGE_VERSION"),
+					Properties:   parseCommaDelimitedNameValuePair(os.Getenv("SPARK_PROPERTIES")),
+				},
+			},
 		},
 	}
 
@@ -115,32 +116,32 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	// Create the job config.
 	submitJobReq := &dataprocpb.SubmitJobRequest{
-			ProjectId: os.Getenv("GCP_PROJECT"),
-			Region:    region,
-			Job: &dataprocpb.Job{
-				Reference: &dataprocpb.JobReference{
-					JobId: "ocm-ns-orders-" + uuid.New().String(),
-				},
-				Placement: &dataprocpb.JobPlacement{
-					ClusterName: os.Getenv("CLUSTER_NAME"),
-				},
-				TypeJob: &dataprocpb.Job_SparkJob{
-					SparkJob: &dataprocpb.SparkJob{
-						JarFileUris: []string {
-							"gs://wm_dataproc/netsuite-orders-1.0-SNAPSHOT.jar",
-						},
-						Driver: &dataprocpb.SparkJob_MainClass{
-							MainClass: "streamer.OrderStreamer",
-						},
-						Args: []string {
-							"runonce",
-						},
-						Properties: map[string]string {
-							"spark.jars.packages": "org.apache.spark:spark-sql_2.12:3.0.0",
-						},
+		ProjectId: os.Getenv("GCP_PROJECT"),
+		Region:    region,
+		Job: &dataprocpb.Job{
+			Reference: &dataprocpb.JobReference{
+				JobId: "ocm-ns-orders-" + uuid.New().String(),
+			},
+			Placement: &dataprocpb.JobPlacement{
+				ClusterName: os.Getenv("CLUSTER_NAME"),
+			},
+			TypeJob: &dataprocpb.Job_SparkJob{
+				SparkJob: &dataprocpb.SparkJob{
+					JarFileUris: []string{
+						os.Getenv("JOB_JARFILE"),
+					},
+					Driver: &dataprocpb.SparkJob_MainClass{
+						MainClass: os.Getenv("JOB_CLASS"),
+					},
+					Args: []string{
+						os.Getenv("JOB_ARGUMENT"),
+					},
+					Properties: map[string]string{
+						"spark.jars.packages": "org.apache.spark:spark-sql_2.12:3.0.0",
 					},
 				},
 			},
+		},
 	}
 
 	submitJobResp, err := jobClient.SubmitJob(ctx, submitJobReq)
@@ -153,6 +154,5 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 
 	log.Printf("Submitted job %q", id)
 
-	return nil	
+	return nil
 }
-

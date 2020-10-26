@@ -297,8 +297,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					EventData: make(map[string]interface{}),
 				}
 
-				eventData.EventData["status"] = "File Generated"
-				eventData.EventData["message"] = "File generated successfully " + filename
+				eventData.EventData["status"] = "PROCESSED"
+				eventData.EventData["message"] = "Emails subscribed to listrak and file generated successfully " + filename
 				eventData.EventData["parent-emails"] = countParentEmails
 				eventData.EventData["student-emails"] = countStudentEmails
 				eventData.EventData["row-count"] = len(records) - 1

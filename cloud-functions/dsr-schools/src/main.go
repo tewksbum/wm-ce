@@ -2,12 +2,12 @@ package dsrschool
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
-	"database/sql"
-	"os"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 
@@ -37,7 +37,7 @@ type result struct {
 type record struct {
 	SchoolCode string `json:"school_code"`
 	SchoolName string `json:"school_name"`
-	NSID string `json:"netsuite_id"`
+	NSID       string `json:"netsuite_id"`
 	NetsuiteID int64
 }
 
@@ -122,7 +122,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
-			}(rec)		
+			}(rec)
 		}
 		wg.Wait()
 	} else {
