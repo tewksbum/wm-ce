@@ -35,6 +35,7 @@ var CAROptions = strings.Split(os.Getenv("CAROPTIONS"), ",")
 var CWPOptions = strings.Split(os.Getenv("CWPOPTIONS"), ",")
 var RHLOptions = strings.Split(os.Getenv("RHLOPTIONS"), ",")
 var DDOptions = strings.Split(os.Getenv("DDOPTIONS"), ",")
+var obdRHLSeasonTemp = os.Getenv("OBD")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -283,9 +284,11 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				masterProgramCode := GetKVPValue(event.Passthrough, "masterProgramCode")
 				adcode := GetKVPValue(event.Passthrough, "ADCODE")
 				seasonUpload := GetKVPValue(event.Passthrough, "seasonUpload")
+				orderByDate := GetKVPValue(event.Passthrough, "orderByDate")
 				if Contains(RHLOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) && Contains(seasonCodeList, seasonUpload) {
 					masterProgramCode = masterProgramCode + strings.ToUpper(seasonUpload)
 					adcode = adcodeList[GetKVPValue(event.Passthrough, "schoolCode")]
+					orderByDate = obdRHLSeasonTemp
 					if len(adcode) == 0 {
 						eventData := EventData{
 							Signature: Signature{
@@ -314,7 +317,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					masterProgramCode,
 					adcode,
 					event.Created.Format("01/02/2006"),
-					GetKVPValue(event.Passthrough, "orderByDate"),
+					orderByDate,
 					roleFormatter(GetKVPValue(event.Attributes, "role")),
 					GetKVPValue(event.Passthrough, "salutation"),
 					g.FNAME,
