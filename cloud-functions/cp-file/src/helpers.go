@@ -124,7 +124,7 @@ func copyFileToBucket(ctx context.Context, event Event, records [][]string, buck
 
 	csvBytes := buf.Bytes()
 
-	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + event.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
+	file := sb.Object(GetKVPValue(event.Passthrough, "sponsorCode") + "." + GetKVPValue(event.Passthrough, "masterProgramCode") + strings.ToUpper(GetKVPValue(event.Passthrough, "seasonUpload")) + "." + GetKVPValue(event.Passthrough, "schoolYear") + "." + event.EventID + "." + strconv.Itoa(len(records)-1) + ".csv")
 
 	writer := file.NewWriter(ctx)
 	if _, err := io.Copy(writer, bytes.NewReader(csvBytes)); err != nil {

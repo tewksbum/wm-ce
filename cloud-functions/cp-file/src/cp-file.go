@@ -35,6 +35,7 @@ var CAROptions = strings.Split(os.Getenv("CAROPTIONS"), ",")
 var CWPOptions = strings.Split(os.Getenv("CWPOPTIONS"), ",")
 var RHLOptions = strings.Split(os.Getenv("RHLOPTIONS"), ",")
 var DDOptions = strings.Split(os.Getenv("DDOPTIONS"), ",")
+var obdRHLSeasonTemp = os.Getenv("OBD")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
 
@@ -47,6 +48,48 @@ var ds *datastore.Client
 var fs *datastore.Client
 var cs *storage.Client
 var status *pubsub.Topic
+
+var adcodeList = map[string]string{
+	"UAZ": "UAZ1R0LQQW",
+	"UNL": "UNL1R0LQQW",
+	"MSO": "MSO1R0LQQW",
+	"ITH": "ITH1R0LQQW",
+	"TCU": "TCU1R0LQQW",
+	"PSU": "PSU7R0LQQW",
+	"COB": "COB1R0LQQW",
+	"UFL": "UFL1R0LQQW",
+	"TAM": "TAM1R0LQQW",
+	"MAA": "MAA1R0LQQW",
+	"NCT": "NCT1R0LQQW",
+	"NDS": "NDS1R0LQQW",
+	"CMI": "CMI1R0LQQW",
+	"CSL": "CSL1R0LQQW",
+	"UNC": "UNC1R0LQQW",
+	"RUT": "RUT1R0LQQW",
+	"YLU": "YLU1R0LQQW",
+	"FGC": "FGC1R0LQQW",
+	"UTO": "UTO1R0LQQW",
+	"RDR": "RDR1R0LQQW",
+	"CHC": "CHC1R0LQQW",
+	"HMP": "HMP7R0LQQW",
+	"CAU": "CAU7R0LQQW",
+	"SMI": "SMI1R0LQQW",
+	"MIT": "MIT1R0LQQW",
+	"USE": "USE1R0LQQW",
+	"TSM": "TSM1R0LQQW",
+	"UNT": "UNT1R0LQQW",
+	"FHS": "FHS7R0LQQW",
+	"HNU": "HNU1R0LQQW",
+	"DRU": "DRU7R0LQQW",
+	"SCT": "SCT1R0LQQW",
+	"MDL": "MDL7R0LQQW",
+	"WDN": "WDN1R0LQQW",
+	"CMU": "CMU7R0LQQW",
+	"SFL": "SFL7R0LQQW",
+	"KNS": "KNS1R0LQQW",
+}
+
+var seasonCodeList = []string{"Spring", "Summer", "Fall", "Winter"}
 
 // var setSchema bigquery.Schema
 
@@ -238,6 +281,31 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				} else {
 					international++
 				}
+				masterProgramCode := GetKVPValue(event.Passthrough, "masterProgramCode")
+				adcode := GetKVPValue(event.Passthrough, "ADCODE")
+				seasonUpload := GetKVPValue(event.Passthrough, "seasonUpload")
+				orderByDate := GetKVPValue(event.Passthrough, "orderByDate")
+				if Contains(RHLOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) && Contains(seasonCodeList, seasonUpload) {
+					masterProgramCode = masterProgramCode + strings.ToUpper(seasonUpload)
+					adcode = adcodeList[GetKVPValue(event.Passthrough, "schoolCode")]
+					orderByDate = obdRHLSeasonTemp
+					if len(adcode) == 0 {
+						eventData := EventData{
+							Signature: Signature{
+								EventID: input.EventID,
+								OwnerID: input.OwnerID,
+							},
+							EventData: make(map[string]interface{}),
+						}
+						eventData.EventData["status"] = "Error"
+						eventData.EventData["message"] = "No campaign selected for this school"
+						statusJSON, _ := json.Marshal(eventData)
+						_ = status.Publish(ctx, &pubsub.Message{
+							Data: statusJSON,
+						})
+						return nil
+					}
+				}
 
 				row := []string{
 					GetKVPValue(event.Passthrough, "schoolCode"),
@@ -246,10 +314,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					GetKVPValue(event.Passthrough, "schoolName"),
 					GetKVPValue(event.Passthrough, "inputType"),
 					schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
-					GetKVPValue(event.Passthrough, "masterProgramCode"),
-					GetKVPValue(event.Passthrough, "ADCODE"),
+					masterProgramCode,
+					adcode,
 					event.Created.Format("01/02/2006"),
-					GetKVPValue(event.Passthrough, "orderByDate"),
+					orderByDate,
 					roleFormatter(GetKVPValue(event.Attributes, "role")),
 					GetKVPValue(event.Passthrough, "salutation"),
 					g.FNAME,
