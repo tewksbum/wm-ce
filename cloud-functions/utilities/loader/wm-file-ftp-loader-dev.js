@@ -60,6 +60,10 @@ const getBucketFiles = async () => {
         case "ocmovein":
         case "off2school":
         case "rhl":
+        case "rhlwinter":
+        case "rhlsummer":
+        case "rhlfall":
+        case "rhlspring":
           remotePath = "/RHL/Input/";
           break;
       }
