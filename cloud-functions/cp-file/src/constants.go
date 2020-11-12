@@ -791,4 +791,7 @@ var adcodeList = map[string]string{
 	"YCP": "YCP1R0LQQW",
 	"YLU": "YLU1W0DQQW",
 	"YSU": "YSU1R0LQQW",
+	"WCS": "WCS1R0LQQW",
+	"WAG": "WAG1R0LQQW",
+	"OXF": "OXF1R0LQQW",
 }
