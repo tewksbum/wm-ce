@@ -49,46 +49,6 @@ var fs *datastore.Client
 var cs *storage.Client
 var status *pubsub.Topic
 
-var adcodeList = map[string]string{
-	"UAZ": "UAZ1R0LQQW",
-	"UNL": "UNL1R0LQQW",
-	"MSO": "MSO1R0LQQW",
-	"ITH": "ITH1R0LQQW",
-	"TCU": "TCU1R0LQQW",
-	"PSU": "PSU7R0LQQW",
-	"COB": "COB1R0LQQW",
-	"UFL": "UFL1R0LQQW",
-	"TAM": "TAM1R0LQQW",
-	"MAA": "MAA1R0LQQW",
-	"NCT": "NCT1R0LQQW",
-	"NDS": "NDS1R0LQQW",
-	"CMI": "CMI1R0LQQW",
-	"CSL": "CSL1R0LQQW",
-	"UNC": "UNC1R0LQQW",
-	"RUT": "RUT1R0LQQW",
-	"YLU": "YLU1R0LQQW",
-	"FGC": "FGC1R0LQQW",
-	"UTO": "UTO1R0LQQW",
-	"RDR": "RDR1R0LQQW",
-	"CHC": "CHC1R0LQQW",
-	"HMP": "HMP7R0LQQW",
-	"CAU": "CAU7R0LQQW",
-	"SMI": "SMI1R0LQQW",
-	"MIT": "MIT1R0LQQW",
-	"USE": "USE1R0LQQW",
-	"TSM": "TSM1R0LQQW",
-	"UNT": "UNT1R0LQQW",
-	"FHS": "FHS7R0LQQW",
-	"HNU": "HNU1R0LQQW",
-	"DRU": "DRU7R0LQQW",
-	"SCT": "SCT1R0LQQW",
-	"MDL": "MDL7R0LQQW",
-	"WDN": "WDN1R0LQQW",
-	"CMU": "CMU7R0LQQW",
-	"SFL": "SFL7R0LQQW",
-	"KNS": "KNS1R0LQQW",
-}
-
 var seasonCodeList = []string{"Spring", "Summer", "Fall", "Winter"}
 
 // var setSchema bigquery.Schema
