@@ -83,6 +83,9 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 func GetPeopleFiberSearchFields(v *PeopleFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
+	if len(v.CLIENTID.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("EXTERNALID=%v", strings.ToUpper(v.CLIENTID.Value)))
+	}
 	if len(v.EMAIL.Value) > 0 {
 		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL.Value), strings.ToUpper(v.ROLE.Value)))
 	}
