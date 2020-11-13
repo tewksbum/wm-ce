@@ -1,0 +1,24 @@
+timeout: 600s
+steps:
+  - id: go_deploy
+    env: ['GOPATH=/gopath']
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ["functions", 
+    "deploy", "ns-vendornet-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime", "go111", 
+    "--memory", "128MB",
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "540",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--max-instances", "10",
+    ]
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: segment-writer
+    _TRIGGER_TOPIC: people-360
+    _ENTRY_POINT: ProcessOutput
+options:
+    substitution_option: 'ALLOW_LOOSE'
