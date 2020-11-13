@@ -233,6 +233,15 @@ type People360Output struct {
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
 }
 
+type GoldenOutput struct {
+	ID string `json:"id"`
+	Sponsor string `json:"sponsor"`
+	Signatures   []Signature      `json:"signatures"`
+	People PeopleGoldenDS `json:"people"`
+	ExternalIDs map[string][]string `json:"externalIds"` // for this map, key is the external source such as netsuite, value is a list of IDs
+	ExpiredIDs  []string         `json:"expiredIds"`
+}
+
 type PeopleSetDS struct {
 	ID                     *datastore.Key `datastore:"__key__"`
 	OwnerID                []string       `datastore:"ownerid"`

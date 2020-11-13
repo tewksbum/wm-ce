@@ -83,6 +83,9 @@ func GetMatchKey360ByName(v []MatchKey360, key string) *MatchKey360 {
 func GetPeopleFiberSearchFields(v *PeopleFiberDS) []string {
 	var searchFields []string
 	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", v.RecordID))
+	if len(v.CLIENTID.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("EXTERNALID=%v", strings.ToUpper(v.CLIENTID.Value)))
+	}
 	if len(v.EMAIL.Value) > 0 {
 		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.ToUpper(v.EMAIL.Value), strings.ToUpper(v.ROLE.Value)))
 	}
@@ -192,6 +195,23 @@ func SetPeople360GoldenOutputFieldValue(v *PeopleGoldenDS, field string, value s
 	}
 }
 
+func SetPeopleOutputFieldValue(v *PeopleOutput, field string, value string, values []string) {
+	r := reflect.ValueOf(v)
+	f := reflect.Indirect(r).FieldByName(field)
+	// if the field to be set is EMAIL, and the existing golden record value does not already contain the new value, then add it as
+	// a | delimited value
+	if field == "EMAIL" {
+		f.Set(reflect.ValueOf(strings.Join(values, "|")))
+	} else {
+		if len(value) == 0 {
+			log.Printf("Golden key %v setting to blank, available values %v", field, values)
+		}
+		f.Set(reflect.ValueOf(value))
+	}
+}
+
+
+
 func SetPeopleFiberMatchKeyField(v *PeopleFiberDS, field string, value MatchKeyField) {
 	LogDev(fmt.Sprintf("SetPeopleFiberMatchKeyField: %v %v", field, value))
 	r := reflect.ValueOf(v)
@@ -232,6 +252,14 @@ func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360)
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
 		SetPeople360GoldenOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
+	}
+}
+
+
+func PopulatePeopleOutputMatchKeys(target *PeopleOutput, values []MatchKey360) {
+	KeyList := structs.Names(&PeopleOutput{})
+	for _, key := range KeyList {
+		SetPeopleOutputFieldValue(target, key, GetGoldenValueFromMatchKeys(values, key), GetGoldenValuesFromMatchKeys(values, key))
 	}
 }
 
