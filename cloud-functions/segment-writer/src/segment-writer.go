@@ -35,18 +35,13 @@ func init() {
 		log.Fatalf("failed to setup client: %v", err)
 	}
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: os.Getenv("MYSQL_DSN"),
+		Name: os.Getenv("SEGMENT_MYSQL_SECRET"),
 	}
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {
 		log.Fatalf("failed to get secret: %v", err)
 	}
 	secretsData := secretresult.Payload.Data
-
-	if err := json.Unmarshal(secretsData, &dbsecret); err != nil {
-		log.Fatalf("error decoding secrets %v", err)
-		return
-	}
 
 	db, err = sql.Open("mysql", string(secretsData))
 	if err != nil {
