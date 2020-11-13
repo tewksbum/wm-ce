@@ -6,7 +6,7 @@ steps:
     "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime","go111", 
-    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml"
@@ -15,8 +15,8 @@ steps:
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: event-post
-    _TRIGGER_TOPIC: event-prepipe
-    _ENTRY_POINT: PostProcessEvent
+    _FUNCTION_NAME: order-event
+    _TRIGGER_TOPIC: order-intake
+    _ENTRY_POINT: ProcessOrder
 options:
     substitution_option: 'ALLOW_LOOSE'
