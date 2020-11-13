@@ -8,5 +8,5 @@ import (
 func TestRequest(t *testing.T) {
 	var message PubSubMessage
 	message.Data = []byte("")
-	ProcessFiles(context.Background(), message)
+	ProcessOutput(context.Background(), message)
 }
