@@ -143,7 +143,7 @@ func init() {
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
-func PostProcessOrder(ctx context.Context, m PubSubMessage) error {
+func ProcessOrder(ctx context.Context, m PubSubMessage) error {
 	var input orders
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
