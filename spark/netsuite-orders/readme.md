@@ -108,6 +108,7 @@ gcloud dataproc clusters create sparkles-test \
 Copy Jar file and Submit a Job to the dataproc cluster
 ```
 gsutil cp target/netsuite-orders-1.0-SNAPSHOT.jar gs://wm_dataproc/
+gsutil cp target/netsuite-orders-1.2-SNAPSHOT.jar gs://wm_dataproc/
 
 gcloud dataproc jobs submit spark \
     --cluster=sparkles \

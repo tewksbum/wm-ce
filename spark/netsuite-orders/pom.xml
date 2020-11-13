@@ -19,6 +19,8 @@
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
+    <akka.version>2.5.31</akka.version>
+    <akka.http.version>10.1.11</akka.http.version>    
     <jvm.options.xms>-Xms512M</jvm.options.xms>
     <jvm.options.xmx>-Xmx2048M</jvm.options.xmx>
     <jvm.options.maxpermsize>-XX:MaxPermSize=2048M</jvm.options.maxpermsize>
@@ -134,7 +136,7 @@
     </dependency>
     -->
     <!-- begin dependencies for pubusb lite -->
-    <dependency>
+    <!-- <dependency>
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-pubsublite</artifactId>
       <version>0.1.7</version>
@@ -143,16 +145,23 @@
       <groupId>com.google.cloud</groupId>
       <artifactId>google-cloud-pubsub</artifactId>
       <version>1.108.0</version>
-    </dependency>
+    </dependency> -->
 
     <!-- A logging dependency used by the underlying library  -->
-    <dependency>
+    <!-- <dependency>
       <groupId>com.google.flogger</groupId>
       <artifactId>flogger-system-backend</artifactId>
       <version>0.5.1</version>
       <scope>runtime</scope>
-    </dependency>
+    </dependency> -->
     <!-- end dependencies for pubusb lite -->
+
+    <!-- hyjay pubsub-->
+    <dependency>
+      <groupId>com.github.hyjay</groupId>
+      <artifactId>fs2-google-cloud-pubsub_2.12</artifactId>
+      <version>0.1.0</version>
+    </dependency>
 
   </dependencies>
 

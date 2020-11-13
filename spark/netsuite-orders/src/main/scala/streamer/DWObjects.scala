@@ -124,7 +124,29 @@ case class BillToDim(
     zip: String,
     country: String,
     phone: String,
-    email: String
+    email: String,
+    owner: Option[String],
+    source: Option[String],
+    event_id: Option[String],
+    event_type: Option[String],
+    address_type: Option[String]
+)
+
+case class Pipeline (
+    owner: String,
+    source: String,
+    eventType: String,
+    eventId: String,
+    recordId: String,
+    name: String,
+    addr1: String,
+    addr2: String,
+    city: String,
+    state: String,
+    zip: String,
+    country: String,
+    phone: String,
+    email: String  
 )
 
 case class ShipToDim(
@@ -139,7 +161,12 @@ case class ShipToDim(
     country: String,
     phone: String,
     desttype_key: Long,
-    email: String
+    email: String,
+    owner: Option[String],
+    source: Option[String],
+    event_id: Option[String],
+    event_type: Option[String],
+    address_type: Option[String]
 )
 
 case class CustomerDim(

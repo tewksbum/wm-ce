@@ -1,12 +1,7 @@
 package streamer
 
-import com.google.api.core.ApiFuture
-import com.google.api.core.ApiFutureCallback
-import com.google.api.core.ApiFutures
-import com.google.cloud.pubsub.v1.Publisher
-import com.google.pubsub.v1.ProjectTopicName
-import com.google.protobuf.ByteString
-import com.google.pubsub.v1.PubsubMessage
+import com.github.hyjay.pubsub.Publisher
+import cats.effect.IO
 import org.json4s._
 import org.json4s.native.JsonMethods._
 import org.json4s.DefaultFormats
@@ -15,35 +10,31 @@ import org.json4s.native.Serialization.{read, write}
 object PubsubWriter {
   implicit val formats = DefaultFormats
 
-  val topicName : ProjectTopicName = ProjectTopicName.of(OrderStreamer.projectID, OrderStreamer.pubTopicAddress);
-  val publisher : Publisher  = Publisher.newBuilder(topicName).build();
+  //val topicName : ProjectTopicName = ProjectTopicName.of(OrderStreamer.projectID, OrderStreamer.pubTopicAddress);
+  // val publisher   = Publisher.create(OrderStreamer.projectID, OrderStreamer.pubTopicAddress);
 
+  // owner = sponsor, source = order.channel, event type = order, event = orderId
   def pubBillTo(records: Array[BillToDim]) {
     // pub these
     for (record <- records) {
       val jsonString : String = write(record);
-      val jsonData : ByteString = ByteString.copyFromUtf8(jsonString);
-      try {
-        val pubsubMessage : PubsubMessage = PubsubMessage.newBuilder().setData(jsonData).build();
-        val messageIdFuture = publisher.publish(pubsubMessage);
-      }
-      catch {
-        case e : Throwable => println(e);
-      }
+      val io = for {
+        publisher <- Publisher.create(OrderStreamer.projectID, OrderStreamer.pubTopicAddress)
+        messageId <- publisher.publish(jsonString.getBytes())
+      } yield()
+      io.unsafeRunSync()
+      //publisher.publish(jsonString.getBytes());
     }
   }
 
   def pubShipTo(records: Array[ShipToDim]) {
     for (record <- records) {
       val jsonString : String = write(record);
-      val jsonData : ByteString = ByteString.copyFromUtf8(jsonString);
-      try {
-        val pubsubMessage : PubsubMessage = PubsubMessage.newBuilder().setData(jsonData).build();
-        val messageIdFuture = publisher.publish(pubsubMessage);
-      }
-      catch {
-        case e : Throwable => println(e);
-      }
+      val io = for {
+        publisher <- Publisher.create(OrderStreamer.projectID, OrderStreamer.pubTopicAddress);
+        messageId <- publisher.publish(jsonString.getBytes())
+      } yield()
+      io.unsafeRunSync()
     }
   }
 }

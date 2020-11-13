@@ -61,15 +61,44 @@ object DataTransformer {
           $"billing.phone",
           $"billing.email"
         )
+        .withColumn("event_type", lit("order"))
+        .withColumn("address_type", lit("billto"))
+        .withColumn("event_id", lit(""))
+        .withColumn("owner", lit(""))     
+        .withColumn("source", lit(""))    
         .withColumn("email", when(col("netsuite_key") === "", "").otherwise(col("email"))) // blank out email if no key
         .distinct()
         .withColumn("billto_key", expr("uuid()"))
         .withColumn("billto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("billto_key"))) // fix the billto key if no netsuite key
-        
         .distinct()
+
       val dfBillToResults = batchBilltoDim(dfBillTo.as[BillToDim].collect()).toDF.distinct()
+
       // pub
-      //pubBillTo(dfBillTo.as[BillToDim].collect())
+      // val dfBillToPub = df
+      //   .select(
+      //     $"billing.addressKey".alias("netsuite_key"),
+      //     $"billing.name",
+      //     $"billing.addr1",
+      //     $"billing.addr2",
+      //     $"billing.city",
+      //     $"billing.state",
+      //     $"billing.zip",
+      //     $"billing.country",
+      //     $"billing.phone",
+      //     $"billing.email",
+      //     $"attributes.channel".alias("source"),
+      //     $"orderNumber".alias("event_id"),
+      //     $"sponsorname_1".alias("owner")
+      //   )
+      //   .withColumn("event_type", lit("order"))
+      //   .withColumn("address_type", lit("billto"))
+      //   .withColumn("email", when(col("netsuite_key") === "", "").otherwise(col("email"))) // blank out email if no key
+      //   .distinct()
+      //   .withColumn("billto_key", expr("uuid()"))
+      //   .withColumn("billto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("billto_key"))) // fix the billto key if no netsuite key
+      //   .distinct()      
+      //pubBillTo(dfBillToPub.as[BillToDim].collect())
 
       val dfBillToNew = dfBillTo
       .as("billto")
@@ -77,7 +106,6 @@ object DataTransformer {
       .drop("billto_key", "old_key")
       .withColumnRenamed("new_key", "billto_key")
       .withColumn("billto_key", coalesce($"billto_key", lit("00000000-0000-0000-0000-000000000000"))) // set to Unassigned if null
-
       
       print(" shipto .")
 
@@ -97,6 +125,11 @@ object DataTransformer {
           $"shipments.type".alias("type"),
           $"shipments.email".alias("email")
         )
+        .withColumn("event_type", lit("order"))
+        .withColumn("address_type", lit("billto"))
+        .withColumn("event_id", lit(""))
+        .withColumn("owner", lit(""))     
+        .withColumn("source", lit(""))          
         .withColumn("country", lit("USA"))
         .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
         .as("shipments")
@@ -113,7 +146,41 @@ object DataTransformer {
       val dfShipToResults = batchShiptoDim(dfShipTo.as[ShipToDim].collect()).toDF.distinct()
 
       // pub
-      //pubShipTo(dfShipTo.as[ShipToDim].collect())
+      // val dfShipToPub = df
+      //   .withColumn("shipments", explode($"shipments"))
+      //   .distinct()
+      //   .select(
+      //     expr("uuid()").alias("shipto_key"), // generate shipto key
+      //     $"shipments.addressKey".alias("netsuite_key"),
+      //     $"shipments.name".alias("name"),
+      //     $"shipments.addr1".alias("addr1"),
+      //     $"shipments.addr2".alias("addr2"),
+      //     $"shipments.city".alias("city"),
+      //     $"shipments.state".alias("state"),
+      //     $"shipments.zip".alias("zip"),
+      //     $"shipments.phone".alias("phone"),
+      //     $"shipments.type".alias("type"),
+      //     $"shipments.email".alias("email"),
+      //     $"attributes.channel".alias("source"),
+      //     $"orderNumber".alias("event_id"),
+      //     $"sponsorname_1".alias("owner")
+      //   )
+      //   .withColumn("event_type", lit("order"))
+      //   .withColumn("address_type", lit("shipto"))          
+      //   .withColumn("country", lit("USA"))
+      //   .withColumn("type", coalesce($"type", lit("Unassigned"))) // set to Unassigned if null
+      //   .as("shipments")
+      //   // lookup desttype key
+      //   .join(
+      //     OrderStreamer.dimDestTypes.as("desttype"),
+      //     $"shipments.type" === $"desttype.desttype_name",
+      //     "leftouter"
+      //   )
+      //   .drop("type", "desttype_name")
+      //   .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
+      //   .withColumn("shipto_key", when(col("netsuite_key") === "", "00000000-0000-0000-0000-000000000000").otherwise(col("shipto_key"))) // fix the billto key if no netsuite key
+      //   .distinct()      
+      // pubShipTo(dfShipToPub.as[ShipToDim].collect())
 
       val dfShipToNew = dfShipTo
         .as("shipto")

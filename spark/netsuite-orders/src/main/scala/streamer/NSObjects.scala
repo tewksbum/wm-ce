@@ -101,6 +101,11 @@ case class NetsuiteOrder(
     sponsor_3: Option[Long],
     sponsor_4: Option[Long],
     sponsor_5: Option[Long],
+    sponsorname_1: Option[String],
+    sponsorname_2: Option[String],
+    sponsorname_3: Option[String],
+    sponsorname_4: Option[String],
+    sponsorname_5: Option[String],    
     `type`: String,
     status: String,
 )
