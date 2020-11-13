@@ -48,6 +48,7 @@ var ctx context.Context
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var topic2 *pubsub.Topic
+var topicG *pubsub.Topic
 var status *pubsub.Topic
 var cleanup *pubsub.Topic
 var ds *datastore.Client
@@ -64,6 +65,7 @@ func init() {
 	fs, _ = datastore.NewClient(ctx, DSProjectID)
 	topic = ps.Topic(os.Getenv("PSOUTPUT"))
 	topic2 = ps.Topic(os.Getenv("PSOUTPUT2"))
+	topicG = ps.Topic(os.Getenv("PSGOLDEN"))
 	status = ps.Topic(os.Getenv("PSSTATUS"))
 	cleanup = ps.Topic(os.Getenv("PSCLEANUP"))
 	cpTopic = ps.Topic(os.Getenv("PSCPFILE"))
@@ -208,10 +210,13 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		HasNewValues := false
 		var output People360Output
+		var golden GoldenOutput
 		var FiberSignatures []Signature
 		var FiberSearchFields []string
 		output.ID = uuid.New().String()
+		golden.ID = output.ID
 		output.Signatures = []Signature{}
+		golden.Sponsor = input.Signature.OwnerID
 		MatchKeyList := structs.Names(&PeopleOutput{})
 		FiberMatchKeys := make(map[string][]string)
 		// collect all fiber match key values
@@ -231,6 +236,9 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			}
 			var searchFields []string
 			searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.Signature.RecordID))
+			if len(input.MatchKeys.CLIENTID.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("EXTERNALID=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.CLIENTID.Value))))
+			}
 			if len(input.MatchKeys.EMAIL.Value) > 0 {
 				searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(input.MatchKeys.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(input.MatchKeys.ROLE.Value))))
 			}
@@ -820,6 +828,30 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		setDS.Search = SetSearchFields
 
+		externalIDs := make(map[string][]string)
+		for _, ss := range setDS.Search {
+			if strings.HasPrefix(ss, "EXTERNALID=") {
+				ss1 := ss[11:]
+				ssi := strings.Index(ss1, ".")
+				if ssi > -1 {
+					ek := ss1[0:ssi]
+					ev := ss1[ssi+1:]
+					if len(ek) > 0 && len(ev) > 0 {
+					if evl, ok := externalIDs[ek]; ok {
+						if !Contains(evl, ev) {
+							evl = append(evl, ev)
+							externalIDs[ek] = evl
+						}
+					  }
+					} else {
+						evl := []string{ev}
+						externalIDs[ek] = evl
+					}
+				}
+			}
+		}
+		golden.ExternalIDs = externalIDs
+		golden.People = goldenDS
 		// write each of the search key into each of the fiber in redis
 		for _, search := range SetSearchFields {
 			msKey := []string{input.Signature.OwnerID, "search-fibers", search}
@@ -1180,6 +1212,8 @@ func People360(ctx context.Context, m PubSubMessage) error {
 
 		// push into pubsub
 		output.ExpiredSets = expiredSetCollection
+		golden.ExpiredIDs = output.ExpiredSets
+		golden.Signatures = output.Signatures
 		outputJSON, _ := json.Marshal(output)
 		psresult := topic.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
@@ -1195,6 +1229,18 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		} else {
 			LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 		}
+
+		goldenPubJSON, _ := json.Marshal(golden)
+		pgresult := topicG.Publish(ctx, &pubsub.Message{
+			Data: goldenPubJSON,
+		})
+		pgid, err := pgresult.Get(ctx)
+		_, err = pgresult.Get(ctx)
+		if err != nil {
+			log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
+		} else {
+			LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, pgid, string(goldenPubJSON)))
+		}		
 
 		topic2.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
