@@ -4,7 +4,7 @@ steps:
     env: ['GOPATH=/gopath']
     name: 'gcr.io/cloud-builders/gcloud'
     args: ["functions", 
-    "deploy", "ns-vendornet-${_FUNCTION_NAME}", 
+    "deploy", "wm-${_FUNCTION_NAME}-$BRANCH_NAME", 
     "--entry-point", "${_ENTRY_POINT}", 
     "--runtime", "go111", 
     "--memory", "128MB",
@@ -13,6 +13,7 @@ steps:
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "10",
+    "--verbosity", "debug"
     ]
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
