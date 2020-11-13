@@ -17,19 +17,19 @@ type PubSubMessage struct {
 
 // orders is the payload in order-intake pubsub
 type orders []struct {
-	ID          int    `json:"id"`
+	ID          int64    `json:"id"`
 	OrderNumber string `json:"orderNumber"`
 	Type        string `json:"type"`
 	Status      string `json:"status"`
 	Totals      struct {
 		MerchandiseCostTotal float64 `json:"merchandiseCostTotal"`
-		MerchandiseTotal     int     `json:"merchandiseTotal"`
+		MerchandiseTotal     float64     `json:"merchandiseTotal"`
 		MerchandiseTaxTotal  float64 `json:"merchandiseTaxTotal"`
-		ShippingTotal        int     `json:"shippingTotal"`
+		ShippingTotal        float64     `json:"shippingTotal"`
 		ShippingTaxTotal     float64 `json:"shippingTaxTotal"`
-		DiscountTotal        int     `json:"discountTotal"`
-		ServiceTotal         int     `json:"serviceTotal"`
-		ServiceTaxTotal      int     `json:"serviceTaxTotal"`
+		DiscountTotal        float64     `json:"discountTotal"`
+		ServiceTotal         float64     `json:"serviceTotal"`
+		ServiceTaxTotal      float64     `json:"serviceTaxTotal"`
 		Total                float64 `json:"total"`
 	} `json:"totals"`
 	Dates struct {
@@ -39,14 +39,14 @@ type orders []struct {
 	} `json:"dates"`
 	Attributes struct {
 		WebOrderNumber string `json:"webOrderNumber"`
-		WebOrderID     int    `json:"webOrderId"`
+		WebOrderID     int64    `json:"webOrderId"`
 		Subsidiary     string `json:"subsidiary"`
 		Channel        string `json:"channel"`
-		ChannelID      int    `json:"channelId"`
+		ChannelID      int64    `json:"channelId"`
 		Source         string `json:"source"`
-		SourceID       int    `json:"sourceId"`
+		SourceID       int64    `json:"sourceId"`
 		School         string `json:"school"`
-		SchoolID       int    `json:"schoolId"`
+		SchoolID       int64    `json:"schoolId"`
 	} `json:"attributes"`
 	Customer struct {
 		ID   int    `json:"id"`
@@ -67,16 +67,16 @@ type orders []struct {
 	Fees      []interface{} `json:"fees"`
 	Shipments []struct {
 		Lines []struct {
-			ExtPrice    int     `json:"extPrice"`
+			ExtPrice    float64     `json:"extPrice"`
 			Quantity    int     `json:"quantity"`
 			Lob         string  `json:"lob"`
 			Cost        float64 `json:"cost"`
 			Type        string  `json:"type"`
-			UnitPrice   int     `json:"unitPrice"`
+			UnitPrice   float64     `json:"unitPrice"`
 			Shipment    string  `json:"shipment"`
 			ItemTitle   string  `json:"itemTitle"`
 			ItemSku     string  `json:"itemSku"`
-			ItemID      int     `json:"itemId"`
+			ItemID      int64     `json:"itemId"`
 			IsDropship  bool    `json:"isDropship"`
 			IsCancelled bool    `json:"isCancelled"`
 			LineID      string  `json:"lineId"`
@@ -84,8 +84,8 @@ type orders []struct {
 			Kit         string  `json:"kit"`
 			LineNo      int     `json:"lineNo"`
 			LineIndex   int     `json:"lineIndex"`
-			Discount    int     `json:"discount"`
-			Shipping    int     `json:"shipping"`
+			Discount    float64     `json:"discount"`
+			Shipping    float64     `json:"shipping"`
 			Tax         float64 `json:"tax"`
 		} `json:"lines"`
 		AddressKey   string      `json:"addressKey"`
@@ -99,9 +99,9 @@ type orders []struct {
 		Phone        string      `json:"phone"`
 		Email        string      `json:"email"`
 		Type         string      `json:"type"`
-		ProgramID    int         `json:"programId"`
+		ProgramID    int64         `json:"programId"`
 		ProgramName  string      `json:"programName"`
-		SponsorID    int         `json:"sponsorId"`
+		SponsorID    int64         `json:"sponsorId"`
 		SponsorName  string      `json:"sponsorName"`
 		ProductTotal interface{} `json:"productTotal,omitempty"`
 	} `json:"shipments"`
