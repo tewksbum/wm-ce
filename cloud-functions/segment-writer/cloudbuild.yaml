@@ -18,7 +18,7 @@ steps:
 tags: ['$BRANCH_NAME']    
 substitutions:
     _FUNCTION_NAME: segment-writer
-    _TRIGGER_TOPIC: people-360
+    _TRIGGER_TOPIC: people-golden
     _ENTRY_POINT: ProcessOutput
 options:
     substitution_option: 'ALLOW_LOOSE'
