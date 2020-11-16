@@ -169,6 +169,10 @@ func ProcessOrder(ctx context.Context, m PubSubMessage) error {
 				AddressType: "billto",
 			}
 
+			if len(ad.Owner) == 0 {
+				ad.Owner = "ocm"
+			}
+
 			// push into pubsub
 			outputJSON, _ := json.Marshal(ad)
 			_ = topic.Publish(ctx, &pubsub.Message{
