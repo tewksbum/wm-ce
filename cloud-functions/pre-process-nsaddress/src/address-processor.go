@@ -72,6 +72,7 @@ func init() {
 // ProcessAddress Receives a http event request
 func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 	var input Input
+	LogDev(fmt.Sprintf("input: %v", string(m.Data)))
 	if err := json.Unmarshal(m.Data, &input); err != nil {
 		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
@@ -117,7 +118,6 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 	output.Passthrough = otherValues
 
 	outputJSON, _ := json.Marshal(output)
-
 	// this is a data request, drop to eventdata pubsub
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
