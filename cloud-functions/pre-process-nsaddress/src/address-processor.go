@@ -1,4 +1,4 @@
-// Package streamerapi contains a series of cloud functions for streamer
+// Package addressprocessor contains a series of cloud functions for streamer
 package addressprocessor
 
 import (
@@ -15,6 +15,7 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"googlemaps.github.io/maps"
+	"github.com/google/uuid"
 )
 
 // Customer contains Customer fields
@@ -83,6 +84,9 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		Source:    input.Source,
 		EventID:   input.EventID,
 		EventType: input.EventType,
+		FiberType: "default",
+		FiberID: uuid.New().String(),
+		RecordID: input.NetsuiteKey,
 	}
 	var person PeopleOutput
 	person.ADBOOK.Value = input.AddressType
@@ -411,6 +415,9 @@ type Signature struct {
 	Source    string `json:"source"`
 	EventID   string `json:"eventId"`
 	EventType string `json:"eventType"`
+	FiberType string `json:"fiberType"`
+	RecordID  string `json:"recordId"`
+	FiberID   string `json:"id"`
 }
 
 type Output struct {
