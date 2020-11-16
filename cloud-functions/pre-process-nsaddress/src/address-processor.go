@@ -117,7 +117,8 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 	otherValues["netsuite_key"] = input.NetsuiteKey
 	output.Passthrough = otherValues
 
-	outputJSON, _ := json.Marshal(output)
+
+	outputJSON, _ := json.Marshal([]Output{output})
 	// this is a data request, drop to eventdata pubsub
 	psresult := topic.Publish(ctx, &pubsub.Message{
 		Data: outputJSON,
