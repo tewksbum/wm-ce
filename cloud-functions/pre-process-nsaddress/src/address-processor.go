@@ -15,7 +15,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"googlemaps.github.io/maps"
-	"github.com/google/uuid"
 )
 
 // Customer contains Customer fields
@@ -78,6 +77,10 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	if len(input.Owner) == 0 {
+		input.Owner = "ocm"
+	}
+
 	var output Output
 	output.Signature = Signature{
 		OwnerID:   input.Owner,
@@ -85,9 +88,11 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		EventID:   input.EventID,
 		EventType: input.EventType,
 		FiberType: "default",
-		FiberID: uuid.New().String(),
+		FiberID: input.NetsuiteKey,
 		RecordID: input.NetsuiteKey,
 	}
+
+	
 	var person PeopleOutput
 	person.ADBOOK.Value = input.AddressType
 	names := ParseName(input.Name)
