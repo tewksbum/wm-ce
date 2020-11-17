@@ -85,6 +85,10 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		input.Owner = "ocm"
 	}
 
+	if input.Phone == "2222222222" {
+		input.Phone = ""
+	}
+
 	var output Output
 	output.Signature = Signature{
 		OwnerID:   input.Owner,
