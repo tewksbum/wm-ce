@@ -100,7 +100,7 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		input.Owner = "ocm"
 	}
 
-	if input.Phone == "2222222222" {
+	if input.Phone == "2222222222" || input.Phone == "5555555555" {
 		input.Phone = ""
 	}
 
