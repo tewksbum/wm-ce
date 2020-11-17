@@ -5,6 +5,7 @@ require (
 	cloud.google.com/go/datastore v1.3.0
 	cloud.google.com/go/pubsub v1.8.2
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/martian v2.1.0+incompatible // indirect
 	github.com/google/uuid v1.1.2
