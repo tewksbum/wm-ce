@@ -77,6 +77,10 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		log.Fatalf("Error: Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 
+	if len(input.NetsuiteKey) == 0 {
+		input.NetsuiteKey = input.EventID
+	}
+
 	if len(input.Owner) == 0 {
 		input.Owner = "ocm"
 	}
