@@ -360,7 +360,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				})
 
 				if len(fiber.RecordID) == 0 {
-					log.Printf("WARN fier is missing signature fields %v", fiber)
+					log.Printf("WARN fiber is missing signature fields %v", fiber)
 				}
 
 				if fiber.FiberType == "default" {
