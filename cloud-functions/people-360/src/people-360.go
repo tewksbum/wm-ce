@@ -1227,7 +1227,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if err != nil {
 			log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
 		} else {
-			LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
+			LogDev(fmt.Sprintf("%v pubbed output as message id %v: %v", input.Signature.EventID, psid, string(outputJSON)))
 		}
 
 		goldenPubJSON, _ := json.Marshal(golden)
@@ -1239,7 +1239,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		if err != nil {
 			log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
 		} else {
-			LogDev(fmt.Sprintf("%v pubbed record as message id %v: %v", input.Signature.EventID, pgid, string(goldenPubJSON)))
+			LogDev(fmt.Sprintf("%v pubbed golden as message id %v: %v", input.Signature.EventID, pgid, string(goldenPubJSON)))
 		}		
 
 		topic2.Publish(ctx, &pubsub.Message{
