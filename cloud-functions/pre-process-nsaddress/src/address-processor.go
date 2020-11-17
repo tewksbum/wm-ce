@@ -12,9 +12,12 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/pubsub"
 	"googlemaps.github.io/maps"
+	"github.com/gomodule/redigo/redis"
+	"cloud.google.com/go/datastore"
 )
 
 // Customer contains Customer fields
@@ -51,7 +54,10 @@ var reFullName2 = regexp.MustCompile(`^(.*), (.*) (.{1})\.$`) // Wilson, Lauren 
 var reFullName3 = regexp.MustCompile(`^(.*), (.*)$`)          // Wilson, Lauren K.
 var reFullName4 = regexp.MustCompile(`^(.*),(.*)$`)           // Wilson,Lauren
 var reFullName5 = regexp.MustCompile(`^(.*),(.*)( .{1}\.)$`)  //// Wilson,Lauren K.
-
+var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
+var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
+var redisTemporaryExpiration = 3600
+var DSKindSet = os.Getenv("DSKINDSET")
 var env = os.Getenv("ENVIRONMENT")
 var dev = (env == "dev")
 
@@ -61,11 +67,20 @@ var ps *pubsub.Client
 var topic *pubsub.Topic
 var ap http.Client
 var gm *maps.Client
+var msp *redis.Pool
+var fs *datastore.Client
 
 func init() {
 	ctx = context.Background()
 	ps, _ = pubsub.NewClient(ctx, ProjectID)
 	topic = ps.Topic(PubSubTopic)
+	msp = &redis.Pool{
+		MaxIdle:     3,
+		IdleTimeout: 240 * time.Second,
+		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
+	}
+	gm, _ = maps.NewClient(maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
+	fs, _ = datastore.NewClient(ctx, os.Getenv("DSPROJECTID"))
 	log.Printf("init completed, pubsub topic names: %v", topic)
 }
 
@@ -89,6 +104,8 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		input.Phone = ""
 	}
 
+	input.NetsuiteKey = fmt.Sprintf("%-36v", input.NetsuiteKey) // make these IDs 36 character long because 360 assumes these are GUID
+	
 	var output Output
 	output.Signature = Signature{
 		OwnerID:   input.Owner,
@@ -124,6 +141,32 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 	person.ADVALID.Value = "FALSE"
 	person.ADCORRECT.Value = "FALSE"
 
+	// perform some clean up
+	if reStateFull.MatchString(strings.ToLower(person.STATE.Value)) {
+		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", person.STATE.Value))
+		person.STATE.Value = lookupState(person.STATE.Value)
+	}
+	// standardize "US" for any US State address
+	if reState.MatchString(person.STATE.Value) && (person.COUNTRY.Value == "US" || person.COUNTRY.Value == "USA" || strings.ToLower(person.COUNTRY.Value) == "united states of america" || strings.ToLower(person.COUNTRY.Value) == "united states" || person.COUNTRY.Value == "") {
+		LogDev(fmt.Sprintf("overriding country by state value: %v", person.STATE.Value))
+		person.COUNTRY.Value = "US"
+		person.COUNTRY.Source = "WM"
+	}
+
+	// if ad1 and ad2 are equals, drop ad2
+	if person.AD1.Value == person.AD2.Value {
+		person.AD2.Value = ""
+		person.AD2.Source = ""
+	}
+
+	// swap ad1 and ad2 if ad2 is not blank but ad1 is
+	if len(person.AD1.Value) == 0 && len(person.AD2.Value) > 0 {
+		person.AD1.Value = person.AD2.Value
+		person.AD1.Source = person.AD2.Source
+		person.AD2.Value = ""
+		person.AD2.Source = ""
+	}
+
 	StandardizeAddressSmartyStreet(&person)
 	if person.ADVALID.Value != "TRUE" {
 		StandardizeAddressGoogleMap(&person)
@@ -134,6 +177,55 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 	otherValues["netsuite_key"] = input.NetsuiteKey
 	output.Passthrough = otherValues
 
+	// compute search fields and pre-load into redis
+	var searchFields []string
+	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.NetsuiteKey))
+	searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.NetsuiteKey))
+
+	if len(person.EMAIL.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value)))) // for people
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value))))                                                           // for house
+	}
+	if len(person.PHONE.Value) > 0 && len(person.FINITIAL.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.PHONE.Value)), strings.TrimSpace(strings.ToUpper(person.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
+	}
+
+	if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.LNAME.Value) > 0 && len(person.FNAME.Value) > 0 && len(person.AD1.Value) > 0 {
+		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.FNAME.Value)), strings.TrimSpace(strings.ToUpper(person.LNAME.Value)), strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
+	}
+	// for house
+	if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.AD1.Value) > 0 {
+		if len(person.AD2.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.AD2.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
+		} else {
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
+		}
+	}
+
+	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, output.Signature.OwnerID))
+
+	if len(searchFields) > 0 {
+		for _, search := range searchFields {
+			fiberRedisKey := []string{output.Signature.OwnerID, "search-fibers", search} // existing fibers
+			setRedisKey := []string{output.Signature.OwnerID, "search-sets", search}     // existing sets
+			searchValue := strings.Replace(search, "'", `''`, -1)
+			querySets := []PeopleSetDS{}
+			if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
+				log.Fatalf("Error querying sets: %v", err)
+			}
+			log.Printf("Fiber search %v found %v sets", search, len(querySets))
+			for _, s := range querySets {
+				if len(s.Fibers) > 0 {
+					for _, f := range s.Fibers {
+						AppendRedisTempKey(fiberRedisKey, f)
+						// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
+					}
+				}
+				AppendRedisTempKey(setRedisKey, s.ID.Name)
+				// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+			}
+		}
+	}
 
 	outputJSON, _ := json.Marshal([]Output{output})
 	// this is a data request, drop to eventdata pubsub
@@ -492,4 +584,216 @@ type PeopleOutput struct {
 
 type PubSubMessage struct {
 	Data []byte `json:"data"`
+}
+
+func lookupState(in string) string { // THIS SHOULD BE RECODED AS MAP LOOKUP
+	switch in {
+	case "Alabama":
+		return "AL"
+	case "Alaska":
+		return "AK"
+	case "Arizona":
+		return "AZ"
+	case "Arkansas":
+		return "AR"
+	case "California":
+		return "CA"
+	case "Colorado":
+		return "CO"
+	case "Connecticut":
+		return "CT"
+	case "Delaware":
+		return "DE"
+	case "District Of Columbia":
+		return "DC"
+	case "Florida":
+		return "FL"
+	case "Georgia":
+		return "GA"
+	case "Hawaii":
+		return "HI"
+	case "Idaho":
+		return "ID"
+	case "Illinois":
+		return "IL"
+	case "Indiana":
+		return "IN"
+	case "Iowa":
+		return "IA"
+	case "Kansas":
+		return "KS"
+	case "Kentucky":
+		return "KY"
+	case "Louisiana":
+		return "LA"
+	case "Maine":
+		return "ME"
+	case "Maryland":
+		return "MD"
+	case "Massachusetts":
+		return "MA"
+	case "Michigan":
+		return "MI"
+	case "Minnesota":
+		return "MN"
+	case "Mississippi":
+		return "MS"
+	case "Missouri":
+		return "MO"
+	case "Montana":
+		return "MN"
+	case "Nebraska":
+		return "NE"
+	case "Nevada":
+		return "NV"
+	case "New Hampshire":
+		return "NH"
+	case "New Jersey":
+		return "NJ"
+	case "New Mexico":
+		return "NM"
+	case "New York":
+		return "NY"
+	case "North Carolina":
+		return "NC"
+	case "North Dakota":
+		return "ND"
+	case "Ohio":
+		return "OH"
+	case "Oklahoma":
+		return "OK"
+	case "Oregon":
+		return "OR"
+	case "Pennsylvania":
+		return "PA"
+	case "Rhode Island":
+		return "RI"
+	case "South Carolina":
+		return "SC"
+	case "South Dakota":
+		return "SD"
+	case "Tennessee":
+		return "TN"
+	case "Texas":
+		return "TX"
+	case "Utah":
+		return "UT"
+	case "Vermont":
+		return "VT"
+	case "Virginia":
+		return "VA"
+	case "Washington":
+		return "WA"
+	case "West Virginia":
+		return "WV"
+	case "Wisconsin":
+		return "WI"
+	case "Wyoming":
+		return "WY"
+	}
+	return in
+}
+
+type PeopleSetDS struct {
+	ID                     *datastore.Key `datastore:"__key__"`
+	OwnerID                []string       `datastore:"ownerid"`
+	Source                 []string       `datastore:"source"`
+	EventID                []string       `datastore:"eventid"`
+	EventType              []string       `datastore:"eventtype"`
+	FiberType              []string       `datastore:"fibertype"`
+	RecordID               []string       `datastore:"recordid"`
+	RecordIDNormalized     []string       `datastore:"recordidnormalized"`
+	CreatedAt              time.Time      `datastore:"createdat"`
+	Fibers                 []string       `datastore:"fibers"`
+	Search                 []string       `datastore:"search"`
+	SALUTATION             []string       `datastore:"salutation"`
+	SALUTATIONNormalized   []string       `datastore:"salutationnormalized"`
+	NICKNAME               []string       `datastore:"nickname"`
+	NICKNAMENormalized     []string       `datastore:"nicknamenormalized"`
+	FNAME                  []string       `datastore:"fname"`
+	FNAMENormalized        []string       `datastore:"fnamenormalized"`
+	FINITIAL               []string       `datastore:"finitial"`
+	FINITIALNormalized     []string       `datastore:"finitialnormalized"`
+	LNAME                  []string       `datastore:"lname"`
+	LNAMENormalized        []string       `datastore:"lnamenormalized"`
+	MNAME                  []string       `datastore:"mname"`
+	MNAMENormalized        []string       `datastore:"mnamenormalized"`
+	AD1                    []string       `datastore:"ad1"`
+	AD1Normalized          []string       `datastore:"ad1normalized"`
+	AD1NO                  []string       `datastore:"ad1no"`
+	AD1NONormalized        []string       `datastore:"ad1nonormalized"`
+	AD2                    []string       `datastore:"ad2"`
+	AD2Normalized          []string       `datastore:"ad2normalized"`
+	AD3                    []string       `datastore:"ad3"`
+	AD3Normalized          []string       `datastore:"ad3normalized"`
+	AD4                    []string       `datastore:"ad4"`
+	AD4Normalized          []string       `datastore:"ad4normalized"`
+	CITY                   []string       `datastore:"city"`
+	CITYNormalized         []string       `datastore:"citynormalized"`
+	STATE                  []string       `datastore:"state"`
+	STATENormalized        []string       `datastore:"statenormalized"`
+	ZIP                    []string       `datastore:"zip"`
+	ZIPNormalized          []string       `datastore:"zipnormalized"`
+	ZIP5                   []string       `datastore:"zip5"`
+	ZIP5Normalized         []string       `datastore:"zip5normalized"`
+	COUNTRY                []string       `datastore:"country"`
+	COUNTRYNormalized      []string       `datastore:"countrynormalized"`
+	MAILROUTE              []string       `datastore:"mailroute"`
+	MAILROUTENormalized    []string       `datastore:"mailroutenormalized"`
+	ADTYPE                 []string       `datastore:"adtype"`
+	ADTYPENormalized       []string       `datastore:"adtypenormalized"`
+	ZIPTYPE                []string       `datastore:"ziptype"`
+	ZIPTYPENormalized      []string       `datastore:"ziptypenormalized"`
+	RECORDTYPE             []string       `datastore:"recordtype"`
+	RECORDTYPENormalized   []string       `datastore:"recordtypenormalized"`
+	ADBOOK                 []string       `datastore:"adbook"`
+	ADBOOKNormalized       []string       `datastore:"adbooknormalized"`
+	ADPARSER               []string       `datastore:"adparser"`
+	ADPARSERNormalized     []string       `datastore:"adparsernormalized"`
+	ADCORRECT              []string       `datastore:"adcorrect"`
+	ADCORRECTNormalized    []string       `datastore:"adcorrectnormalized"`
+	ADVALID                []string       `datastore:"advalid"`
+	ADVALIDNormalized      []string       `datastore:"advalidnormalized"`
+	EMAIL                  []string       `datastore:"email"`
+	EMAILNormalized        []string       `datastore:"emailnormalized"`
+	PHONE                  []string       `datastore:"phone"`
+	PHONENormalized        []string       `datastore:"phonenormalized"`
+	TRUSTEDID              []string       `datastore:"trustedid"`
+	TRUSTEDIDNormalized    []string       `datastore:"trustedidnormalized"`
+	CLIENTID               []string       `datastore:"clientid"`
+	CLIENTIDNormalized     []string       `datastore:"clientidnormalized"`
+	GENDER                 []string       `datastore:"gender"`
+	GENDERNormalized       []string       `datastore:"gendernormalized"`
+	AGE                    []string       `datastore:"age"`
+	AGENormalized          []string       `datastore:"agenormalized"`
+	DOB                    []string       `datastore:"dob"`
+	DOBNormalized          []string       `datastore:"dobnormalized"`
+	ORGANIZATION           []string       `datastore:"organization"`
+	ORGANIZATIONNormalized []string       `datastore:"organizationnormalized"`
+	TITLE                  []string       `datastore:"title"`
+	TITLENormalized        []string       `datastore:"titlenormalized"`
+	ROLE                   []string       `datastore:"role"`
+	ROLENormalized         []string       `datastore:"rolenormalized"`
+	STATUS                 []string       `datastore:"status"`
+	STATUSNormalized       []string       `datastore:"statusnormalized"`
+	PermE                  []string       `datastore:"perme"`
+	PermENormalized        []string       `datastore:"permenormalized"`
+	PermM                  []string       `datastore:"permm"`
+	PermMNormalized        []string       `datastore:"permmnormalized"`
+	PermS                  []string       `datastore:"perms"`
+	PermSNormalized        []string       `datastore:"permsnormalized"`
+}
+
+func AppendRedisTempKey(keyparts []string, value string) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("APPEND", strings.Join(keyparts, ":"), value)
+	if err != nil {
+		log.Printf("Error APPEND value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+	_, err = ms.Do("EXPIRE", strings.Join(keyparts, ":"), redisTemporaryExpiration)
+	if err != nil {
+		log.Printf("Error EXPIRE value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
 }
