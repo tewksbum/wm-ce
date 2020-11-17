@@ -850,6 +850,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 		}
+		LogDev(fmt.Sprintf("setting external id to %v", externalIDs))
 		golden.ExternalIDs = externalIDs
 		golden.People = goldenDS
 		// write each of the search key into each of the fiber in redis

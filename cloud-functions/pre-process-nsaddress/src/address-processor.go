@@ -57,6 +57,7 @@ var reFullName5 = regexp.MustCompile(`^(.*),(.*)( .{1}\.)$`)  //// Wilson,Lauren
 var reState = regexp.MustCompile(`(?i)^(AL|AK|AZ|AR|CA|CO|CT|DC|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|PR|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY)$`)
 var reStateFull = regexp.MustCompile(`(?i)^(alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|district of columbia|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming)$`)
 var redisTemporaryExpiration = 3600
+var redisTransientExpiration = 3600 * 24
 var DSKindSet = os.Getenv("DSKINDSET")
 var env = os.Getenv("ENVIRONMENT")
 var dev = (env == "dev")
@@ -100,147 +101,152 @@ func ProcessAddress(ctx context.Context, m PubSubMessage) error {
 		input.Owner = "ocm"
 	}
 
-	if input.Phone == "2222222222" {
+	if input.Phone == "2222222222" || input.Phone == "5555555555" {
 		input.Phone = ""
 	}
 
 	input.NetsuiteKey = fmt.Sprintf("%-36v", input.NetsuiteKey) // make these IDs 36 character long because 360 assumes these are GUID
 	
-	var output Output
-	output.Signature = Signature{
-		OwnerID:   input.Owner,
-		Source:    input.Source,
-		EventID:   input.EventID,
-		EventType: input.EventType,
-		FiberType: "default",
-		FiberID: input.NetsuiteKey,
-		RecordID: input.NetsuiteKey,
-	}
 
-	
-	var person PeopleOutput
-	person.ADBOOK.Value = input.AddressType
-	names := ParseName(input.Name)
-	person.FNAME.Value = names.FNAME
-	person.LNAME.Value = names.LNAME
-	person.AD1.Value = input.Addr1
-	person.AD2.Value = input.Addr2
-	person.CITY.Value = input.City
-	person.STATE.Value = input.State
-	person.ZIP.Value = input.Zip
-	person.COUNTRY.Value = input.Country
-	if person.COUNTRY.Value == "" {
-		person.COUNTRY.Value = "US"
-	}
-	person.EMAIL.Value = input.Email
-	person.PHONE.Value = input.Phone
-	if len(input.NetsuiteKey) > 0 {
-		person.CLIENTID.Value = "NETSUITE." + input.NetsuiteKey
-	}
-
-	person.ADVALID.Value = "FALSE"
-	person.ADCORRECT.Value = "FALSE"
-
-	// perform some clean up
-	if reStateFull.MatchString(strings.ToLower(person.STATE.Value)) {
-		LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", person.STATE.Value))
-		person.STATE.Value = lookupState(person.STATE.Value)
-	}
-	// standardize "US" for any US State address
-	if reState.MatchString(person.STATE.Value) && (person.COUNTRY.Value == "US" || person.COUNTRY.Value == "USA" || strings.ToLower(person.COUNTRY.Value) == "united states of america" || strings.ToLower(person.COUNTRY.Value) == "united states" || person.COUNTRY.Value == "") {
-		LogDev(fmt.Sprintf("overriding country by state value: %v", person.STATE.Value))
-		person.COUNTRY.Value = "US"
-		person.COUNTRY.Source = "WM"
-	}
-
-	// if ad1 and ad2 are equals, drop ad2
-	if person.AD1.Value == person.AD2.Value {
-		person.AD2.Value = ""
-		person.AD2.Source = ""
-	}
-
-	// swap ad1 and ad2 if ad2 is not blank but ad1 is
-	if len(person.AD1.Value) == 0 && len(person.AD2.Value) > 0 {
-		person.AD1.Value = person.AD2.Value
-		person.AD1.Source = person.AD2.Source
-		person.AD2.Value = ""
-		person.AD2.Source = ""
-	}
-
-	StandardizeAddressSmartyStreet(&person)
-	if person.ADVALID.Value != "TRUE" {
-		StandardizeAddressGoogleMap(&person)
-	}
-	output.MatchKeys = person
-	
-	otherValues := make(map[string]string)
-	otherValues["netsuite_key"] = input.NetsuiteKey
-	output.Passthrough = otherValues
-
-	// compute search fields and pre-load into redis
-	var searchFields []string
-	searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.NetsuiteKey))
-	searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.NetsuiteKey))
-
-	if len(person.EMAIL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value)))) // for people
-		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value))))                                                           // for house
-	}
-	if len(person.PHONE.Value) > 0 && len(person.FINITIAL.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.PHONE.Value)), strings.TrimSpace(strings.ToUpper(person.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
-	}
-
-	if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.LNAME.Value) > 0 && len(person.FNAME.Value) > 0 && len(person.AD1.Value) > 0 {
-		searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.FNAME.Value)), strings.TrimSpace(strings.ToUpper(person.LNAME.Value)), strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
-	}
-	// for house
-	if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.AD1.Value) > 0 {
-		if len(person.AD2.Value) > 0 {
-			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.AD2.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
-		} else {
-			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
+	// see if this record should be processed
+	existingCheck := GetRedisIntValue([]string{"netsuite", input.EventID, input.NetsuiteKey})
+	if existingCheck == 0 { // this fiber has already been processed	
+		var output Output
+		output.Signature = Signature{
+			OwnerID:   input.Owner,
+			Source:    input.Source,
+			EventID:   input.EventID,
+			EventType: input.EventType,
+			FiberType: "default",
+			FiberID: input.NetsuiteKey,
+			RecordID: input.NetsuiteKey,
 		}
-	}
 
-	dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, output.Signature.OwnerID))
+		
+		var person PeopleOutput
+		person.ADBOOK.Value = input.AddressType
+		names := ParseName(input.Name)
+		person.FNAME.Value = names.FNAME
+		person.LNAME.Value = names.LNAME
+		person.AD1.Value = input.Addr1
+		person.AD2.Value = input.Addr2
+		person.CITY.Value = input.City
+		person.STATE.Value = input.State
+		person.ZIP.Value = input.Zip
+		person.COUNTRY.Value = input.Country
+		if person.COUNTRY.Value == "" {
+			person.COUNTRY.Value = "US"
+		}
+		person.EMAIL.Value = input.Email
+		person.PHONE.Value = input.Phone
+		if len(input.NetsuiteKey) > 0 {
+			person.CLIENTID.Value = "NETSUITE." + input.NetsuiteKey
+		}
 
-	if len(searchFields) > 0 {
-		for _, search := range searchFields {
-			fiberRedisKey := []string{output.Signature.OwnerID, "search-fibers", search} // existing fibers
-			setRedisKey := []string{output.Signature.OwnerID, "search-sets", search}     // existing sets
-			searchValue := strings.Replace(search, "'", `''`, -1)
-			querySets := []PeopleSetDS{}
-			if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
-				log.Fatalf("Error querying sets: %v", err)
+		person.ADVALID.Value = "FALSE"
+		person.ADCORRECT.Value = "FALSE"
+
+		// perform some clean up
+		if reStateFull.MatchString(strings.ToLower(person.STATE.Value)) {
+			LogDev(fmt.Sprintf("standardizing STATE to 2 letter abbreviation: %v", person.STATE.Value))
+			person.STATE.Value = lookupState(person.STATE.Value)
+		}
+		// standardize "US" for any US State address
+		if reState.MatchString(person.STATE.Value) && (person.COUNTRY.Value == "US" || person.COUNTRY.Value == "USA" || strings.ToLower(person.COUNTRY.Value) == "united states of america" || strings.ToLower(person.COUNTRY.Value) == "united states" || person.COUNTRY.Value == "") {
+			LogDev(fmt.Sprintf("overriding country by state value: %v", person.STATE.Value))
+			person.COUNTRY.Value = "US"
+			person.COUNTRY.Source = "WM"
+		}
+
+		// if ad1 and ad2 are equals, drop ad2
+		if person.AD1.Value == person.AD2.Value {
+			person.AD2.Value = ""
+			person.AD2.Source = ""
+		}
+
+		// swap ad1 and ad2 if ad2 is not blank but ad1 is
+		if len(person.AD1.Value) == 0 && len(person.AD2.Value) > 0 {
+			person.AD1.Value = person.AD2.Value
+			person.AD1.Source = person.AD2.Source
+			person.AD2.Value = ""
+			person.AD2.Source = ""
+		}
+
+		StandardizeAddressSmartyStreet(&person)
+		if person.ADVALID.Value != "TRUE" {
+			StandardizeAddressGoogleMap(&person)
+		}
+		output.MatchKeys = person
+		
+		otherValues := make(map[string]string)
+		otherValues["netsuite_key"] = input.NetsuiteKey
+		output.Passthrough = otherValues
+
+		// compute search fields and pre-load into redis
+		var searchFields []string
+		searchFields = append(searchFields, fmt.Sprintf("RECORDID=%v", input.NetsuiteKey))
+		searchFields = append(searchFields, fmt.Sprintf("HOUSE=&RECORDID=%v", input.NetsuiteKey))
+
+		if len(person.EMAIL.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("EMAIL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value)))) // for people
+			searchFields = append(searchFields, fmt.Sprintf("HOUSE=&EMAIL=%v", strings.TrimSpace(strings.ToUpper(person.EMAIL.Value))))                                                           // for house
+		}
+		if len(person.PHONE.Value) > 0 && len(person.FINITIAL.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.PHONE.Value)), strings.TrimSpace(strings.ToUpper(person.FINITIAL.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
+		}
+
+		if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.LNAME.Value) > 0 && len(person.FNAME.Value) > 0 && len(person.AD1.Value) > 0 {
+			searchFields = append(searchFields, fmt.Sprintf("FNAME=%v&LNAME=%v&AD1=%v&CITY=%v&STATE=%v&ROLE=%v", strings.TrimSpace(strings.ToUpper(person.FNAME.Value)), strings.TrimSpace(strings.ToUpper(person.LNAME.Value)), strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value)), strings.TrimSpace(strings.ToUpper(person.ROLE.Value))))
+		}
+		// for house
+		if len(person.CITY.Value) > 0 && len(person.STATE.Value) > 0 && len(person.AD1.Value) > 0 {
+			if len(person.AD2.Value) > 0 {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&AD2=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.AD2.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
+			} else {
+				searchFields = append(searchFields, fmt.Sprintf("HOUSE=&AD1=%v&CITY=%v&STATE=%v", strings.TrimSpace(strings.ToUpper(person.AD1.Value)), strings.TrimSpace(strings.ToUpper(person.CITY.Value)), strings.TrimSpace(strings.ToUpper(person.STATE.Value))))
 			}
-			log.Printf("Fiber search %v found %v sets", search, len(querySets))
-			for _, s := range querySets {
-				if len(s.Fibers) > 0 {
-					for _, f := range s.Fibers {
-						AppendRedisTempKey(fiberRedisKey, f)
-						// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
-					}
+		}
+
+		dsNameSpace := strings.ToLower(fmt.Sprintf("%v-%v", env, output.Signature.OwnerID))
+
+		if len(searchFields) > 0 {
+			for _, search := range searchFields {
+				fiberRedisKey := []string{output.Signature.OwnerID, "search-fibers", search} // existing fibers
+				setRedisKey := []string{output.Signature.OwnerID, "search-sets", search}     // existing sets
+				searchValue := strings.Replace(search, "'", `''`, -1)
+				querySets := []PeopleSetDS{}
+				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
+					log.Fatalf("Error querying sets: %v", err)
 				}
-				AppendRedisTempKey(setRedisKey, s.ID.Name)
-				// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+				log.Printf("Fiber search %v found %v sets", search, len(querySets))
+				for _, s := range querySets {
+					if len(s.Fibers) > 0 {
+						for _, f := range s.Fibers {
+							AppendRedisTempKey(fiberRedisKey, f)
+							// log.Printf("fiberRedisKey %v f %v ", fiberRedisKey, f)
+						}
+					}
+					AppendRedisTempKey(setRedisKey, s.ID.Name)
+					// log.Printf("setRedisKey %v s.ID.Name %v ", setRedisKey, s.ID.Name)
+				}
 			}
 		}
+		
+		SetRedisValueWithExpiration([]string{"netsuite", input.EventID, input.NetsuiteKey}, 1) // mark this event as processed in redis
+		outputJSON, _ := json.Marshal([]Output{output})
+		// this is a data request, drop to eventdata pubsub
+		psresult := topic.Publish(ctx, &pubsub.Message{
+			Data: outputJSON,
+		})
+
+		psid, err := psresult.Get(ctx)
+		_, err = psresult.Get(ctx)
+		if err != nil {
+			log.Fatalf("%v Could not pub to pubsub: %v", output.Signature.EventID, err)
+		} else {
+			log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
+		}
 	}
-
-	outputJSON, _ := json.Marshal([]Output{output})
-	// this is a data request, drop to eventdata pubsub
-	psresult := topic.Publish(ctx, &pubsub.Message{
-		Data: outputJSON,
-	})
-
-	psid, err := psresult.Get(ctx)
-	_, err = psresult.Get(ctx)
-	if err != nil {
-		log.Fatalf("%v Could not pub to pubsub: %v", output.Signature.EventID, err)
-	} else {
-		log.Printf("%v pubbed record as message id %v: %v", output.Signature.EventID, psid, string(outputJSON))
-	}
-
 	return nil
 }
 
@@ -796,4 +802,24 @@ func AppendRedisTempKey(keyparts []string, value string) {
 	if err != nil {
 		log.Printf("Error EXPIRE value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
 	}
+}
+
+func SetRedisValueWithExpiration(keyparts []string, value int) {
+	ms := msp.Get()
+	defer ms.Close()
+
+	_, err := ms.Do("SETEX", strings.Join(keyparts, ":"), redisTransientExpiration, value)
+	if err != nil {
+		log.Printf("Error setting redis value %v to %v, error %v", strings.Join(keyparts, ":"), value, err)
+	}
+}
+
+func GetRedisIntValue(keyparts []string) int {
+	ms := msp.Get()
+	defer ms.Close()
+	value, err := redis.Int(ms.Do("GET", strings.Join(keyparts, ":")))
+	if err != nil {
+		// log.Printf("Error getting redis value %v, error %v", strings.Join(keyparts, ":"), err)
+	}
+	return value
 }
