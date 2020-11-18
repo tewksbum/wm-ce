@@ -9,7 +9,9 @@ steps:
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "30",
-    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    "--max-instances", "25",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--vpc-connector", "${_VPC_CONNECTOR}",
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
@@ -18,5 +20,6 @@ substitutions:
     _FUNCTION_NAME: pre-process-nsaddress
     _ENTRY_POINT: ProcessAddress
     _TRIGGER_TOPIC: order-address
+    _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'
