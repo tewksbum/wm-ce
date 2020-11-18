@@ -829,6 +829,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		setDS.Search = SetSearchFields
 
 		externalIDs := make(map[string][]string)
+		LogDev(fmt.Sprintf("set search keys %v", setDS.Search))
 		for _, ss := range setDS.Search {
 			if strings.HasPrefix(ss, "EXTERNALID=") {
 				ss1 := ss[11:]
