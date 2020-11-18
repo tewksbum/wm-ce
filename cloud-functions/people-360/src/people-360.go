@@ -838,15 +838,15 @@ func People360(ctx context.Context, m PubSubMessage) error {
 					ek := ss1[0:ssi]
 					ev := ss1[ssi+1:]
 					if len(ek) > 0 && len(ev) > 0 {
-					if evl, ok := externalIDs[ek]; ok {
-						if !Contains(evl, ev) {
-							evl = append(evl, ev)
+						if evl, ok := externalIDs[ek]; ok {
+							if !Contains(evl, ev) {
+								evl = append(evl, ev)
+								externalIDs[ek] = evl
+							}
+						} else {
+							evl := []string{ev}
 							externalIDs[ek] = evl
 						}
-					  }
-					} else {
-						evl := []string{ev}
-						externalIDs[ek] = evl
 					}
 				}
 			}
@@ -1242,7 +1242,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 			log.Printf("Error: %v Could not pub to pubsub: %v", input.Signature.EventID, err)
 		} else {
 			LogDev(fmt.Sprintf("%v pubbed golden as message id %v: %v", input.Signature.EventID, pgid, string(goldenPubJSON)))
-		}		
+		}
 
 		topic2.Publish(ctx, &pubsub.Message{
 			Data: outputJSON,
