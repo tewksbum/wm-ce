@@ -43,6 +43,11 @@ type record struct {
 	NSID       string `json:"netsuite_id"`
 	AvgCost    float64
 	NetsuiteID int64
+	Cat1       string `json:"cat_1"`
+	Cat2       string `json:"cat_2"`
+	Cat3       string `json:"cat_3"`
+	Cat4       string `json:"cat_4"`
+	Cat5       string `json:"cat_5"`
 }
 
 func init() {
@@ -127,7 +132,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				}()
 				rec.AvgCost, _ = strconv.ParseFloat(rec.Cost, 64)
 				rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
-				_, err := db.Exec("CALL sp_upsert_product(?,?,?,?,?,?)", rec.Sku, rec.Title, rec.Type, rec.LOB, rec.AvgCost, rec.NetsuiteID)
+				_, err := db.Exec("CALL sp_upsert_product(?,?,?,?,?,?,?,?,?,?,?)", rec.Sku, rec.Title, rec.Type, rec.LOB, rec.AvgCost, rec.NetsuiteID, rec.Cat1, rec.Cat2, rec.Cat3, rec.Cat4, rec.Cat5)
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
