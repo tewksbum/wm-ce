@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"cloud.google.com/go/datastore"
@@ -26,7 +27,7 @@ var DSKindGolden = os.Getenv("DSKINDGOLDEN")
 var DSKindFiber = os.Getenv("DSKINDFIBER")
 var PubSubTopic = os.Getenv("PSOUTPUT")
 var Bucket = os.Getenv("BUCKET")
-var FEPBucket = os.Getenv("FEPBUCKET")
+var EmailOnlyBucket = os.Getenv("EMAILONLYBUCKET")
 var BadBucket = os.Getenv("BADBUCKET")
 var Threshold = getEnvFloat("THRESHOLD")
 var PortalLink = os.Getenv("PORTALLINK")
@@ -314,8 +315,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			if Contains(FEPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
-				filename := copyFileToBucket(ctx, event, records, FEPBucket)
+			emailFirst, _ := strconv.ParseBool(GetKVPValue(event.Passthrough, "emailFirst"))
+
+			if emailFirst {
+				filename := copyFileToBucket(ctx, event, records, EmailOnlyBucket)
 				log.Printf("Writing %v records into output file %v", len(records)-1, filename)
 
 				eventData := EventData{
