@@ -35,6 +35,7 @@ var CAROptions = strings.Split(os.Getenv("CAROPTIONS"), ",")
 var CWPOptions = strings.Split(os.Getenv("CWPOPTIONS"), ",")
 var RHLOptions = strings.Split(os.Getenv("RHLOPTIONS"), ",")
 var DDOptions = strings.Split(os.Getenv("DDOPTIONS"), ",")
+var winterAdcode = os.Getenv("WINTERADCODE")
 var obdRHLSeasonTemp = os.Getenv("OBD")
 
 var reAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
@@ -247,7 +248,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				orderByDate := GetKVPValue(event.Passthrough, "orderByDate")
 				if Contains(RHLOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) && Contains(seasonCodeList, seasonUpload) {
 					masterProgramCode = masterProgramCode + strings.ToUpper(seasonUpload)
-					adcode = adcodeList[GetKVPValue(event.Passthrough, "schoolCode")]
+					adcode = GetKVPValue(event.Passthrough, "schoolCode") + winterAdcode
 					orderByDate = obdRHLSeasonTemp
 					if len(adcode) == 0 {
 						eventData := EventData{
