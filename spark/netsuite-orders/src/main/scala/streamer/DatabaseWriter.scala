@@ -402,8 +402,9 @@ object DatabaseWriter {
             insert into fact_orderlines_${id} 
             (date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,shipto_key,netsuite_order_id,netsuite_order_number,
             ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping) 
-            values(?,?,?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?)
+            total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping, 
+            program_key, sponsor_key) 
+            values(?,?,?,?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?,  ?,?,?,?,?,?,?,?,?, ?,?)
             """
           )
           for (record <- records) {
@@ -439,6 +440,8 @@ object DatabaseWriter {
             ps.setInt(28, record.is_cancelled)
             ps.setDouble(29, record.total_discount)
             ps.setDouble(30, record.total_shipping)
+            ps.setLong(31, record.program_key)
+            ps.setLong(32, record.sponsor_key)
             // println(ps.toString);
             ps.addBatch
           }
@@ -463,14 +466,16 @@ object DatabaseWriter {
               date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
               shipto_key,netsuite_order_id,netsuite_order_number,
               ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping,
+              program_key, sponsor_key
             ) 
 
             select 
               date_key,orderstatus_key,ordertype_key,channel_key,source_key,school_key,customer_key,product_key,billto_key,
               shipto_key,netsuite_order_id,netsuite_order_number,
               ocm_order_id,ocm_order_number,shipment_number,netsuite_line_id,netsuite_line_key,lob_key,desttype_key,is_dropship,total_price,
-              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping
+              total_tax,total_cost,quantity,is_discount,is_shipping,is_service,is_cancelled,total_discount,total_shipping,
+              program_key, sponsor_key
             from fact_orderlines_${id} a 
             where not exists (select 1 from fact_orderlines b where b.netsuite_line_id = a.netsuite_line_id) 
           """
@@ -506,6 +511,8 @@ object DatabaseWriter {
             b.is_cancelled = a.is_cancelled,
             b.total_discount = a.total_discount,
             b.total_shipping = a.total_shipping
+            b.program_key = a.program_key,
+            b.sponsor_key = a.sponsor_key
           """
           val sqlDrop = s"drop table fact_orderlines_${id}"
 
