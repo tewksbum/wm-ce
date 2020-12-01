@@ -579,7 +579,8 @@ object DatabaseWriter {
             ps.setInt(25, record.is_service)
             ps.setInt(26, record.is_cancelled)
             ps.setDouble(27, record.total_discount)
-            ps.setDouble(28, record.total_shipping)            
+            ps.setDouble(28, record.total_shipping)
+                        
 
             val rs = ps.executeQuery()
             // this query returns
