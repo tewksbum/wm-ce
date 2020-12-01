@@ -510,7 +510,7 @@ object DatabaseWriter {
             b.is_service = a.is_service,
             b.is_cancelled = a.is_cancelled,
             b.total_discount = a.total_discount,
-            b.total_shipping = a.total_shipping
+            b.total_shipping = a.total_shipping,
             b.program_key = a.program_key,
             b.sponsor_key = a.sponsor_key
           """
@@ -580,7 +580,7 @@ object DatabaseWriter {
             ps.setInt(26, record.is_cancelled)
             ps.setDouble(27, record.total_discount)
             ps.setDouble(28, record.total_shipping)
-                        
+
 
             val rs = ps.executeQuery()
             // this query returns
