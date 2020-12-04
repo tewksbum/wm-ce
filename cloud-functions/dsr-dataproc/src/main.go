@@ -58,7 +58,8 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 					ServiceAccount:       os.Getenv("SERVICE_ACCOUNT"),
 					ServiceAccountScopes: strings.Split(os.Getenv("SCOPES"), ","),
 					ZoneUri:              os.Getenv("ZONE"),
-					SubnetworkUri:        "nat-subnet-1",
+					SubnetworkUri:        "default",
+					//InternalIpOnly:       true,
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances:   int32(parseInt(os.Getenv("MASTER_COUNT"), 2)),
