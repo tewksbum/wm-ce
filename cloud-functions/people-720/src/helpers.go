@@ -411,7 +411,10 @@ func SetRedisKeyIfNotExists(keyparts []string) int {
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
 	}
-	log.Printf("SetRedisKeyIfNotExists on %v returned %v", strings.Join(keyparts, ":"), result)
+	if result == 1 {
+		// if able to set the key, set expiration
+		_, err = ms.Do("EXPIRE", strings.Join(keyparts, ":"), redisTemporaryExpiration)
+	}
 	return result
 }
 
