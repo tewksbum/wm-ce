@@ -257,10 +257,6 @@ func PopulateGoldenOutputMatchKeys(target *PeopleGoldenDS, values []MatchKey360)
 	}
 }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> people-360 update for segment
 func PopulatePeopleOutputMatchKeys(target *PeopleOutput, values []MatchKey360) {
 	KeyList := structs.Names(&PeopleOutput{})
 	for _, key := range KeyList {
