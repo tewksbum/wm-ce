@@ -9,7 +9,9 @@ steps:
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
-    "--env-vars-file", ".env.$BRANCH_NAME.yaml"
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--max-instances", "20",
+    "--vpc-connector", "${_VPC_CONNECTOR}"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
@@ -18,5 +20,6 @@ substitutions:
     _FUNCTION_NAME: order-event
     _TRIGGER_TOPIC: order-intake
     _ENTRY_POINT: ProcessOrder
+    _VPC_CONNECTOR: cf-connector-4
 options:
     substitution_option: 'ALLOW_LOOSE'
