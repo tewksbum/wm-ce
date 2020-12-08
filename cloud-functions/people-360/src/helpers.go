@@ -106,7 +106,7 @@ func GetPeopleGoldenSearchFields(v *PeopleGoldenDS) []string {
 	}
 	if len(v.CLIENTID) > 0 {
 		searchFields = append(searchFields, fmt.Sprintf("EXTERNALID=%v", strings.ToUpper(v.CLIENTID)))
-	}	
+	}
 	if len(v.PHONE) > 0 && len(v.FINITIAL) > 0 {
 		searchFields = append(searchFields, fmt.Sprintf("PHONE=%v&FINITIAL=%v&ROLE=%v", strings.ToUpper(v.PHONE), strings.ToUpper(v.FINITIAL), strings.ToUpper(v.ROLE)))
 	}
