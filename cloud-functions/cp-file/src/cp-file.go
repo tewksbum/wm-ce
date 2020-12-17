@@ -203,6 +203,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			goodAD := 0
 			studentsUS := 0
 			international := 0
+			emailFirst, _ := strconv.ParseBool(GetKVPValue(event.Passthrough, "emailFirst"))
 			for _, g := range goldens {
 				if len(g.EMAIL) > 0 {
 					emails := strings.Split(g.EMAIL, "|")
@@ -301,7 +302,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				}
 
 				//only students with name and lastname
-				if !Contains(FEPOptions, GetKVPValue(event.Passthrough, "masterProgramCode")) {
+				if !emailFirst {
 					if (g.ADVALID == "TRUE" || g.COUNTRY != "US") && (len(g.FNAME) > 0 && len(g.LNAME) > 0) {
 						goodAD++
 						records = append(records, row)
@@ -314,8 +315,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					records = append(records, row)
 				}
 			}
-
-			emailFirst, _ := strconv.ParseBool(GetKVPValue(event.Passthrough, "emailFirst"))
 
 			if emailFirst {
 				filename := copyFileToBucket(ctx, event, records, EmailOnlyBucket)
