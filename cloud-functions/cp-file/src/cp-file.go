@@ -317,8 +317,6 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				}
 			}
 
-			emailFirst, _ := strconv.ParseBool(GetKVPValue(event.Passthrough, "emailFirst"))
-
 			if emailFirst {
 				filename := copyFileToBucket(ctx, event, records, EmailOnlyBucket)
 				log.Printf("Writing %v records into output file %v", len(records)-1, filename)
