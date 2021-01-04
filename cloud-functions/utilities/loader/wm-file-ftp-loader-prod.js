@@ -40,7 +40,11 @@ const getBucketFiles = async () => {
         case "fep":
         case "ffep":
         case "sfep":
-        case "wfep":
+        case "wfep":       
+        case "fepwinter":
+        case "fepsummer":
+        case "fepfall":
+        case "fepspring":
           remotePath = "/FEP/Input/";
           break;
         case "cwp":
@@ -48,7 +52,11 @@ const getBucketFiles = async () => {
           remotePath = "/CWP/Input/";
           break;
         case "frames":
-        case "dd":
+        case "dd":        
+        case "ddwinter":
+        case "ddsummer":
+        case "ddfall":
+        case "ddspring":
           remotePath = "/FRAMES/Input/";
           break;
         case "carpet":
