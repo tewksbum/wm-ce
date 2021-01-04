@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	"os"
+	"strings"
+
+	"github.com/dghubble/oauth1"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/ybbus/httpretry"
@@ -19,13 +21,21 @@ import (
 
 var smClient *secretmanager.Client
 var nsSecret secretsNS
-var nsAuth string
+var consumerKey string
+var consumerSecret string
+var tokenSecret string
+var tokenKey string
+var realm string
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var ctx context.Context
 
 type secretsNS struct {
-	NSAuth string `json:"nsauth"`
+	ConsumerKey    string `json:"consumerKey"`
+	ConsumerSecret string `json:"consumerSecret"`
+	TokenKey       string `json:"tokenKey"`
+	TokenSecret    string `json:"tokenSecret"`
+	Realm          string `json:"realm"`
 }
 
 type result struct {
@@ -56,7 +66,11 @@ func init() {
 		return
 	}
 
-	nsAuth = nsSecret.NSAuth
+	consumerKey = nsSecret.ConsumerKey
+	consumerSecret = nsSecret.ConsumerSecret
+	tokenSecret = nsSecret.TokenSecret
+	tokenKey = nsSecret.TokenKey
+	realm = nsSecret.Realm
 
 	ps, _ = pubsub.NewClient(ctx, os.Getenv("GCP_PROJECT"))
 	topic = ps.Topic(os.Getenv("ORDER_PUBSUB"))
@@ -68,12 +82,19 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		log.Fatalf("Unable to unmarshal message %v with error %v", string(m.Data), err)
 	}
 	log.Printf("pulling orders %v", ids)
+	config := oauth1.Config{
+		ConsumerKey:    consumerKey,
+		ConsumerSecret: consumerSecret,
+		Realm:          realm,
+	}
+	token := oauth1.NewToken(tokenKey, tokenSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
 	orderURL := fmt.Sprintf(os.Getenv("ORDERS_FETCH_URL"), strings.Join(ids, ","))
 	req, _ := http.NewRequest("GET", orderURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", nsAuth)
-	client := httpretry.NewDefaultClient()
+
+	client := httpretry.NewCustomClient(httpClient)
 	jsonString := ""
 	retryCount := 0
 	for {

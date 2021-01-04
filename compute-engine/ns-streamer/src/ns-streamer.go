@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/dghubble/oauth1"
 	"github.com/ybbus/httpretry"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
@@ -19,13 +20,21 @@ import (
 
 var smClient *secretmanager.Client
 var nsSecret secretsNS
-var nsAuth string
+var consumerKey string
+var consumerSecret string
+var tokenSecret string
+var tokenKey string
+var realm string
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var ctx context.Context
 
 type secretsNS struct {
-	NSAuth string `json:"nsauth"`
+	ConsumerKey    string `json:"consumerKey"`
+	ConsumerSecret string `json:"consumerSecret"`
+	TokenKey       string `json:"tokenKey"`
+	TokenSecret    string `json:"tokenSecret"`
+	Realm          string `json:"realm"`
 }
 
 type result struct {
@@ -45,7 +54,7 @@ func init() {
 	}
 
 	secretReq := &secretmanagerpb.AccessSecretVersionRequest{
-		Name: "projects/180297787522/secrets/netsuite/versions/4",
+		Name: "projects/180297787522/secrets/netsuite/versions/5",
 	}
 	secretresult, err := smClient.AccessSecretVersion(ctx, secretReq)
 	if err != nil {
@@ -57,7 +66,11 @@ func init() {
 		return
 	}
 
-	nsAuth = nsSecret.NSAuth
+	consumerKey = nsSecret.ConsumerKey
+	consumerSecret = nsSecret.ConsumerSecret
+	tokenSecret = nsSecret.TokenSecret
+	tokenKey = nsSecret.TokenKey
+	realm = nsSecret.Realm
 
 	ps, _ = pubsub.NewClient(ctx, "wemade-core")
 	topic = ps.Topic("wm-order-intake")
@@ -66,12 +79,18 @@ func init() {
 func main() {
 	log.Printf("getting list")
 	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming_a"
+	config := oauth1.Config{
+		ConsumerKey:    consumerKey,
+		ConsumerSecret: consumerSecret,
+		Realm:          realm,
+	}
+	token := oauth1.NewToken(tokenKey, tokenSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", nsAuth)
 
-	client := httpretry.NewDefaultClient()
+	client := httpretry.NewCustomClient(httpClient)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
@@ -134,7 +153,6 @@ func main() {
 			req, _ := http.NewRequest("GET", orderURL, nil)
 			req.Header.Set("Content-Type", "application/json")
 			req.Header.Set("Accept", "application/json")
-			req.Header.Set("Authorization", nsAuth)
 
 			jsonString := ""
 			for {
