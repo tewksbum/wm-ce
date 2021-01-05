@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/dghubble/oauth1"
+
 	// cloud sql
 	_ "github.com/go-sql-driver/mysql"
 
@@ -22,12 +24,20 @@ import (
 
 var smClient *secretmanager.Client
 var nsSecret secretsNS
-var nsAuth string
+var consumerKey string
+var consumerSecret string
+var tokenSecret string
+var tokenKey string
+var realm string
 var ctx context.Context
 var db *sql.DB
 
 type secretsNS struct {
-	NSAuth string `json:"nsauth"`
+	ConsumerKey    string `json:"consumerKey"`
+	ConsumerSecret string `json:"consumerSecret"`
+	TokenKey       string `json:"tokenKey"`
+	TokenSecret    string `json:"tokenSecret"`
+	Realm          string `json:"realm"`
 }
 
 type result struct {
@@ -70,7 +80,12 @@ func init() {
 		return
 	}
 
-	nsAuth = nsSecret.NSAuth
+	consumerKey = nsSecret.ConsumerKey
+	consumerSecret = nsSecret.ConsumerSecret
+	tokenSecret = nsSecret.TokenSecret
+	tokenKey = nsSecret.TokenKey
+	realm = nsSecret.Realm
+
 	secretReq = &secretmanagerpb.AccessSecretVersionRequest{
 		Name: os.Getenv("DW_SECRET"),
 	}
@@ -94,13 +109,18 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 	if message == "kit" {
 		listURL = os.Getenv("KIT_LIST_URL")
 	}
+	config := oauth1.Config{
+		ConsumerKey:    consumerKey,
+		ConsumerSecret: consumerSecret,
+		Realm:          realm,
+	}
+	token := oauth1.NewToken(tokenKey, tokenSecret)
+	httpClient := config.Client(oauth1.NoContext, token)
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", nsAuth)
 
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 	}
