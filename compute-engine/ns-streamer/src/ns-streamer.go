@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -28,6 +29,7 @@ var realm string
 var ps *pubsub.Client
 var topic *pubsub.Topic
 var ctx context.Context
+var list []int64
 
 type secretsNS struct {
 	ConsumerKey    string `json:"consumerKey"`
@@ -78,33 +80,49 @@ func init() {
 
 func main() {
 	log.Printf("getting list")
-	listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming_a"
-	config := oauth1.Config{
-		ConsumerKey:    consumerKey,
-		ConsumerSecret: consumerSecret,
-		Realm:          realm,
-	}
-	token := oauth1.NewToken(tokenKey, tokenSecret)
-	httpClient := config.Client(oauth1.NoContext, token)
-	req, _ := http.NewRequest("GET", listURL, nil)
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	client := httpretry.NewCustomClient(httpClient)
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-
 	var input result
-	err = json.Unmarshal(body, &input)
+	client := httpretry.NewDefaultClient()
+	if len(list) > 0 {
+		records := []record{}
+		for _, i := range list {
+			records = append(records, record{
+				ID:   strconv.FormatInt(i, 10),
+				Type: "Sales Order",
+			})
+		}
+		input = result{
+			Records: records,
+		}
 
-	// err = json.NewDecoder(resp.Body).Decode(input)
-	if err != nil {
-		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
+	} else {
+		listURL := "https://3312248.restlets.api.netsuite.com/app/site/hosting/restlet.nl?script=819&deploy=1&searchId=customsearch_wm_sales_orders_streaming_a"
+		config := oauth1.Config{
+			ConsumerKey:    consumerKey,
+			ConsumerSecret: consumerSecret,
+			Realm:          realm,
+		}
+		token := oauth1.NewToken(tokenKey, tokenSecret)
+		httpClient := config.Client(oauth1.NoContext, token)
+		req, _ := http.NewRequest("GET", listURL, nil)
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Accept", "application/json")
+
+		client := httpretry.NewCustomClient(httpClient)
+		resp, err := client.Do(req)
+		if err != nil {
+			log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+
+		var input result
+		err = json.Unmarshal(body, &input)
+
+		// err = json.NewDecoder(resp.Body).Decode(input)
+		if err != nil {
+			log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
+		}
 	}
 
 	N := 12
