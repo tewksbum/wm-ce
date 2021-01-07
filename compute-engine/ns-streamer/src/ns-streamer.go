@@ -191,7 +191,7 @@ func main() {
 			psresult := topic.Publish(ctx, &pubsub.Message{
 				Data: []byte(jsonString),
 			})
-			_, err = psresult.Get(ctx)
+			_, err := psresult.Get(ctx)
 			if err != nil {
 				log.Printf("Error could not pub order exceptions to pubsub: %v", err)
 			}
