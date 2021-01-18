@@ -58,6 +58,10 @@ type record struct {
 	Cat3       string `json:"cat_3"`
 	Cat4       string `json:"cat_4"`
 	Cat5       string `json:"cat_5"`
+	QOH        string `json:"qty_onhand"`
+	QOO        string `json:"qty_onorder"`
+	QtyOnHand  int64
+	QtyOnOrder int64
 }
 
 func init() {
@@ -152,7 +156,9 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				}()
 				rec.AvgCost, _ = strconv.ParseFloat(rec.Cost, 64)
 				rec.NetsuiteID, _ = strconv.ParseInt(rec.NSID, 10, 64)
-				_, err := db.Exec("CALL sp_upsert_product(?,?,?,?,?,?,?,?,?,?,?)", rec.Sku, rec.Title, rec.Type, rec.LOB, rec.AvgCost, rec.NetsuiteID, rec.Cat1, rec.Cat2, rec.Cat3, rec.Cat4, rec.Cat5)
+				rec.QtyOnHand, _ = strconv.ParseInt(rec.QOH, 10, 64)
+				rec.QtyOnOrder, _ = strconv.ParseInt(rec.QOO, 10, 64)
+				_, err := db.Exec("CALL sp_upsert_product(?,?,?,?,?,?,?,?,?,?,?,?,?)", rec.Sku, rec.Title, rec.Type, rec.LOB, rec.AvgCost, rec.NetsuiteID, rec.Cat1, rec.Cat2, rec.Cat3, rec.Cat4, rec.Cat5, rec.QtyOnHand, rec.QtyOnOrder)
 				if err != nil {
 					log.Printf("Error %v", err)
 				}
