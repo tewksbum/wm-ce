@@ -49,6 +49,9 @@ const getBucketFiles = async () => {
           break;
         case "frames":
         case "dd":
+        case "ddregular":
+        case "ddspring b":
+        case "ddholiday":
           remotePath = "/FRAMES/Input/";
           break;
         case "carpet":
