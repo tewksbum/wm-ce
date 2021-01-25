@@ -40,11 +40,10 @@ const getBucketFiles = async () => {
         case "fep":
         case "ffep":
         case "sfep":
-        case "wfep":       
-        case "fepwinter":
-        case "fepsummer":
-        case "fepfall":
-        case "fepspring":
+        case "wfep":
+        case "ffepfall":
+        case "sfepspring":
+        case "wfepwinter":
           remotePath = "/FEP/Input/";
           break;
         case "cwp":
