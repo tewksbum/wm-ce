@@ -166,7 +166,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.LastName = 1
 	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence", "hall assignment":
 		err.Dorm = 1
-	case "room", "room number", "room #":
+	case "room", "room number", "room #", "Room Space Description 2":
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
