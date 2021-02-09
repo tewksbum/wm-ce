@@ -44,14 +44,19 @@ const getBucketFiles = async () => {
         case "ffepfall":
         case "sfepspring":
         case "wfepwinter":
+        case "fepregular":
+        case "ffepregular":
+        case "sfepregular":
+        case "wfepregular":
           remotePath = "/FEP/Input/";
           break;
+        case "cwpregular":
         case "cwp":
         case "ocgifting":
           remotePath = "/CWP/Input/";
           break;
         case "frames":
-        case "dd":  
+        case "dd":        
         case "ddwinter":
         case "ddsummer":
         case "ddfall":
@@ -63,6 +68,7 @@ const getBucketFiles = async () => {
           break;
         case "carpet":
         case "car":
+        case "rhcregular":
           remotePath = "/RHC/Input/";
           break;
         case "linens":
@@ -74,6 +80,7 @@ const getBucketFiles = async () => {
         case "rhlsummer":
         case "rhlfall":
         case "rhlspring":
+        case "rhlregular":
           remotePath = "/RHL/Input/";
           break;
       }
