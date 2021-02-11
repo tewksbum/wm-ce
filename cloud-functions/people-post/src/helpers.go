@@ -1139,9 +1139,13 @@ func SetRedisKeyIfNotExists(keyparts []string) {
 	ms := msp.Get()
 	defer ms.Close()
 
-	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
+	result, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 1)
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 1, err)
+	}
+	if result == 1 {
+		// if able to set the key, set expiration
+		_, err = ms.Do("EXPIRE", strings.Join(keyparts, ":"), redisTemporaryExpiration)
 	}
 }
 
@@ -1149,9 +1153,13 @@ func SetRedisKeyTo0IfNotExists(keyparts []string) {
 	ms := msp.Get()
 	defer ms.Close()
 
-	_, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 0)
+	result, err := ms.Do("SETNX", strings.Join(keyparts, ":"), 0)
 	if err != nil {
 		log.Printf("Error SETNX value %v to %v, error %v", strings.Join(keyparts, ":"), 0, err)
+	}
+	if result == 1 {
+		// if able to set the key, set expiration
+		_, err = ms.Do("EXPIRE", strings.Join(keyparts, ":"), redisTemporaryExpiration)
 	}
 }
 

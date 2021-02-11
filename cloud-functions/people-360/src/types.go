@@ -203,6 +203,32 @@ type PeopleOutput struct {
 	PermS        MatchKeyField `json:"perms"`
 }
 
+type PeopleAddress struct { // address fields will be updated in golden as a set
+	SALUTATION MatchKeyField `json:"salutation"`
+	NICKNAME   MatchKeyField `json:"nickname"`
+	FNAME      MatchKeyField `json:"fname"`
+	FINITIAL   MatchKeyField `json:"finitial"`
+	LNAME      MatchKeyField `json:"lname"`
+	MNAME      MatchKeyField `json:"mname"`
+	AD1        MatchKeyField `json:"ad1"`
+	AD1NO      MatchKeyField `json:"ad1no"`
+	AD2        MatchKeyField `json:"ad2"`
+	AD3        MatchKeyField `json:"ad3"`
+	CITY       MatchKeyField `json:"city"`
+	STATE      MatchKeyField `json:"state"`
+	ZIP        MatchKeyField `json:"zip"`
+	ZIP5       MatchKeyField `json:"zip5"`
+	COUNTRY    MatchKeyField `json:"country"`
+	MAILROUTE  MatchKeyField `json:"mailroute"`
+	ADTYPE     MatchKeyField `json:"adtype"`
+	ADBOOK     MatchKeyField `json:"adbook"`
+	ADPARSER   MatchKeyField `json:"adparser"`
+	ADCORRECT  MatchKeyField `json:"adcorrect"`
+	ADVALID    MatchKeyField `json:"advalid"`
+	ZIPTYPE    MatchKeyField `json:"ziptype"`
+	RECORDTYPE MatchKeyField `json:"recordtype"`
+}
+
 type Signature360 struct {
 	OwnerID   string `json:"ownerId"`
 	Source    string `json:"source"`
@@ -231,6 +257,15 @@ type People360Output struct {
 	ExpiredSets  []string         `json:"expiredSets"`
 	Passthroughs []Passthrough360 `json:"passthroughs"`
 	MatchKeys    []MatchKey360    `json:"matchKeys"`
+}
+
+type GoldenOutput struct {
+	ID          string              `json:"id"`
+	Sponsor     string              `json:"sponsor"`
+	Signatures  []Signature         `json:"signatures"`
+	People      PeopleGoldenDS      `json:"people"`
+	ExternalIDs map[string][]string `json:"externalIds"` // for this map, key is the external source such as netsuite, value is a list of IDs
+	ExpiredIDs  []string            `json:"expiredIds"`
 }
 
 type PeopleSetDS struct {
