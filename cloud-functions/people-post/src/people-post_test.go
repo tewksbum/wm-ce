@@ -64,5 +64,5 @@ func TestGoogleGeocode(t *testing.T) {
 		ZIP:     MatchKeyField{Value: "19104"},
 		COUNTRY: MatchKeyField{Value: "US"},
 	}
-	CorrectAddressSmartyStreet(&po)
+	StandardizeAddressGoogleMap(&po)
 }

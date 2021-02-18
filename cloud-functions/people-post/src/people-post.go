@@ -97,7 +97,6 @@ var sb *storage.Client
 var msp *redis.Pool
 var fs *datastore.Client
 var gm *maps.Client
-var gmClient *http.Client
 
 var topicR *pubsub.Topic
 
@@ -128,13 +127,8 @@ func init() {
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 
-	gmClient = &http.Client{
-		Timeout: time.Second * 60, // Maximum of 60 secs
-	}
+	gm, _ = maps.NewClient(maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
 
-	gm, _ = maps.NewClient(maps.WithHTTPClient(gmClient), maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
-
-	log.Printf("init completed, pubsub topic gm: %v", gm)
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
@@ -571,7 +565,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
-					log.Fatalf("Error querying sets: %v", err)
+					log.Printf("Error querying sets: %v", err)
 				}
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
