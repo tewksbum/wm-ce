@@ -97,6 +97,7 @@ var sb *storage.Client
 var msp *redis.Pool
 var fs *datastore.Client
 var gm *maps.Client
+var gmClient *http.Client
 
 var topicR *pubsub.Topic
 
@@ -127,8 +128,13 @@ func init() {
 		Dial:        func() (redis.Conn, error) { return redis.Dial("tcp", os.Getenv("MEMSTORE")) },
 	}
 
-	gm, _ = maps.NewClient(maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
+	gmClient = &http.Client{
+		Timeout: time.Second * 60, // Maximum of 60 secs
+	}
 
+	gm, _ = maps.NewClient(maps.WithHTTPClient(gmClient), maps.WithAPIKey("AIzaSyBvLGRj_RzXIPxo58X1XVtrOs1tc7FwABs"))
+
+	log.Printf("init completed, pubsub topic gm: %v", gm)
 	log.Printf("init completed, pubsub topic name: %v", topic)
 }
 
