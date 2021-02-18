@@ -275,6 +275,7 @@ func reMilityBaseCity(val string) bool {
 func StandardizeAddressGoogleMap(mkOutput *PeopleOutput) {
 	addressInput := mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value + ", " + mkOutput.COUNTRY.Value
 	if mkOutput.COUNTRY.Value == "US" {
+		log.Printf("Google Maps init %v", addressInput)
 		addressInput = mkOutput.AD1.Value + ", " + mkOutput.AD2.Value + ", " + mkOutput.CITY.Value + ", " + mkOutput.STATE.Value + " " + mkOutput.ZIP.Value
 		if len(strings.TrimSpace(addressInput)) > 10 {
 			gmResult, err := gm.Geocode(ctx, &maps.GeocodingRequest{
