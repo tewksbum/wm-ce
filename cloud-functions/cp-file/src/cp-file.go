@@ -195,7 +195,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 			header := []string{
 				"School Code", "CRM", "Processor", "Sponsor", "Input Type", "Class Year", "Program", "Adcode", "Date Uploaded", "Order By Date", "List Type", "Salutation",
 				"Student First Name", "Student Last Name", "Street Address 1", "Street Address 2", "City", "State", "Zipcode", "Country", "Student's Email_1", "Student's Email_2",
-				"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email"}
+				"Parent_1's First Name", "Parent_1's Last Name", "Parent_1's Email", "Parent_2's First Name", "Parent_2's Last Name", "Parent_2's Email", "Portal List Id"}
 			records := [][]string{header}
 			header = append(header, "ADVALID")
 			badrecords := [][]string{header}
@@ -273,7 +273,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 				row := []string{
 					GetKVPValue(event.Passthrough, "schoolCode"),
 					GetKVPValue(event.Attributes, "classStanding"), //This is only for frames.
-					"",
+					GetKVPValue(event.Passthrough, "distCode"),
 					GetKVPValue(event.Passthrough, "schoolName"),
 					GetKVPValue(event.Passthrough, "inputType"),
 					schoolYearFormatter(GetKVPValue(event.Passthrough, "schoolYear"), GetKVPValue(event.Attributes, "classStanding")),
@@ -299,6 +299,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					"",
 					"",
 					"",
+					GetKVPValue(event.Passthrough, "portalListID"),
 				}
 
 				//only students with name and lastname
