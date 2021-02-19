@@ -553,9 +553,6 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 							//check if the element is empty
 							if len(strings.TrimSpace(allrows[j][i])) == 0 {
 								counter++
-							} else if len(strings.TrimSpace(allrows[j][i])) == 1 && strings.TrimSpace(allrows[j][i]) == "-" {
-								allrows[j][i] = ""
-								counter++
 							} else {
 								break
 							}
