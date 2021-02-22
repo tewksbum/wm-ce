@@ -120,7 +120,6 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
-	topicR = ps.Topic(os.Getenv("PSREPORT"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
