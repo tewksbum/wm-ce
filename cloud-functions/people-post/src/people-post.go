@@ -564,7 +564,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
-					log.Printf("Error querying sets error: %v search: %v", err, searchValue)
+					log.Fatalf("Error querying sets error: %v search: %v", err, searchValue)
 				}
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
@@ -735,7 +735,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 
 	psid, err := psresult.Get(ctx)
 	if err != nil {
-		log.Printf("%v Could not pub to pubsub error: %v: output: %v", input.Signature.EventID, err, string(outputJSON))
+		log.Fatalf("%v Could not pub to pubsub error: %v: output: %v", input.Signature.EventID, err, string(outputJSON))
 	} else {
 		log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
 		report := FileReport{
