@@ -265,6 +265,7 @@ object DataTransformer {
         .join(dfBillToNew.as("billtos"), $"orders.billto_value" === $"billtos.netsuite_key", "inner")
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
+        .withColumn("channel_key", coalesce($"channel_key", lit(999))) // set to Unampped if null
         .distinct()
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
@@ -398,6 +399,7 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
+        .withColumn("channel_key", coalesce($"channel_key", lit(999))) // set to Unampped if null
         .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
         .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
@@ -451,80 +453,80 @@ object DataTransformer {
       )
       .drop("desttype_key", "product_key")
 
-      // if not existing and not cancelled, add
-      val dsr1 = dfDSR
-      .where(dfDSR("existing") === false)
-      .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
-      .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
-      .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
-      .withColumn("total_discount", when(col("is_cancelled") === 1, 0).otherwise(col("total_discount")))
-      .withColumn("total_shipping", when(col("is_cancelled") === 1, 0).otherwise(col("total_shipping")))
-      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-      .agg(
-        sum("total_price").as("price"),
-        sum("total_cost").as("cost"),
-        sum("total_tax").as("tax"),
-        sum("total_discount").as("discount"),
-        sum("total_shipping").as("shipping")
-      )
+      // // if not existing and not cancelled, add
+      // val dsr1 = dfDSR
+      // .where(dfDSR("existing") === false)
+      // .withColumn("total_price", when(col("is_cancelled") === 1, 0).otherwise(col("total_price")))
+      // .withColumn("total_cost", when(col("is_cancelled") === 1, 0).otherwise(col("total_cost")))
+      // .withColumn("total_tax", when(col("is_cancelled") === 1, 0).otherwise(col("total_tax")))
+      // .withColumn("total_discount", when(col("is_cancelled") === 1, 0).otherwise(col("total_discount")))
+      // .withColumn("total_shipping", when(col("is_cancelled") === 1, 0).otherwise(col("total_shipping")))
+      // .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      // .agg(
+      //   sum("total_price").as("price"),
+      //   sum("total_cost").as("cost"),
+      //   sum("total_tax").as("tax"),
+      //   sum("total_discount").as("discount"),
+      //   sum("total_shipping").as("shipping")
+      // )
 
-      // if existing, and not cancelled ever, add the difference
-      var dsr2 = dfDSR
-      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
-      .withColumn("total_price", col("total_price") - col("prev_price"))
-      .withColumn("total_cost", col("total_cost") - col("prev_cost"))
-      .withColumn("total_tax", col("total_tax") - col("prev_tax"))
-      .withColumn("total_discount", col("total_discount") - col("prev_discount"))
-      .withColumn("total_shipping", col("total_shipping") - col("prev_shipping"))
-      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-      .agg(
-        sum("total_price").as("price"),
-        sum("total_cost").as("cost"),
-        sum("total_tax").as("tax"),
-        sum("total_discount").as("discount"),
-        sum("total_shipping").as("shipping")
-      )
+      // // if existing, and not cancelled ever, add the difference
+      // var dsr2 = dfDSR
+      // .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === false)
+      // .withColumn("total_price", col("total_price") - col("prev_price"))
+      // .withColumn("total_cost", col("total_cost") - col("prev_cost"))
+      // .withColumn("total_tax", col("total_tax") - col("prev_tax"))
+      // .withColumn("total_discount", col("total_discount") - col("prev_discount"))
+      // .withColumn("total_shipping", col("total_shipping") - col("prev_shipping"))
+      // .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      // .agg(
+      //   sum("total_price").as("price"),
+      //   sum("total_cost").as("cost"),
+      //   sum("total_tax").as("tax"),
+      //   sum("total_discount").as("discount"),
+      //   sum("total_shipping").as("shipping")
+      // )
 
-      // if existing and uncancelled
-      var dsr3 = dfDSR
-      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
-      .withColumn("total_price", col("total_price"))
-      .withColumn("total_cost", col("total_cost"))
-      .withColumn("total_tax", col("total_tax"))
-      .withColumn("total_discount", col("total_discount"))
-      .withColumn("total_shipping", col("total_shipping"))
-      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-      .agg(
-        sum("total_price").as("price"),
-        sum("total_cost").as("cost"),
-        sum("total_tax").as("tax"),
-        sum("total_discount").as("discount"),
-        sum("total_shipping").as("shipping")
-      )
+      // // if existing and uncancelled
+      // var dsr3 = dfDSR
+      // .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 0 && dfDSR("prev_cancelled") === true)
+      // .withColumn("total_price", col("total_price"))
+      // .withColumn("total_cost", col("total_cost"))
+      // .withColumn("total_tax", col("total_tax"))
+      // .withColumn("total_discount", col("total_discount"))
+      // .withColumn("total_shipping", col("total_shipping"))
+      // .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      // .agg(
+      //   sum("total_price").as("price"),
+      //   sum("total_cost").as("cost"),
+      //   sum("total_tax").as("tax"),
+      //   sum("total_discount").as("discount"),
+      //   sum("total_shipping").as("shipping")
+      // )
 
-      // if existing and now cancelled, subtract
-      var dsr4 = dfDSR
-      .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
-      .withColumn("total_price", -col("prev_price"))
-      .withColumn("total_cost", -col("prev_cost"))
-      .withColumn("total_tax", -col("prev_tax"))
-      .withColumn("total_discount", -col("total_discount"))
-      .withColumn("total_shipping", -col("total_shipping"))      
-      .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
-      .agg(
-        sum("total_price").as("price"),
-        sum("total_cost").as("cost"),
-        sum("total_tax").as("tax"),
-        sum("total_discount").as("discount"),
-        sum("total_shipping").as("shipping")
-      )
+      // // if existing and now cancelled, subtract
+      // var dsr4 = dfDSR
+      // .where(dfDSR("existing") === true && dfDSR("is_cancelled") === 1 && dfDSR("prev_cancelled") === false)
+      // .withColumn("total_price", -col("prev_price"))
+      // .withColumn("total_cost", -col("prev_cost"))
+      // .withColumn("total_tax", -col("prev_tax"))
+      // .withColumn("total_discount", -col("total_discount"))
+      // .withColumn("total_shipping", -col("total_shipping"))      
+      // .groupBy("schedule_key", "date_key", "channel_key", "lob_key", "is_dropship")
+      // .agg(
+      //   sum("total_price").as("price"),
+      //   sum("total_cost").as("cost"),
+      //   sum("total_tax").as("tax"),
+      //   sum("total_discount").as("discount"),
+      //   sum("total_shipping").as("shipping")
+      // )
 
-      var dsr = dsr1
-      .union(dsr2)
-      .union(dsr3)
-      .union(dsr4)
+      // var dsr = dsr1
+      // .union(dsr2)
+      // .union(dsr3)
+      // .union(dsr4)
 
-      upsertDSRFact(dsr.as[DailySalesFact].collect())
+      // upsertDSRFact(dsr.as[DailySalesFact].collect())
       print(" fee .")
       // process the fees
       val dfOrderFees = df
@@ -622,14 +624,11 @@ object DataTransformer {
         .withColumn("quantity", coalesce($"quantity", lit(1))) // set to 1 if null
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
-        .withColumn(
-          "product_key",
-          coalesce($"product_key", lit(72804))
-        ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("product_key", coalesce($"product_key", lit(72804))) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
-        .withColumn("program_key", lit(10092) ) // set to fixed value of 10092 = Unknown if we don't know what it is
-        .withColumn("sponsor_key", lit(5189) ) // set to fixed value of 5189 = Unknown if we don't know what it is
+        .withColumn("program_key", lit(10092) ) // set to fixed value of 10092 = Unknown 
+        .withColumn("sponsor_key", lit(5189) ) // set to fixed value of 5189 = Unknown 
         .distinct()
 
       batchOrderLinesFact(dfOrderFees.as[OrderLineFact].collect(), false)
