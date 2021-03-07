@@ -67,7 +67,8 @@ case class Line(
     shipping: Double,
     discount: Double,
     lineId: Option[String],
-    uniqueKey: Option[String]
+    uniqueKey: Option[String],
+    packageId: Option[Long]
 )
 case class Shipments(
     addressKey: Option[String],

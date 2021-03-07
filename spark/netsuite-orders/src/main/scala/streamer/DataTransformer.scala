@@ -374,6 +374,9 @@ object DataTransformer {
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .join(dfShipToNew.as("shiptos"), $"lines.shipto_value" === $"shiptos.netsuite_key", "leftouter")
         .drop("shipto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "type", "phone")
+        .join(OrderStreamer.dimProducts.as("kits"), $"lines.packageId" === $"kits.netsuite_id", "leftouter")
+        .drop("netsuite_id", "packageId", "sku", "title", "type", "lob_key", "avg_cost")
+        .withColumnRenamed("product_key", "kit_key")
         .join(OrderStreamer.dimProducts.as("products"), $"lines.itemId" === $"products.netsuite_id", "leftouter")
         .drop("netsuite_id", "itemId", "sku", "title", "type", "lob_key", "avg_cost")
         .join(OrderStreamer.dimLobs.as("lobs"), $"lines.lob" === $"lobs.lob_name", "leftouter")
@@ -401,6 +404,7 @@ object DataTransformer {
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
         .withColumn("channel_key", coalesce($"channel_key", lit(999))) // set to Unampped if null
         .withColumn("product_key", coalesce($"product_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("kit_key", coalesce($"kit_key", lit(72804)) ) // set to fixed value of 72804 if we don't know what it is
         .withColumn("desttype_key", coalesce($"desttype_key", lit(99))) // set to Unassigned if null
         .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
         .withColumn("program_key", coalesce($"program_key", lit(10092)) ) // set to fixed value of 10092 = Unknown if we don't know what it is
@@ -625,6 +629,7 @@ object DataTransformer {
         .withColumn("total_cost", coalesce($"total_cost", lit(0))) // set to 1 if null
         .withColumn("lob_key", coalesce($"lob_key", lit(99))) // set to unassigned if null
         .withColumn("product_key", coalesce($"product_key", lit(72804))) // set to fixed value of 72804 if we don't know what it is
+        .withColumn("kit_key", lit(72804)) // set to fixed value of 72804 if we don't know what it is
         .withColumn("shipto_key", lit("00000000-0000-0000-0000-000000000000"))
         .withColumn("desttype_key", lit(99))
         .withColumn("program_key", lit(10092) ) // set to fixed value of 10092 = Unknown 
