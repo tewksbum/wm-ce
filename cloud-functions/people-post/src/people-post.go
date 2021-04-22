@@ -92,6 +92,7 @@ var topic *pubsub.Topic
 var topic2 *pubsub.Topic
 var expire *pubsub.Topic
 var martopic *pubsub.Topic
+var topicPeople *pubsub.Topic
 var ap http.Client
 var sb *storage.Client
 var msp *redis.Pool
@@ -113,6 +114,7 @@ func init() {
 	martopic = ps.Topic(os.Getenv("PSOUTPUT"))
 	expire = ps.Topic(os.Getenv("PSOUTPUT"))
 	topicR = ps.Topic(os.Getenv("PSREPORT"))
+	topicPeople = ps.Topic(os.Getenv("PSOUTPUTPEOPLE"))
 
 	// martopic.PublishSettings.DelayThreshold = 1 * time.Second
 	// sb, _ := storage.NewClient(ctx)
@@ -564,7 +566,30 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
-					log.Fatalf("Error querying sets error: %v search: %v", err, searchValue)
+					log.Printf("Error querying sets error: %v search: %v", err, searchValue)
+					retry := strconv.Atoi(os.Getenv("RETRYMAX"))
+					counter := GetRedisIntValue([]string{input.Signature.OwnerID, g.ID.Name, "set", "querying"})
+					if counter == nil {
+						counter = 0
+					} 
+					counter += 1
+					if counter > retry {
+						log.Fatalf("%v Maximun retry for record: %v", input.Signature.OwnerID, input.Signature.RecordID)
+					}
+					log.Printf("%v Retry count: %v for record: %v", input.Signature.OwnerID, counter, input.Signature.RecordID)
+					SetRedisTempKeyWithValue([]string{input.Signature.OwnerID, g.ID.Name, "set", "querying"}, counter)
+					
+					//call the people-post topic
+					psresultPeople := topicPeople.Publish(ctx, &pubsub.Message{
+						Data: input,
+					})
+					psid, err := psresultPeople.Get(ctx)
+					if err != nil {
+						log.Fatalf("Could not pub to pubsub: %v", err)
+					} else {
+						log.Printf("pubbed to %v as message id %v: %v", topicPeople, psid, string(input))
+					}
+					return nil
 				}
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
