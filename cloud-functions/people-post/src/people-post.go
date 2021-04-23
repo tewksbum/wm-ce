@@ -567,27 +567,30 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
 					log.Printf("Error querying sets error: %v search: %v", err, searchValue)
-					retry := strconv.Atoi(os.Getenv("RETRYMAX"))
-					counter := GetRedisIntValue([]string{input.Signature.OwnerID, g.ID.Name, "set", "querying"})
-					if counter == nil {
+					retry, _ := strconv.Atoi(os.Getenv("RETRYMAX"))
+					var counter int
+					if SetRedisKeyTo0IfNotExists([]string{input.Signature.RecordID, "people-post-set-retry"}) == 0 {
 						counter = 0
-					} 
+					} else {
+						counter = GetRedisIntValue([]string{input.Signature.RecordID, "people-post-set-retry"})
+					}
 					counter += 1
 					if counter > retry {
 						log.Fatalf("%v Maximun retry for record: %v", input.Signature.OwnerID, input.Signature.RecordID)
 					}
 					log.Printf("%v Retry count: %v for record: %v", input.Signature.OwnerID, counter, input.Signature.RecordID)
-					SetRedisTempKeyWithValue([]string{input.Signature.OwnerID, g.ID.Name, "set", "querying"}, counter)
+					SetRedisValueWithExpiration([]string{input.Signature.RecordID, "people-post-set-retry"}, counter)
 					
 					//call the people-post topic
+					outputPeopleJSON, _ := json.Marshal(input)
 					psresultPeople := topicPeople.Publish(ctx, &pubsub.Message{
-						Data: input,
+						Data: outputPeopleJSON,
 					})
 					psid, err := psresultPeople.Get(ctx)
 					if err != nil {
 						log.Fatalf("Could not pub to pubsub: %v", err)
 					} else {
-						log.Printf("pubbed to %v as message id %v: %v", topicPeople, psid, string(input))
+						log.Printf("pubbed to %v as message id %v: %v", topicPeople, psid, string(outputPeopleJSON))
 					}
 					return nil
 				}

@@ -506,7 +506,6 @@ func PubMessage(topic *pubsub.Topic, data []byte) {
 		Data: data,
 	})
 	psid, err := psresult.Get(ctx)
-	_, err = psresult.Get(ctx)
 	if err != nil {
 		log.Fatalf("Could not pub to pubsub: %v", err)
 	} else {
