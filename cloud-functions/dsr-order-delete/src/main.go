@@ -1,16 +1,22 @@
-package dsrorderlist
+package dsrschool
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
+	"time"
+
+	"github.com/dghubble/oauth1"
+	// cloud sql
+	_ "github.com/go-sql-driver/mysql"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/dghubble/oauth1"
-	"github.com/ybbus/httpretry"
 
 	secretmanager "cloud.google.com/go/secretmanager/apiv1beta1"
 	secretmanagerpb "google.golang.org/genproto/googleapis/cloud/secretmanager/v1beta1"
@@ -23,9 +29,8 @@ var consumerSecret string
 var tokenSecret string
 var tokenKey string
 var realm string
-var ps *pubsub.Client
-var topic *pubsub.Topic
 var ctx context.Context
+var db *sql.DB
 
 type secretsNS struct {
 	ConsumerKey    string `json:"consumerKey"`
@@ -35,12 +40,13 @@ type secretsNS struct {
 	Realm          string `json:"realm"`
 }
 
-type result struct {
-	Records []record `json:"result"`
-}
-
 type record struct {
-	ID string `json:"id"`
+	RecordType string `json:"recordType"`
+	Values     struct {
+		Name        string `json:"name"`
+		DeletedDate string `json:"deleteddate"`
+		DeletedAt   time.Time
+	}
 }
 
 func init() {
@@ -69,64 +75,82 @@ func init() {
 	tokenKey = nsSecret.TokenKey
 	realm = nsSecret.Realm
 
-	ps, _ = pubsub.NewClient(ctx, os.Getenv("GCP_PROJECT"))
-	topic = ps.Topic(os.Getenv("ORDER_FETCH_PUBSUB"))
+	secretReq = &secretmanagerpb.AccessSecretVersionRequest{
+		Name: os.Getenv("DW_SECRET"),
+	}
+	secretresult, err = smClient.AccessSecretVersion(ctx, secretReq)
+	if err != nil {
+		log.Fatalf("failed to get secret: %v", err)
+	}
+
+	secretsData2 := secretresult.Payload.Data
+	dsn := string(secretsData2)
+
+	db, err = sql.Open("mysql", dsn)
+	if err != nil {
+		log.Printf("error opening db %v", err)
+	}
 }
 
 func Run(ctx context.Context, m *pubsub.Message) error {
-	log.Printf("getting list")
+	NSDateTimeFormat := "1/2/2006 3:04 pm"
+
+	listURL := os.Getenv("DELETEDORDER_LIST_URL")
 	config := oauth1.Config{
 		ConsumerKey:    consumerKey,
 		ConsumerSecret: consumerSecret,
 		Realm:          realm,
 	}
 	token := oauth1.NewToken(tokenKey, tokenSecret)
+
 	httpClient := config.Client(oauth1.NoContext, token)
-	listURL := os.Getenv("ORDERS_LIST_URL")
 	req, _ := http.NewRequest("GET", listURL, nil)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	client := httpretry.NewCustomClient(httpClient)
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		log.Fatalf("FATAL ERROR Unable to send request to netsuite: error %v", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-
-	var input result
+	log.Printf("Received body %v", string(body))
+	var input []record
 	err = json.Unmarshal(body, &input)
 
 	// err = json.NewDecoder(resp.Body).Decode(input)
 	if err != nil {
 		log.Printf("FATAL ERROR Unable to decode netsuite response: error %v", err)
 	}
-
-	log.Printf("distributing %v orders for fetching", len(input.Records))
-	batchSize := 5
-	for i := 0; i < len(input.Records); i += batchSize {
-		ids := []string{}
-		e := i + batchSize
-		if e > len(input.Records) {
-			e = len(input.Records)
+	if len(string(body)) > 10 {
+		N := 20
+		wg := new(sync.WaitGroup)
+		sem := make(chan struct{}, N)
+		log.Printf("Running delete for %v orders", len(input))
+		for _, rec := range input {
+			wg.Add(1)
+			go func(rec record) {
+				defer wg.Done()
+				sem <- struct{}{}
+				defer func() {
+					// Reading from the channel decrements the semaphore
+					// (frees up buffer slot).
+					<-sem
+				}()
+				if strings.HasPrefix(rec.Values.Name, "Sales Order #") {
+					rec.Values.DeletedAt, _ = time.Parse(NSDateTimeFormat, rec.Values.DeletedDate)
+					log.Printf("Marking order %v as deleted", rec.Values.Name[13:])
+					_, err := db.Exec("CALL sp_delete_order (?, ?)", rec.Values.Name[13:], rec.Values.DeletedAt)
+					if err != nil {
+						log.Printf("Error %v", err)
+					}
+				}
+			}(rec)
 		}
-		for _, r := range input.Records[i:e] {
-			if len(r.ID) > 0 {
-				ids = append(ids, r.ID)
-			}
-		}
-		log.Printf("pubbing %v orders", len(ids))
-		data, _ := json.Marshal(ids)
-		psresult := topic.Publish(ctx, &pubsub.Message{
-			Data: data,
-		})
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Printf("Error could not pub order exceptions to pubsub: %v", err)
-		}
+		wg.Wait()
+	} else {
+		log.Printf("Nothing to update")
 	}
-
 	return nil
 }
