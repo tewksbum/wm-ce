@@ -8,7 +8,10 @@ import (
 	"sort"
 	"strings"
 	"unicode"
+	"time"
+	"context"
 
+	"cloud.google.com/go/datastore"
 	"cloud.google.com/go/pubsub"
 	"github.com/fatih/structs"
 	"github.com/gomodule/redigo/redis"
@@ -547,7 +550,7 @@ func validateTitle(title string) string {
 	return title
 }
 
-func StoreGoldenRecordWithTimeout(ctx context.Context, goldenKey Key, goldenDS *PeopleGoldenDS) (Result, error) {
+func StoreGoldenRecordWithTimeout(ctx context.Context, goldenKey *datastore.Key, goldenDS *PeopleGoldenDS) (*datastore.Key, error) {
 	ctx2, cancel := context.WithTimeout(ctx, 120*time.Second)
 	defer cancel()  // releases resources if slowOperation completes before timeout elapses
 	return fs.Put(ctx2, goldenKey, &goldenDS)
