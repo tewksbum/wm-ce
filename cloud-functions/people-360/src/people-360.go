@@ -673,7 +673,7 @@ func People360(ctx context.Context, m PubSubMessage) error {
 		goldenDS.Search = GetPeopleGoldenSearchFields(&goldenDS)
 		goldenJSON, _ := json.Marshal(goldenDS)
 		log.Printf("writing golden %v", string(goldenJSON))
-		if _, err := fs.Put(ctx, goldenKey, &goldenDS); err != nil {
+		if _, err := StoreGoldenRecordWithTimeout(ctx, goldenKey, &goldenDS); err != nil {
 			log.Printf("Error: storing golden record with sig %v, error %v", input.Signature, err)
 		}
 

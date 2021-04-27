@@ -546,3 +546,9 @@ func validateTitle(title string) string {
 	}
 	return title
 }
+
+func StoreGoldenRecordWithTimeout(ctx context.Context, goldenKey Key, goldenDS *PeopleGoldenDS) (Result, error) {
+	ctx2, cancel := context.WithTimeout(ctx, 120*time.Second)
+	defer cancel()  // releases resources if slowOperation completes before timeout elapses
+	return fs.Put(ctx2, goldenKey, &goldenDS)
+}
