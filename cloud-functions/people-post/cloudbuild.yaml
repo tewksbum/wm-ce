@@ -11,6 +11,7 @@ steps:
     "--timeout", "60",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "5",
+    "--retry",
     "--vpc-connector", "${_VPC_CONNECTOR}"
     ]
     env: ['GOPATH=/gopath']
