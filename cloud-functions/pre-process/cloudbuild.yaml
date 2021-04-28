@@ -8,7 +8,7 @@ steps:
     "--runtime","go111", 
     "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
     "--project", "${PROJECT_ID}", 
-    "--timeout", "540",
+    "--timeout", "60",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--vpc-connector", "${_VPC_CONNECTOR}",
     "--max-instances", "5",
