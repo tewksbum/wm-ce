@@ -22,6 +22,8 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
+// fix
+
 func MapNER(column InputColumn, ner map[string]float64) {
 	for k, v := range ner {
 		switch k {
