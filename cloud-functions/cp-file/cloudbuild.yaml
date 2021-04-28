@@ -10,7 +10,6 @@ steps:
     "--timeout", "540",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--max-instances", "5",
-    "--retry",
     "--egress-settings", "all",
     "--vpc-connector", "${_VPC_CONNECTOR}",
     "--retry"
