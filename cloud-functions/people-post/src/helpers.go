@@ -1,7 +1,6 @@
 package peoplepost
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
