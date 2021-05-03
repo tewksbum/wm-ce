@@ -17,7 +17,7 @@ import (
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/storage"
 	"github.com/gomodule/redigo/redis"
-	"github.com/xojoc/useragent"
+	// "github.com/xojoc/useragent"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 )
@@ -105,7 +105,7 @@ func GetPeopleERR(column string) PeopleERR {
 	key := strings.TrimSpace(strings.ToLower(column))
 	//TODO: go through and take anything ownerspecific out of this list... and make it cached dynamic
 	switch key {
-	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first", "first name (given name)", "first name preferred", "legal name", "student_first name", "first nam", "students first name", "preferred first name":
+	case "fname", "f name", "f_name", "first name", "firstname", "name first", "namefirst", "name_first", "first_name", "first", "nickname", "given name", "given_name", "student first name", "student first", "student-first", "preferred name", "name preferred", "chosen name", "patron.first name", "firstpreferredname", "prei_name", "std first", "fn", "cx first name", "applicant: preferred name mailing", "greeting_name", "preferred", "irst name", "nick/first", "first name (given name)", "first name preferred", "legal name", "student_first name", "first nam", "students first name", "preferred first name", "studentnamepreferred":
 		err.FirstName = 1
 	case "lname", "lname ", "l name ", "l_name", "last name", "last_name", "name last", "namelast", "name_last", "last", "surname", "student last name", "patron.last name", "keyname", "student-last", "student last", "std last", "ln", "cx last name", "lash name", "lastname", "last ame", "last name (surname)", "student_last", "students last name", "preferred last name":
 		err.LastName = 1
@@ -113,7 +113,7 @@ func GetPeopleERR(column string) PeopleERR {
 		err.MiddleName = 1
 	case "suffix", "jr., iii, etc.", "sfix", "student_suffix":
 		err.Suffix = 1
-	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1", "home address (street)", "street1_line1", "str1", "line_adr1":
+	case "ad", "ad1", "ad1 ", "add1", "add 1", "address 1", "ad 1", "address line 1", "street line 1", "street address 1", "streetaddress1", "address1", "street", "street_line1", "street address line 1", "addr_line_1", "address street line 1", "street 1", "street address", "permanent street 1", "parent street", "home street", "home address line 1", "hom address line 1", "number_and_street", "street1_pr", "pa street address line 1", "line1", "line 1", "delivery address", "current delivery address", "address line1", "addr1", "permanent address street 1", "prstr1", "home addr svsu", "home addr1", "address (preferred one line)", "parent street 1", "add line1", "active street 1", "home mailing 1", "addrline1", "home address (street)", "street1_line1", "str1", "line_adr1", "address_line_1":
 		err.Address1 = 1
 	case "ad2", "add2", "ad 2", "address 2", "address line 2", "street line 2", "street address 2", "streetaddress2", "address2", "street_line2", "street 2", "street address line 2", "addr_line_2", "address1b", "permanent street 2", "home street 2", "home address line 2", "hom address line 2", "parent street 2", "street2_pr", "pa street address line 2", "line2", "line 2", "address street line 2", "address line2", "home addr2", "street2", "add line2", "active street 2", "home mailing 2", "addrline2", "street1_line2", "apt #", "str2", "line_adr2":
 		err.Address2 = 1
@@ -135,11 +135,11 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ZipCode = 1
 	case "county":
 		err.County = 1
-	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4", "natn_desc1":
+	case "country", "country (blank for us)", "home_country", "home country", "address country", "address country name", "pa nation", "nation", "country description", "parent nation", "active country", "country description 4", "natn_desc1", "cntry", "perm cntry":
 		err.Country = 1
 	case "address", "student address", "parent address", "home address", "permanent address":
 		err.FullAddress = 1
-	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:", "winthrop email", "e-mail":
+	case "email", "student email", "email ", "email1", "email address", "stu_email", "student e mail", "studentemail", "student personal email address", "student emails", "student e-mail", "student personal email", "student email address", "email2", "email_address_2", "student school email", "naz_email", "student school email_1", "student school email_2", "email address:", "winthrop email", "e-mail", "student e- mail", "primary_email", "e-mail address":
 		err.Email = 1
 	case "par_email", "par_email1", "parent e-mail", "par email", "parent email", "parent email address", "par_email2", "father_email", "mother_email", "parent_1's email", "parent_2's email", "parent's e-mail address", "parent/guardian email address:", "parent/guardian email", "p1_email", "emergency contact email":
 		// err.Email = 1
@@ -160,13 +160,13 @@ func GetPeopleERR(column string) PeopleERR {
 		err.ParentFirstName = 1
 		err.ParentLastName = 1
 		err.ParentName = 1
-	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name", "student full name", "student", "student fullname", "student_name", "sort_name":
+	case "fullname", "full name", "full_name", "full name (last, first)", "student name", "students name", "application: applicant", "last, first", "ekuname", "name", "individual name", "student name - last, first, middle", "lfm name", "preferredname", "entry name", "name lfm", "resident: full name", "studentname", "person name", "student full name", "student", "student fullname", "student_name", "sort_name", "lastname, first name":
 		err.FullName = 1
 		err.FirstName = 1
 		err.LastName = 1
 	case "dorm", "hall", "building", "building name", "dormitory", "apartment", "fraternity", "residence", "hall assignment":
 		err.Dorm = 1
-	case "room", "room number", "room #":
+	case "room", "room number", "room #", "room space description 2":
 		err.Room = 1
 	case "organization":
 		err.Organization = 1
@@ -302,204 +302,204 @@ func GetPeopleERR(column string) PeopleERR {
 	return err
 }
 
-func GetCampaignERR(column string) CampaignERR {
-	var err CampaignERR
-	key := strings.ToLower(column)
-	switch key {
-	case "campaign id", "campaignid", "campaign.id":
-		err.CampaignID = 1
-	case "campaign", "campaign name", "campaignname", "campaign.name":
-		err.Name = 1
-	case "campaign type", "campaigntype", "campaign.type":
-		err.Type = 1
-	case "campaign budget", "campaignbudget", "budget", "campaign.budget":
-		err.Budget = 1
-	case "campaign channel", "campaignchannel", "campaign.channel":
-		err.Channel = 1
-	case "campaign start date", "campaign startdate", "campaignstartdate", "campaign.startdate":
-		err.StartDate = 1
-	case "campaign end date", "campaign enddate", "campaignenddate", "campaignend.date":
-		err.EndDate = 1
-	}
-	return err
-}
+// func GetCampaignERR(column string) CampaignERR {
+// 	var err CampaignERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "campaign id", "campaignid", "campaign.id":
+// 		err.CampaignID = 1
+// 	case "campaign", "campaign name", "campaignname", "campaign.name":
+// 		err.Name = 1
+// 	case "campaign type", "campaigntype", "campaign.type":
+// 		err.Type = 1
+// 	case "campaign budget", "campaignbudget", "budget", "campaign.budget":
+// 		err.Budget = 1
+// 	case "campaign channel", "campaignchannel", "campaign.channel":
+// 		err.Channel = 1
+// 	case "campaign start date", "campaign startdate", "campaignstartdate", "campaign.startdate":
+// 		err.StartDate = 1
+// 	case "campaign end date", "campaign enddate", "campaignenddate", "campaignend.date":
+// 		err.EndDate = 1
+// 	}
+// 	return err
+// }
 
-func GetConsignmentERR(column string) ConsignmentERR {
-	var err ConsignmentERR
-	key := strings.ToLower(column)
-	switch key {
-	case "ship date", "shipdate":
-		err.ShipDate = 1
-	case "shipment", "consignment", "consignment id", "consignmentid":
-		err.ID = 1
-	}
+// func GetConsignmentERR(column string) ConsignmentERR {
+// 	var err ConsignmentERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "ship date", "shipdate":
+// 		err.ShipDate = 1
+// 	case "shipment", "consignment", "consignment id", "consignmentid":
+// 		err.ID = 1
+// 	}
 
-	// adding logic for flattened order source
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "consignments") && strings.Contains(key, ".id") {
-		err.ID = 1
-	}
+// 	// adding logic for flattened order source
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "consignments") && strings.Contains(key, ".id") {
+// 		err.ID = 1
+// 	}
 
-	return err
-}
+// 	return err
+// }
 
-func GetEventERR(column string) EventERR {
-	var err EventERR
-	key := strings.ToLower(column)
-	switch key {
-	case "event id", "eventid", "event.id":
-		err.ID = 1
-	case "event type", "eventtype", "event.type":
-		err.Type = 1
-	case "campaign id", "campaignid", "campaign.id":
-		err.CampaignID = 1
-	case "browser":
-		err.Browser = 1
-	case "channel":
-		err.Channel = 1
-	case "os":
-		err.OS = 1
-	case "domain":
-		err.Domain = 1
-	case "url":
-		err.URL = 1
-	case "geo", "lat", "long":
-		err.Location = 1
-	case "referrer":
-		err.Referrer = 1
-	case "searchterm":
-		err.SearchTerm = 1
-	}
-	return err
-}
+// func GetEventERR(column string) EventERR {
+// 	var err EventERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "event id", "eventid", "event.id":
+// 		err.ID = 1
+// 	case "event type", "eventtype", "event.type":
+// 		err.Type = 1
+// 	case "campaign id", "campaignid", "campaign.id":
+// 		err.CampaignID = 1
+// 	case "browser":
+// 		err.Browser = 1
+// 	case "channel":
+// 		err.Channel = 1
+// 	case "os":
+// 		err.OS = 1
+// 	case "domain":
+// 		err.Domain = 1
+// 	case "url":
+// 		err.URL = 1
+// 	case "geo", "lat", "long":
+// 		err.Location = 1
+// 	case "referrer":
+// 		err.Referrer = 1
+// 	case "searchterm":
+// 		err.SearchTerm = 1
+// 	}
+// 	return err
+// }
 
-func GetOrderERR(column string) OrderERR {
-	var err OrderERR
-	key := strings.ToLower(column)
-	switch key {
-	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
-		err.ID = 1
-	case "order number", "ordernumber", "full order number", "full ordernumber",
-		"fullorder number", "fullordernumber", "ecometryordernumber":
-		err.Number = 1
-	case "order date", "orderdate", "invoice date", "invoicedate",
-		"placed date", "placeddate", "created at", "createdat":
-		err.Date = 1
-	case "order subtotal", "ordersubtotal", "subtotal":
-		err.SubTotal = 1
-	case "order discount", "orderdiscount", "discount":
-		err.Discount = 1
-	case "order shipping", "ordershipping", "shipping":
-		err.Shipping = 1
-	case "order tax", "ordertax", "tax":
-		err.Tax = 1
-	case "order total", "ordertotal", "total":
-		err.Total = 1
-	// for de-nested node case...
-	case "order.ecometryordernumber":
-		err.Number = 1
-	case "order.ektronuserid":
-		err.CustomerID = 1
-	case "order.placedat":
-		err.Date = 1
-	case "order.ordersubtotal", "order.subtotal":
-		err.SubTotal = 1
-	case "order.orderdiscount", "order.discount":
-		err.Discount = 1
-	case "order.ordershipping", "order.shipping":
-		err.Shipping = 1
-	case "order.ordertax", "order.tax":
-		err.Tax = 1
-	case "order.total":
-		err.Total = 1
-	case "order.channel":
-		err.Channel = 1
-	}
+// func GetOrderERR(column string) OrderERR {
+// 	var err OrderERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "orderid", "order id", "invoiceid", "invoice id", "order.id":
+// 		err.ID = 1
+// 	case "order number", "ordernumber", "full order number", "full ordernumber",
+// 		"fullorder number", "fullordernumber", "ecometryordernumber":
+// 		err.Number = 1
+// 	case "order date", "orderdate", "invoice date", "invoicedate",
+// 		"placed date", "placeddate", "created at", "createdat":
+// 		err.Date = 1
+// 	case "order subtotal", "ordersubtotal", "subtotal":
+// 		err.SubTotal = 1
+// 	case "order discount", "orderdiscount", "discount":
+// 		err.Discount = 1
+// 	case "order shipping", "ordershipping", "shipping":
+// 		err.Shipping = 1
+// 	case "order tax", "ordertax", "tax":
+// 		err.Tax = 1
+// 	case "order total", "ordertotal", "total":
+// 		err.Total = 1
+// 	// for de-nested node case...
+// 	case "order.ecometryordernumber":
+// 		err.Number = 1
+// 	case "order.ektronuserid":
+// 		err.CustomerID = 1
+// 	case "order.placedat":
+// 		err.Date = 1
+// 	case "order.ordersubtotal", "order.subtotal":
+// 		err.SubTotal = 1
+// 	case "order.orderdiscount", "order.discount":
+// 		err.Discount = 1
+// 	case "order.ordershipping", "order.shipping":
+// 		err.Shipping = 1
+// 	case "order.ordertax", "order.tax":
+// 		err.Tax = 1
+// 	case "order.total":
+// 		err.Total = 1
+// 	case "order.channel":
+// 		err.Channel = 1
+// 	}
 
-	return err
-}
+// 	return err
+// }
 
-func GetOrderDetailERR(column string) OrderDetailERR {
-	var err OrderDetailERR
-	key := strings.ToLower(column)
-	switch key {
-	case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
-		err.ID = 1
-	}
+// func GetOrderDetailERR(column string) OrderDetailERR {
+// 	var err OrderDetailERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "order detail id", "orderdetail id", "orderdetailid", "row", "line":
+// 		err.ID = 1
+// 	}
 
-	// adding logic for flattened order source
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
-		err.ID = 1
-	}
-	if strings.Contains(key, "ordernumber") {
-		err.OrderNumber = 1
-	}
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".orderid") {
-		err.OrderID = 1
-	}
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".productid") {
-		err.ProductID = 1
-	}
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
-		err.ProductSKU = 1
-	}
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
-		err.ProductQuantity = 1
-	}
-	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemlob") {
-		err.MasterCategory = 1
-	}
+// 	// adding logic for flattened order source
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".id") {
+// 		err.ID = 1
+// 	}
+// 	if strings.Contains(key, "ordernumber") {
+// 		err.OrderNumber = 1
+// 	}
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".orderid") {
+// 		err.OrderID = 1
+// 	}
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".productid") {
+// 		err.ProductID = 1
+// 	}
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemsku") {
+// 		err.ProductSKU = 1
+// 	}
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".quantity") {
+// 		err.ProductQuantity = 1
+// 	}
+// 	if strings.Contains(key, "order.consignments") && strings.Contains(key, "shipments") && strings.Contains(key, "shipitems") && strings.Contains(key, ".itemlob") {
+// 		err.MasterCategory = 1
+// 	}
 
-	return err
-}
+// 	return err
+// }
 
-func GetProductERR(column string) ProductERR {
-	var err ProductERR
-	key := strings.ToLower(column)
-	switch key {
-	case "product name", "productname", "prod name", "prodname", "product.name":
-		err.Name = 1
-	case "product description", "productdescription", "prod description", "product.description",
-		"proddescription", "product desc", "productdesc", "prod desc",
-		"proddesc", "p desc", "pdesc":
-		err.Description = 1
-	case "product size", "productsize", "prod size", "product.size",
-		"p size", "psize", "size":
-		err.Size = 1
-	case "product color", "productcolor", "prod color", "product.color",
-		"p color", "pcolor", "color":
-		err.Color = 1
-	case "product unit price", "productunit price", "prod unit price", "product.unitprice",
-		"product unitprice", "productunitprice", "prod unitprice",
-		"p unit price", "punit price", "p unitprice", "punitprice",
-		"unit price", "unitprice":
-		err.UnitPrice = 1
-	case "product type", "producttype", "prod type", "product.type",
-		"p type", "ptype", "type":
-		err.Type = 1
-	case "product vendorid", "productvendorid", "prod vendorid",
-		"p vendorid", "pvendorid", "vendorid":
-		err.VendorID = 1
-	case "product vendor", "productvendor", "prod vendor",
-		"p vendor", "pvendor", "vendor":
-		err.Vendor = 1
-	case "product cost", "productcost", "prod cost", "product.cost",
-		"p cost", "pcost", "cost":
-		err.Cost = 1
-	case "product stars", "productstars", "prod stars", "product.stars",
-		"p stars", "pstars", "stars":
-		err.Stars = 1
-	case "product category", "productcategory", "product cat", "product.category",
-		"productcat", "prod cat", "prodcat", "p cat", "pcat":
-		err.Category = 1
-	case "product margin", "productmargin", "prod margin", "product.margin",
-		"p margin", "pmargin", "margin", "contibution":
-		err.Margin = 1
-	case "contains", "bundle items", "bundleitems", "bundled items", "bundleditems",
-		"kit items", "kititems":
-		err.Contains = 1
-	}
-	return err
-}
+// func GetProductERR(column string) ProductERR {
+// 	var err ProductERR
+// 	key := strings.ToLower(column)
+// 	switch key {
+// 	case "product name", "productname", "prod name", "prodname", "product.name":
+// 		err.Name = 1
+// 	case "product description", "productdescription", "prod description", "product.description",
+// 		"proddescription", "product desc", "productdesc", "prod desc",
+// 		"proddesc", "p desc", "pdesc":
+// 		err.Description = 1
+// 	case "product size", "productsize", "prod size", "product.size",
+// 		"p size", "psize", "size":
+// 		err.Size = 1
+// 	case "product color", "productcolor", "prod color", "product.color",
+// 		"p color", "pcolor", "color":
+// 		err.Color = 1
+// 	case "product unit price", "productunit price", "prod unit price", "product.unitprice",
+// 		"product unitprice", "productunitprice", "prod unitprice",
+// 		"p unit price", "punit price", "p unitprice", "punitprice",
+// 		"unit price", "unitprice":
+// 		err.UnitPrice = 1
+// 	case "product type", "producttype", "prod type", "product.type",
+// 		"p type", "ptype", "type":
+// 		err.Type = 1
+// 	case "product vendorid", "productvendorid", "prod vendorid",
+// 		"p vendorid", "pvendorid", "vendorid":
+// 		err.VendorID = 1
+// 	case "product vendor", "productvendor", "prod vendor",
+// 		"p vendor", "pvendor", "vendor":
+// 		err.Vendor = 1
+// 	case "product cost", "productcost", "prod cost", "product.cost",
+// 		"p cost", "pcost", "cost":
+// 		err.Cost = 1
+// 	case "product stars", "productstars", "prod stars", "product.stars",
+// 		"p stars", "pstars", "stars":
+// 		err.Stars = 1
+// 	case "product category", "productcategory", "product cat", "product.category",
+// 		"productcat", "prod cat", "prodcat", "p cat", "pcat":
+// 		err.Category = 1
+// 	case "product margin", "productmargin", "prod margin", "product.margin",
+// 		"p margin", "pmargin", "margin", "contibution":
+// 		err.Margin = 1
+// 	case "contains", "bundle items", "bundleitems", "bundled items", "bundleditems",
+// 		"kit items", "kititems":
+// 		err.Contains = 1
+// 	}
+// 	return err
+// }
 
 func PubMessage(topic *pubsub.Topic, data []byte) {
 	psresult := topic.Publish(ctx, &pubsub.Message{
@@ -588,23 +588,23 @@ func GetPeopleVER(column *InputColumn) PeopleVER {
 	return result
 }
 
-func GetEventVER(column *InputColumn) EventVER {
-	var val = strings.TrimSpace(column.Value)
-	// log.Printf("features Event values is %v", val)
-	val = RemoveDiacritics(val)
-	browser := useragent.Parse(val)
-	isBrowser := true
-	if browser == nil {
-		isBrowser = false
-	}
-	result := EventVER{
-		IS_BROWSER: isBrowser,
-		IS_CHANNEL: ContainsBool(listChannels, val),
-	}
-	// columnJ, _ := json.Marshal(result)
-	// log.Printf("current Event VER %v", string(columnJ))
-	return result
-}
+// func GetEventVER(column *InputColumn) EventVER {
+// 	var val = strings.TrimSpace(column.Value)
+// 	// log.Printf("features Event values is %v", val)
+// 	val = RemoveDiacritics(val)
+// 	browser := useragent.Parse(val)
+// 	isBrowser := true
+// 	if browser == nil {
+// 		isBrowser = false
+// 	}
+// 	result := EventVER{
+// 		IS_BROWSER: isBrowser,
+// 		IS_CHANNEL: ContainsBool(listChannels, val),
+// 	}
+// 	// columnJ, _ := json.Marshal(result)
+// 	// log.Printf("current Event VER %v", string(columnJ))
+// 	return result
+// }
 
 func GetHash(s string) uint32 {
 	h := fnv.New32a()

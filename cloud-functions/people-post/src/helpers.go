@@ -864,52 +864,52 @@ func ExtractMPRCounter(columnName string) int {
 	// if we don't find anything intersting, then return 0 and let the caller figure out
 	return 0
 }
+//We don't use this in people-post
+// func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
+// 	var output Output
+// 	output.Signature = input.Signature
+// 	output.Signature.FiberType = recordType
+// 	if len(suffix) > 0 {
+// 		output.Signature.RecordID += suffix
+// 	}
+// 	output.Passthrough = input.Passthrough
 
-func PubRecord(ctx context.Context, input *Input, mkOutput PeopleOutput, suffix string, recordType string) {
-	var output Output
-	output.Signature = input.Signature
-	output.Signature.FiberType = recordType
-	if len(suffix) > 0 {
-		output.Signature.RecordID += suffix
-	}
-	output.Passthrough = input.Passthrough
+// 	output.MatchKeys = mkOutput
 
-	output.MatchKeys = mkOutput
+// 	outputJSON, _ := json.Marshal(output)
+// 	if recordType == "mar" {
+// 		psresult := martopic.Publish(ctx, &pubsub.Message{
+// 			Data: outputJSON,
+// 			Attributes: map[string]string{
+// 				"type":   "people",
+// 				"source": "post",
+// 			},
+// 		})
+// 		psid, err := psresult.Get(ctx)
+// 		_, err = psresult.Get(ctx)
+// 		if err != nil {
+// 			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+// 		} else {
+// 			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+// 		}
+// 	} else {
+// 		psresult := topic.Publish(ctx, &pubsub.Message{
+// 			Data: outputJSON,
+// 			Attributes: map[string]string{
+// 				"type":   "people",
+// 				"source": "post",
+// 			},
+// 		})
+// 		psid, err := psresult.Get(ctx)
+// 		_, err = psresult.Get(ctx)
+// 		if err != nil {
+// 			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
+// 		} else {
+// 			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
+// 		}
+// 	}
 
-	outputJSON, _ := json.Marshal(output)
-	if recordType == "mar" {
-		psresult := martopic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-			Attributes: map[string]string{
-				"type":   "people",
-				"source": "post",
-			},
-		})
-		psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
-		} else {
-			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
-		}
-	} else {
-		psresult := topic.Publish(ctx, &pubsub.Message{
-			Data: outputJSON,
-			Attributes: map[string]string{
-				"type":   "people",
-				"source": "post",
-			},
-		})
-		psid, err := psresult.Get(ctx)
-		_, err = psresult.Get(ctx)
-		if err != nil {
-			log.Fatalf("%v Could not pub to pubsub: %v", input.Signature.EventID, err)
-		} else {
-			log.Printf("%v pubbed record as message id %v: %v", input.Signature.EventID, psid, string(outputJSON))
-		}
-	}
-
-}
+// }
 
 func SetLibPostalField(v *LibPostalParsed, field string, value string) string {
 	r := reflect.ValueOf(v)
