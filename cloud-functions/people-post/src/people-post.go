@@ -1,7 +1,5 @@
 package peoplepost
 
-// touch
-
 import (
 	"context"
 	"encoding/json"
@@ -122,6 +120,8 @@ func init() {
 	ap = http.Client{
 		Timeout: time.Second * 2, // Maximum of 2 secs
 	}
+	// is a duplicate of line 117
+	// topicR = ps.Topic(os.Getenv("PSREPORT"))
 	msp = &redis.Pool{
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
@@ -566,7 +566,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 				searchValue := strings.Replace(search, "'", `''`, -1)
 				querySets := []PeopleSetDS{}
 				if _, err := fs.GetAll(ctx, datastore.NewQuery(DSKindSet).Namespace(dsNameSpace).Filter("search =", searchValue), &querySets); err != nil {
-					log.Fatalf("Error querying sets for %v: %v", search, err)
+					log.Fatalf("Error querying sets for %v: %v", searchValue, err)
 				}
 				log.Printf("Fiber type %v Search %v found %v sets", v.Type, search, len(querySets))
 				for _, s := range querySets {
@@ -617,6 +617,8 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 				for _, g := range goldens {
+					// if g.ROLE != "Parent" {
+					// Here we can receive an empty golden if we had the error "fetching golden error" line 616
 					if g.ID != nil  && g.ROLE != "Parent" {
 						SetRedisTempKeyWithValue([]string{input.Signature.OwnerID, g.ID.Name, "golden", "title"}, g.TITLE)
 						if g.ADVALID == "TRUE" {
@@ -736,6 +738,7 @@ func PostProcessPeople(ctx context.Context, m PubSubMessage) error {
 	})
 
 	psid, err := psresult.Get(ctx)
+	// _, err = psresult.Get(ctx)
 	if err != nil {
 		log.Fatalf("%v Could not pub to pubsub error: %v: output: %v", input.Signature.EventID, err, string(outputJSON))
 	} else {
