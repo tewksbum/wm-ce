@@ -1,0 +1,25 @@
+timeout: 600s
+steps:
+  - id: go_deploy
+    name: 'gcr.io/cloud-builders/gcloud'
+    args: ['functions', 
+    "deploy", "wm-$BRANCH_NAME-${_FUNCTION_NAME}", 
+    "--entry-point", "${_ENTRY_POINT}", 
+    "--runtime","go111", 
+    "--trigger-topic", "wm-${_TRIGGER_TOPIC}-$BRANCH_NAME", 
+    "--project", "${PROJECT_ID}", 
+    "--timeout", "30",
+    "--max-instances", "25",
+    "--env-vars-file", ".env.$BRANCH_NAME.yaml",
+    "--vpc-connector", "${_VPC_CONNECTOR}",
+    ]
+    env: ['GOPATH=/gopath']
+    dir: './cloud-functions/${_FUNCTION_NAME}/src'
+tags: ['$BRANCH_NAME']    
+substitutions:
+    _FUNCTION_NAME: pre-process-nsaddress
+    _ENTRY_POINT: ProcessAddress
+    _TRIGGER_TOPIC: order-address
+    _VPC_CONNECTOR: cf-connector-4
+options:
+    substitution_option: 'ALLOW_LOOSE'

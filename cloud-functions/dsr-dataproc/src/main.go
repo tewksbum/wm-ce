@@ -57,8 +57,9 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				GceClusterConfig: &dataprocpb.GceClusterConfig{
 					ServiceAccount:       os.Getenv("SERVICE_ACCOUNT"),
 					ServiceAccountScopes: strings.Split(os.Getenv("SCOPES"), ","),
-					// ZoneUri: os.Getenv("ZONE"),
-					SubnetworkUri: "default",
+					ZoneUri:              os.Getenv("ZONE"),
+					SubnetworkUri:        "default",
+					//InternalIpOnly:       true,
 				},
 				MasterConfig: &dataprocpb.InstanceGroupConfig{
 					NumInstances:   int32(parseInt(os.Getenv("MASTER_COUNT"), 2)),
@@ -82,7 +83,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 				},
 				LifecycleConfig: &dataprocpb.LifecycleConfig{ // delete after 20 min of inactivity
 					IdleDeleteTtl: &duration.Duration{
-						Seconds: int64(parseInt(os.Getenv("IDLE_DELETE_MINUTE"), 20) * 60),
+						Seconds: int64(parseInt(os.Getenv("IDLE_DELETE_MINUTE"), 5) * 60),
 					},
 				},
 				SoftwareConfig: &dataprocpb.SoftwareConfig{

@@ -1,7 +1,5 @@
 package fileprocessor
 
-// yuck...
-
 import (
 	"bytes"
 	"context"

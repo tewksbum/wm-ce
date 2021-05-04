@@ -1,4 +1,4 @@
-timeout: 10m
+timeout: 600s
 steps:
   - id: go_deploy
     name: 'gcr.io/cloud-builders/gcloud'
@@ -11,7 +11,8 @@ steps:
     "--timeout", "30",
     "--env-vars-file", ".env.$BRANCH_NAME.yaml",
     "--vpc-connector", "${_VPC_CONNECTOR}",
-    "--max-instances", "100"
+    "--max-instances", "100",
+    "--retry"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'

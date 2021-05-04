@@ -52,60 +52,60 @@ type KVP struct {
 	Value string `json:"v" datastore:"v"`
 }
 
-type CampaignERR struct {
-	TrustedID  int `json:"TrustedID"`
-	CampaignID int `json:"CampaignId"`
-	Name       int `json:"Name"`
-	Type       int `json:"Type"`
-	Channel    int `json:"Channel"`
-	StartDate  int `json:"StartDate"`
-	EndDate    int `json:"EndDate"`
-	Budget     int `json:"Budget"`
-}
+// type CampaignERR struct {
+// 	TrustedID  int `json:"TrustedID"`
+// 	CampaignID int `json:"CampaignId"`
+// 	Name       int `json:"Name"`
+// 	Type       int `json:"Type"`
+// 	Channel    int `json:"Channel"`
+// 	StartDate  int `json:"StartDate"`
+// 	EndDate    int `json:"EndDate"`
+// 	Budget     int `json:"Budget"`
+// }
 
-type ConsignmentERR struct {
-	ID       int `json:"ID"`
-	ShipDate int `json:"ShipDate"`
-}
+// type ConsignmentERR struct {
+// 	ID       int `json:"ID"`
+// 	ShipDate int `json:"ShipDate"`
+// }
 
-type EventERR struct {
-	ID         int `json:"ID"`
-	Type       int `json:"Type"`
-	CampaignID int `json:"CampaignId"`
-	Browser    int `json:"Browser"`
-	Channel    int `json:"Channel"`
-	OS         int `json:"StartDate"`
-	Domain     int `json:"Domain"`
-	URL        int `json:"URL"`
-	Location   int `json:"Location"`
-	Referrer   int `json:"Referrer"`
-	SearchTerm int `json:"SearchTerm"`
-}
+// type EventERR struct {
+// 	ID         int `json:"ID"`
+// 	Type       int `json:"Type"`
+// 	CampaignID int `json:"CampaignId"`
+// 	Browser    int `json:"Browser"`
+// 	Channel    int `json:"Channel"`
+// 	OS         int `json:"StartDate"`
+// 	Domain     int `json:"Domain"`
+// 	URL        int `json:"URL"`
+// 	Location   int `json:"Location"`
+// 	Referrer   int `json:"Referrer"`
+// 	SearchTerm int `json:"SearchTerm"`
+// }
 
-type OrderERR struct {
-	ID         int `json:"ID"`
-	Number     int `json:"Number"`
-	Date       int `json:"Date"`
-	CustomerID int `json:"CustomerID"`
-	SubTotal   int `json:"SubTotal"`
-	Shipping   int `json:"Shipping"`
-	Discount   int `json:"Tax"`
-	Tax        int `json:"Discount"`
-	Total      int `json:"Total"`
-	Channel    int `json:"Channel"`
-}
+// type OrderERR struct {
+// 	ID         int `json:"ID"`
+// 	Number     int `json:"Number"`
+// 	Date       int `json:"Date"`
+// 	CustomerID int `json:"CustomerID"`
+// 	SubTotal   int `json:"SubTotal"`
+// 	Shipping   int `json:"Shipping"`
+// 	Discount   int `json:"Tax"`
+// 	Tax        int `json:"Discount"`
+// 	Total      int `json:"Total"`
+// 	Channel    int `json:"Channel"`
+// }
 
-type OrderDetailERR struct {
-	ID              int `json:"ID"`
-	OrderID         int `json:"OrderID"`
-	OrderNumber     int `json:"OrderNumber"`
-	ConsigmentID    int `json:"ConsigmentID"`
-	ProductID       int `json:"ProductID"`
-	ProductSKU      int `json:"ProductSKU"`
-	ProductUPC      int `json:"ProductUPC"`
-	ProductQuantity int `json:"ProductQuantity"`
-	MasterCategory  int `json:"MasterCategory"`
-}
+// type OrderDetailERR struct {
+// 	ID              int `json:"ID"`
+// 	OrderID         int `json:"OrderID"`
+// 	OrderNumber     int `json:"OrderNumber"`
+// 	ConsigmentID    int `json:"ConsigmentID"`
+// 	ProductID       int `json:"ProductID"`
+// 	ProductSKU      int `json:"ProductSKU"`
+// 	ProductUPC      int `json:"ProductUPC"`
+// 	ProductQuantity int `json:"ProductQuantity"`
+// 	MasterCategory  int `json:"MasterCategory"`
+// }
 
 type PeopleERR struct {
 	Address              int `json:"Address"`
@@ -167,24 +167,24 @@ type PeopleERR struct {
 	PermS                int `json:"PermS"`
 }
 
-type ProductERR struct {
-	PID         int `json:"ID"`
-	SKU         int `json:"SKU"`
-	UPC         int `json:"UPC"`
-	Name        int `json:"Name"`
-	Description int `json:"Description"`
-	Size        int `json:"Size"`
-	Color       int `json:"Color"`
-	UnitPrice   int `json:"UnitPrice"`
-	Contains    int `json:"Contains"`
-	Type        int `json:"Type"`
-	VendorID    int `json:"VendorId"`
-	Vendor      int `json:"Vendor"`
-	Cost        int `json:"Cost"`
-	Stars       int `json:"Stars"`
-	Category    int `json:"Category"`
-	Margin      int `json:"Margin"`
-}
+// type ProductERR struct {
+// 	PID         int `json:"ID"`
+// 	SKU         int `json:"SKU"`
+// 	UPC         int `json:"UPC"`
+// 	Name        int `json:"Name"`
+// 	Description int `json:"Description"`
+// 	Size        int `json:"Size"`
+// 	Color       int `json:"Color"`
+// 	UnitPrice   int `json:"UnitPrice"`
+// 	Contains    int `json:"Contains"`
+// 	Type        int `json:"Type"`
+// 	VendorID    int `json:"VendorId"`
+// 	Vendor      int `json:"Vendor"`
+// 	Cost        int `json:"Cost"`
+// 	Stars       int `json:"Stars"`
+// 	Category    int `json:"Category"`
+// 	Margin      int `json:"Margin"`
+// }
 
 type ERRFlags struct {
 	PeopleFirstName bool
@@ -244,22 +244,22 @@ type PeopleVER struct {
 	IS_PHONE     bool  `json:"isPHONE"`
 }
 
-type EventVER struct {
-	IS_BROWSER bool `json:"isBROWSER"`
-	IS_CHANNEL bool `json:"isCHANNEL"`
-}
+// type EventVER struct {
+// 	IS_BROWSER bool `json:"isBROWSER"`
+// 	IS_CHANNEL bool `json:"isCHANNEL"`
+// }
 
 type InputColumn struct {
 	NER            NER            `json:"NER"`
 	PeopleERR      PeopleERR      `json:"PeopleERR"`
-	ProductERR     ProductERR     `json:"ProductERR"`
-	CampaignERR    CampaignERR    `json:"CampaignERR"`
-	OrderERR       OrderERR       `json:"OrderERR"`
-	ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
-	OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
+	// ProductERR     ProductERR     `json:"ProductERR"`
+	// CampaignERR    CampaignERR    `json:"CampaignERR"`
+	// OrderERR       OrderERR       `json:"OrderERR"`
+	// ConsignmentERR ConsignmentERR `json:"ConsignmentERR"`
+	// OrderDetailERR OrderDetailERR `json:"OrderDetailERR"`
 	PeopleVER      PeopleVER      `json:"VER"`
-	EventERR       EventERR       `json:"EventERR"`
-	EventVER       EventVER       `json:"EventVER"`
+	// EventERR       EventERR       `json:"EventERR"`
+	// EventVER       EventVER       `json:"EventVER"`
 	Name           string         `json:"Name"`
 	Value          string         `json:"Value"`
 	MatchKey       string         `json:"MK"`
