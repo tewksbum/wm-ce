@@ -243,7 +243,17 @@ func ProcessFile(ctx context.Context, m PubSubMessage) error {
 	// get the file
 	if fileURL, ok := input.EventData["fileUrl"]; ok {
 		log.Printf("fetching file %v", fileURL)
-		resp, err := http.Get(fmt.Sprintf("%v", fileURL))
+		retryLoop := 0
+		var err error
+		var resp *http.Response
+		for {
+			resp, err = http.Get(fmt.Sprintf("%v", fileURL))
+			if err == nil || retryLoop > 2{
+				break;
+			}
+			time.Sleep(1 * time.Second)
+			retryLoop++
+		}
 		if err != nil {
 			input.EventData["message"] = "File cannot be downloaded"
 			input.EventData["status"] = "Error"
