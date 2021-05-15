@@ -9,6 +9,7 @@ steps:
     "--trigger-topic", "ocm-ns-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
+    "--retry",
     "--env-vars-file", ".env.yaml",
     "--max-instances", "10"
     ]
