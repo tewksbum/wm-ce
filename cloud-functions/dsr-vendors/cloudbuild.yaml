@@ -9,16 +9,15 @@ steps:
     "--trigger-topic", "ocm-ns-${_TRIGGER_TOPIC}", 
     "--project", "${PROJECT_ID}", 
     "--timeout", "540",
-    "--retry",
     "--env-vars-file", ".env.yaml",
-    "--max-instances", "10"
+    "--max-instances", "1"
     ]
     env: ['GOPATH=/gopath']
     dir: './cloud-functions/${_FUNCTION_NAME}/src'
 tags: ['$BRANCH_NAME']    
 substitutions:
-    _FUNCTION_NAME: dsr-orders-fetch
-    _TRIGGER_TOPIC: dsr-orders-fetch
+    _FUNCTION_NAME: dsr-vendors
+    _TRIGGER_TOPIC: dsr-vendors-refresh
     _ENTRY_POINT: Run
 options:
     substitution_option: 'ALLOW_LOOSE'
