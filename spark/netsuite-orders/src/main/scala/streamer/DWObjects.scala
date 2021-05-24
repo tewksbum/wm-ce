@@ -61,7 +61,8 @@ case class OrderLineFact(
     is_discount: Int,
     is_shipping: Int,
     is_service: Int,
-    is_cancelled: Int
+    is_cancelled: Int,
+    kit_key: Long
 )
 
 case class DailySalesFact(
