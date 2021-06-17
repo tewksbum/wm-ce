@@ -475,21 +475,21 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 			outputJSON, _ := json.Marshal(output)
 			fmt.Println(string(outputJSON))
-			// psresult := topic.Publish(ctx, &pubsub.Message{
-			// 	Data: outputJSON,
-			// 	Attributes: map[string]string{
-			// 		"eventid": input.EventID,
-			// 		"listid":  GetKVPValue(event.Passthrough, "listid"),
-			// 		"form":    GetKVPValue(event.Passthrough, "form"),
-			// 	},
-			// })
-			// psid, err := psresult.Get(ctx)
-			// _, err = psresult.Get(ctx)
-			// if err != nil {
-			// 	log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
-			// 	return nil
-			// }
-			// log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+			psresult := topic.Publish(ctx, &pubsub.Message{
+				Data: outputJSON,
+				Attributes: map[string]string{
+					"eventid": input.EventID,
+					"listid":  GetKVPValue(event.Passthrough, "listid"),
+					"form":    GetKVPValue(event.Passthrough, "form"),
+				},
+			})
+			psid, err := psresult.Get(ctx)
+			_, err = psresult.Get(ctx)
+			if err != nil {
+				log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+				return nil
+			}
+			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
 	}
 	return nil
