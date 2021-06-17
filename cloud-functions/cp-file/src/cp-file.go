@@ -188,6 +188,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 		output := []ContactInfo{}
 		if event.EventType != "Form Submission" {
+			role := GetKVPValue(event.Attributes, "role")
+
 			countStudentEmails := 0
 			countParentEmails := 0
 
@@ -236,7 +238,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					}
 				}
 				//only students
-				if g.ROLE == "Parent" {
+				if g.ROLE == "Parent" && role == "Student" {
 					continue
 				}
 				if g.COUNTRY == "US" {
@@ -269,6 +271,10 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 						return nil
 					}
 				}
+				salutation := GetKVPValue(event.Passthrough, "salutation")
+				if role == "Parent" {
+					salutation = ""
+				}
 
 				row := []string{
 					GetKVPValue(event.Passthrough, "schoolCode"),
@@ -281,8 +287,8 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 					adcode,
 					event.Created.Format("01/02/2006"),
 					orderByDate,
-					roleFormatter(GetKVPValue(event.Attributes, "role")),
-					GetKVPValue(event.Passthrough, "salutation"),
+					roleFormatter(role),
+					salutation,
 					g.FNAME,
 					g.LNAME,
 					g.AD1,
@@ -469,21 +475,21 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 
 			outputJSON, _ := json.Marshal(output)
 			fmt.Println(string(outputJSON))
-			psresult := topic.Publish(ctx, &pubsub.Message{
-				Data: outputJSON,
-				Attributes: map[string]string{
-					"eventid": input.EventID,
-					"listid":  GetKVPValue(event.Passthrough, "listid"),
-					"form":    GetKVPValue(event.Passthrough, "form"),
-				},
-			})
-			psid, err := psresult.Get(ctx)
-			_, err = psresult.Get(ctx)
-			if err != nil {
-				log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
-				return nil
-			}
-			log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
+			// psresult := topic.Publish(ctx, &pubsub.Message{
+			// 	Data: outputJSON,
+			// 	Attributes: map[string]string{
+			// 		"eventid": input.EventID,
+			// 		"listid":  GetKVPValue(event.Passthrough, "listid"),
+			// 		"form":    GetKVPValue(event.Passthrough, "form"),
+			// 	},
+			// })
+			// psid, err := psresult.Get(ctx)
+			// _, err = psresult.Get(ctx)
+			// if err != nil {
+			// 	log.Printf("%v Could not pub to pubsub: %v", input.EventID, err)
+			// 	return nil
+			// }
+			// log.Printf("%v pubbed record as message id %v: %v", input.EventID, psid, string(outputJSON))
 		}
 	}
 	return nil
