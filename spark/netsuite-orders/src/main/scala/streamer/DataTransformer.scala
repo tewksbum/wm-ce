@@ -266,6 +266,7 @@ object DataTransformer {
         .drop("billto_value", "netsuite_key", "name", "addr1", "addr2", "city", "state", "zip", "country", "phone")
         .withColumnRenamed("netsuite_order_id", "netsuite_id")
         .withColumn("channel_key", coalesce($"channel_key", lit(999))) // set to Unampped if null
+        .withColumn("date_key", coalesce($"date_key", lit(0))) // set to 0 if null
         .distinct()
 
       upsertOrdersFact(dfOrders.as[OrdersFact].collect())
@@ -409,6 +410,7 @@ object DataTransformer {
         .withColumn("shipto_key", coalesce($"shipto_key", lit("00000000-0000-0000-0000-000000000000"))) // fix the shipto key if no shipto
         .withColumn("program_key", coalesce($"program_key", lit(10092)) ) // set to fixed value of 10092 = Unknown if we don't know what it is
         .withColumn("sponsor_key", coalesce($"sponsor_key", lit(5189)) ) // set to fixed value of 5189 = Unknown if we don't know what it is
+        .withColumn("date_key", coalesce($"date_key", lit(0))) // set to 0 if null
         .distinct()
       // dfOrderLines.show
 
