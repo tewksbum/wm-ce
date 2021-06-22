@@ -86,6 +86,7 @@ func Run(ctx context.Context, m *pubsub.Message) error {
 		ConsumerKey:    consumerKey,
 		ConsumerSecret: consumerSecret,
 		Realm:          realm,
+		Signer:         &oauth1.HMAC256Signer{ConsumerSecret: consumerSecret},
 	}
 	token := oauth1.NewToken(tokenKey, tokenSecret)
 	httpClient := config.Client(oauth1.NoContext, token)
