@@ -58,6 +58,7 @@ var devSegments = map[string]int{
 	"SchoolCode":  17362,
 	"SchoolName":  17364,
 	"SchoolColor": 17363,
+	"Role":        24506,
 }
 
 var fepSegments = map[string]int{
@@ -67,6 +68,7 @@ var fepSegments = map[string]int{
 	"SchoolCode":  6275,
 	"SchoolName":  6276,
 	"SchoolColor": 6277,
+	"Role":        24500,
 }
 
 var carSegments = map[string]int{
@@ -76,6 +78,7 @@ var carSegments = map[string]int{
 	"SchoolCode":  17333,
 	"SchoolName":  17335,
 	"SchoolColor": 17334,
+	"Role":        24498,
 }
 
 var cwpSegments = map[string]int{
@@ -85,6 +88,7 @@ var cwpSegments = map[string]int{
 	"SchoolCode":  17347,
 	"SchoolName":  17349,
 	"SchoolColor": 17348,
+	"Role":        24501,
 }
 
 var rhlSegments = map[string]int{
@@ -94,6 +98,7 @@ var rhlSegments = map[string]int{
 	"SchoolCode":  17340,
 	"SchoolName":  17342,
 	"SchoolColor": 17341,
+	"Role":        24499,
 }
 
 var ddSegments = map[string]int{
@@ -103,6 +108,7 @@ var ddSegments = map[string]int{
 	"SchoolCode":  17354,
 	"SchoolName":  17356,
 	"SchoolColor": 17355,
+	"Role":        24502,
 }
 
 // Ambassador segmentation ids
