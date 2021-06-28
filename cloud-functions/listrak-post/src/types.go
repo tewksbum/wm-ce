@@ -14,7 +14,7 @@ type ContactInfo struct {
 	State       string `json:"state"`
 	Zip         string `json:"zip"`
 	Country     string `json:"country"`
-	RoleType    string `json:"roleType"`
+	Role        string `json:"role"`
 	Email       string `json:"email"`
 	ContactID   string `json:"contactID"`
 	SchoolCode  string `json:"schoolCode"`

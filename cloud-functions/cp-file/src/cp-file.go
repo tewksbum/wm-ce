@@ -225,7 +225,7 @@ func GenerateCP(ctx context.Context, m PubSubMessage) error {
 								State:       g.STATE,
 								Zip:         g.ZIP,
 								Country:     g.COUNTRY,
-								RoleType:    validateRole(g.ROLE),
+								Role:        validateRole(g.ROLE),
 								Email:       email,
 								ContactID:   g.ID.Name,
 								SchoolCode:  GetKVPValue(event.Passthrough, "schoolCode"),
